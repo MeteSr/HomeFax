@@ -1,0 +1,17 @@
+{
+  "name": "homefax",
+  "version": "0.1.0",
+  "description": "Blockchain-verified home maintenance history platform on Internet Computer Protocol",
+  "private": true,
+  "scripts": {
+    "deploy:local": "bash scripts/deploy-local.sh",
+    "start": "dfx start --background",
+    "stop": "dfx stop",
+    "test": "bash scripts/test-backend.sh",
+    "frontend": "cd src/frontend && npm run dev",
+    "generate": "dfx generate"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

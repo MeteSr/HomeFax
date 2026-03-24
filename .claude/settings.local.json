@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh auth:*)",
+      "Bash(where gh:*)",
+      "Bash(curl --version)",
+      "Bash(echo \"GITHUB_TOKEN=$GITHUB_TOKEN:+set\")",
+      "Bash(echo \"GH_TOKEN=$GH_TOKEN:+set\")",
+      "Bash(gh repo:*)",
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

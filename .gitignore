@@ -1,0 +1,25 @@
+# DFX artifacts
+.dfx/
+canister_ids.json
+
+# Node
+node_modules/
+src/frontend/node_modules/
+
+# Build output
+src/frontend/dist/
+dist/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
