@@ -233,7 +233,7 @@ export default function PropertyDetailPage() {
 
         {tab === "timeline"  && <TimelineTab jobs={jobs} onVerify={handleVerify} currentPrincipal={principal} photosByJob={photosByJob} onPhotoUpload={handlePhotoUpload} />}
         {tab === "jobs"      && <JobsTab jobs={jobs} />}
-        {tab === "documents" && <DocumentsTab />}
+        {tab === "documents" && <DocumentsTab propertyId={id!} />}
         {tab === "settings"  && <SettingsTab property={property} />}
       </div>
 
@@ -438,14 +438,89 @@ function JobsTab({ jobs }: { jobs: Job[] }) {
   );
 }
 
-function DocumentsTab() {
-  const S = { rule: "#C8C3B8", inkLight: "#7A7268", serif: "'Playfair Display', Georgia, serif" as const, mono: "'IBM Plex Mono', monospace" as const };
+function DocumentsTab({ propertyId }: { propertyId: string }) {
+  const S = {
+    ink: "#0E0E0C", rule: "#C8C3B8", inkLight: "#7A7268", rust: "#C94C2E",
+    serif: "'Playfair Display', Georgia, serif" as const,
+    mono:  "'IBM Plex Mono', monospace" as const,
+  };
+  const RECEIPT_JOB = `receipts_${propertyId}`;
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [docs, setDocs] = useState<Photo[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    photoService.getByJob(RECEIPT_JOB).then(setDocs).catch(() => {});
+  }, [propertyId]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const doc = await photoService.upload(file, RECEIPT_JOB, propertyId, "PostConstruction", file.name);
+      setDocs((prev) => [doc, ...prev]);
+      toast.success("Receipt uploaded");
+    } catch (err: any) {
+      toast.error(err.message ?? "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
   return (
-    <div style={{ border: `1px dashed ${S.rule}`, padding: "3rem", textAlign: "center" }}>
-      <p style={{ fontFamily: S.serif, fontWeight: 700, marginBottom: "0.375rem" }}>Document receipts coming soon</p>
-      <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight }}>
-        Upload and hash your maintenance receipts to prove authenticity on-chain.
-      </p>
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+        <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
+          Maintenance Receipts
+        </p>
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          style={{
+            fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase",
+            padding: "0.375rem 0.875rem", border: `1px solid ${S.rust}`, color: S.rust,
+            background: "none", cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.5 : 1,
+          }}
+        >
+          {uploading ? "Uploading…" : "+ Upload Receipt"}
+        </button>
+        <input ref={inputRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={handleUpload} />
+      </div>
+
+      {docs.length === 0 ? (
+        <div style={{ border: `1px dashed ${S.rule}`, padding: "3rem", textAlign: "center" }}>
+          <p style={{ fontFamily: S.serif, fontWeight: 700, marginBottom: "0.375rem" }}>No receipts uploaded yet</p>
+          <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight }}>
+            Upload maintenance receipts — each file is SHA-256 hashed and stored on-chain.
+          </p>
+        </div>
+      ) : (
+        <div style={{ border: `1px solid ${S.rule}` }}>
+          {docs.map((doc, i) => (
+            <div key={doc.id} style={{
+              display: "flex", alignItems: "center", gap: "1rem", padding: "0.875rem 1.25rem",
+              background: "#fff", borderBottom: i < docs.length - 1 ? `1px solid ${S.rule}` : "none",
+            }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.125rem" }}>{doc.description}</p>
+                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, letterSpacing: "0.06em" }}>
+                  {(doc.size / 1024).toFixed(1)} KB · SHA-256: {doc.hash.slice(0, 16)}… · {new Date(doc.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              {doc.url && (
+                <a href={doc.url} target="_blank" rel="noreferrer" style={{
+                  fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: S.rust, textDecoration: "none",
+                }}>
+                  View
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

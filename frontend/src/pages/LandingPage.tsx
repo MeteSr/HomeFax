@@ -35,11 +35,15 @@ export default function LandingPage() {
           Home<span style={{ color: s.rust }}>Fax</span>
         </div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", padding: "0 1.5rem", gap: "2rem" }}>
-          {["Features", "Pricing", "About"].map((l) => (
-            <span key={l} style={{
+          {([
+            { label: "Features", action: () => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" }) },
+            { label: "Pricing",  action: () => navigate("/pricing") },
+            { label: "About",    action: () => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" }) },
+          ] as const).map(({ label, action }) => (
+            <span key={label} onClick={action} style={{
               fontFamily: s.mono, fontSize: "0.688rem", letterSpacing: "0.12em",
               textTransform: "uppercase", color: "#888", cursor: "pointer",
-            }}>{l}</span>
+            }}>{label}</span>
           ))}
         </div>
         <button
@@ -208,7 +212,7 @@ export default function LandingPage() {
       </div>
 
       {/* ── Features ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", borderBottom: `1px solid ${s.rule}` }}>
+      <div id="features" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", borderBottom: `1px solid ${s.rule}` }}>
         {[
           {
             num: "01",
@@ -250,7 +254,7 @@ export default function LandingPage() {
       </div>
 
       {/* ── CTA band ─────────────────────────────────────────────────────────── */}
-      <div style={{
+      <div id="about" style={{
         display: "grid", gridTemplateColumns: "1fr auto",
         alignItems: "center", padding: "3.5rem 3rem", gap: "2.5rem",
         borderBottom: `1px solid ${s.rule}`,
