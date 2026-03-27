@@ -888,6 +888,80 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 ---
 
+---
+
+## 14. Security — Audit Findings & Hardening
+
+**Audit scope:** ~3,500 lines of Motoko across 14 canisters + ~2,000 lines of TypeScript/React + Express voice agent proxy. Audit completed 2026-03-27. Issues are ordered by severity.
+
+---
+
+### 14.1 Critical — Fix Before Production
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| 14.1.1 | First-admin privilege escalation | ⬜ Missing | S | **CRITICAL.** All canisters share the same pattern: when `admins.size() == 0`, any caller can invoke `addAdmin()` and become admin — locking out the real deployer and gaining `pause()`/`unpause()` control over the entire platform. Affects: `auth`, `property`, `job`, `contractor`, `report`, `recurring`. Fix: add a one-time `initializeAdmin()` function gated by a `Bool` stable var (`initialized`), or hardcode the deployer principal at canister startup. |
+| 14.1.2 | Weak report share token generation | ⬜ Missing | S | **CRITICAL.** Tokens are generated as `"RPT_" # counter # "_" # timestampMs` — fully deterministic and enumerable. An attacker who generates one report can predict adjacent tokens and access other homeowners' private reports without being invited. Fix: replace with IC certified randomness (`Random.blob()`) to generate a 32-byte random token. Never use sequential counters or timestamps as security tokens. File: `backend/report/main.mo` `nextIds()`. |
+
+---
+
+### 14.2 High — Fix Before Launch
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| 14.2.1 | Cross-canister job ownership not verified | ⬜ Missing | M | **HIGH.** `backend/sensor/main.mo` passes `device.homeowner` (its own stored value) directly to `jobCanister.createSensorJob()`, which trusts the principal without verifying it against the Property canister. An attacker who registers a sensor device with a fabricated `homeowner` principal can create jobs attributed to arbitrary users. Fix: in `createSensorJob()`, call the Property canister to verify the passed `homeowner` actually owns `propertyId` before creating the job. |
+| 14.2.2 | Dev identity bypass not structurally isolated | ⬜ Missing | S | **HIGH.** `loginWithLocalIdentity()` in `actor.ts` uses a fixed seed (`seed[0] = 42`), generating the same principal on every call. `AuthContext.tsx` accepts `window.__e2e_principal` injection in DEV mode. Both are intentional for testing but must never reach production. Fix: gate the entire function behind a Vite dead-code elimination check (`if (import.meta.env.DEV)`), add a build-time assertion that verifies neither function is reachable in production builds. |
+| 14.2.3 | Report disclosure options enforced on frontend only | ⬜ Missing | M | **HIGH.** `hideAmounts`, `hideContractors`, `hidePermits`, `hideDescriptions` are URL params interpreted by React only. Any caller can invoke `getReport(token)` directly via the IC agent and receive the full snapshot regardless of disclosure settings. Fix: store disclosure rules inside the `ShareLink` record on-chain; enforce them in `getReport()` by filtering the snapshot fields before returning. File: `backend/report/main.mo`. |
+
+---
+
+### 14.3 Medium — Fix Before Public Beta
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| 14.3.1 | Missing text field size limits across canisters | ⬜ Missing | M | **MEDIUM.** `description`, `title`, `comment`, `bio`, `name` fields are validated for non-empty but not for maximum length. The sensor canister correctly enforces `MAX_PAYLOAD_BYTES = 4096` but other canisters don't follow this pattern. An attacker can submit a multi-gigabyte description and cause memory exhaustion or expensive serialization cycles. Fix: add `MAX_DESCRIPTION: Nat = 5000`, `MAX_COMMENT: Nat = 10000` constants to all canisters that accept free-text input; return `#InvalidInput` if exceeded. |
+| 14.3.2 | No rate limiting on voice agent proxy endpoints | ⬜ Missing | S | **MEDIUM.** `/api/agent` and `/api/chat` on the Express proxy (port 3001) have no rate limiting. An attacker can spam these endpoints, exhausting the `ANTHROPIC_API_KEY` quota or causing denial of service. Fix: add `express-rate-limit` middleware — 30 requests/minute/IP on `/api/` routes. File: `agents/voice/server.ts`. |
+| 14.3.3 | CORS origin fails open if env var missing | ⬜ Missing | S | **MEDIUM.** `FRONTEND_ORIGIN` defaults to `"http://localhost:5173"` if not set. In a misconfigured production environment this silently restricts or opens CORS in unexpected ways. Fix: throw a startup error if `FRONTEND_ORIGIN` is not set (`if (!allowedOrigin) throw new Error(...)`). File: `agents/voice/server.ts`. |
+| 14.3.4 | Missing Content-Security-Policy header | ⬜ Missing | S | **MEDIUM.** `frontend/index.html` has no CSP meta tag. While no `dangerouslySetInnerHTML` was found in the current codebase, absence of a CSP leaves the door open for XSS introduced by future changes or third-party scripts. Fix: add `<meta http-equiv="Content-Security-Policy">` restricting `script-src`, `style-src` (allow `fonts.googleapis.com`), `font-src` (allow `fonts.gstatic.com`), `connect-src` to IC endpoint. |
+
+---
+
+### 14.4 Low / Hardening
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| 14.4.1 | Warranty expiry timestamp overflow | ⬜ Missing | S | **LOW.** `useVoiceAgent.ts` computes warranty expiry as `Date.getTime() + warrantyMonths * MS_PER_MONTH`. Extreme values (year 2100 start date + 100-year warranty) can produce a number beyond JS `Number.MAX_SAFE_INTEGER`. Fix: clamp to a reasonable max date (e.g., year 2100) before comparison. |
+| 14.4.2 | Secrets audit — confirm no keys in codebase | ⬜ Missing | S | Add `git-secrets` or `gitleaks` pre-commit hook to scan for API keys, private keys, and secrets patterns. Confirm `.env` is in `.gitignore` and `.env.example` contains only placeholders. Run a one-time `gitleaks detect` scan on full git history. |
+| 14.4.3 | Stable memory schema migration safety | ⬜ Missing | M | The `report` canister's addition of `recurringServices` to `ReportSnapshot` is a breaking stable variable change. Old snapshots deserialized after upgrade will have an empty field (safe in this case due to Motoko's default handling), but there is no documented upgrade checklist or rollback plan. Fix: document a canister upgrade runbook (stop → redeploy → verify → rollback procedure) and add a schema version field to `ReportSnapshot`. |
+| 14.4.4 | Canister `pause()` has no timeout or auto-recovery | ⬜ Missing | S | A paused canister stays paused indefinitely — if an admin principal is lost or compromised, the canister cannot be unpaused. Fix: add an optional `pauseDurationSeconds` parameter; auto-unpause after the duration. Alternatively, require 2-of-N admin approval to pause in production. |
+| 14.4.5 | Verify `fetchRootKey` is never called in production | ⬜ Missing | S | `actor.ts` correctly gates `shouldFetchRootKey: IS_LOCAL`. Add a CI lint rule or build-time assertion that fails if `fetchRootKey: true` appears in any production code path. This is a defense-in-depth check — a future developer could accidentally enable it. |
+| 14.4.6 | Anthropic API key not exposed to frontend — confirm in build | ⬜ Missing | S | The voice agent proxy correctly holds `ANTHROPIC_API_KEY` server-side and never sends it to the browser. Confirm this is enforced in the Vite config — no `VITE_ANTHROPIC_*` prefixed env var should exist, as Vite automatically inlines `VITE_*` vars into the bundle. Add a build step that greps `dist/` for the key pattern. |
+
+---
+
+### Priority Tiers — Security
+
+**Tier 1-SEC — Fix Before Production (blocking)**
+- 14.1.1 First-admin privilege escalation (all canisters)
+- 14.1.2 Weak report token generation
+- 14.2.1 Cross-canister job ownership verification
+- 14.2.3 Report disclosure enforcement moved to canister
+
+**Tier 2-SEC — Fix Before Public Beta**
+- 14.2.2 Dev identity isolation in build
+- 14.3.1 Text field size limits across all canisters
+- 14.3.2 Voice proxy rate limiting
+- 14.4.2 Secrets audit + pre-commit hook
+- 14.4.5 `fetchRootKey` production assertion
+- 14.4.6 API key build-time verification
+
+**Tier 3-SEC — Hardening**
+- 14.3.3 CORS fail-secure on missing env var
+- 14.3.4 Content-Security-Policy header
+- 14.4.1 Warranty timestamp overflow clamp
+- 14.4.3 Canister upgrade runbook + schema version
+- 14.4.4 Canister pause timeout / multi-admin approval
+
 ### Priority Tiers — Benchmark & Load Testing
 
 **Tier 1-B — Establish Baseline First**
