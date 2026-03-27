@@ -103,8 +103,19 @@ function SystemCard({ pred, onSchedule, marketRec, taskState, onTaskStateChange 
           </div>
         </div>
         <div style={{ textAlign: "right", minWidth: "7rem" }}>
-          <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight }}>Replacement</div>
-          <div style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.75rem", color: S.ink }}>{low}–{high}</div>
+          {(pred.urgency === "Critical" || pred.urgency === "Soon") ? (
+            <>
+              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight }}>Replacement</div>
+              <div style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.75rem", color: S.ink }}>{low}–{high}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight }}>Service call</div>
+              <div style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.75rem", color: S.ink }}>
+                {maintenanceService.formatCents(pred.serviceCallLowCents)}–{maintenanceService.formatCents(pred.serviceCallHighCents)}
+              </div>
+            </>
+          )}
         </div>
         <div style={{ color: S.inkLight }}>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -302,10 +313,12 @@ function FiveYearCalendar({ entries, onComplete, onDelete, onAddYear }: {
 
 function AddToScheduleModal({ pred, propertyId, onSave, onClose }: { pred: SystemPrediction; propertyId: string; onSave: (e: ScheduleEntry) => void; onClose: () => void }) {
   const currentYear = new Date().getFullYear();
+  const isUrgent    = pred.urgency === "Critical" || pred.urgency === "Soon";
+  const defaultCost = isUrgent ? pred.estimatedCostLowCents : pred.serviceCallLowCents;
   const [year, setYear]   = useState(String(currentYear + 1));
   const [month, setMonth] = useState("");
-  const [desc, setDesc]   = useState(`${pred.systemName} service/inspection`);
-  const [cost, setCost]   = useState(String(Math.round(pred.estimatedCostLowCents / 100)));
+  const [desc, setDesc]   = useState(isUrgent ? `${pred.systemName} replacement` : `${pred.systemName} service/inspection`);
+  const [cost, setCost]   = useState(String(Math.round(defaultCost / 100)));
 
   const save = async () => {
     const entry = await maintenanceService.createScheduleEntry(propertyId, pred.systemName, desc, Number(year), month ? Number(month) : undefined, cost ? Math.round(parseFloat(cost) * 100) : undefined);
@@ -699,9 +712,11 @@ export default function PredictiveMaintenancePage() {
               const pending = report.annualTasks.filter((t) => !annualTaskDone[annualKey(t.task)]);
               const done    = report.annualTasks.filter((t) =>  annualTaskDone[annualKey(t.task)]);
               const pct     = report.annualTasks.length > 0 ? Math.round((done.length / report.annualTasks.length) * 100) : 0;
+              const pendingBudgetLow  = pending.reduce((s, t) => s + t.estimatedCostLowCents,  0);
+              const pendingBudgetHigh = pending.reduce((s, t) => s + t.estimatedCostHighCents, 0);
               return (
                 <>
-                  {/* Progress bar */}
+                  {/* Progress bar + budget */}
                   <div style={{ marginBottom: "1.25rem" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.375rem" }}>
                       <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>
@@ -714,6 +729,16 @@ export default function PredictiveMaintenancePage() {
                     <div style={{ height: "4px", background: S.rule }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? S.sage : S.rust, transition: "width 0.3s" }} />
                     </div>
+                    {pending.length > 0 && (
+                      <div style={{ marginTop: "0.625rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.inkLight }}>
+                          {pending.length} task{pending.length !== 1 ? "s" : ""} remaining
+                        </span>
+                        <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.ink }}>
+                          Est. remaining cost: <strong>{maintenanceService.formatCents(pendingBudgetLow)}–{maintenanceService.formatCents(pendingBudgetHigh)}</strong>
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Pending tasks */}

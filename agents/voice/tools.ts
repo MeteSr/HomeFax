@@ -233,6 +233,46 @@ Use this when the user explicitly confirms they want to verify a specific job.`,
   },
 
   {
+    name: "schedule_maintenance_task",
+    description: `Add a task to the property's maintenance schedule for a future year.
+
+Use this when the user wants to plan ahead for a known upcoming maintenance need — e.g. "remind me to replace the roof in 2026" or "schedule HVAC service for next spring".
+
+Always confirm the system name, year, and property before calling this tool.`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        property_id: {
+          type: "string",
+          description: "The ID of the property this task belongs to",
+        },
+        system_name: {
+          type: "string",
+          enum: ["HVAC", "Roofing", "Water Heater", "Windows", "Electrical", "Plumbing", "Flooring", "Insulation", "Other"],
+          description: "The home system this task relates to",
+        },
+        task_description: {
+          type: "string",
+          description: "Clear description of what needs to be done",
+        },
+        planned_year: {
+          type: "number",
+          description: "The year this task is planned for, e.g. 2026",
+        },
+        planned_month: {
+          type: "number",
+          description: "Optional month (1–12) if a specific month is known",
+        },
+        estimated_cost_dollars: {
+          type: "number",
+          description: "Rough cost estimate in dollars (not cents). Omit if unknown.",
+        },
+      },
+      required: ["property_id", "system_name", "task_description", "planned_year"],
+    },
+  },
+
+  {
     name: "update_job_status",
     description: `Update the status of an existing maintenance job.
 Use this to mark a job as in-progress or completed based on what the user tells you.`,

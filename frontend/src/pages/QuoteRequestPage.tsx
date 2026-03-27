@@ -5,6 +5,8 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { PhotoQuotaDisplay } from "@/components/PhotoQuotaDisplay";
 import { quoteService, Urgency } from "@/services/quote";
+import { jobService, Job } from "@/services/job";
+import { getPriceRange, PriceRange, SERVICE_SUBCATEGORIES } from "@/services/market";
 import { usePropertyStore } from "@/store/propertyStore";
 import toast from "react-hot-toast";
 
@@ -34,12 +36,15 @@ export default function QuoteRequestPage() {
   const location  = useLocation();
   const prefill   = (location.state as { prefill?: Record<string, string> } | null)?.prefill ?? null;
   const { properties } = usePropertyStore();
-  const [loading,   setLoading]   = useState(false);
-  const [openCount, setOpenCount] = useState(0);
-  const [tierLimit, setTierLimit] = useState(3);
+  const [loading,     setLoading]     = useState(false);
+  const [openCount,   setOpenCount]   = useState(0);
+  const [tierLimit,   setTierLimit]   = useState(3);
+  const [propertyJobs, setPropertyJobs] = useState<Job[]>([]);
+  const [priceRange,  setPriceRange]  = useState<PriceRange | null>(null);
   const [form, setForm] = useState({
     propertyId:  properties[0] ? String(properties[0].id) : "",
     serviceType: prefill?.serviceType ?? SERVICE_TYPES[0],
+    subCategory: "",
     urgency:     "medium" as Urgency,
     description: "",
     budgetMin:   "",
@@ -50,15 +55,30 @@ export default function QuoteRequestPage() {
     quoteService.getRequests().then((reqs) => {
       const open = reqs.filter((r) => r.status === "open" || r.status === "quoted").length;
       setOpenCount(open);
-      // Infer tier from limit embedded in response (fallback to Free)
       const tier = (reqs[0] as any)?.tier ?? "Free";
       setTierLimit(TIER_LIMITS[tier] ?? 3);
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Load jobs for the selected property to inform price range
+  useEffect(() => {
+    if (!form.propertyId) return;
+    jobService.getByProperty(form.propertyId).then(setPropertyJobs).catch(() => {});
+  }, [form.propertyId]);
+
+  // Recompute price range whenever service type, subcategory, or loaded jobs change
+  useEffect(() => {
+    const selectedProperty = properties.find((p) => String(p.id) === form.propertyId);
+    const range = getPriceRange(form.serviceType, propertyJobs, selectedProperty?.state, form.subCategory || undefined);
+    setPriceRange(range);
+  }, [form.serviceType, form.subCategory, form.propertyId, propertyJobs, properties]);
+
   const quota     = { used: openCount, limit: tierLimit, tier: "Free" };
   const atLimit   = openCount >= tierLimit;
-  const update    = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const update    = (key: string, value: string) =>
+    setForm((f) => key === "serviceType" ? { ...f, [key]: value, subCategory: "" } : { ...f, [key]: value });
+
+  const subCategoryOptions = SERVICE_SUBCATEGORIES[form.serviceType] ?? [];
 
   if (properties.length === 0) {
     return (
@@ -145,6 +165,71 @@ export default function QuoteRequestPage() {
               {SERVICE_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
+
+          {subCategoryOptions.length > 0 && (
+            <div>
+              <label className="form-label">
+                What specifically do you need?
+                <span style={{ color: S.inkLight, fontWeight: 300, marginLeft: "0.375rem" }}>(optional — refines your price estimate)</span>
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(10rem, 1fr))", gap: "1px", background: S.rule }}>
+                <div
+                  onClick={() => update("subCategory", "")}
+                  style={{
+                    padding: "0.625rem 0.875rem", cursor: "pointer",
+                    background: form.subCategory === "" ? "#FAF0ED" : "#fff",
+                  }}
+                >
+                  <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: form.subCategory === "" ? S.rust : S.ink }}>
+                    General / Not sure
+                  </div>
+                </div>
+                {subCategoryOptions.map((opt) => (
+                  <div
+                    key={opt.label}
+                    onClick={() => update("subCategory", opt.label)}
+                    style={{
+                      padding: "0.625rem 0.875rem", cursor: "pointer",
+                      background: form.subCategory === opt.label ? "#FAF0ED" : "#fff",
+                    }}
+                  >
+                    <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: form.subCategory === opt.label ? S.rust : S.ink, marginBottom: "0.2rem" }}>
+                      {opt.label}
+                    </div>
+                    <div style={{ fontFamily: S.mono, fontSize: "0.55rem", color: S.inkLight }}>
+                      ${Math.round(opt.lowCents / 100).toLocaleString()}–${Math.round(opt.highCents / 100).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Price range estimate */}
+          {priceRange && (
+            <div style={{ padding: "1rem 1.25rem", background: S.paper, border: `1px solid ${S.rule}`, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
+                Typical price range — {form.subCategory || form.serviceType}
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
+                <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.25rem", color: S.ink }}>
+                  ${Math.round(priceRange.low / 100).toLocaleString()}
+                </span>
+                <span style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.inkLight }}>–</span>
+                <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.25rem", color: S.ink }}>
+                  ${Math.round(priceRange.high / 100).toLocaleString()}
+                </span>
+                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, marginLeft: "0.25rem" }}>
+                  median ${Math.round(priceRange.median / 100).toLocaleString()}
+                </span>
+              </div>
+              <div style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: S.inkLight }}>
+                {priceRange.source === "local"
+                  ? `Based on ${priceRange.sampleSize} verified job${priceRange.sampleSize !== 1 ? "s" : ""} in your HomeFax history`
+                  : "Based on 2024 Remodeling Magazine national averages, adjusted for your state"}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="form-label">Urgency *</label>

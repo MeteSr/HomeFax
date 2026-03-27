@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, CreditCard, Bell, Lock, CheckCircle, LayoutDashboard } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
 import { authService } from "@/services/auth";
-import { PLANS } from "@/services/payment";
+import { PLANS, paymentService, type PlanTier } from "@/services/payment";
 import { agentProfileService, type AgentProfile } from "@/services/agentProfile";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
@@ -217,38 +217,254 @@ function AgentDashboardLink() {
 }
 
 function SubscriptionTab({ profile }: { profile: any }) {
-  const currentTier = profile?.role === "Contractor" ? "ContractorPro" : "Free";
+  const navigate = useNavigate();
+  const [tier,      setTier]      = useState<PlanTier>(profile?.role === "Contractor" ? "ContractorPro" : "Free");
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [subLoaded, setSubLoaded] = useState(false);
+  const [upgrading, setUpgrading] = useState<PlanTier | null>(null);
+  const [cancelStep, setCancelStep] = useState<"idle" | "confirm" | "loading" | "done">("idle");
+  const [pauseState, setPauseState] = useState(paymentService.getPauseState());
+
+  useEffect(() => {
+    paymentService.getMySubscription().then((sub) => {
+      setTier(sub.tier);
+      setExpiresAt(sub.expiresAt);
+    }).catch(() => {}).finally(() => setSubLoaded(true));
+  }, []);
+
+  const handlePause = (months: 1 | 2 | 3) => {
+    paymentService.pause(months);
+    setPauseState(paymentService.getPauseState());
+    toast.success(`Subscription paused for ${months} month${months > 1 ? "s" : ""}`);
+  };
+
+  const handleResume = () => {
+    paymentService.resume();
+    setPauseState(null);
+    toast.success("Subscription resumed");
+  };
+
+  const currentPlan = PLANS.find((p) => p.tier === tier) ?? PLANS[0];
+  const isPaid      = tier !== "Free";
+
+  const handleUpgrade = async (targetTier: PlanTier) => {
+    setUpgrading(targetTier);
+    try {
+      await paymentService.initiate(targetTier);
+      setTier(targetTier);
+      setExpiresAt(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      toast.success(`Upgraded to ${targetTier}!`);
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast.error(err.message || "Upgrade failed");
+    } finally {
+      setUpgrading(null);
+    }
+  };
+
+  const handleCancel = async () => {
+    setCancelStep("loading");
+    try {
+      await paymentService.cancel();
+      setTier("Free");
+      setExpiresAt(null);
+      setCancelStep("done");
+    } catch (err: any) {
+      toast.error(err.message || "Cancellation failed");
+      setCancelStep("confirm");
+    }
+  };
+
+  if (!subLoaded) {
+    return <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}><div className="spinner-lg" /></div>;
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+      {/* Current plan */}
       <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
         <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
           <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Current Plan</p>
         </div>
-        <div style={{ padding: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <Badge variant="info" size="lg">{currentTier}</Badge>
-          <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight }}>
-            {currentTier === "Free" ? "Free forever" : "Active subscription"}
-          </span>
+        <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <Badge variant="info" size="lg">{tier}</Badge>
+            <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight }}>
+              {!isPaid
+                ? "Free forever"
+                : expiresAt
+                ? `Renews ${new Date(expiresAt).toLocaleDateString()}`
+                : "Active subscription"}
+            </span>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
+            {currentPlan.features.map((f) => (
+              <span key={f} style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: S.inkLight, border: `1px solid ${S.rule}`, padding: "0.15rem 0.5rem", background: S.paper }}>
+                {f}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-      <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Upgrade Plan</p>
-      {PLANS.filter((p) => p.tier !== "Free" && p.tier !== currentTier).map((plan) => (
-        <div key={plan.tier} style={{ border: `1px solid ${plan.tier === "Pro" ? S.rust : S.rule}`, background: "#fff", padding: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-              <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{plan.tier}</span>
-              {plan.tier === "Pro" && <Badge variant="info" size="sm">Most Popular</Badge>}
+
+      {/* Upgrade options */}
+      {PLANS.filter((p) => p.tier !== "Free" && p.tier !== tier).length > 0 && (
+        <>
+          <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
+            {isPaid ? "Switch Plan" : "Upgrade Plan"}
+          </p>
+          {PLANS.filter((p) => p.tier !== "Free" && p.tier !== tier).map((plan) => (
+            <div key={plan.tier} style={{ border: `1px solid ${plan.tier === "Pro" ? S.rust : S.rule}`, background: "#fff", padding: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                  <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{plan.tier}</span>
+                  {plan.tier === "Pro" && <Badge variant="info" size="sm">Most Popular</Badge>}
+                </div>
+                <p style={{ fontSize: "0.8rem", color: S.inkLight, fontWeight: 300 }}>{plan.features[0]}, {plan.features[1]}</p>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.25rem", lineHeight: 1, marginBottom: "0.5rem" }}>
+                  ${plan.price}<span style={{ fontFamily: S.mono, fontSize: "0.65rem", fontWeight: 400, color: S.inkLight }}>/{plan.period}</span>
+                </p>
+                <Button
+                  size="sm"
+                  variant={plan.tier === "Pro" ? "primary" : "outline"}
+                  loading={upgrading === plan.tier}
+                  onClick={() => handleUpgrade(plan.tier)}
+                >
+                  {isPaid ? "Switch" : "Upgrade"}
+                </Button>
+              </div>
             </div>
-            <p style={{ fontSize: "0.8rem", color: S.inkLight, fontWeight: 300 }}>{plan.features[0]}, {plan.features[1]}</p>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.25rem", lineHeight: 1, marginBottom: "0.5rem" }}>
-              ${plan.price}<span style={{ fontFamily: S.mono, fontSize: "0.65rem", fontWeight: 400, color: S.inkLight }}>/{plan.period}</span>
+          ))}
+        </>
+      )}
+
+      {/* Pause status banner */}
+      {isPaid && pauseState && (
+        <div style={{ border: `1px solid #D4820E`, background: "#FEF3DC", padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+          <div>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B6914", marginBottom: "0.2rem" }}>
+              Subscription Paused
             </p>
-            <Button size="sm" variant={plan.tier === "Pro" ? "primary" : "outline"}>Upgrade</Button>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: "#8B6914" }}>
+              {pauseState.daysLeft} day{pauseState.daysLeft !== 1 ? "s" : ""} remaining — resumes {new Date(pauseState.pausedUntil).toLocaleDateString()}
+            </p>
+          </div>
+          <button
+            onClick={handleResume}
+            style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 1rem", border: "1px solid #D4820E", background: "#fff", color: "#8B6914", cursor: "pointer", whiteSpace: "nowrap" }}
+          >
+            Resume now
+          </button>
+        </div>
+      )}
+
+      {/* Cancellation */}
+      {isPaid && cancelStep !== "done" && (
+        <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
+          <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Cancel Subscription</p>
+          </div>
+
+          {cancelStep === "idle" && (
+            <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: S.inkLight, lineHeight: 1.6 }}>
+                Not ready to cancel? You can pause your subscription for up to 3 months — your records and score stay active, billing stops.
+              </p>
+              {!pauseState && (
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {([1, 2, 3] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => handlePause(m)}
+                      style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 0.875rem", border: "1px solid #D4820E", background: "#FEF3DC", color: "#8B6914", cursor: "pointer" }}
+                    >
+                      Pause {m} month{m > 1 ? "s" : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div style={{ borderTop: `1px solid ${S.rule}`, paddingTop: "0.875rem" }}>
+                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight, lineHeight: 1.6, marginBottom: "0.75rem" }}>
+                  Cancelling will immediately downgrade your account to Free. Your records and property history will be preserved.
+                </p>
+                <button
+                  onClick={() => setCancelStep("confirm")}
+                  style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: `1px solid ${S.rust}`, background: "none", color: S.rust, cursor: "pointer" }}
+                >
+                  Cancel Plan
+                </button>
+              </div>
+            </div>
+          )}
+
+          {cancelStep === "confirm" && (
+            <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ padding: "1rem", background: "#FAF0ED", border: `1px solid ${S.rust}40` }}>
+                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.rust, marginBottom: "0.5rem" }}>
+                  You will lose access to:
+                </p>
+                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                  {currentPlan.features.filter((f) => !PLANS[0].features.includes(f)).map((f) => (
+                    <li key={f} style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight }}>
+                      — {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight }}>
+                Or pause instead — keeps your account active without billing.
+              </p>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <button
+                  onClick={handleCancel}
+                  style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: `1px solid ${S.rust}`, background: S.rust, color: "#F4F1EB", cursor: "pointer" }}
+                >
+                  Confirm Cancellation
+                </button>
+                {!pauseState && (
+                  <button
+                    onClick={() => { handlePause(1); setCancelStep("idle"); }}
+                    style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: "1px solid #D4820E", background: "#FEF3DC", color: "#8B6914", cursor: "pointer" }}
+                  >
+                    Pause 1 month instead
+                  </button>
+                )}
+                <button
+                  onClick={() => setCancelStep("idle")}
+                  style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: `1px solid ${S.rule}`, background: "none", color: S.inkLight, cursor: "pointer" }}
+                >
+                  Keep Plan
+                </button>
+              </div>
+            </div>
+          )}
+
+          {cancelStep === "loading" && (
+            <div style={{ padding: "1.5rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div className="spinner-lg" style={{ width: "1rem", height: "1rem" }} />
+              <span style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight }}>Processing cancellation…</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Post-cancellation confirmation */}
+      {cancelStep === "done" && (
+        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <CheckCircle size={16} color="#3D6B57" style={{ flexShrink: 0 }} />
+          <div>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#3D6B57", marginBottom: "0.2rem" }}>
+              Subscription cancelled
+            </p>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
+              Your account has been downgraded to Free. All your records are intact.
+            </p>
           </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }

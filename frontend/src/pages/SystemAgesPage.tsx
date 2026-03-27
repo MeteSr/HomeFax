@@ -23,6 +23,7 @@ const SYSTEM_DESCRIPTIONS: Record<SystemName, string> = {
   "Plumbing":      "Pipes, supply & drain lines",
   "Flooring":      "Hardwood, tile, carpet",
   "Insulation":    "Attic, wall, crawlspace insulation",
+  "Solar Panels":  "Panels + inverter system",
 };
 
 const CURRENT_YEAR = new Date().getFullYear();

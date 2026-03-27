@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Home, ShieldCheck, Wrench, FileText, ArrowRight, CheckCircle } from "lucide-react";
+import { Home, ShieldCheck, Wrench, ArrowRight, CheckCircle } from "lucide-react";
 import { propertyService, Property } from "@/services/property";
 import { jobService, Job } from "@/services/job";
 import { systemAgesService } from "@/services/systemAges";
@@ -25,15 +25,14 @@ interface Step {
 
 function buildSteps(properties: Property[], jobs: Job[], firstPropertyId?: bigint): Step[] {
   const hasProperty  = properties.length > 0;
-  const verified     = properties.some((p) => p.verificationLevel !== "Unverified" && p.verificationLevel !== "PendingReview");
+  const verified     = properties.some((p) => p.verificationLevel !== "Unverified"); // PendingReview counts — user has submitted
   const hasJob       = jobs.length > 0;
   const hasSystemAges = hasProperty && firstPropertyId != null && systemAgesService.hasAny(String(firstPropertyId));
   return [
     { id: "add-property",    icon: <Home size={20} />,       title: "Add your first property",          body: "Register your home on-chain and start building its verified maintenance history.",             cta: hasProperty ? "View my property" : "Add property", href: hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}` : "/properties/new", done: hasProperty },
     { id: "verify-ownership", icon: <ShieldCheck size={20} />, title: "Verify ownership",               body: "Upload a utility bill, deed, or tax record to earn a verification badge that buyers trust.",    cta: "Verify now",       href: hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}/verify` : "/properties/new", done: verified },
-    { id: "log-job",         icon: <Wrench size={20} />,     title: "Log your first maintenance job",    body: "Every repair, renovation, or upgrade you record adds real value to your HomeFax report.",      cta: "Log a job",        href: "/jobs/new", done: hasJob },
     { id: "system-ages",     icon: <Wrench size={20} />,     title: "Set your system ages",              body: "Tell us when your HVAC, roof, water heater, and other systems were last replaced — so predictions reflect reality, not just your home's build year.", cta: "Set system ages", href: hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}/systems` : "/dashboard", done: hasSystemAges },
-    { id: "get-report",      icon: <FileText size={20} />,   title: "Generate your HomeFax report",      body: "Share a verified, tamper-proof history with buyers, agents, or insurers with one link.",       cta: "Go to dashboard",  href: "/dashboard", done: false },
+    { id: "log-job",         icon: <Wrench size={20} />,     title: "Log your first maintenance job",    body: "Every repair, renovation, or upgrade you record adds real value to your HomeFax report.",      cta: "Log a job",        href: "/jobs/new", done: hasJob },
   ];
 }
 
@@ -69,7 +68,7 @@ function StepCard({ step, index, isNext, onClick }: { step: Step; index: number;
       </div>
 
       {!step.done && (
-        <button onClick={onClick} style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${isNext ? S.rust : S.rule}`, background: isNext ? S.rust : "#fff", color: isNext ? "#F4F1EB" : S.inkLight, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: isNext ? "pointer" : "default", whiteSpace: "nowrap" }}>
+        <button onClick={onClick} style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${isNext ? S.rust : S.rule}`, background: isNext ? S.rust : "#fff", color: isNext ? "#F4F1EB" : S.inkLight, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap" }}>
           {step.cta} {isNext && <ArrowRight size={12} />}
         </button>
       )}

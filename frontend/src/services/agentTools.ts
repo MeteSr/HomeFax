@@ -10,6 +10,7 @@
 import { jobService } from "./job";
 import { quoteService } from "./quote";
 import { contractorService } from "./contractor";
+import { maintenanceService } from "./maintenance";
 
 export type ToolName =
   | "classify_home_issue"
@@ -18,7 +19,8 @@ export type ToolName =
   | "draft_work_order"
   | "search_contractors"
   | "sign_job_verification"
-  | "update_job_status";
+  | "update_job_status"
+  | "schedule_maintenance_task";
 
 export interface ToolCallResult {
   success: boolean;
@@ -201,6 +203,26 @@ export async function executeTool(
         };
       }
 
+      // ── Schedule maintenance task ──────────────────────────────────────────
+      case "schedule_maintenance_task": {
+        const entry = await maintenanceService.createScheduleEntry(
+          String(input.property_id),
+          String(input.system_name),
+          String(input.task_description),
+          Number(input.planned_year),
+          input.planned_month ? Number(input.planned_month) : undefined,
+          input.estimated_cost_dollars ? Math.round(Number(input.estimated_cost_dollars) * 100) : undefined,
+        );
+        const monthStr = entry.plannedMonth ? ` (month ${entry.plannedMonth})` : "";
+        return {
+          success: true,
+          data: {
+            entryId: entry.id,
+            summary: `${entry.systemName} task scheduled for ${entry.plannedYear}${monthStr}: ${entry.taskDescription}`,
+          },
+        };
+      }
+
       default:
         return { success: false, error: `Unknown tool: ${name}` };
     }
@@ -215,13 +237,14 @@ export async function executeTool(
 /** Returns a short, user-facing label for what the agent is doing. */
 export function toolActionLabel(name: ToolName): string {
   const labels: Record<ToolName, string> = {
-    classify_home_issue:    "analyzing issue",
-    create_maintenance_job: "logging maintenance job",
-    create_quote_request:   "opening quote request",
-    draft_work_order:       "drafting work order",
-    search_contractors:     "searching contractors",
-    sign_job_verification:  "signing job verification",
-    update_job_status:      "updating job status",
+    classify_home_issue:      "analyzing issue",
+    create_maintenance_job:   "logging maintenance job",
+    create_quote_request:     "opening quote request",
+    draft_work_order:         "drafting work order",
+    search_contractors:       "searching contractors",
+    sign_job_verification:    "signing job verification",
+    update_job_status:        "updating job status",
+    schedule_maintenance_task:"scheduling maintenance task",
   };
   return labels[name] ?? name;
 }

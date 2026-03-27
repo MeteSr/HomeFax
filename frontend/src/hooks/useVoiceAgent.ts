@@ -1,21 +1,23 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { propertyService } from "../services/property";
 import { jobService } from "../services/job";
+import { quoteService } from "../services/quote";
 import { executeTool, toolActionLabel, type ToolName } from "../services/agentTools";
+import { useAgentHistory, type AgentAction } from "./useAgentHistory";
 
-// ── Minimal message types (mirrors Anthropic SDK without importing it) ────────
+// ── Minimal message types (mirrors Anthropic SDK without importing it) ─────────
 
-type TextBlock      = { type: "text";       text: string };
-type ToolUseBlock   = { type: "tool_use";   id: string; name: string; input: Record<string, unknown> };
+type TextBlock       = { type: "text";        text: string };
+type ToolUseBlock    = { type: "tool_use";    id: string; name: string; input: Record<string, unknown> };
 type ToolResultBlock = { type: "tool_result"; tool_use_id: string; content: string };
-type ContentBlock   = TextBlock | ToolUseBlock | ToolResultBlock;
+type ContentBlock    = TextBlock | ToolUseBlock | ToolResultBlock;
 
 interface MessageParam {
   role: "user" | "assistant";
   content: string | ContentBlock[];
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 export type VoiceAgentState =
   | "idle"
@@ -24,79 +26,159 @@ export type VoiceAgentState =
   | "speaking"
   | "error";
 
-export interface UseVoiceAgentReturn {
-  state: VoiceAgentState;
-  transcript: string;
-  response: string;
-  error: string | null;
-  isSupported: boolean;
-  startListening: () => void;
-  stopListening: () => void;
-  reset: () => void;
+export interface ProactiveAlert {
+  type:         "warranty" | "signature" | "quote";
+  message:      string;
+  actionLabel?: string;
+  href?:        string;
 }
 
-// ── Config ────────────────────────────────────────────────────────────────────
+export interface UseVoiceAgentReturn {
+  state:           VoiceAgentState;
+  transcript:      string;
+  response:        string;
+  error:           string | null;
+  isSupported:     boolean;
+  alerts:          ProactiveAlert[];
+  history:         AgentAction[];
+  clearHistory:    () => void;
+  startListening:  () => void;
+  stopListening:   () => void;
+  reset:           () => void;
+}
 
-const PROXY_URL =
-  (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http://localhost:3001";
+// ── Config ─────────────────────────────────────────────────────────────────────
 
-const MAX_AGENT_TURNS = 5; // safety cap — prevents runaway loops
+const PROXY_URL    = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http://localhost:3001";
+const MAX_TURNS    = 5;
+const MS_PER_MONTH = 30.44 * 24 * 60 * 60 * 1000;
+const NINETY_DAYS  = 90 * 24 * 60 * 60 * 1000;
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
+// ── Hook ───────────────────────────────────────────────────────────────────────
 
 export function useVoiceAgent(): UseVoiceAgentReturn {
-  const [state, setState] = useState<VoiceAgentState>("idle");
-  const [transcript, setTranscript]   = useState("");
-  const [response, setResponse]       = useState("");
-  const [error, setError]             = useState<string | null>(null);
+  const [state,      setState]      = useState<VoiceAgentState>("idle");
+  const [transcript, setTranscript] = useState("");
+  const [response,   setResponse]   = useState("");
+  const [error,      setError]      = useState<string | null>(null);
+  const [alerts,     setAlerts]     = useState<ProactiveAlert[]>([]);
 
-  const recognitionRef       = useRef<any>(null);
-  const finalTranscriptRef   = useRef("");
+  const recognitionRef     = useRef<any>(null);
+  const finalTranscriptRef = useRef("");
+
+  const { history, addAction, clearHistory } = useAgentHistory();
 
   const SpeechRecognition =
     (window as any).SpeechRecognition ||
     (window as any).webkitSpeechRecognition;
   const isSupported = typeof SpeechRecognition !== "undefined";
 
-  // ── Context builder ───────────────────────────────────────────────────────
+  // ── Richer context builder ───────────────────────────────────────────────────
 
   const buildContext = async () => {
-    const [propertiesResult, jobsResult] = await Promise.allSettled([
+    const [propertiesResult, jobsResult, quotesResult] = await Promise.allSettled([
       propertyService.getMyProperties(),
       jobService.getAll(),
+      quoteService.getRequests(),
     ]);
+
+    const properties = propertiesResult.status === "fulfilled" ? propertiesResult.value : [];
+    const jobs       = jobsResult.status === "fulfilled"       ? jobsResult.value       : [];
+    const quotes     = quotesResult.status === "fulfilled"     ? quotesResult.value     : [];
+
+    const now = Date.now();
+
+    // Expiring warranties
+    const expiringWarranties = jobs
+      .filter((j) => j.warrantyMonths && j.warrantyMonths > 0)
+      .map((j) => ({
+        job:    j,
+        expiry: new Date(j.date).getTime() + (j.warrantyMonths ?? 0) * MS_PER_MONTH,
+      }))
+      .filter(({ expiry }) => expiry > now && expiry - now <= NINETY_DAYS)
+      .map(({ job, expiry }) => ({
+        jobId:         job.id,
+        serviceType:   job.serviceType,
+        daysRemaining: Math.round((expiry - now) / (24 * 60 * 60 * 1000)),
+        expiryDate:    new Date(expiry).toISOString().split("T")[0],
+      }));
+
+    // Jobs pending homeowner signature
+    const pendingSignatureJobIds = jobs
+      .filter((j) => !j.homeownerSigned && !j.isDiy)
+      .map((j) => j.id);
+
+    const openQuoteCount = quotes.filter(
+      (q) => q.status === "open" || q.status === "quoted"
+    ).length;
+
     return {
-      properties:
-        propertiesResult.status === "fulfilled"
-          ? propertiesResult.value.map((p) => ({
-              address: p.address,
-              city: p.city,
-              state: p.state,
-              zipCode: p.zipCode,
-              propertyType: p.propertyType,
-              yearBuilt: Number(p.yearBuilt),
-              squareFeet: Number(p.squareFeet),
-              verificationLevel: p.verificationLevel,
-            }))
-          : [],
-      recentJobs:
-        jobsResult.status === "fulfilled"
-          ? jobsResult.value.slice(0, 10).map((j) => ({
-              serviceType: j.serviceType,
-              description: j.description,
-              contractorName: j.contractorName,
-              amount: j.amount,
-              status: j.status,
-            }))
-          : [],
+      properties: properties.map((p) => ({
+        id:                String(p.id),
+        address:           p.address,
+        city:              p.city,
+        state:             p.state,
+        zipCode:           p.zipCode,
+        propertyType:      p.propertyType,
+        yearBuilt:         Number(p.yearBuilt),
+        squareFeet:        Number(p.squareFeet),
+        verificationLevel: p.verificationLevel,
+      })),
+      recentJobs: jobs.slice(0, 15).map((j) => ({
+        id:             j.id,
+        serviceType:    j.serviceType,
+        description:    j.description,
+        contractorName: j.contractorName,
+        amount:         j.amount,
+        status:         j.status,
+        date:           j.date,
+        warrantyMonths: j.warrantyMonths,
+      })),
+      expiringWarranties,
+      pendingSignatureJobIds,
+      openQuoteCount,
     };
   };
 
-  // ── Agentic loop ──────────────────────────────────────────────────────────
-  //
-  // Runs repeated POST /api/agent turns until Claude returns a final "answer".
-  // Tool calls are executed here in the browser so they use the user's ICP
-  // identity — the proxy never touches authentication.
+  // ── Proactive alerts (computed once on mount) ────────────────────────────────
+
+  useEffect(() => {
+    buildContext().then((ctx) => {
+      const newAlerts: ProactiveAlert[] = [];
+
+      if (ctx.expiringWarranties.length > 0) {
+        const first = ctx.expiringWarranties[0];
+        newAlerts.push({
+          type:        "warranty",
+          message:     `${first.serviceType} warranty expires in ${first.daysRemaining} day${first.daysRemaining !== 1 ? "s" : ""}`,
+          actionLabel: "View warranties",
+          href:        "/warranties",
+        });
+      }
+
+      if (ctx.pendingSignatureJobIds.length > 0) {
+        newAlerts.push({
+          type:        "signature",
+          message:     `${ctx.pendingSignatureJobIds.length} job${ctx.pendingSignatureJobIds.length !== 1 ? "s" : ""} awaiting your signature`,
+          actionLabel: "Go to dashboard",
+          href:        "/dashboard",
+        });
+      }
+
+      if (ctx.openQuoteCount > 0) {
+        newAlerts.push({
+          type:        "quote",
+          message:     `${ctx.openQuoteCount} open quote request${ctx.openQuoteCount !== 1 ? "s" : ""}`,
+          actionLabel: "View quotes",
+          href:        "/dashboard",
+        });
+      }
+
+      setAlerts(newAlerts);
+    }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Agentic loop ─────────────────────────────────────────────────────────────
 
   const runAgentLoop = useCallback(async (userMessage: string) => {
     setState("processing");
@@ -104,11 +186,9 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
 
     try {
       const context = await buildContext();
-      const messages: MessageParam[] = [
-        { role: "user", content: userMessage },
-      ];
+      const messages: MessageParam[] = [{ role: "user", content: userMessage }];
 
-      for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
+      for (let turn = 0; turn < MAX_TURNS; turn++) {
         const res = await fetch(`${PROXY_URL}/api/agent`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -118,46 +198,52 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
         if (!res.ok) throw new Error(`Proxy error: HTTP ${res.status}`);
         const data = await res.json();
 
-        // ── Final answer ─────────────────────────────────────────────────
         if (data.type === "answer") {
           setResponse(data.text);
           speak(data.text);
           return;
         }
 
-        // ── Tool calls ───────────────────────────────────────────────────
         if (data.type === "tool_calls") {
           const labels = (data.toolCalls as { name: ToolName }[])
             .map((tc) => toolActionLabel(tc.name))
             .join(", ");
           setResponse(`Working on it: ${labels}…`);
 
-          // Append Claude's assistant message (contains tool_use blocks)
           messages.push(data.assistantMessage as MessageParam);
 
-          // Execute each tool in the browser, collect results
           const toolResults: ToolResultBlock[] = await Promise.all(
             (data.toolCalls as { id: string; name: ToolName; input: Record<string, unknown> }[])
               .map(async (tc) => {
                 const result = await executeTool(tc.name, tc.input);
+
+                // Record to audit log (skip read-only classification step)
+                if (tc.name !== "classify_home_issue") {
+                  addAction({
+                    toolName: tc.name,
+                    label:    toolActionLabel(tc.name),
+                    summary:  result.success
+                      ? (result.data?.summary as string ?? tc.name)
+                      : (result.error ?? "Failed"),
+                    success:  result.success,
+                  });
+                }
+
                 return {
-                  type: "tool_result" as const,
+                  type:        "tool_result" as const,
                   tool_use_id: tc.id,
-                  content: JSON.stringify(result),
+                  content:     JSON.stringify(result),
                 };
               })
           );
 
-          // Feed results back as a user turn
           messages.push({ role: "user", content: toolResults });
           continue;
         }
 
-        // Unexpected response shape — bail out
         throw new Error("Unexpected response from agent");
       }
 
-      // Loop exhausted without a final answer
       const fallback = "I ran into trouble completing that. Please try again.";
       setResponse(fallback);
       speak(fallback);
@@ -169,19 +255,19 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
       setError(msg);
       setState("error");
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addAction]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── TTS ───────────────────────────────────────────────────────────────────
+  // ── TTS ───────────────────────────────────────────────────────────────────────
 
   const speak = (text: string) => {
     setState("speaking");
     window.speechSynthesis.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate  = 0.95;
-    utterance.pitch = 1.0;
+    const utterance  = new SpeechSynthesisUtterance(text);
+    utterance.rate   = 0.95;
+    utterance.pitch  = 1.0;
 
-    const voices = window.speechSynthesis.getVoices();
+    const voices    = window.speechSynthesis.getVoices();
     const preferred = voices.find(
       (v) =>
         v.lang.startsWith("en") &&
@@ -192,13 +278,13 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
     );
     if (preferred) utterance.voice = preferred;
 
-    utterance.onend  = () => setState("idle");
+    utterance.onend   = () => setState("idle");
     utterance.onerror = () => setState("idle");
 
     window.speechSynthesis.speak(utterance);
   };
 
-  // ── Speech recognition ────────────────────────────────────────────────────
+  // ── Speech recognition ────────────────────────────────────────────────────────
 
   const startListening = useCallback(() => {
     if (!isSupported) {
@@ -212,7 +298,7 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
     setError(null);
     finalTranscriptRef.current = "";
 
-    const recognition = new SpeechRecognition();
+    const recognition          = new SpeechRecognition();
     recognition.lang            = "en-US";
     recognition.interimResults  = true;
     recognition.maxAlternatives = 1;
@@ -235,12 +321,8 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error === "no-speech") {
-        setState("idle");
-      } else {
-        setError(`Microphone error: ${event.error}`);
-        setState("error");
-      }
+      if (event.error === "no-speech") setState("idle");
+      else { setError(`Microphone error: ${event.error}`); setState("error"); }
     };
 
     recognitionRef.current = recognition;
@@ -263,13 +345,8 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
   }, []);
 
   return {
-    state,
-    transcript,
-    response,
-    error,
-    isSupported,
-    startListening,
-    stopListening,
-    reset,
+    state, transcript, response, error, isSupported,
+    alerts, history, clearHistory,
+    startListening, stopListening, reset,
   };
 }

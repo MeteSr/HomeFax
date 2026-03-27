@@ -79,8 +79,10 @@ export interface SystemPrediction {
   percentLifeUsed: number;
   yearsRemaining: number;
   urgency: UrgencyLevel;
-  estimatedCostLowCents: number;
-  estimatedCostHighCents: number;
+  estimatedCostLowCents: number;     // full replacement cost
+  estimatedCostHighCents: number;    // full replacement cost
+  serviceCallLowCents: number;       // routine service / inspection cost
+  serviceCallHighCents: number;      // routine service / inspection cost
   recommendation: string;
   diyViable: boolean;
 }
@@ -90,6 +92,8 @@ export interface AnnualTask {
   frequency: string;
   season: string | null;
   estimatedCost: string;
+  estimatedCostLowCents: number;
+  estimatedCostHighCents: number;
   diyViable: boolean;
 }
 
@@ -98,6 +102,8 @@ export interface MaintenanceReport {
   annualTasks: AnnualTask[];
   totalBudgetLowCents: number;
   totalBudgetHighCents: number;
+  annualTaskBudgetLowCents: number;
+  annualTaskBudgetHighCents: number;
   generatedAt: number;
 }
 
@@ -120,31 +126,34 @@ interface SystemSpec {
   lifespanYears: number;
   costLowCents: number;
   costHighCents: number;
+  serviceCallLowCents: number;   // routine inspection / tune-up (not replacement)
+  serviceCallHighCents: number;
   diyViable: boolean;
 }
 
 const SYSTEMS: SystemSpec[] = [
-  { name: "HVAC",         lifespanYears: 18, costLowCents:  800_000, costHighCents: 1_500_000, diyViable: false },
-  { name: "Roofing",      lifespanYears: 25, costLowCents: 1_500_000, costHighCents: 3_500_000, diyViable: false },
-  { name: "Water Heater", lifespanYears: 12, costLowCents:  120_000, costHighCents:   350_000, diyViable: false },
-  { name: "Windows",      lifespanYears: 22, costLowCents:  800_000, costHighCents: 2_400_000, diyViable: false },
-  { name: "Electrical",   lifespanYears: 35, costLowCents:  200_000, costHighCents:   600_000, diyViable: false },
-  { name: "Plumbing",     lifespanYears: 50, costLowCents:  400_000, costHighCents: 1_500_000, diyViable: false },
-  { name: "Flooring",     lifespanYears: 25, costLowCents:  300_000, costHighCents: 2_000_000, diyViable: true  },
-  { name: "Insulation",   lifespanYears: 30, costLowCents:  150_000, costHighCents:   500_000, diyViable: true  },
+  { name: "HVAC",         lifespanYears: 18, costLowCents:  800_000, costHighCents: 1_500_000, serviceCallLowCents:  8_000, serviceCallHighCents:  20_000, diyViable: false },
+  { name: "Roofing",      lifespanYears: 25, costLowCents: 1_500_000, costHighCents: 3_500_000, serviceCallLowCents: 15_000, serviceCallHighCents:  40_000, diyViable: false },
+  { name: "Water Heater", lifespanYears: 12, costLowCents:  120_000, costHighCents:   350_000, serviceCallLowCents:  5_000, serviceCallHighCents:  15_000, diyViable: false },
+  { name: "Windows",      lifespanYears: 22, costLowCents:  800_000, costHighCents: 2_400_000, serviceCallLowCents:  5_000, serviceCallHighCents:  20_000, diyViable: false },
+  { name: "Electrical",   lifespanYears: 35, costLowCents:  200_000, costHighCents:   600_000, serviceCallLowCents: 10_000, serviceCallHighCents:  30_000, diyViable: false },
+  { name: "Plumbing",     lifespanYears: 50, costLowCents:  400_000, costHighCents: 1_500_000, serviceCallLowCents: 10_000, serviceCallHighCents:  35_000, diyViable: false },
+  { name: "Flooring",     lifespanYears: 25, costLowCents:  300_000, costHighCents: 2_000_000, serviceCallLowCents: 10_000, serviceCallHighCents:  50_000, diyViable: true  },
+  { name: "Insulation",   lifespanYears: 30, costLowCents:  150_000, costHighCents:   500_000, serviceCallLowCents: 10_000, serviceCallHighCents:  30_000, diyViable: true  },
+  { name: "Solar Panels", lifespanYears: 25, costLowCents: 1_500_000, costHighCents: 3_500_000, serviceCallLowCents: 15_000, serviceCallHighCents:  40_000, diyViable: false },
 ];
 
 const ANNUAL_TASKS: AnnualTask[] = [
-  { task: "Replace HVAC air filter",            frequency: "Quarterly",     season: null,     estimatedCost: "$10–$30 (DIY)",  diyViable: true  },
-  { task: "Clean gutters",                       frequency: "Semi-annually", season: "Fall",   estimatedCost: "$100–$250",       diyViable: true  },
-  { task: "Clean dryer vent",                    frequency: "Annually",      season: null,     estimatedCost: "$0–$150",         diyViable: true  },
-  { task: "Flush water heater",                  frequency: "Annually",      season: null,     estimatedCost: "$0 (DIY)",        diyViable: true  },
-  { task: "Test smoke & CO detectors",           frequency: "Annually",      season: null,     estimatedCost: "$0 (DIY)",        diyViable: true  },
-  { task: "Inspect roof for damage",             frequency: "Annually",      season: "Spring", estimatedCost: "$0–$300",         diyViable: true  },
-  { task: "Check weatherstripping & caulk",      frequency: "Annually",      season: "Fall",   estimatedCost: "$20–$80 (DIY)",  diyViable: true  },
-  { task: "Service garage door springs/tracks",  frequency: "Annually",      season: null,     estimatedCost: "$0–$200",         diyViable: true  },
-  { task: "HVAC professional tune-up",           frequency: "Annually",      season: "Spring", estimatedCost: "$80–$150",        diyViable: false },
-  { task: "Chimney inspection & cleaning",       frequency: "Annually",      season: "Fall",   estimatedCost: "$150–$350",       diyViable: false },
+  { task: "Replace HVAC air filter",            frequency: "Quarterly",     season: null,     estimatedCost: "$10–$30 (DIY)",  estimatedCostLowCents:  1_000, estimatedCostHighCents:  3_000, diyViable: true  },
+  { task: "Clean gutters",                       frequency: "Semi-annually", season: "Fall",   estimatedCost: "$100–$250",       estimatedCostLowCents: 10_000, estimatedCostHighCents: 25_000, diyViable: true  },
+  { task: "Clean dryer vent",                    frequency: "Annually",      season: null,     estimatedCost: "$0–$150",         estimatedCostLowCents:     0, estimatedCostHighCents: 15_000, diyViable: true  },
+  { task: "Flush water heater",                  frequency: "Annually",      season: null,     estimatedCost: "$0 (DIY)",        estimatedCostLowCents:     0, estimatedCostHighCents:  5_000, diyViable: true  },
+  { task: "Test smoke & CO detectors",           frequency: "Annually",      season: null,     estimatedCost: "$0 (DIY)",        estimatedCostLowCents:     0, estimatedCostHighCents:  2_000, diyViable: true  },
+  { task: "Inspect roof for damage",             frequency: "Annually",      season: "Spring", estimatedCost: "$0–$300",         estimatedCostLowCents:     0, estimatedCostHighCents: 30_000, diyViable: true  },
+  { task: "Check weatherstripping & caulk",      frequency: "Annually",      season: "Fall",   estimatedCost: "$20–$80 (DIY)",  estimatedCostLowCents:  2_000, estimatedCostHighCents:  8_000, diyViable: true  },
+  { task: "Service garage door springs/tracks",  frequency: "Annually",      season: null,     estimatedCost: "$0–$200",         estimatedCostLowCents:     0, estimatedCostHighCents: 20_000, diyViable: true  },
+  { task: "HVAC professional tune-up",           frequency: "Annually",      season: "Spring", estimatedCost: "$80–$150",        estimatedCostLowCents:  8_000, estimatedCostHighCents: 15_000, diyViable: false },
+  { task: "Chimney inspection & cleaning",       frequency: "Annually",      season: "Fall",   estimatedCost: "$150–$350",       estimatedCostLowCents: 15_000, estimatedCostHighCents: 35_000, diyViable: false },
 ];
 
 // ─── Prediction Engine ───────────────────────────────────────────────────────
@@ -219,6 +228,8 @@ export function predictMaintenance(
       urgency,
       estimatedCostLowCents:  sys.costLowCents,
       estimatedCostHighCents: sys.costHighCents,
+      serviceCallLowCents:    sys.serviceCallLowCents,
+      serviceCallHighCents:   sys.serviceCallHighCents,
       recommendation:         recommendationFor(sys, urgency, remaining),
       diyViable:              sys.diyViable,
     });
@@ -232,12 +243,17 @@ export function predictMaintenance(
   // Sort Critical → Soon → Watch → Good
   predictions.sort((a, b) => URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency]);
 
+  const annualLow  = ANNUAL_TASKS.reduce((s, t) => s + t.estimatedCostLowCents,  0);
+  const annualHigh = ANNUAL_TASKS.reduce((s, t) => s + t.estimatedCostHighCents, 0);
+
   return {
-    systemPredictions:    predictions,
-    annualTasks:          ANNUAL_TASKS,
-    totalBudgetLowCents:  budgetLow,
-    totalBudgetHighCents: budgetHigh,
-    generatedAt:          Date.now(),
+    systemPredictions:         predictions,
+    annualTasks:               ANNUAL_TASKS,
+    totalBudgetLowCents:       budgetLow,
+    totalBudgetHighCents:      budgetHigh,
+    annualTaskBudgetLowCents:  annualLow,
+    annualTaskBudgetHighCents: annualHigh,
+    generatedAt:               Date.now(),
   };
 }
 

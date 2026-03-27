@@ -29,6 +29,7 @@ import OnboardingPage from "@/pages/OnboardingPage";
 import AgentDashboardPage from "@/pages/AgentDashboardPage";
 import SystemAgesPage from "@/pages/SystemAgesPage";
 import SensorPage from "@/pages/SensorPage";
+import WarrantyWalletPage from "@/pages/WarrantyWalletPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -230,6 +231,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SensorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/warranties"
+          element={
+            <ProtectedRoute>
+              <WarrantyWalletPage />
             </ProtectedRoute>
           }
         />

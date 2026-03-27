@@ -14,6 +14,7 @@ export const TRACKED_SYSTEMS = [
   "Plumbing",
   "Flooring",
   "Insulation",
+  "Solar Panels",
 ] as const;
 
 export type SystemName = typeof TRACKED_SYSTEMS[number];

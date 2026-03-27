@@ -24,8 +24,8 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 |---|------|--------|------|-------|
 | 1.1.1 | System lifespan estimates per age/type | ✅ Exists | — | `maintenance` canister + `systemAges.ts` service |
 | 1.1.2 | Seasonal task generation | ✅ Exists | — | `getSeasonalTasks()` in maintenance canister |
-| 1.1.3 | 5-year rolling calendar view | 🟡 Partial | M | `PredictiveMaintenancePage` shows urgency cards but no multi-year calendar UI |
-| 1.1.4 | Per-task cost estimate ranges | 🟡 Partial | M | `market` canister has ROI data; wire cost estimates into maintenance forecasts |
+| 1.1.3 | 5-year rolling calendar view | ✅ Exists | — | `FiveYearCalendar` component in `PredictiveMaintenancePage` — "Schedule" tab with year columns, per-year budget, completion checkboxes |
+| 1.1.4 | Per-task cost estimate ranges | ✅ Exists | — | `serviceCallLowCents`/`High` on `SystemPrediction`; numeric cents on `AnnualTask`; annual budget total on Annual Tasks tab; modal pre-fills service cost for Watch/Good, replacement cost for Critical/Soon |
 | 1.1.5 | Climate-adjusted aging model | ⬜ Missing | L | Pull zip-code weather normals; adjust HVAC/roof lifespan curves by region |
 | 1.1.6 | Material-aware forecasting | ⬜ Missing | L | Room digital twin (1.4) is a prerequisite — need material metadata |
 | 1.1.7 | Exportable PDF maintenance calendar | ⬜ Missing | M | Generate printable 12-month schedule with estimated costs |
@@ -98,9 +98,9 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 2.3.1 | Warranty record type in job/fixture entity | ⬜ Missing | M | Add `warrantyExpiry: ?Int` and `warrantyDocHash: ?Text` to Job or Fixture |
-| 2.3.2 | Warranty entry UI | ⬜ Missing | S | Add warranty fields to `JobCreatePage` and `PropertyDetailPage` job editor |
-| 2.3.3 | Expiry alert system | ⬜ Missing | M | `maintenance` canister scheduled query: find warranties expiring in <90 days, generate alerts |
+| 2.3.1 | Warranty record type in job/fixture entity | ✅ Exists | — | `warrantyMonths` field on `Job`; expiry computed as `date + warrantyMonths * 30.44 days` |
+| 2.3.2 | Warranty entry UI | ✅ Exists | — | `warrantyMonths` input in `JobCreatePage` |
+| 2.3.3 | Expiry alert system | ✅ Exists | — | Proactive alerts in `useVoiceAgent` — warranties expiring ≤90 days surfaced as VoiceAgent chips |
 | 2.3.4 | Warranty summary in HomeFax Report | ⬜ Missing | M | Show "14 years warranty remaining on roof" in report output |
 | 2.3.5 | Warranty doc upload | 🟡 Partial | S | `photo` canister can store docs; add `phase: "Warranty"` and link to job |
 
@@ -134,7 +134,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
 | 3.2.1 | SHA-256 dedup photo storage | ✅ Exists | — | `photo` canister |
-| 3.2.2 | Document type taxonomy | 🟡 Partial | S | `ConstructionPhase` enum exists; extend with `Permit`, `Inspection`, `Warranty`, `Invoice` |
+| 3.2.2 | Document type taxonomy | ✅ Exists | — | `DOC_TYPES` in `ConstructionPhotoUpload.tsx`: Receipt, Invoice, Permit, Before/After Photo, Warranty Card, Inspection Report, Other |
 | 3.2.3 | Permit / inspection upload flow | ⬜ Missing | M | Dedicated upload UI in `PropertyDetailPage` Documents tab beyond receipts |
 | 3.2.4 | Per-tier storage quota enforcement | 🟡 Partial | S | `getQuota()` exists; quota banner shown; enforcement on upload needs hardening |
 | 3.2.5 | Canister-level access control | ⬜ Missing | M | Only property owner + authorized contractors can read documents; add caller check in `photo` canister |
@@ -211,7 +211,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 |---|------|--------|------|-------|
 | 5.1.1 | Voice agent (SSE streaming chat) | ✅ Exists | — | `agents/voice/server.ts` with Claude API |
 | 5.1.2 | Agentic tool-use loop (up to 5 turns) | ✅ Exists | — | `POST /api/agent` in voice server |
-| 5.1.3 | Issue classification tool | 🟡 Partial | M | `agentTools.ts` has tools defined; classification tool not yet wired to `quote.createRequest()` |
+| 5.1.3 | Issue classification tool | ✅ Exists | — | `classify_home_issue` → confirms with user → `create_quote_request` → `quoteService.createRequest()`; full classify-then-act loop in `tools.ts` and `agentTools.ts` |
 | 5.1.4 | Contractor search + schedule via agent | ⬜ Missing | L | Agent calls `contractor.search()`, proposes top 3, and pre-fills `QuoteRequestPage` |
 | 5.1.5 | Work order auto-draft from NL input | ⬜ Missing | M | Agent generates structured job description from homeowner's natural language input |
 | 5.1.6 | Auto-log completed job from conversation | ⬜ Missing | M | After contractor confirmation, agent calls `job.createJob()` with parsed fields |
@@ -349,14 +349,16 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 ### Tier 1 — Complete MVP (existing canisters, polish existing flows)
 Items that use only what's already built. Ship these first.
 
-- 1.1.3 5-year calendar view
-- 1.1.4 Per-task cost estimates
+- ~~1.1.3 5-year calendar view~~ ✅ FiveYearCalendar in PredictiveMaintenancePage
+- ~~2.3.1–2.3.3 Warranty wallet (core)~~ ✅ WarrantyWalletPage + VoiceAgent alerts
+- ~~3.2.2 Document type taxonomy~~ ✅ DOC_TYPES in ConstructionPhotoUpload
+- ~~1.1.4 Per-task cost estimates~~ ✅
 - 2.1.5 Trust score auto-increment on verified jobs
-- 2.3.1–2.3.5 Warranty wallet
+- 2.3.4–2.3.5 Warranty wallet (report + doc upload)
 - 3.1.2–3.1.4 Ownership transfer log + UI
-- 3.2.2–3.2.3 Document type taxonomy + permit/inspection uploads
+- 3.2.3 Permit/inspection upload flow
 - 4.1.2 Field-level disclosure toggles on report shares
-- 5.1.3 Issue classification tool (wire voice agent → quote creation)
+- ~~5.1.3 Issue classification → quote creation (voice agent)~~ ✅
 - 6.1.3 Dollar premium display on Dashboard
 - 6.4.1–6.4.4 Agent co-branding
 
@@ -403,7 +405,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 | 8.1.1 | Home Pulse digest generation (Claude) | ⬜ Missing | L | Claude agent generates digest from: property location, build year, system ages, local climate/season, recent job history |
 | 8.1.2 | Climate zone data integration | ⬜ Missing | M | Map zip code → NOAA climate zone; feed into digest and maintenance forecasts (see 1.1.5) |
 | 8.1.3 | Weekly digest email delivery | ⬜ Missing | M | Email template + send pipeline (Resend / SendGrid); one digest per active property per user |
-| 8.1.4 | In-app Pulse notification | ⬜ Missing | S | Dashboard banner or notification feed entry for the week's Pulse content |
+| 8.1.4 | In-app Pulse notification | ✅ Exists | — | Proactive alert chips in `VoiceAgent` component surface warranty/signature/quote alerts on every page load |
 | 8.1.5 | Pulse opt-out / frequency controls | ⬜ Missing | S | User preference in `SettingsPage` Notifications tab; already has toggle UI pattern |
 | 8.1.6 | Pulse content personalization over time | ⬜ Missing | M | Track which Pulse items the user acted on; Claude weights future digests toward high-signal topics |
 
@@ -414,7 +416,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 |---|------|--------|------|-------|
 | 8.2.1 | Score event system | ⬜ Missing | M | Define all scoreable micro-actions: upload doc, add appliance, connect utility, confirm scheduled service, log DIY task, respond to AI prompt |
 | 8.2.2 | Micro-increment scoring in `market` canister | ⬜ Missing | M | Lightweight point increments (not just full competitive analysis) for each score event; stored in `monitoring` canister for history |
-| 8.2.3 | Score history / sparkline | ⬜ Missing | M | 30/90-day score trend chart on Dashboard; shows upward trajectory for engaged users |
+| 8.2.3 | Score history / sparkline | ✅ Exists | — | `ScoreSparkline` + `ScoreHistoryChart` on Dashboard; `scoreService.ts` persists weekly snapshots to localStorage |
 | 8.2.4 | Dollar value of score change | ⬜ Missing | M | "Your score went from 74 to 77. In Flagler County, a 3-point increase ≈ $4,200 in home value." Requires score-to-value model (6.1.2) |
 | 8.2.5 | Score increase push notification | ⬜ Missing | S | Trigger notification when score increases ≥ 1 point; show new score + dollar value |
 | 8.2.6 | Score stagnation alert | ⬜ Missing | S | If score hasn't moved in 30 days, prompt the user with the easiest action to earn points |
@@ -424,10 +426,10 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 8.3.1 | Cancellation intent screen | ⬜ Missing | M | Before cancellation is confirmed, show: verified record count, active warranty reminders, current score, "what happens if you cancel" |
+| 8.3.1 | Cancellation intent screen | ✅ Exists | — | `SubscriptionTab` in `SettingsPage` — idle → confirm (features-lost list) → loading → done state machine |
 | 8.3.2 | Post-cancel read-only mode | ⬜ Missing | M | Cancelled accounts retain read access to their on-chain records; score stops updating; reports become static |
 | 8.3.3 | "Your records stay on ICP" messaging | ⬜ Missing | S | Explicit copy explaining that ICP records are permanent even after cancel — honest, trust-building |
-| 8.3.4 | Pause subscription option | ⬜ Missing | S | 1–3 month pause instead of cancel; reduces hard churn; `payment` canister needs pause state |
+| 8.3.4 | Pause subscription option | ✅ Exists | — | `paymentService.pause(months)`/`resume()`/`getPauseState()` in localStorage; pause banner + 1/2/3-month buttons in SettingsPage; "Pause 1 month instead" shortcut in cancel confirm step |
 | 8.3.5 | Win-back email sequence | ⬜ Missing | M | 7/30/90-day post-cancel emails highlighting new records that would have been created; "Your home didn't stop aging" |
 
 ### 8.4 Insurance Defense Mode — Florida-Specific Retention Hook
@@ -474,12 +476,13 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 ### Tier 1-R — Retention: High ROI, Low Effort
 Build these alongside Tier 1 MVP polish. Each addresses a root churn cause with minimal new infrastructure.
 
-- 8.1.4 In-app Pulse notification (S)
+- ~~8.1.4 In-app Pulse notification (S)~~ ✅ VoiceAgent proactive alert chips
+- ~~8.2.3 Score sparkline on Dashboard (M)~~ ✅ ScoreSparkline + ScoreHistoryChart
+- ~~8.3.1 Cancellation intent screen (M)~~ ✅ SettingsPage subscription tab
 - 8.1.5 Pulse opt-out controls (S)
-- 8.2.3 Score sparkline on Dashboard (M)
 - 8.2.5 Score increase push notification (S)
 - 8.2.6 Score stagnation alert (S)
-- 8.3.4 Pause subscription option (S)
+- ~~8.3.4 Pause subscription option (S)~~ ✅
 - 8.4.3 Insurance-relevant job flags (S)
 - 8.5.1 Annual milestone trigger (S)
 - 8.6.1 Post-job completion notification (S)
@@ -503,4 +506,4 @@ Build these alongside Tier 1 MVP polish. Each addresses a root churn cause with 
 
 ---
 
-*Last updated: 2026-03-26*
+*Last updated: 2026-03-27*

@@ -694,9 +694,14 @@ export default function DashboardPage() {
         {/* Warranty expiry alerts */}
         {!loading && expiringWarranties.length > 0 && (
           <div style={{ marginBottom: "2.5rem" }}>
-            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.rust, marginBottom: "0.75rem" }}>
-              Warranties Expiring Soon
-            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+              <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.rust }}>
+                Warranties Expiring Soon
+              </p>
+              <button onClick={() => navigate("/warranties")} style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: "3px" }}>
+                View all →
+              </button>
+            </div>
             <div style={{ border: `1px solid ${S.rule}` }}>
               {expiringWarranties.map((job, i) => {
                 const expiry   = new Date(job.date).getTime() + (job.warrantyMonths ?? 0) * 30.44 * 24 * 60 * 60 * 1000;

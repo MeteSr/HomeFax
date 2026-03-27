@@ -7,7 +7,7 @@ export function buildSystemPrompt(ctx: AgentContext): string {
         ctx.properties
           .map(
             (p) =>
-              `- ${p.address}, ${p.city}, ${p.state} ${p.zipCode} | ` +
+              `- [ID: ${p.id}] ${p.address}, ${p.city}, ${p.state} ${p.zipCode} | ` +
               `${p.propertyType} | built ${p.yearBuilt} | ${p.squareFeet} sq ft | ` +
               `verification: ${p.verificationLevel}`
           )
@@ -20,9 +20,28 @@ export function buildSystemPrompt(ctx: AgentContext): string {
         ctx.recentJobs
           .map((j) => {
             const who = j.contractorName ? `by ${j.contractorName}` : "DIY";
-            return `- ${j.serviceType}: "${j.description}" ${who}, $${(j.amount / 100).toFixed(2)}, status: ${j.status}`;
+            const warranty = j.warrantyMonths ? ` | warranty: ${j.warrantyMonths} mo` : "";
+            return `- [ID: ${j.id}] ${j.serviceType}: "${j.description}" ${who}, $${(j.amount / 100).toFixed(2)}, ${j.date}, status: ${j.status}${warranty}`;
           })
           .join("\n")
+      : "";
+
+  const warrantySection =
+    ctx.expiringWarranties.length > 0
+      ? "\nWarranties expiring soon (within 90 days):\n" +
+        ctx.expiringWarranties
+          .map((w) => `- Job ${w.jobId} (${w.serviceType}): expires ${w.expiryDate} — ${w.daysRemaining} days left`)
+          .join("\n")
+      : "";
+
+  const pendingSection =
+    ctx.pendingSignatureJobIds.length > 0
+      ? `\nJobs awaiting homeowner signature: ${ctx.pendingSignatureJobIds.join(", ")}`
+      : "";
+
+  const quotesSection =
+    ctx.openQuoteCount > 0
+      ? `\nOpen quote requests: ${ctx.openQuoteCount} (contractors may be responding)`
       : "";
 
   return `You are the HomeFax Assistant — a knowledgeable, friendly advisor specializing in home maintenance and property value.
@@ -51,6 +70,8 @@ Issue triage — when a homeowner describes a home problem, ALWAYS call classify
 - Immediate safety risk (flooding, gas smell, no heat in winter, live wires) → action: emergency_quote
 After classifying, confirm with the user in one sentence before proceeding with the next tool call.
 
+Property IDs for tool calls: when calling create_maintenance_job, create_quote_request, or schedule_maintenance_task, use the [ID: ...] shown in the property list above. If the user says "my house" or "the property" and they have only one property, use that ID automatically without asking.
+
 Document and photo guidance — after logging any job, say:
 "To make this record stronger, you can add a photo of the work or a receipt on the job details page."
 Only mention permits if the service type typically requires one (electrical, roofing, HVAC replacement).
@@ -61,5 +82,5 @@ Voice response rules — these are mandatory:
 - Write as you would speak: natural, conversational, clear.
 - For cost estimates, give a realistic range (e.g. "typically between eight hundred and twelve hundred dollars") and note that local rates vary.
 - If the user's property or job data is relevant to their question, reference it directly.
-${propertySection}${jobSection}`;
+${propertySection}${jobSection}${warrantySection}${pendingSection}${quotesSection}`;
 }

@@ -160,6 +160,31 @@ export const paymentService = {
     return { url: "/dashboard" };
   },
 
+  async cancel(): Promise<void> {
+    return this.subscribe("Free");
+  },
+
+  pause(months: 1 | 2 | 3): void {
+    const resumeAt = Date.now() + months * 30 * 24 * 60 * 60 * 1000;
+    localStorage.setItem("homefax_sub_paused_until", String(resumeAt));
+  },
+
+  resume(): void {
+    localStorage.removeItem("homefax_sub_paused_until");
+  },
+
+  getPauseState(): { pausedUntil: number; daysLeft: number } | null {
+    const raw = localStorage.getItem("homefax_sub_paused_until");
+    if (!raw) return null;
+    const pausedUntil = Number(raw);
+    if (Date.now() >= pausedUntil) {
+      localStorage.removeItem("homefax_sub_paused_until");
+      return null;
+    }
+    const daysLeft = Math.ceil((pausedUntil - Date.now()) / (24 * 60 * 60 * 1000));
+    return { pausedUntil, daysLeft };
+  },
+
   async hasPaidFor(_feature: string): Promise<boolean> {
     const sub = await this.getMySubscription();
     return sub.tier !== "Free";

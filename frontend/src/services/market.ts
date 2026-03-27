@@ -292,3 +292,155 @@ export const marketService = {
     return `$${(cents / 100).toLocaleString()}`;
   },
 };
+
+// ─── Price range estimation ────────────────────────────────────────────────────
+
+export interface PriceRange {
+  low:        number;  // cents
+  median:     number;  // cents
+  high:       number;  // cents
+  source:     "local" | "national";
+  sampleSize: number;
+}
+
+export interface SubCategorySpec {
+  label:      string;
+  lowCents:   number;
+  medianCents: number;
+  highCents:  number;
+}
+
+/** Subcategories with national price benchmarks (per-system job types). */
+export const SERVICE_SUBCATEGORIES: Record<string, SubCategorySpec[]> = {
+  HVAC: [
+    { label: "Full System Replacement",   lowCents:  800_000, medianCents: 1_100_000, highCents: 1_500_000 },
+    { label: "AC Unit Only",              lowCents:  300_000, medianCents:   450_000, highCents:   600_000 },
+    { label: "Furnace Only",              lowCents:  250_000, medianCents:   350_000, highCents:   500_000 },
+    { label: "Heat Pump",                 lowCents:  400_000, medianCents:   600_000, highCents:   800_000 },
+    { label: "Repair / Component Fix",    lowCents:   15_000, medianCents:    40_000, highCents:    80_000 },
+    { label: "Duct Cleaning",             lowCents:   30_000, medianCents:    50_000, highCents:    70_000 },
+    { label: "Thermostat Replacement",    lowCents:    5_000, medianCents:    15_000, highCents:    30_000 },
+  ],
+  Roofing: [
+    { label: "Full Roof Replacement",     lowCents: 1_500_000, medianCents: 2_200_000, highCents: 3_500_000 },
+    { label: "Partial Repair / Patch",    lowCents:    50_000, medianCents:   150_000, highCents:   300_000 },
+    { label: "Gutter Replacement",        lowCents:   100_000, medianCents:   200_000, highCents:   400_000 },
+    { label: "Skylight Install / Replace",lowCents:   150_000, medianCents:   250_000, highCents:   450_000 },
+    { label: "Flashing Repair",           lowCents:    20_000, medianCents:    60_000, highCents:   100_000 },
+  ],
+  Plumbing: [
+    { label: "Full Re-pipe",              lowCents:  800_000, medianCents: 1_200_000, highCents: 2_000_000 },
+    { label: "Water Heater Replacement",  lowCents:  120_000, medianCents:   200_000, highCents:   350_000 },
+    { label: "Pipe Repair / Leak Fix",    lowCents:   15_000, medianCents:    50_000, highCents:   150_000 },
+    { label: "Drain Cleaning",            lowCents:   10_000, medianCents:    20_000, highCents:    50_000 },
+    { label: "Fixture Replacement",       lowCents:   20_000, medianCents:    50_000, highCents:   150_000 },
+    { label: "Water Softener Install",    lowCents:  100_000, medianCents:   175_000, highCents:   300_000 },
+  ],
+  Electrical: [
+    { label: "Panel Upgrade",             lowCents:  200_000, medianCents:   350_000, highCents:   600_000 },
+    { label: "Whole House Rewire",        lowCents:  800_000, medianCents: 1_200_000, highCents: 2_000_000 },
+    { label: "Outlet / Switch Replace",   lowCents:    5_000, medianCents:    15_000, highCents:    30_000 },
+    { label: "Ceiling Fan Install",       lowCents:   10_000, medianCents:    20_000, highCents:    50_000 },
+    { label: "EV Charger Install",        lowCents:   50_000, medianCents:   100_000, highCents:   250_000 },
+    { label: "Generator Install",         lowCents:  200_000, medianCents:   400_000, highCents:   800_000 },
+  ],
+  Windows: [
+    { label: "Full Window Replacement",   lowCents:  800_000, medianCents: 1_400_000, highCents: 2_400_000 },
+    { label: "Single Window Replace",     lowCents:   50_000, medianCents:    90_000, highCents:   200_000 },
+    { label: "Window Repair / Seal",      lowCents:   10_000, medianCents:    25_000, highCents:    60_000 },
+    { label: "Door Replacement",          lowCents:   50_000, medianCents:   120_000, highCents:   300_000 },
+  ],
+  Flooring: [
+    { label: "Hardwood Install",          lowCents:  300_000, medianCents:   600_000, highCents: 1_200_000 },
+    { label: "Hardwood Refinish",         lowCents:  150_000, medianCents:   280_000, highCents:   500_000 },
+    { label: "Tile Install",              lowCents:  200_000, medianCents:   450_000, highCents:   800_000 },
+    { label: "Carpet Install",            lowCents:  100_000, medianCents:   250_000, highCents:   500_000 },
+    { label: "LVP / Laminate Install",    lowCents:  150_000, medianCents:   300_000, highCents:   600_000 },
+  ],
+  Painting: [
+    { label: "Exterior Paint",            lowCents:  200_000, medianCents:   400_000, highCents:   800_000 },
+    { label: "Interior — Whole House",    lowCents:  300_000, medianCents:   600_000, highCents: 1_000_000 },
+    { label: "Single Room",              lowCents:   30_000, medianCents:    70_000, highCents:   120_000 },
+    { label: "Cabinet Painting",          lowCents:  150_000, medianCents:   280_000, highCents:   500_000 },
+  ],
+  Landscaping: [
+    { label: "Full Landscape Design",     lowCents:  300_000, medianCents:   700_000, highCents: 1_500_000 },
+    { label: "Tree Removal",              lowCents:   50_000, medianCents:   150_000, highCents:   500_000 },
+    { label: "Irrigation System Install", lowCents:  200_000, medianCents:   350_000, highCents:   600_000 },
+    { label: "Fence Install",             lowCents:  150_000, medianCents:   300_000, highCents:   700_000 },
+    { label: "Lawn Cleanup / Grading",    lowCents:   50_000, medianCents:   120_000, highCents:   300_000 },
+  ],
+  Foundation: [
+    { label: "Full Foundation Repair",    lowCents:  500_000, medianCents: 1_200_000, highCents: 3_000_000 },
+    { label: "Crack Injection",           lowCents:   50_000, medianCents:   100_000, highCents:   300_000 },
+    { label: "Waterproofing",             lowCents:  300_000, medianCents:   600_000, highCents: 1_000_000 },
+    { label: "Pier / Beam Leveling",      lowCents:  500_000, medianCents:   900_000, highCents: 2_000_000 },
+  ],
+};
+
+const MIN_LOCAL_SAMPLES = 3;
+
+/**
+ * Returns a price range for a given service type + optional subcategory.
+ *
+ * Priority:
+ * 1. Local job history (≥ MIN_LOCAL_SAMPLES completed/verified jobs of the same type)
+ * 2. Subcategory benchmark (if subCategory provided and found in SERVICE_SUBCATEGORIES)
+ * 3. Top-level Remodeling Magazine template (state-adjusted)
+ *
+ * @param serviceType  The job service type (matches PROJECT_TEMPLATES category)
+ * @param jobs         Pool of jobs to sample — typically the property's own history
+ * @param state        Two-letter US state code for cost adjustment (optional)
+ * @param subCategory  Specific job subtype from SERVICE_SUBCATEGORIES (optional)
+ */
+export function getPriceRange(
+  serviceType: string,
+  jobs: Job[],
+  state?: string,
+  subCategory?: string
+): PriceRange | null {
+  const relevant = jobs.filter(
+    (j) =>
+      j.serviceType === serviceType &&
+      (j.status === "completed" || j.status === "verified" || j.verified) &&
+      j.amount > 0
+  );
+
+  if (relevant.length >= MIN_LOCAL_SAMPLES) {
+    const amounts = relevant.map((j) => j.amount).sort((a, b) => a - b);
+    const n      = amounts.length;
+    const p25    = amounts[Math.floor(n * 0.25)];
+    const median = amounts[Math.floor(n * 0.5)];
+    const p75    = amounts[Math.floor(n * 0.75)];
+    return { low: p25, median, high: p75, source: "local", sampleSize: n };
+  }
+
+  const mult = state ? stateMultiplier(state) : 100;
+
+  // Subcategory benchmark
+  if (subCategory) {
+    const sub = SERVICE_SUBCATEGORIES[serviceType]?.find((s) => s.label === subCategory);
+    if (sub) {
+      return {
+        low:        Math.round(sub.lowCents    * mult / 100),
+        median:     Math.round(sub.medianCents * mult / 100),
+        high:       Math.round(sub.highCents   * mult / 100),
+        source:     "national",
+        sampleSize: 0,
+      };
+    }
+  }
+
+  // Fall back to Remodeling Magazine top-level template
+  const template = PROJECT_TEMPLATES.find((t) => t.category === serviceType);
+  if (!template) return null;
+
+  const base = Math.round(template.baseCostCents * mult / 100);
+  return {
+    low:        Math.round(base * 0.75),
+    median:     base,
+    high:       Math.round(base * 1.35),
+    source:     "national",
+    sampleSize: 0,
+  };
+}
