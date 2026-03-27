@@ -10,6 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install DFX
-        run: DFXVM_INIT_YES_TO_ALL=true sh -c "$(curl -fsSL https://internetcomputer.org/install.sh)"
+        uses: dfinity/setup-dfx@main
       - name: Run tests with coverage
         run: bash scripts/test-backend.sh

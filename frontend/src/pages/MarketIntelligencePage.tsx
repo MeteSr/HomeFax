@@ -166,7 +166,6 @@ export default function MarketIntelligencePage() {
                     padding: "0.625rem 1.25rem",
                     fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase",
                     color: tab === t ? S.rust : S.inkLight,
-                    borderBottom: tab === t ? `2px solid ${S.rust}` : "2px solid transparent",
                     marginBottom: "-1px", background: "none", border: "none",
                     borderBottom: tab === t ? `2px solid ${S.rust}` : "2px solid transparent",
                     cursor: "pointer",

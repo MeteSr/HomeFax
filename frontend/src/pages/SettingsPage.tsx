@@ -49,7 +49,6 @@ export default function SettingsPage() {
                 style={{
                   display: "flex", alignItems: "center", gap: "0.625rem",
                   width: "100%", padding: "0.75rem 1rem",
-                  borderBottom: i < TABS.length - 1 ? `1px solid ${S.rule}` : "none",
                   fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase",
                   color: tab === t.key ? S.rust : S.inkLight,
                   background: tab === t.key ? "#FAF0ED" : "#fff",
