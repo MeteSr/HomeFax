@@ -80,6 +80,11 @@ const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
     ),
+    transferOwnership: IDL.Func(
+      [IDL.Nat, IDL.Principal],
+      [IDL.Variant({ ok: IDL.Null, err: Error })],
+      []
+    ),
   });
 };
 
@@ -222,6 +227,17 @@ export const propertyService = {
     const a = await getActor();
     const { Principal: P } = await import("@dfinity/principal");
     const result = await a.setTier(P.fromText(userPrincipal), { [tier]: null });
+    if ("err" in result) {
+      const key = Object.keys(result.err)[0];
+      throw new Error(key);
+    }
+  },
+
+  async transferOwnership(propertyId: bigint, newOwnerPrincipal: string): Promise<void> {
+    if (!PROPERTY_CANISTER_ID) return; // mock: no-op
+    const { Principal: P } = await import("@dfinity/principal");
+    const a = await getActor();
+    const result = await a.transferOwnership(propertyId, P.fromText(newOwnerPrincipal));
     if ("err" in result) {
       const key = Object.keys(result.err)[0];
       throw new Error(key);

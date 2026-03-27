@@ -231,7 +231,7 @@ export default function PropertyDetailPage() {
           ))}
         </div>
 
-        {tab === "timeline"  && <TimelineTab jobs={jobs} onVerify={handleVerify} currentPrincipal={principal} photosByJob={photosByJob} onPhotoUpload={handlePhotoUpload} />}
+        {tab === "timeline"  && <TimelineTab property={property} jobs={jobs} onVerify={handleVerify} currentPrincipal={principal} photosByJob={photosByJob} onPhotoUpload={handlePhotoUpload} />}
         {tab === "jobs"      && <JobsTab jobs={jobs} />}
         {tab === "documents" && <DocumentsTab propertyId={id!} />}
         {tab === "settings"  && <SettingsTab property={property} />}
@@ -393,7 +393,8 @@ function warrantyStatus(job: Job): { label: string; color: string; bg: string } 
   return { label: `Warranty: ${monthsLeft}mo left`, color: "#3D6B57", bg: "#F0F6F3" };
 }
 
-function TimelineTab({ jobs, onVerify, currentPrincipal, photosByJob, onPhotoUpload }: {
+function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, onPhotoUpload }: {
+  property: Property;
   jobs: Job[];
   onVerify: (id: string) => void;
   currentPrincipal: string | null;
@@ -650,6 +651,19 @@ function TimelineTab({ jobs, onVerify, currentPrincipal, photosByJob, onPhotoUpl
                         <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, width: "6rem", flexShrink: 0 }}>Job ID</span>
                         <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>{job.id}</span>
                       </div>
+                      {job.verified && (
+                        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                          <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, width: "6rem", flexShrink: 0 }}>ICP Record</span>
+                          <a
+                            href={`https://dashboard.internetcomputer.org/account/${property.owner}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.sage, textDecoration: "none", borderBottom: `1px solid ${S.sage}` }}
+                          >
+                            Verified on ICP ↗
+                          </a>
+                        </div>
+                      )}
                       {/* Edit button — only for homeowner-owned unverified jobs */}
                       {!job.verified && job.homeowner === currentPrincipal && (
                         <div style={{ marginTop: "0.25rem" }}>
@@ -891,6 +905,10 @@ function SettingsTab({ property }: { property: Property }) {
   const S = { rule: "#C8C3B8", inkLight: "#7A7268", ink: "#0E0E0C", rust: "#C94C2E", sage: "#3D6B57", paper: "#F4F1EB", serif: "'Playfair Display', Georgia, serif" as const, mono: "'IBM Plex Mono', monospace" as const };
   const navigate = useNavigate();
 
+  const [transferPrincipal, setTransferPrincipal] = React.useState("");
+  const [transferStep, setTransferStep] = React.useState<"idle" | "confirm" | "loading" | "done">("idle");
+  const [transferError, setTransferError] = React.useState<string | null>(null);
+
   const verificationNext =
     property.verificationLevel === "Unverified"
       ? { label: "Verify Ownership", href: `/properties/${property.id}/verify`, color: S.rust }
@@ -979,6 +997,110 @@ function SettingsTab({ property }: { property: Property }) {
             >
               Upgrade Plan →
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* On-Chain Identity */}
+      <div style={{ border: `1px solid ${S.rule}` }}>
+        {section("On-Chain Identity")}
+        <div style={{ padding: "1.25rem", background: "#fff", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {[
+            { label: "Owner Principal", value: property.owner },
+            { label: "Property ID",     value: String(property.id) },
+          ].map((row) => (
+            <div key={row.label} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
+              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, width: "8rem", flexShrink: 0, paddingTop: "0.1rem" }}>{row.label}</span>
+              <span style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.ink, wordBreak: "break-all" }}>{row.value}</span>
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, width: "8rem", flexShrink: 0 }}>ICP Dashboard</span>
+            <a
+              href={`https://dashboard.internetcomputer.org/account/${property.owner}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.sage, textDecoration: "none", borderBottom: `1px solid ${S.sage}` }}
+            >
+              View on ICP Explorer ↗
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Transfer Ownership */}
+      <div style={{ border: `1px solid ${S.rust}` }}>
+        {section("Transfer Ownership")}
+        <div style={{ padding: "1.25rem", background: "#fff" }}>
+          {transferStep === "done" ? (
+            <p style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.sage }}>Ownership transfer submitted. The new owner must accept on-chain.</p>
+          ) : (
+            <>
+              <p style={{ fontSize: "0.8rem", color: S.inkLight, fontWeight: 300, lineHeight: 1.6, marginBottom: "1rem" }}>
+                Transferring ownership is <strong style={{ color: S.rust, fontWeight: 600 }}>irreversible</strong>. The new owner will gain full control of this property record, including its maintenance history and verification status.
+              </p>
+              {transferStep === "idle" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div>
+                    <label className="form-label">New Owner Principal ID</label>
+                    <input
+                      className="form-input"
+                      value={transferPrincipal}
+                      onChange={(e) => { setTransferPrincipal(e.target.value); setTransferError(null); }}
+                      placeholder="aaaaa-aa..."
+                      spellCheck={false}
+                    />
+                  </div>
+                  {transferError && (
+                    <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.rust }}>{transferError}</p>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (!transferPrincipal.trim()) { setTransferError("Enter the new owner's principal ID."); return; }
+                      setTransferStep("confirm");
+                    }}
+                    style={{ alignSelf: "flex-start", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: S.rust, color: "#fff", border: "none", cursor: "pointer" }}
+                  >
+                    Transfer →
+                  </button>
+                </div>
+              )}
+              {transferStep === "confirm" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ padding: "0.875rem", background: "#FEF2F0", border: `1px solid ${S.rust}` }}>
+                    <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.rust, marginBottom: "0.25rem" }}>Confirm transfer to:</p>
+                    <p style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.ink, wordBreak: "break-all" }}>{transferPrincipal}</p>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                    <button
+                      onClick={async () => {
+                        setTransferStep("loading");
+                        try {
+                          const { propertyService } = await import("../services/property");
+                          await propertyService.transferOwnership(BigInt(property.id), transferPrincipal.trim());
+                          setTransferStep("done");
+                        } catch (e: any) {
+                          setTransferError(e.message ?? "Transfer failed.");
+                          setTransferStep("idle");
+                        }
+                      }}
+                      style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: S.rust, color: "#fff", border: "none", cursor: "pointer" }}
+                    >
+                      Confirm Transfer
+                    </button>
+                    <button
+                      onClick={() => { setTransferStep("idle"); setTransferError(null); }}
+                      style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: "none", border: `1px solid ${S.rule}`, color: S.inkLight, cursor: "pointer" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              {transferStep === "loading" && (
+                <p style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.inkLight }}>Submitting transfer…</p>
+              )}
+            </>
           )}
         </div>
       </div>
