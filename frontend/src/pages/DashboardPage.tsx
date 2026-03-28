@@ -1026,7 +1026,7 @@ export default function DashboardPage() {
                   {nextServiceTip}
                 </p>
                 <button
-                  onClick={() => navigate("/maintenance")}
+                  onClick={() => navigate(`/maintenance?system=${encodeURIComponent(recentVerified.serviceType)}`)}
                   style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.35rem 0.875rem", border: `1px solid ${S.sage}`, background: "none", color: S.sage, cursor: "pointer" }}
                 >
                   Add to Maintenance Schedule →

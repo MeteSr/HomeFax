@@ -45,6 +45,9 @@ export default function InsuranceDefensePage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [jobs,       setJobs]       = useState<Job[]>([]);
   const [loading,    setLoading]    = useState(true);
+  const [showSuccessPrompt, setShowSuccessPrompt] = useState(false);
+  const [successSubmitted,  setSuccessSubmitted]  = useState(false);
+  const [savingsInput,      setSavingsInput]       = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -80,7 +83,7 @@ export default function InsuranceDefensePage() {
           >
             <ArrowLeft size={13} /> Dashboard
           </button>
-          <Button icon={<Printer size={14} />} onClick={() => window.print()}>
+          <Button icon={<Printer size={14} />} onClick={() => { window.print(); setShowSuccessPrompt(true); }}>
             Print / Export PDF
           </Button>
         </div>
@@ -265,6 +268,54 @@ export default function InsuranceDefensePage() {
           </>
         )}
       </div>
+
+      {/* 8.4.5 — Insurance success story prompt */}
+      {showSuccessPrompt && !successSubmitted && (
+        <div className="no-print" style={{ maxWidth: "56rem", margin: "1.5rem auto", padding: "0 1.5rem" }}>
+          <div style={{ border: `1px solid #B5D4C8`, background: "#F0F6F3", padding: "1.25rem 1.5rem" }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.sage, marginBottom: "0.5rem" }}>
+              Did this help with your insurer?
+            </p>
+            <p style={{ fontSize: "0.875rem", color: S.ink, marginBottom: "1rem", fontWeight: 300, lineHeight: 1.6 }}>
+              Tell us what you saved — your story helps other homeowners know what's possible.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+              <input
+                type="text"
+                value={savingsInput}
+                onChange={(e) => setSavingsInput(e.target.value)}
+                placeholder="e.g. insurer accepted all records, saved $1,200/yr"
+                style={{ flex: 1, minWidth: "200px", padding: "0.5rem 0.75rem", fontFamily: S.mono, fontSize: "0.7rem", border: `1px solid #B5D4C8`, background: "#fff", outline: "none" }}
+              />
+              <button
+                onClick={() => {
+                  if (savingsInput.trim()) {
+                    localStorage.setItem("homefax_insurance_success", JSON.stringify({ text: savingsInput, ts: Date.now() }));
+                  }
+                  setSuccessSubmitted(true);
+                }}
+                style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: S.sage, color: "#fff", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+              >
+                Share Story
+              </button>
+              <button
+                onClick={() => setShowSuccessPrompt(false)}
+                style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 0.875rem", background: "none", color: S.inkLight, border: `1px solid ${S.rule}`, cursor: "pointer" }}
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showSuccessPrompt && successSubmitted && (
+        <div className="no-print" style={{ maxWidth: "56rem", margin: "1.5rem auto", padding: "0 1.5rem" }}>
+          <div style={{ border: `1px solid #B5D4C8`, background: "#F0F6F3", padding: "1rem 1.5rem", display: "flex", alignItems: "center", gap: "0.625rem" }}>
+            <CheckCircle size={14} color={S.sage} />
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.sage }}>Thank you — your story helps other HomeFax users know what's possible.</p>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @media print {

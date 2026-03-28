@@ -250,6 +250,30 @@ export default function ResaleReadyPage() {
               </Button>
             </div>
 
+            {/* 8.5.4 — Milestone share card text */}
+            {property && (
+              <div style={{ borderTop: `1px solid ${S.rule}`, paddingTop: "0.875rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+                <div>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.2rem" }}>Share Your Milestone</p>
+                  <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
+                    Copy a shareable text snippet for social media or neighborhood groups
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    const verifiedCount = jobs.filter((j) => j.verified || j.status === "verified").length;
+                    const grade = getScoreGrade(score);
+                    const text = `My home at ${property.address} has a HomeFax Score of ${score} (${grade}) — ${verifiedCount} verified maintenance records on the blockchain. Ready to sell with full documented history. #HomeFax #HomeMaintenance`;
+                    navigator.clipboard.writeText(text);
+                    toast.success("Share text copied!");
+                  }}
+                  style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid ${S.rule}`, color: S.inkLight, background: "none", cursor: "pointer", flexShrink: 0 }}
+                >
+                  Copy Share Text
+                </button>
+              </div>
+            )}
+
             <div style={{ borderTop: `1px solid ${S.rule}`, paddingTop: "0.875rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
               <div>
                 <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.2rem" }}>Insurance Defense Report</p>
@@ -310,6 +334,27 @@ export default function ResaleReadyPage() {
             </div>
           </div>
         )}
+
+        {/* 8.5.5 — Advocate / referral prompt */}
+        <div style={{ border: `1px solid ${S.rule}`, background: "#FAF9F6", padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+          <div>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.rust, marginBottom: "0.375rem" }}>
+              Know a homeowner who should have this?
+            </p>
+            <p style={{ fontSize: "0.875rem", color: S.ink, fontWeight: 300, lineHeight: 1.5 }}>
+              Every homeowner deserves verified records before they sell. Share HomeFax with a neighbor, friend, or family member.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.origin);
+              toast.success("HomeFax link copied — share it with a friend!");
+            }}
+            style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: `1px solid ${S.rust}`, color: S.rust, background: "none", cursor: "pointer", flexShrink: 0 }}
+          >
+            Copy Referral Link
+          </button>
+        </div>
 
       </div>
     </Layout>

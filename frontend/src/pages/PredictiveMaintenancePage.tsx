@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { systemAgesService } from "@/services/systemAges";
 import { marketService, buildPropertySummary, type ProjectRecommendation } from "@/services/market";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const S = {
   ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
@@ -448,9 +448,12 @@ export default function PredictiveMaintenancePage() {
   const { jobs }       = useJobStore();
   const navigate       = useNavigate();
 
+  const [searchParams] = useSearchParams();
+  const deepLinkSystem = searchParams.get("system");    // e.g. "HVAC"
+
   const [selectedId, setSelectedId] = useState(String(properties[0]?.id ?? ""));
   const [report, setReport]         = useState<MaintenanceReport | null>(null);
-  const [activeTab, setActiveTab]   = useState<Tab>("systems");
+  const [activeTab, setActiveTab]   = useState<Tab>(deepLinkSystem ? "systems" : "systems");
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
   const [scheduleTarget, setScheduleTarget]   = useState<SystemPrediction | null>(null);
   const [taskStates, setTaskStates] = useState<Record<string, TaskState>>(() => {
@@ -516,6 +519,15 @@ export default function PredictiveMaintenancePage() {
     setReport(maintenanceService.predict(Number(property.yearBuilt), propJobs, systemAges, String(property.state)));
     maintenanceService.getScheduleByProperty(String(property.id)).then(setScheduleEntries);
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // One-tap add: if ?system=HVAC is in the URL, open the schedule modal for that system
+  React.useEffect(() => {
+    if (!deepLinkSystem || !report) return;
+    const pred = report.systemPredictions.find(
+      (p) => p.systemName.toLowerCase() === deepLinkSystem.toLowerCase()
+    );
+    if (pred) setScheduleTarget(pred);
+  }, [deepLinkSystem, report]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScheduleSave = (entry: ScheduleEntry) => { setScheduleEntries((prev) => [...prev, entry]); setActiveTab("schedule"); };
   const handleComplete = async (id: string) => { await maintenanceService.markCompleted(id); setScheduleEntries((prev) => prev.map((e) => (e.id === id ? { ...e, isCompleted: true } : e))); };
