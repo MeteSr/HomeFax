@@ -591,7 +591,7 @@ export default function LandingPage() {
             </p>
             <div className="hfl-rc-actions">
               <button className="hfl-rc-btn" onClick={() => navigate("/login")}>Generate My HomeFax →</button>
-              <button className="hfl-rc-ghost" onClick={() => navigate("/login")}>View Sample Report</button>
+              <button className="hfl-rc-ghost" onClick={() => window.open("/sample-report.html", "_blank", "noopener,noreferrer")}>View Sample Report</button>
             </div>
           </div>
           <div>
