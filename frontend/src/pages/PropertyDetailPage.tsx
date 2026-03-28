@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Share2, Shield, Wrench, Calendar, DollarSign, AlertCircle, Star } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
@@ -24,11 +24,13 @@ type Tab = "timeline" | "jobs" | "documents" | "settings";
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { properties: storeProperties } = usePropertyStore();
   const { principal } = useAuthStore();
   const [property, setProperty] = useState<Property | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [tab, setTab] = useState<Tab>("timeline");
+  const initialTab = (searchParams.get("tab") as Tab | null) ?? "timeline";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [loading, setLoading] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
   const [photosByJob, setPhotosByJob] = useState<Record<string, Photo[]>>({});

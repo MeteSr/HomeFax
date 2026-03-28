@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Home, ShieldCheck, Wrench, ArrowRight, CheckCircle } from "lucide-react";
+import { Home, ShieldCheck, Wrench, ArrowRight, CheckCircle, FolderOpen } from "lucide-react";
 import { propertyService, Property } from "@/services/property";
 import { jobService, Job } from "@/services/job";
+import { photoService } from "@/services/photo";
 import { systemAgesService } from "@/services/systemAges";
 import { useAuthStore } from "@/store/authStore";
 
@@ -23,16 +24,18 @@ interface Step {
   done: boolean;
 }
 
-function buildSteps(properties: Property[], jobs: Job[], firstPropertyId?: bigint): Step[] {
-  const hasProperty  = properties.length > 0;
-  const verified     = properties.some((p) => p.verificationLevel !== "Unverified"); // PendingReview counts — user has submitted
-  const hasJob       = jobs.length > 0;
+function buildSteps(properties: Property[], jobs: Job[], firstPropertyId: bigint | undefined, hasDocs: boolean): Step[] {
+  const hasProperty   = properties.length > 0;
+  const verified      = properties.some((p) => p.verificationLevel !== "Unverified");
+  const hasJob        = jobs.length > 0;
   const hasSystemAges = hasProperty && firstPropertyId != null && systemAgesService.hasAny(String(firstPropertyId));
+  const propPath      = hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}` : "/properties/new";
   return [
-    { id: "add-property",    icon: <Home size={20} />,       title: "Add your first property",          body: "Register your home on-chain and start building its verified maintenance history.",             cta: hasProperty ? "View my property" : "Add property", href: hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}` : "/properties/new", done: hasProperty },
-    { id: "verify-ownership", icon: <ShieldCheck size={20} />, title: "Verify ownership",               body: "Upload a utility bill, deed, or tax record to earn a verification badge that buyers trust.",    cta: "Verify now",       href: hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}/verify` : "/properties/new", done: verified },
-    { id: "system-ages",     icon: <Wrench size={20} />,     title: "Set your system ages",              body: "Tell us when your HVAC, roof, water heater, and other systems were last replaced — so predictions reflect reality, not just your home's build year.", cta: "Set system ages", href: hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}/systems` : "/dashboard", done: hasSystemAges },
-    { id: "log-job",         icon: <Wrench size={20} />,     title: "Log your first maintenance job",    body: "Every repair, renovation, or upgrade you record adds real value to your HomeFax report.",      cta: "Log a job",        href: "/jobs/new", done: hasJob },
+    { id: "add-property",     icon: <Home size={20} />,       title: "Add your first property",         body: "Register your home on-chain and start building its verified maintenance history.",                                                                                                               cta: hasProperty ? "View my property" : "Add property", href: propPath,                                     done: hasProperty  },
+    { id: "verify-ownership", icon: <ShieldCheck size={20} />, title: "Verify ownership",               body: "Upload a utility bill, deed, or tax record to earn a verification badge that buyers trust.",                                                                                                     cta: "Verify now",                                      href: `${propPath}/verify`,                            done: verified     },
+    { id: "import-docs",      icon: <FolderOpen size={20} />, title: "Import historical documents",     body: "Bulk-upload existing receipts, permits, inspection reports, and warranties. Duplicates are auto-detected — drag in everything and HomeFax sorts it out.",                                       cta: "Import documents",                                href: `${propPath}?tab=documents`,                     done: hasDocs      },
+    { id: "system-ages",      icon: <Wrench size={20} />,     title: "Set your system ages",            body: "Tell us when your HVAC, roof, water heater, and other systems were last replaced — so predictions reflect reality, not just your home's build year.",                                          cta: "Set system ages",                                 href: hasProperty && firstPropertyId != null ? `/properties/${firstPropertyId}/systems` : "/dashboard", done: hasSystemAges },
+    { id: "log-job",          icon: <Wrench size={20} />,     title: "Log your first maintenance job",  body: "Every repair, renovation, or upgrade you record adds real value to your HomeFax report.",                                                                                                       cta: "Log a job",                                       href: "/jobs/new",                                     done: hasJob       },
   ];
 }
 
@@ -83,17 +86,23 @@ export default function OnboardingPage() {
   const { profile } = useAuthStore();
   const [properties, setProperties] = useState<Property[]>([]);
   const [jobs, setJobs]             = useState<Job[]>([]);
+  const [hasDocs, setHasDocs]       = useState(false);
   const [loaded, setLoaded]         = useState(false);
 
   useEffect(() => {
     Promise.all([
-      propertyService.getMyProperties().then(setProperties).catch(() => {}),
-      jobService.getAll().then(setJobs).catch(() => {}),
-    ]).finally(() => setLoaded(true));
+      propertyService.getMyProperties().then(setProperties).catch(() => []),
+      jobService.getAll().then(setJobs).catch(() => []),
+    ]).then(([props]) => {
+      const firstId = (props as Property[])[0]?.id;
+      if (firstId) {
+        photoService.getByJob(`docs_${String(firstId)}`).then((docs) => setHasDocs(docs.length > 0)).catch(() => {});
+      }
+    }).finally(() => setLoaded(true));
   }, []);
 
   const firstPropertyId = properties[0]?.id;
-  const steps     = buildSteps(properties, jobs, firstPropertyId);
+  const steps     = buildSteps(properties, jobs, firstPropertyId, hasDocs);
   const doneCount = steps.filter((s) => s.done).length;
   const nextStep  = steps.find((s) => !s.done);
 
