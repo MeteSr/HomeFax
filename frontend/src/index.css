@@ -1,21 +1,30 @@
 /* ─── Design tokens ──────────────────────────────────────────────────────────── */
 
 :root {
-  --ink:    #0E0E0C;
-  --paper:  #F4F1EB;
-  --rule:   #C8C3B8;
-  --rust:   #C94C2E;
-  --rust-dark: #A83D23;
-  --sage:   #3D6B57;
-  --gold:   #B89040;
-  --white:  #FFFFFF;
-  --ink-mid: #4A4A45;
-  --ink-light: #7A7268;
-  --paper-dark: #EDE9E0;
+  /* New palette */
+  --plum:        #2E2540;
+  --plum-mid:    #6B5B7B;
+  --plum-dark:   #1E1928;
+  --sage:        #7AAF76;
+  --sage-mid:    #C4DCC2;
+  --sage-light:  #E5F0E4;
+  --blush:       #F0CDBA;
+  --sky:         #BAD5E8;
+  --butter:      #F5E9BB;
+  --white:       #FDFCFA;
+  --rule:        #D4CFC8;
 
-  --serif: 'Playfair Display', Georgia, serif;
+  /* Legacy aliases — kept so old inline styles degrade gracefully during migration */
+  --ink:         #2E2540;
+  --paper:       #FDFCFA;
+  --rust:        #7AAF76;
+  --ink-mid:     #6B5B7B;
+  --ink-light:   #6B5B7B;
+  --paper-dark:  #E5F0E4;
+
+  --serif: 'Fraunces', Georgia, serif;
   --mono:  'IBM Plex Mono', 'Courier New', monospace;
-  --sans:  'IBM Plex Sans', system-ui, sans-serif;
+  --sans:  'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────────────────── */
@@ -36,8 +45,8 @@ body {
   font-weight: 400;
   font-size: 16px;
   line-height: 1.5;
-  color: var(--ink);
-  background-color: var(--paper);
+  color: var(--plum);
+  background-color: var(--white);
 }
 
 img {
@@ -60,22 +69,22 @@ a {
   font-family: var(--mono);
   font-size: 0.7rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-mid);
+  color: var(--plum-mid);
   margin-bottom: 0.5rem;
 }
 
 .form-input {
   display: block;
   width: 100%;
-  padding: 0.625rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9rem;
   font-family: var(--sans);
-  color: var(--ink);
+  color: var(--plum);
   background-color: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: 0;
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   -webkit-appearance: none;
@@ -83,18 +92,18 @@ a {
 }
 
 .form-input:focus {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 2px rgba(14, 14, 12, 0.08);
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px rgba(46, 37, 64, 0.08);
 }
 
 .form-input::placeholder {
-  color: var(--ink-light);
+  color: var(--plum-mid);
   font-weight: 300;
 }
 
 .form-input:disabled {
-  background-color: var(--paper-dark);
-  color: var(--ink-light);
+  background-color: var(--sage-light);
+  color: var(--plum-mid);
   cursor: not-allowed;
 }
 
@@ -129,7 +138,7 @@ textarea.form-input {
   width: 3rem;
   height: 3rem;
   border: 2px solid var(--rule);
-  border-top-color: var(--rust);
+  border-top-color: var(--sage);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   margin: 0 auto;
@@ -160,22 +169,22 @@ textarea.form-input {
 /* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--paper-dark); }
-::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 0; }
-::-webkit-scrollbar-thumb:hover { background: var(--ink-light); }
+::-webkit-scrollbar-track { background: var(--sage-light); }
+::-webkit-scrollbar-thumb { background: var(--sage-mid); border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: var(--plum-mid); }
 
 /* ─── Focus ──────────────────────────────────────────────────────────────────── */
 
 :focus-visible {
-  outline: 2px solid var(--rust);
+  outline: 2px solid var(--sage);
   outline-offset: 2px;
 }
 
 /* ─── Selection ──────────────────────────────────────────────────────────────── */
 
 ::selection {
-  background-color: #F5C5B8;
-  color: var(--ink);
+  background-color: var(--sage-light);
+  color: var(--plum);
 }
 
 /* ─── Table defaults ─────────────────────────────────────────────────────────── */
@@ -214,12 +223,10 @@ table { border-collapse: collapse; }
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0;
-  font-family: var(--mono);
-  font-size: 0.7rem;
+  font-family: var(--sans);
+  font-size: 0.875rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-light);
+  color: var(--plum-mid);
   text-decoration: none;
   background: none;
   border: none;
@@ -230,7 +237,7 @@ table { border-collapse: collapse; }
   transition: color 0.15s;
 }
 .rsp-mobile-link:hover,
-.rsp-mobile-link.active { color: var(--rust); }
+.rsp-mobile-link.active { color: var(--sage); }
 
 .rsp-mobile-divider { height: 1px; background-color: var(--rule); margin: 0.5rem 0; }
 
@@ -285,13 +292,13 @@ table { border-collapse: collapse; }
 /* ─── Google Places autocomplete dropdown ────────────────────────────────────── */
 
 .pac-container {
-  border: 1px solid var(--rule);
+  border: 1.5px solid var(--rule);
   border-top: none;
-  border-radius: 0;
-  box-shadow: 0 4px 12px rgba(14, 14, 12, 0.08);
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 8px 24px rgba(46, 37, 64, 0.1);
   font-family: var(--sans);
   background: var(--white);
-  margin-top: -1px; /* flush with input border */
+  margin-top: -2px;
 }
 
 .pac-container::after {
@@ -316,19 +323,19 @@ table { border-collapse: collapse; }
 
 .pac-item:hover,
 .pac-item-selected {
-  background: #FAF0ED;
+  background: var(--sage-light);
 }
 
 .pac-item-query {
   font-size: 0.8rem;
   font-weight: 500;
-  color: var(--ink);
+  color: var(--plum);
   padding-right: 0.25rem;
 }
 
 .pac-matched {
   font-weight: 700;
-  color: var(--rust);
+  color: var(--sage);
 }
 
 .pac-icon {

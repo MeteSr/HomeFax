@@ -5,18 +5,23 @@ import { Layout } from "@/components/Layout";
 import { recurringService, RecurringService, VisitLog, ServiceStatus, SERVICE_TYPE_LABELS, FREQUENCY_LABELS } from "@/services/recurringService";
 import { photoService } from "@/services/photo";
 import toast from "react-hot-toast";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
-  Active:    { color: S.sage,     bg: "#F0F6F3" },
-  Paused:    { color: "#92611B",  bg: "#FEF3DC" },
-  Cancelled: { color: S.inkLight, bg: S.paper   },
+  Active:    { color: S.sage,         bg: COLORS.sageLight },
+  Paused:    { color: COLORS.plumMid, bg: COLORS.butter    },
+  Cancelled: { color: S.inkLight,     bg: S.paper          },
 };
 
 function fmtDate(iso: string): string {
@@ -154,7 +159,7 @@ export default function RecurringServiceDetailPage() {
             </div>
 
             {/* ── Service details ────────────────────────────────────────────── */}
-            <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.5rem", marginBottom: "1.25rem" }}>
+            <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.5rem", marginBottom: "1.25rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem 2rem" }}>
                 <div>
                   <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>Provider</p>
@@ -195,7 +200,7 @@ export default function RecurringServiceDetailPage() {
             </div>
 
             {/* ── Contract document ──────────────────────────────────────────── */}
-            <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem", marginBottom: "1.25rem" }}>
+            <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem", marginBottom: "1.25rem" }}>
               <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.75rem" }}>
                 Contract Document
               </p>
@@ -247,7 +252,7 @@ export default function RecurringServiceDetailPage() {
                   <button
                     onClick={() => handleStatusChange("Active")}
                     disabled={statusLoading}
-                    style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", border: `1px solid ${S.sage}`, background: "#F0F6F3", cursor: "pointer", color: S.sage }}
+                    style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", border: `1px solid ${S.sage}`, background: COLORS.sageLight, cursor: "pointer", color: S.sage }}
                   >
                     Resume Service
                   </button>
@@ -263,7 +268,7 @@ export default function RecurringServiceDetailPage() {
             )}
 
             {/* ── Visit log ──────────────────────────────────────────────────── */}
-            <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.5rem" }}>
+            <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.5rem" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
                 <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.inkLight }}>
                   Visit Log · {visits.length} {visits.length === 1 ? "entry" : "entries"}

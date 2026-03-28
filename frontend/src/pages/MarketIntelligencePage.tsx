@@ -12,19 +12,24 @@ import {
   ProjectRecommendation,
 } from "@/services/market";
 import { usePropertyStore } from "@/store/propertyStore";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 type Tab = "competitive" | "projects";
 type SortBy = "roi" | "cost" | "payback";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const GRADE_COLOR: Record<string, string> = {
-  A: S.sage, B: "#3b82f6", C: "#f59e0b", D: "#f97316", F: S.rust,
+  A: S.sage, B: COLORS.plum, C: COLORS.plumMid, D: COLORS.plumMid, F: S.rust,
 };
 
 const PRIORITY_VARIANT: Record<string, "error" | "warning" | "default"> = {
@@ -33,7 +38,7 @@ const PRIORITY_VARIANT: Record<string, "error" | "warning" | "default"> = {
 
 function ScoreCard({ label, dim }: { label: string; dim: { score: number; grade: string; detail: string } }) {
   return (
-    <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem" }}>
+    <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
         <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
           {label}
@@ -123,7 +128,7 @@ export default function MarketIntelligencePage() {
         </div>
 
         {/* Controls */}
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem", marginBottom: "1.5rem", display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-end" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem", marginBottom: "1.5rem", display: "flex", flexWrap: "wrap", gap: "1rem", alignItems: "flex-end" }}>
           <div style={{ flex: "1 1 12rem" }}>
             <label style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, display: "block", marginBottom: "0.375rem" }}>
               Property
@@ -181,29 +186,29 @@ export default function MarketIntelligencePage() {
             {tab === "competitive" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
                 {/* Overall score banner */}
-                <div style={{ background: S.ink, padding: "2rem", color: "#F4F1EB", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+                <div style={{ background: S.ink, padding: "2rem", color: COLORS.white, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
                   <div>
-                    <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.5rem" }}>
+                    <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.5rem" }}>
                       Overall HomeFax Score
                     </p>
                     <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
                       <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "3rem", lineHeight: 1 }}>{analysis.overallScore}</span>
-                      <span style={{ fontFamily: S.mono, fontSize: "0.65rem", color: "#7A7268" }}>/100</span>
-                      <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", marginLeft: "0.5rem", color: GRADE_COLOR[analysis.overallGrade] ?? "#F4F1EB" }}>
+                      <span style={{ fontFamily: S.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>/100</span>
+                      <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", marginLeft: "0.5rem", color: GRADE_COLOR[analysis.overallGrade] ?? COLORS.white }}>
                         {analysis.overallGrade}
                       </span>
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.375rem" }}>Competitive rank</p>
+                    <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.375rem" }}>Competitive rank</p>
                     <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1 }}>
-                      #{analysis.rankOutOf} <span style={{ fontFamily: S.mono, fontSize: "0.75rem", color: "#7A7268" }}>of {analysis.totalCompared}</span>
+                      #{analysis.rankOutOf} <span style={{ fontFamily: S.mono, fontSize: "0.75rem", color: COLORS.plumMid }}>of {analysis.totalCompared}</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Dimension scores */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: S.rule }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <ScoreCard label="Maintenance History"  dim={analysis.maintenanceScore} />
                   <ScoreCard label="System Modernization" dim={analysis.systemModernization} />
                 </div>
@@ -211,7 +216,7 @@ export default function MarketIntelligencePage() {
 
                 {/* Strengths */}
                 {analysis.strengths.length > 0 && (
-                  <div style={{ border: `1px solid ${S.sage}`, background: "#fff", padding: "1.25rem" }}>
+                  <div style={{ border: `1px solid ${S.sage}`, background: COLORS.white, padding: "1.25rem" }}>
                     <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.sage, marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <Star size={12} /> Strengths
                     </p>
@@ -223,7 +228,7 @@ export default function MarketIntelligencePage() {
 
                 {/* Improvements */}
                 {analysis.improvements.length > 0 && (
-                  <div style={{ border: `1px solid ${S.rust}`, background: "#FAF0ED", padding: "1.25rem" }}>
+                  <div style={{ border: `1px solid ${S.rust}`, background: COLORS.blush, padding: "1.25rem" }}>
                     <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.rust, marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <AlertCircle size={12} /> Improvement Opportunities
                     </p>
@@ -255,7 +260,7 @@ export default function MarketIntelligencePage() {
                           fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
                           padding: "0.25rem 0.75rem",
                           background: sortBy === s ? S.ink : "none",
-                          color: sortBy === s ? "#F4F1EB" : S.inkLight,
+                          color: sortBy === s ? COLORS.white : S.inkLight,
                           border: `1px solid ${sortBy === s ? S.ink : S.rule}`,
                           cursor: "pointer",
                         }}
@@ -280,7 +285,7 @@ export default function MarketIntelligencePage() {
                       : a.paybackMonths    - b.paybackMonths
                     )
                     .map((p, i) => (
-                    <div key={i} style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem" }}>
+                    <div key={i} style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
@@ -297,13 +302,13 @@ export default function MarketIntelligencePage() {
                           <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: S.inkLight }}>estimated cost</p>
                         </div>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1px", background: S.rule }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
                         {[
                           { label: "ROI", value: `${p.estimatedRoiPercent}%` },
                           { label: "Value Added", value: marketService.formatCost(p.estimatedGainCents) },
                           { label: "Payback", value: `${p.paybackMonths} mo` },
                         ].map((m) => (
-                          <div key={m.label} style={{ background: "#fff", padding: "0.75rem", textAlign: "center" }}>
+                          <div key={m.label} style={{ background: COLORS.white, padding: "0.75rem", textAlign: "center", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
                             <p style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1rem", color: S.ink }}>{m.value}</p>
                             <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>{m.label}</p>
                           </div>

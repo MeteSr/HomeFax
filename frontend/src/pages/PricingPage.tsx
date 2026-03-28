@@ -4,12 +4,17 @@ import { CheckCircle, X, Home } from "lucide-react";
 import { Button } from "@/components/Button";
 import { PLANS } from "@/services/payment";
 import { useAuth } from "@/contexts/AuthContext";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const FEATURES_TABLE = [
@@ -41,11 +46,8 @@ export default function PricingPage() {
       {/* Nav */}
       <header style={{ borderBottom: `1px solid ${S.rule}`, position: "sticky", top: 0, background: S.paper, zIndex: 50 }}>
         <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "3.5rem" }}>
-          <Link to="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
-            <div style={{ width: "1.5rem", height: "1.5rem", background: S.rust, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Home size={12} color="#F4F1EB" />
-            </div>
-            <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1rem", color: S.ink }}>HomeFax</span>
+          <Link to="/" style={{ textDecoration: "none", fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.1rem", letterSpacing: "-0.5px", color: COLORS.plum }}>
+            Home<span style={{ color: COLORS.sage }}>Fax</span>
           </Link>
           <Button size="sm" onClick={login}>Get Started Free</Button>
         </div>
@@ -55,7 +57,7 @@ export default function PricingPage() {
 
         {/* Title */}
         <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
-          <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: S.rust, marginBottom: "0.75rem" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: COLORS.butter, color: COLORS.plum, padding: "5px 16px", borderRadius: 100, fontSize: "0.75rem", fontWeight: 600, marginBottom: "1rem", border: `1px solid rgba(46,37,64,0.1)` }}>
             Pricing
           </div>
           <h1 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3rem)", lineHeight: 1, color: S.ink, marginBottom: "1rem" }}>
@@ -67,38 +69,45 @@ export default function PricingPage() {
         </div>
 
         {/* Plan cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1px", background: S.rule, marginBottom: "4rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.25rem", marginBottom: "4rem" }}>
           {PLANS.map((plan) => {
             const isPopular = plan.tier === "Pro";
             return (
-              <div key={plan.tier} style={{ padding: "2rem", background: isPopular ? S.ink : "#fff", position: "relative" }}>
+              <div key={plan.tier} style={{
+                padding: "2rem",
+                borderRadius: RADIUS.card,
+                background: isPopular ? COLORS.plum : COLORS.white,
+                border: `1.5px solid ${isPopular ? COLORS.plum : COLORS.rule}`,
+                boxShadow: isPopular ? SHADOWS.hover : SHADOWS.card,
+                position: "relative",
+              }}>
                 {isPopular && (
-                  <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.rust, marginBottom: "0.5rem" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", background: COLORS.sage, color: COLORS.white, padding: "3px 12px", borderRadius: 100, fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.75rem" }}>
                     Most Popular
                   </div>
                 )}
-                <div style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.7rem", letterSpacing: "0.12em", textTransform: "uppercase", color: isPopular ? "#F4F1EB" : S.inkLight, marginBottom: "0.5rem" }}>
+                <div style={{ fontFamily: FONTS.sans, fontWeight: 600, fontSize: "0.875rem", color: isPopular ? COLORS.sageLight : COLORS.plumMid, marginBottom: "0.5rem" }}>
                   {plan.tier}
                 </div>
                 <div style={{ marginBottom: "1.5rem" }}>
-                  <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "2.5rem", lineHeight: 1, color: isPopular ? "#F4F1EB" : S.ink }}>
+                  <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2.5rem", lineHeight: 1, color: isPopular ? COLORS.white : COLORS.plum }}>
                     {plan.price === 0 ? "Free" : `$${plan.price}`}
                   </span>
                   {plan.price > 0 && (
-                    <span style={{ fontFamily: S.mono, fontSize: "0.65rem", color: isPopular ? "#7A7268" : S.inkLight }}>/{plan.period}</span>
+                    <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", color: isPopular ? COLORS.plumMid : COLORS.plumMid }}>/{plan.period}</span>
                   )}
                 </div>
 
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                   {plan.features.map((f) => (
-                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: isPopular ? "#C8C3B8" : S.inkLight }}>
-                      <CheckCircle size={12} color={isPopular ? S.rust : S.sage} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
+                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", fontFamily: FONTS.sans, fontSize: "0.85rem", color: isPopular ? COLORS.sageLight : COLORS.plumMid, fontWeight: 300 }}>
+                      <CheckCircle size={14} color={COLORS.sage} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
                       {f}
                     </li>
                   ))}
                 </ul>
 
-                <Button variant={isPopular ? "primary" : "outline"} style={{ width: "100%" }} onClick={login}>
+                <Button variant={isPopular ? "secondary" : "outline"} style={{ width: "100%", background: isPopular ? COLORS.sage : undefined, color: isPopular ? COLORS.white : undefined, borderColor: isPopular ? COLORS.sage : undefined }} onClick={login}>
                   {plan.price === 0 ? "Get Started Free" : `Upgrade to ${plan.tier}`}
                 </Button>
               </div>
@@ -109,13 +118,13 @@ export default function PricingPage() {
         {/* Feature comparison */}
         <div style={{ marginBottom: "4rem" }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: S.rust, marginBottom: "0.5rem" }}>Compare</div>
+            <div style={{ display: "inline-flex", alignItems: "center", background: COLORS.butter, color: COLORS.plum, padding: "5px 16px", borderRadius: 100, fontSize: "0.75rem", fontWeight: 600, marginBottom: "1rem", border: `1px solid rgba(46,37,64,0.1)` }}>Compare</div>
             <h2 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: S.ink }}>Feature comparison</h2>
           </div>
-          <div style={{ border: `1px solid ${S.rule}`, overflow: "hidden" }}>
+          <div style={{ border: `1px solid ${S.rule}`, borderRadius: RADIUS.card, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ background: S.paper }}>
+                <tr style={{ background: COLORS.sageLight }}>
                   <th style={{ textAlign: "left", padding: "0.875rem 1.25rem", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, borderBottom: `1px solid ${S.rule}` }}>
                     Feature
                   </th>
@@ -158,14 +167,14 @@ export default function PricingPage() {
         {/* FAQ */}
         <div style={{ maxWidth: "48rem", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: S.rust, marginBottom: "0.5rem" }}>FAQ</div>
+            <div style={{ display: "inline-flex", alignItems: "center", background: COLORS.butter, color: COLORS.plum, padding: "5px 16px", borderRadius: 100, fontSize: "0.75rem", fontWeight: 600, marginBottom: "1rem", border: `1px solid rgba(46,37,64,0.1)` }}>FAQ</div>
             <h2 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: S.ink }}>Frequently asked questions</h2>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {FAQS.map((faq) => (
-              <div key={faq.q} style={{ background: "#fff", padding: "1.25rem" }}>
-                <p style={{ fontFamily: S.serif, fontWeight: 700, color: S.ink, marginBottom: "0.625rem" }}>{faq.q}</p>
-                <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: S.inkLight, lineHeight: 1.7 }}>{faq.a}</p>
+              <div key={faq.q} style={{ background: COLORS.white, padding: "1.25rem 1.5rem", borderRadius: RADIUS.sm, border: `1px solid ${COLORS.rule}` }}>
+                <p style={{ fontFamily: FONTS.serif, fontWeight: 700, color: S.ink, marginBottom: "0.625rem" }}>{faq.q}</p>
+                <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: S.inkLight, lineHeight: 1.7, fontWeight: 300 }}>{faq.a}</p>
               </div>
             ))}
           </div>

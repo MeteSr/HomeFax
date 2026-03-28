@@ -9,12 +9,17 @@ import { jobService } from "@/services/job";
 import { photoService, PhotoQuota } from "@/services/photo";
 import { usePropertyStore } from "@/store/propertyStore";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const SERVICE_TYPES = [
@@ -134,7 +139,7 @@ export default function JobCreatePage() {
           </p>
 
           {/* Next-service suggestion */}
-          <div style={{ border: `1px solid ${S.rule}`, padding: "1.25rem", background: "#fff", textAlign: "left", marginBottom: "1.5rem" }}>
+          <div style={{ border: `1px solid ${S.rule}`, padding: "1.25rem", background: COLORS.white, textAlign: "left", marginBottom: "1.5rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>
               Next Step
             </p>
@@ -196,7 +201,7 @@ export default function JobCreatePage() {
           {editJob ? `Editing record for ${editJob.serviceType} · ${editJob.date}` : "Record a completed maintenance job on the blockchain."}
         </p>
 
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
 
           {!editJob && properties.length > 0 && (
             <div>
@@ -215,9 +220,9 @@ export default function JobCreatePage() {
               {SERVICE_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
             {isInsuranceRelevant(form.serviceType) && (
-              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginTop: "0.4rem", padding: "0.35rem 0.6rem", background: "#F0F7F4", border: "1px solid #B5D4C8" }}>
-                <ShieldCheck size={11} color="#3D6B57" />
-                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#3D6B57" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginTop: "0.4rem", padding: "0.35rem 0.6rem", background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}` }}>
+                <ShieldCheck size={11} color={COLORS.sage} />
+                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage }}>
                   Insurance-relevant — this record may support a premium dispute or claim
                 </span>
               </div>
@@ -229,14 +234,14 @@ export default function JobCreatePage() {
             <div style={{
               display: "flex", alignItems: "flex-start", gap: "0.625rem",
               padding: "0.875rem 1rem",
-              border: "1px solid #D4820E", background: "#FEF3DC",
+              border: `1px solid ${COLORS.plumMid}`, background: COLORS.butter,
             }}>
-              <AlertTriangle size={14} color="#D4820E" style={{ flexShrink: 0, marginTop: "0.1rem" }} />
+              <AlertTriangle size={14} color={COLORS.plumMid} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
               <div>
-                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B6914", marginBottom: "0.2rem" }}>
+                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.2rem" }}>
                   Permit may be required
                 </p>
-                <p style={{ fontSize: "0.75rem", color: "#8B6914", fontWeight: 300 }}>
+                <p style={{ fontSize: "0.75rem", color: COLORS.plumMid, fontWeight: 300 }}>
                   {form.serviceType} work typically requires a building permit. If one was pulled, logging the permit number below
                   significantly strengthens your record — buyers and lenders look for this.
                 </p>
@@ -251,7 +256,7 @@ export default function JobCreatePage() {
               display: "flex", alignItems: "center", gap: "0.875rem",
               padding: "0.875rem 1rem", cursor: "pointer",
               border: `1px solid ${form.isDiy ? S.rust : S.rule}`,
-              background: form.isDiy ? "#FAF0ED" : "#fff",
+              background: form.isDiy ? COLORS.blush : COLORS.white,
             }}
           >
             <div style={{
@@ -263,7 +268,7 @@ export default function JobCreatePage() {
                 position: "absolute", top: "0.125rem",
                 left: form.isDiy ? "1.125rem" : "0.125rem",
                 width: "1rem", height: "1rem",
-                background: "#fff", transition: "left 0.15s",
+                background: COLORS.white, transition: "left 0.15s",
               }} />
             </div>
             <div>

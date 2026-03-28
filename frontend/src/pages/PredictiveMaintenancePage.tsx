@@ -16,19 +16,24 @@ import {
 import { systemAgesService } from "@/services/systemAges";
 import { marketService, buildPropertySummary, type ProjectRecommendation } from "@/services/market";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const URGENCY_RUST: Record<UrgencyLevel, string> = {
-  Critical: S.rust, Soon: "#D4820E", Watch: "#7A7268", Good: S.sage,
+  Critical: S.rust, Soon: COLORS.plumMid, Watch: COLORS.plumMid, Good: S.sage,
 };
 const URGENCY_BG: Record<UrgencyLevel, string> = {
-  Critical: "#FAF0ED", Soon: "#FEF3DC", Watch: S.paper, Good: "#F0F6F3",
+  Critical: COLORS.blush, Soon: COLORS.butter, Watch: S.paper, Good: COLORS.sageLight,
 };
 
 // ─── Urgency Badge ─────────────────────────────────────────────────────────────
@@ -81,13 +86,13 @@ function SystemCard({ pred, onSchedule, marketRec, taskState, onTaskStateChange 
   const high = maintenanceService.formatCents(pred.estimatedCostHighCents);
 
   return (
-    <div style={{ border: `1px solid ${taskState === "done" ? S.sage : pred.urgency === "Critical" ? S.rust : S.rule}`, background: taskState === "done" ? "#F0F6F3" : "#fff", opacity: taskState === "done" ? 0.75 : 1 }}>
+    <div style={{ border: `1px solid ${taskState === "done" ? S.sage : pred.urgency === "Critical" ? S.rust : S.rule}`, background: taskState === "done" ? COLORS.sageLight : COLORS.white, opacity: taskState === "done" ? 0.75 : 1 }}>
       <div style={{ padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }} onClick={() => setExpanded((e) => !e)}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.375rem" }}>
             <span style={{ fontWeight: 700, fontSize: "0.9rem", color: S.ink }}>{pred.systemName}</span>
             {taskState === "done"      ? <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.sage, border: `1px solid ${S.sage}40`, padding: "0.1rem 0.4rem" }}>✓ Done</span>
-            : taskState === "scheduled" ? <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#8B6914", border: "1px solid #D4820E40", padding: "0.1rem 0.4rem" }}>Scheduled</span>
+            : taskState === "scheduled" ? <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, border: `1px solid ${COLORS.plumMid}40`, padding: "0.1rem 0.4rem" }}>Scheduled</span>
             : <UrgencyBadge urgency={pred.urgency} />}
             {pred.diyViable && (
               <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, border: `1px solid ${S.rule}`, padding: "0.1rem 0.4rem" }}>
@@ -138,7 +143,7 @@ function SystemCard({ pred, onSchedule, marketRec, taskState, onTaskStateChange 
 
           {/* Market ROI data */}
           {marketRec && (
-            <div style={{ border: `1px solid ${S.rule}`, padding: "0.75rem 1rem", marginBottom: "0.75rem", display: "flex", gap: "1.5rem", flexWrap: "wrap", background: "#fff" }}>
+            <div style={{ border: `1px solid ${S.rule}`, padding: "0.75rem 1rem", marginBottom: "0.75rem", display: "flex", gap: "1.5rem", flexWrap: "wrap", background: COLORS.white }}>
               <div>
                 <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.2rem" }}>Market ROI</p>
                 <p style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.75rem", color: S.sage }}>{marketRec.estimatedRoiPercent}%</p>
@@ -160,7 +165,7 @@ function SystemCard({ pred, onSchedule, marketRec, taskState, onTaskStateChange 
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             <button
               onClick={(e) => { e.stopPropagation(); onSchedule(pred); }}
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink, cursor: "pointer" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink, cursor: "pointer" }}
             >
               <Calendar size={11} /> Add to schedule
             </button>
@@ -168,7 +173,7 @@ function SystemCard({ pred, onSchedule, marketRec, taskState, onTaskStateChange 
             {taskState !== "scheduled" && taskState !== "done" && (
               <button
                 onClick={(e) => { e.stopPropagation(); onTaskStateChange("scheduled"); }}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid #D4820E`, background: "#FEF3DC", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B6914", cursor: "pointer" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid ${COLORS.plumMid}`, background: COLORS.butter, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, cursor: "pointer" }}
               >
                 <Clock size={11} /> Mark Scheduled
               </button>
@@ -177,7 +182,7 @@ function SystemCard({ pred, onSchedule, marketRec, taskState, onTaskStateChange 
             {taskState !== "done" && (
               <button
                 onClick={(e) => { e.stopPropagation(); onTaskStateChange("done"); }}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid ${S.sage}`, background: "#F0F6F3", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.sage, cursor: "pointer" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid ${S.sage}`, background: COLORS.sageLight, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.sage, cursor: "pointer" }}
               >
                 <CheckCircle2 size={11} /> Mark Done
               </button>
@@ -186,7 +191,7 @@ function SystemCard({ pred, onSchedule, marketRec, taskState, onTaskStateChange 
             {taskState !== "none" && (
               <button
                 onClick={(e) => { e.stopPropagation(); onTaskStateChange("none"); }}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.4rem 0.875rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
               >
                 <X size={11} /> Undo
               </button>
@@ -230,12 +235,12 @@ function FiveYearCalendar({ entries, onComplete, onDelete, onAddYear }: {
   }
 
   const renderEntry = (entry: ScheduleEntry) => (
-    <div key={entry.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.625rem", padding: "0.625rem 0.875rem", background: entry.isCompleted ? S.paper : "#fff", opacity: entry.isCompleted ? 0.6 : 1 }}>
+    <div key={entry.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.625rem", padding: "0.625rem 0.875rem", background: entry.isCompleted ? S.paper : COLORS.white, opacity: entry.isCompleted ? 0.6 : 1 }}>
       <button
         onClick={() => !entry.isCompleted && onComplete(entry.id)}
-        style={{ width: "1rem", height: "1rem", border: `2px solid ${entry.isCompleted ? S.sage : S.rule}`, background: entry.isCompleted ? S.sage : "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: entry.isCompleted ? "default" : "pointer", flexShrink: 0, marginTop: "0.1rem" }}
+        style={{ width: "1rem", height: "1rem", border: `2px solid ${entry.isCompleted ? S.sage : S.rule}`, background: entry.isCompleted ? S.sage : COLORS.white, display: "flex", alignItems: "center", justifyContent: "center", cursor: entry.isCompleted ? "default" : "pointer", flexShrink: 0, marginTop: "0.1rem" }}
       >
-        {entry.isCompleted && <CheckCircle2 size={8} color="#fff" />}
+        {entry.isCompleted && <CheckCircle2 size={8} color={COLORS.white} />}
       </button>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: "0.85rem", fontWeight: 600, color: S.ink }}>{entry.systemName}</div>
@@ -254,7 +259,7 @@ function FiveYearCalendar({ entries, onComplete, onDelete, onAddYear }: {
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {/* Total pending budget banner */}
       {pending.length > 0 && (
-        <div style={{ border: `1px solid ${S.rule}`, padding: "0.875rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff" }}>
+        <div style={{ border: `1px solid ${S.rule}`, padding: "0.875rem 1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center", background: COLORS.white }}>
           <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>
             {pending.length} tasks scheduled
           </span>
@@ -270,11 +275,11 @@ function FiveYearCalendar({ entries, onComplete, onDelete, onAddYear }: {
         const budget = yearBudget(year);
         const isCurrentYear = year === currentYear;
         return (
-          <div key={year} style={{ border: `1px solid ${isCurrentYear ? S.rust : S.rule}`, background: "#fff", overflow: "hidden" }}>
+          <div key={year} style={{ border: `1px solid ${isCurrentYear ? S.rust : S.rule}`, background: COLORS.white, overflow: "hidden" }}>
             <div style={{
               padding: "0.625rem 1rem", borderBottom: `1px solid ${isCurrentYear ? S.rust : S.rule}`,
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              background: isCurrentYear ? "#FAF0ED" : S.paper,
+              background: isCurrentYear ? COLORS.blush : S.paper,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
                 <span style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.7rem", letterSpacing: "0.1em", color: isCurrentYear ? S.rust : S.inkLight }}>
@@ -328,7 +333,7 @@ function AddToScheduleModal({ pred, propertyId, onSave, onClose }: { pred: Syste
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }} onClick={onClose}>
-      <div style={{ background: "#fff", padding: "1.5rem", maxWidth: "26rem", width: "100%", border: `1px solid ${S.rule}` }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ background: COLORS.white, padding: "1.5rem", maxWidth: "26rem", width: "100%", border: `1px solid ${S.rule}` }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
           <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
             Schedule {pred.systemName} Work
@@ -363,10 +368,10 @@ function AddToScheduleModal({ pred, propertyId, onSave, onClose }: { pred: Syste
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.25rem" }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "0.6rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", color: S.inkLight }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "0.6rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", color: S.inkLight }}>
             Cancel
           </button>
-          <button onClick={save} disabled={!year || !desc} style={{ flex: 2, padding: "0.6rem", border: `1px solid ${S.ink}`, background: S.ink, color: "#F4F1EB", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}>
+          <button onClick={save} disabled={!year || !desc} style={{ flex: 2, padding: "0.6rem", border: `1px solid ${S.ink}`, background: S.ink, color: COLORS.white, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}>
             Save to Schedule
           </button>
         </div>
@@ -416,7 +421,7 @@ function MaintenanceChatPanel({ yearBuilt, propertyAddress, report }: { yearBuil
             maxWidth: "85%", alignSelf: m.role === "user" ? "flex-end" : "flex-start",
             padding: "0.625rem 0.875rem",
             background: m.role === "user" ? S.ink : S.paper,
-            color: m.role === "user" ? "#F4F1EB" : S.ink,
+            color: m.role === "user" ? COLORS.white : S.ink,
             fontFamily: S.mono, fontSize: "0.7rem", letterSpacing: "0.03em", lineHeight: 1.6,
           }}>
             {m.text}
@@ -429,9 +434,9 @@ function MaintenanceChatPanel({ yearBuilt, propertyAddress, report }: { yearBuil
           value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
           placeholder="Ask about your home systems…" disabled={loading}
-          style={{ flex: 1, padding: "0.5rem 0.75rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.7rem", outline: "none", background: "#fff" }}
+          style={{ flex: 1, padding: "0.5rem 0.75rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.7rem", outline: "none", background: COLORS.white }}
         />
-        <button onClick={send} disabled={loading || !input.trim()} style={{ padding: "0.5rem 0.875rem", border: `1px solid ${S.ink}`, background: S.ink, color: "#F4F1EB", cursor: loading || !input.trim() ? "not-allowed" : "pointer", opacity: loading || !input.trim() ? 0.6 : 1 }}>
+        <button onClick={send} disabled={loading || !input.trim()} style={{ padding: "0.5rem 0.875rem", border: `1px solid ${S.ink}`, background: S.ink, color: COLORS.white, cursor: loading || !input.trim() ? "not-allowed" : "pointer", opacity: loading || !input.trim() ? 0.6 : 1 }}>
           <Send size={14} />
         </button>
       </div>
@@ -568,22 +573,22 @@ export default function PredictiveMaintenancePage() {
           #hf-print-calendar { display: block !important; }
 
           #hf-print-calendar {
-            font-family: 'IBM Plex Mono', monospace;
-            color: #0E0E0C;
+            font-family: ${FONTS.mono};
+            color: ${COLORS.plum};
             padding: 2rem;
           }
-          .hf-print-header { margin-bottom: 1.5rem; border-bottom: 2px solid #0E0E0C; padding-bottom: 0.75rem; }
-          .hf-print-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.6rem; font-weight: 900; margin: 0 0 0.25rem; }
-          .hf-print-header p  { font-size: 0.65rem; letter-spacing: 0.06em; color: #7A7268; margin: 0; }
+          .hf-print-header { margin-bottom: 1.5rem; border-bottom: 2px solid ${COLORS.plum}; padding-bottom: 0.75rem; }
+          .hf-print-header h1 { font-family: ${FONTS.serif}; font-size: 1.6rem; font-weight: 900; margin: 0 0 0.25rem; }
+          .hf-print-header p  { font-size: 0.65rem; letter-spacing: 0.06em; color: ${COLORS.plumMid}; margin: 0; }
           .hf-print-section   { margin-bottom: 1.5rem; }
-          .hf-print-section-title { font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid #C8C3B8; padding-bottom: 0.25rem; margin-bottom: 0.5rem; }
-          .hf-print-row { display: flex; justify-content: space-between; align-items: baseline; padding: 0.3rem 0; border-bottom: 1px dotted #C8C3B8; font-size: 0.72rem; }
+          .hf-print-section-title { font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid ${COLORS.rule}; padding-bottom: 0.25rem; margin-bottom: 0.5rem; }
+          .hf-print-row { display: flex; justify-content: space-between; align-items: baseline; padding: 0.3rem 0; border-bottom: 1px dotted ${COLORS.rule}; font-size: 0.72rem; }
           .hf-print-row-label { flex: 1; }
-          .hf-print-row-meta  { font-size: 0.6rem; color: #7A7268; margin-left: 1rem; }
+          .hf-print-row-meta  { font-size: 0.6rem; color: ${COLORS.plumMid}; margin-left: 1rem; }
           .hf-print-row-cost  { font-weight: 700; margin-left: 1rem; }
-          .hf-print-urgency-critical { color: #C94C2E; font-weight: 700; }
-          .hf-print-urgency-soon     { color: #D4820E; font-weight: 700; }
-          .hf-print-footer { margin-top: 2rem; font-size: 0.55rem; color: #7A7268; letter-spacing: 0.05em; border-top: 1px solid #C8C3B8; padding-top: 0.5rem; }
+          .hf-print-urgency-critical { color: ${COLORS.sage}; font-weight: 700; }
+          .hf-print-urgency-soon     { color: ${COLORS.plumMid}; font-weight: 700; }
+          .hf-print-footer { margin-top: 2rem; font-size: 0.55rem; color: ${COLORS.plumMid}; letter-spacing: 0.05em; border-top: 1px solid ${COLORS.rule}; padding-top: 0.5rem; }
         }
         @media screen { #hf-print-calendar { display: none; } }
       `}</style>
@@ -611,7 +616,7 @@ export default function PredictiveMaintenancePage() {
           <>
             {/* Cross-property overdue overview */}
             {allPropertyReports.length >= 2 && (
-              <div style={{ border: `1px solid ${S.rule}`, marginBottom: "1.5rem", background: "#fff" }}>
+              <div style={{ border: `1px solid ${S.rule}`, marginBottom: "1.5rem", background: COLORS.white }}>
                 <div style={{ padding: "0.75rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: S.paper }}>
                   <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.inkLight }}>
                     All Properties — Overdue Overview
@@ -622,7 +627,7 @@ export default function PredictiveMaintenancePage() {
                     <button
                       key={String(p.id)}
                       onClick={() => setSelectedId(String(p.id))}
-                      style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.75rem 1.25rem", background: String(p.id) === selectedId ? "#FAF0ED" : "#fff", border: "none", cursor: "pointer", textAlign: "left", width: "100%" }}
+                      style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.75rem 1.25rem", background: String(p.id) === selectedId ? COLORS.blush : COLORS.white, border: "none", cursor: "pointer", textAlign: "left", width: "100%" }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontWeight: 600, fontSize: "0.875rem", color: S.ink, marginBottom: "0.2rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -643,7 +648,7 @@ export default function PredictiveMaintenancePage() {
                           </span>
                         )}
                         {soon > 0 && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.2rem 0.5rem", border: `1px solid #D4820E`, fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#D4820E" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", padding: "0.2rem 0.5rem", border: `1px solid ${COLORS.plumMid}`, fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid }}>
                             <Clock size={9} /> {soon}
                           </span>
                         )}
@@ -663,7 +668,7 @@ export default function PredictiveMaintenancePage() {
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(String(e.target.value))}
-                style={{ padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.65rem", background: "#fff", cursor: "pointer" }}
+                style={{ padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.65rem", background: COLORS.white, cursor: "pointer" }}
               >
                 {properties.map((p) => (
                   <option key={String(p.id)} value={String(p.id)}>{p.address}, {p.city} ({String(p.yearBuilt)})</option>
@@ -671,7 +676,7 @@ export default function PredictiveMaintenancePage() {
               </select>
               <button
                 onClick={() => navigate(`/properties/${selectedId}/systems`)}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
               >
                 <Settings2 size={12} />
                 {systemAgesService.hasAny(selectedId) ? "Edit system ages" : "Set system ages"}
@@ -699,7 +704,7 @@ export default function PredictiveMaintenancePage() {
               {report && (
                 <button
                   onClick={() => window.print()}
-                  style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
+                  style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
                 >
                   <Download size={12} /> Export PDF
                 </button>
@@ -723,13 +728,13 @@ export default function PredictiveMaintenancePage() {
               return (
                 <>
                   {zone.id !== "mixed" && (
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", padding: "0.65rem 0.875rem", background: "#EFF6FF", border: `1px solid #BFDBFE`, marginBottom: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", padding: "0.65rem 0.875rem", background: COLORS.sky, border: `1px solid ${COLORS.plum}40`, marginBottom: "0.75rem" }}>
                       <span style={{ fontSize: "0.85rem", lineHeight: 1 }}>🌡️</span>
                       <div>
-                        <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#1D4ED8", fontWeight: 700 }}>
+                        <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plum, fontWeight: 700 }}>
                           {zone.name} Climate
                         </span>
-                        <span style={{ fontFamily: S.sans, fontSize: "0.75rem", color: "#1E40AF", marginLeft: "0.5rem" }}>
+                        <span style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", color: COLORS.plumDark, marginLeft: "0.5rem" }}>
                           {adjustedSystems.join(", ")} lifespans adjusted for local conditions
                         </span>
                       </div>
@@ -806,7 +811,7 @@ export default function PredictiveMaintenancePage() {
                   {/* Pending tasks */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(16rem, 1fr))", gap: "1px", background: S.rule }}>
                     {pending.map((task) => (
-                      <div key={task.task} style={{ background: "#fff", padding: "1rem" }}>
+                      <div key={task.task} style={{ background: COLORS.white, padding: "1rem" }}>
                         <label style={{ display: "flex", alignItems: "flex-start", gap: "0.625rem", cursor: "pointer" }}>
                           <input
                             type="checkbox"
@@ -844,7 +849,7 @@ export default function PredictiveMaintenancePage() {
                       </summary>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(16rem, 1fr))", gap: "1px", background: S.rule, marginTop: "0.5rem" }}>
                         {done.map((task) => (
-                          <div key={task.task} style={{ background: "#F0F6F3", padding: "1rem", opacity: 0.7 }}>
+                          <div key={task.task} style={{ background: COLORS.sageLight, padding: "1rem", opacity: 0.7 }}>
                             <label style={{ display: "flex", alignItems: "flex-start", gap: "0.625rem", cursor: "pointer" }}>
                               <input
                                 type="checkbox"
@@ -870,7 +875,7 @@ export default function PredictiveMaintenancePage() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
                   <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>5-Year Maintenance Calendar</p>
-                  <button onClick={() => setActiveTab("systems")} style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, border: `1px solid ${S.rule}`, background: "#fff", padding: "0.35rem 0.75rem", cursor: "pointer" }}>
+                  <button onClick={() => setActiveTab("systems")} style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, border: `1px solid ${S.rule}`, background: COLORS.white, padding: "0.35rem 0.75rem", cursor: "pointer" }}>
                     <PlusCircle size={11} /> Add from systems
                   </button>
                 </div>
@@ -879,7 +884,7 @@ export default function PredictiveMaintenancePage() {
             )}
 
             {activeTab === "advisor" && property && (
-              <div style={{ border: `1px solid ${S.rule}`, background: "#fff", overflow: "hidden", height: "30rem", display: "flex", flexDirection: "column" }}>
+              <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, overflow: "hidden", height: "30rem", display: "flex", flexDirection: "column" }}>
                 <div style={{ padding: "0.875rem 1.25rem", borderBottom: `1px solid ${S.rule}`, display: "flex", alignItems: "center", gap: "0.5rem", background: S.paper }}>
                   <Bot size={14} color={S.rust} />
                   <span style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink }}>
@@ -951,7 +956,7 @@ export default function PredictiveMaintenancePage() {
                 <div className="hf-print-section-title">Annual Maintenance Tasks by Season</div>
                 {Object.entries(tasksBySeason).filter(([, tasks]) => tasks.length > 0).map(([season, tasks]) => (
                   <div key={season} style={{ marginBottom: "0.75rem" }}>
-                    <div style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.25rem" }}>{season}</div>
+                    <div style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.25rem" }}>{season}</div>
                     {tasks.map((t) => (
                       <div key={t.task} className="hf-print-row">
                         <span className="hf-print-row-label">□ {t.task}</span>

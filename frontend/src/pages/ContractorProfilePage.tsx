@@ -5,12 +5,17 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { contractorService, ContractorProfile } from "@/services/contractor";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const SPECIALTIES = [
@@ -146,9 +151,9 @@ export default function ContractorProfilePage() {
           ];
           const doneCount = checks.filter((c) => c.done).length;
           const pct       = Math.round((doneCount / checks.length) * 100);
-          const barColor  = pct === 100 ? S.sage : pct >= 67 ? "#D4820E" : S.rust;
+          const barColor  = pct === 100 ? S.sage : pct >= 67 ? COLORS.plumMid : S.rust;
           return (
-            <div style={{ marginBottom: "1.5rem", border: `1px solid ${S.rule}`, background: "#fff", padding: "1rem 1.25rem" }}>
+            <div style={{ marginBottom: "1.5rem", border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1rem 1.25rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
                 <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>
                   Profile Completeness
@@ -169,7 +174,7 @@ export default function ContractorProfilePage() {
                       padding: "0.15rem 0.5rem",
                       border: `1px solid ${c.done ? S.sage : S.rule}`,
                       color: c.done ? S.sage : S.inkLight,
-                      background: c.done ? "#F0F6F3" : "transparent",
+                      background: c.done ? COLORS.sageLight : "transparent",
                     }}
                   >
                     {c.done ? "✓ " : ""}{c.label}
@@ -187,7 +192,7 @@ export default function ContractorProfilePage() {
 
         {/* Verification badge for existing verified contractors */}
         {existing?.isVerified && (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", border: `1px solid ${S.sage}`, background: "#F0F6F3", marginBottom: "1.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", border: `1px solid ${S.sage}`, background: COLORS.sageLight, marginBottom: "1.25rem" }}>
             <ShieldCheck size={14} color={S.sage} />
             <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.sage }}>
               Verified contractor
@@ -195,7 +200,7 @@ export default function ContractorProfilePage() {
           </div>
         )}
 
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
 
           {/* Section: Identity */}
           <div>
@@ -314,7 +319,7 @@ export default function ContractorProfilePage() {
 
         {/* Trust score preview for existing profiles */}
         {existing && (
-          <div style={{ marginTop: "1.25rem", border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem", display: "flex", gap: "1.25rem", alignItems: "center" }}>
+          <div style={{ marginTop: "1.25rem", border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem", display: "flex", gap: "1.25rem", alignItems: "center", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
             <div style={{ width: "3.5rem", height: "3.5rem", border: `2px solid ${S.rust}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.2rem", lineHeight: 1 }}>{existing.trustScore}</span>
               <span style={{ fontFamily: S.mono, fontSize: "0.5rem", color: S.inkLight }}>/100</span>

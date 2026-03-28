@@ -8,12 +8,17 @@ import { recurringService } from "@/services/recurringService";
 import { computeScore, getScoreGrade } from "@/services/scoreService";
 import type { Property } from "@/services/property";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 interface GenerateReportModalProps {
@@ -133,9 +138,11 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{
-        background: "#fff", width: "100%", maxWidth: "30rem",
+        background: COLORS.white, width: "100%", maxWidth: "30rem",
         maxHeight: "90vh", overflow: "auto",
         border: `1px solid ${S.rule}`,
+        borderRadius: RADIUS.card,
+        boxShadow: SHADOWS.modal,
       }}>
 
         {/* Header */}
@@ -143,22 +150,23 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
           display: "flex", justifyContent: "space-between", alignItems: "flex-start",
           padding: "1.5rem 1.5rem 1.25rem",
           borderBottom: `1px solid ${S.rule}`,
-          background: S.ink,
+          background: COLORS.plum,
+          borderRadius: `${RADIUS.card}px ${RADIUS.card}px 0 0`,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-            <Shield size={16} color={S.rust} />
+            <Shield size={16} color={COLORS.sage} />
             <div>
-              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.2rem" }}>
+              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.2rem" }}>
                 HomeFax Report
               </p>
-              <h2 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.1rem", lineHeight: 1, color: S.paper }}>
+              <h2 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.1rem", lineHeight: 1, color: COLORS.white }}>
                 {property.address}
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7268", padding: "0.25rem", flexShrink: 0, marginLeft: "0.75rem" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, padding: "0.25rem", flexShrink: 0, marginLeft: "0.75rem" }}
           >
             <X size={16} />
           </button>
@@ -173,7 +181,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
             </p>
 
             {/* Expiry picker */}
-            <div style={{ display: "flex", gap: "1px", background: S.rule, marginBottom: "1rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
               {EXPIRY_OPTIONS.map((opt) => (
                 <button
                   key={String(opt.value)}
@@ -181,9 +189,11 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                   style={{
                     flex: 1, padding: "0.45rem 0",
                     fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                    border: "none", cursor: "pointer",
-                    background: expiryDays === opt.value ? S.ink : "#fff",
-                    color:      expiryDays === opt.value ? S.paper : S.inkLight,
+                    border: `1px solid ${expiryDays === opt.value ? COLORS.plum : S.rule}`,
+                    borderRadius: RADIUS.sm,
+                    cursor: "pointer",
+                    background: expiryDays === opt.value ? COLORS.plum : COLORS.white,
+                    color:      expiryDays === opt.value ? COLORS.white : S.inkLight,
                   }}
                 >
                   {opt.label}
@@ -192,7 +202,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
             </div>
 
             {/* Disclosure toggles */}
-            <div style={{ border: `1px solid ${S.rule}`, marginBottom: "1rem" }}>
+            <div style={{ border: `1px solid ${S.rule}`, borderRadius: RADIUS.sm, marginBottom: "1rem", overflow: "hidden" }}>
               <div style={{ padding: "0.5rem 0.875rem", borderBottom: `1px solid ${S.rule}`, display: "flex", alignItems: "center", gap: "0.375rem" }}>
                 <EyeOff size={11} color={S.inkLight} />
                 <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>
@@ -216,7 +226,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                     type="checkbox"
                     checked={disclosure[key]}
                     onChange={(e) => setDisclosure((d) => ({ ...d, [key]: e.target.checked }))}
-                    style={{ accentColor: S.rust, width: "0.875rem", height: "0.875rem" }}
+                    style={{ accentColor: COLORS.sage, width: "0.875rem", height: "0.875rem" }}
                   />
                 </label>
               ))}
@@ -240,14 +250,14 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
 
           {/* Share preview — shown immediately after generation */}
           {freshLink && previewStats && (
-            <div style={{ border: `1px solid ${S.sage}`, background: "#F0F6F3" }}>
-              <div style={{ padding: "0.75rem 1rem", borderBottom: `1px solid ${S.sage}30`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.sage }}>
+            <div style={{ border: `1px solid ${COLORS.sage}`, background: COLORS.sageLight, borderRadius: RADIUS.sm, overflow: "hidden" }}>
+              <div style={{ padding: "0.75rem 1rem", borderBottom: `1px solid ${COLORS.sageMid}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.sage }}>
                   Link ready to share
                 </span>
                 <button
                   onClick={() => setFreshLink(null)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: S.sage, padding: 0 }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.sage, padding: 0 }}
                 >
                   ×
                 </button>
@@ -276,9 +286,9 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                   onClick={() => { handleCopy(freshLink.token); setFreshLink(null); }}
                   style={{
                     width: "100%", padding: "0.6rem",
-                    background: S.ink, color: "#F4F1EB",
+                    background: COLORS.plum, color: COLORS.white,
                     fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase",
-                    border: "none", cursor: "pointer",
+                    border: "none", cursor: "pointer", borderRadius: RADIUS.sm,
                     display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem",
                   }}
                 >
@@ -298,13 +308,13 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
               <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.75rem" }}>
                 Active links ({activeLinks.length})
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {activeLinks.map((link) => {
                   const ld = getLinkDisclosure(link.token);
                   const hiddenCount = Object.values(ld).filter(Boolean).length;
                   const isExpanded = expandedToken === link.token;
                   return (
-                    <div key={link.token} style={{ background: "#fff" }}>
+                    <div key={link.token} style={{ background: COLORS.white, border: `1px solid ${S.rule}`, borderRadius: RADIUS.sm, overflow: "hidden" }}>
                       <div style={{ padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
@@ -319,7 +329,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                               {link.viewCount} view{link.viewCount !== 1 ? "s" : ""}
                             </span>
                             {hiddenCount > 0 && (
-                              <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: S.rust, background: "#FAF0ED", padding: "0.1rem 0.35rem", border: `1px solid ${S.rust}30` }}>
+                              <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.sage, background: COLORS.sageLight, padding: "0.1rem 0.35rem", border: `1px solid ${COLORS.sageMid}`, borderRadius: RADIUS.sm }}>
                                 {hiddenCount} field{hiddenCount > 1 ? "s" : ""} hidden
                               </span>
                             )}
@@ -332,8 +342,9 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                             style={{
                               display: "inline-flex", alignItems: "center",
                               padding: "0.35rem 0.5rem",
-                              border: `1px solid ${isExpanded ? S.ink : S.rule}`,
-                              color: isExpanded ? S.ink : S.inkLight,
+                              border: `1px solid ${isExpanded ? COLORS.plum : S.rule}`,
+                              borderRadius: RADIUS.sm,
+                              color: isExpanded ? COLORS.plum : S.inkLight,
                               background: "none", cursor: "pointer",
                             }}
                           >
@@ -346,8 +357,9 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                               display: "inline-flex", alignItems: "center", gap: "0.3rem",
                               padding: "0.35rem 0.75rem",
                               fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                              border: `1px solid ${copiedToken === link.token ? S.sage : S.rule}`,
-                              color:  copiedToken === link.token ? S.sage : S.inkLight,
+                              border: `1px solid ${copiedToken === link.token ? COLORS.sage : S.rule}`,
+                              borderRadius: RADIUS.sm,
+                              color:  copiedToken === link.token ? COLORS.sage : S.inkLight,
                               background: "none", cursor: "pointer",
                             }}
                           >
@@ -361,6 +373,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                               display: "inline-flex", alignItems: "center",
                               padding: "0.35rem 0.5rem",
                               border: `1px solid ${S.rule}`, color: S.rust,
+                              borderRadius: RADIUS.sm,
                               background: "none", cursor: "pointer",
                             }}
                           >
@@ -370,7 +383,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                       </div>
                       {/* Per-link disclosure toggles */}
                       {isExpanded && (
-                        <div style={{ borderTop: `1px solid ${S.rule}`, background: "#FAFAF8", padding: "0.75rem 1rem" }}>
+                        <div style={{ borderTop: `1px solid ${S.rule}`, background: COLORS.sageLight, padding: "0.75rem 1rem" }}>
                           <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>
                             Hide from viewer for this link
                           </p>
@@ -388,7 +401,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                                   type="checkbox"
                                   checked={ld[key]}
                                   onChange={(e) => setLinkField(link.token, key, e.target.checked)}
-                                  style={{ accentColor: S.rust, width: "0.75rem", height: "0.75rem" }}
+                                  style={{ accentColor: COLORS.sage, width: "0.75rem", height: "0.75rem" }}
                                 />
                                 <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.ink }}>{label}</span>
                               </label>

@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { jobService, type Job } from "@/services/job";
 import { VoiceAgent } from "./VoiceAgent";
+import { COLORS, FONTS } from "@/theme";
 
 // ─── Activity event types ──────────────────────────────────────────────────────
 
@@ -22,21 +23,18 @@ function deriveEvents(properties: any[], jobs: Job[]): ActivityEvent[] {
   const events: ActivityEvent[] = [];
   const now = Date.now();
 
-  // Properties pending review
   for (const p of properties) {
     if (p.verificationLevel === "PendingReview") {
       events.push({ id: `pv-${p.id}`, type: "pending_verification", title: "Verification pending", detail: `${p.address} — under review`, href: `/properties/${p.id}`, timestamp: Number(p.createdAt ?? now) / 1_000_000 });
     }
   }
 
-  // Jobs pending signature
   for (const j of jobs) {
     if (!j.verified && !j.homeownerSigned) {
       events.push({ id: `sig-${j.id}`, type: "job_pending_sig", title: "Awaiting your signature", detail: `${j.serviceType} · ${j.date}`, href: `/properties/${j.propertyId}`, timestamp: j.createdAt ?? now });
     }
   }
 
-  // Warranties expiring within 90 days
   for (const j of jobs) {
     if (!j.warrantyMonths || j.warrantyMonths <= 0) continue;
     const expiry   = new Date(j.date).getTime() + j.warrantyMonths * 30.44 * 86400000;
@@ -46,7 +44,6 @@ function deriveEvents(properties: any[], jobs: Job[]): ActivityEvent[] {
     }
   }
 
-  // 5 most recent jobs
   const recent = [...jobs].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 5);
   for (const j of recent) {
     if (!events.some((e) => e.id.startsWith(`sig-${j.id}`) || e.id.startsWith(`wty-${j.id}`))) {
@@ -75,7 +72,6 @@ export function Layout({ children }: LayoutProps) {
     return parseInt(localStorage.getItem("homefax_feed_read") ?? "0", 10);
   });
 
-  // Load jobs lazily when feed is first opened
   useEffect(() => {
     if (!feedOpen || feedLoaded) return;
     jobService.getAll().then(setFeedJobs).catch(() => {}).finally(() => setFeedLoaded(true));
@@ -110,28 +106,26 @@ export function Layout({ children }: LayoutProps) {
       ];
 
   const linkStyle = (active: boolean): React.CSSProperties => ({
-    fontFamily: "'IBM Plex Mono', monospace",
-    fontSize: "0.688rem",
-    fontWeight: 500,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
+    fontFamily: FONTS.sans,
+    fontSize: "0.875rem",
+    fontWeight: active ? 600 : 500,
     textDecoration: "none",
-    color: active ? "#C94C2E" : "#7A7268",
-    padding: "0 1.25rem",
+    color: active ? COLORS.sage : COLORS.plumMid,
+    padding: "0 1.125rem",
     height: "100%",
     display: "flex",
     alignItems: "center",
-    borderRight: "1px solid #C8C3B8",
     transition: "color 0.15s",
+    borderBottom: active ? `2px solid ${COLORS.sage}` : "2px solid transparent",
   });
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#F4F1EB" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: COLORS.white }}>
       {/* Nav */}
       <header
         style={{
-          backgroundColor: "#F4F1EB",
-          borderBottom: "1px solid #C8C3B8",
+          backgroundColor: COLORS.white,
+          borderBottom: `1px solid ${COLORS.rule}`,
           position: "sticky",
           top: 0,
           zIndex: 50,
@@ -142,6 +136,9 @@ export function Layout({ children }: LayoutProps) {
             display: "flex",
             alignItems: "stretch",
             height: "3.5rem",
+            maxWidth: "1280px",
+            margin: "0 auto",
+            padding: "0 1.5rem",
           }}
         >
           {/* Logo */}
@@ -150,20 +147,19 @@ export function Layout({ children }: LayoutProps) {
             style={{
               display: "flex",
               alignItems: "center",
-              padding: "0 1.5rem",
-              borderRight: "1px solid #C8C3B8",
+              paddingRight: "1.75rem",
+              marginRight: "0.5rem",
               textDecoration: "none",
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontWeight: 500,
-              fontSize: "0.875rem",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#0E0E0C",
+              fontFamily: FONTS.serif,
+              fontWeight: 900,
+              fontSize: "1.1rem",
+              letterSpacing: "-0.5px",
+              color: COLORS.plum,
               whiteSpace: "nowrap",
               flexShrink: 0,
             }}
           >
-            Home<span style={{ color: "#C94C2E" }}>Fax</span>
+            Home<span style={{ color: COLORS.sage }}>Fax</span>
           </Link>
 
           {/* Desktop nav links */}
@@ -181,12 +177,37 @@ export function Layout({ children }: LayoutProps) {
           {/* Activity feed bell */}
           <button
             onClick={openFeed}
-            style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "3.5rem", borderLeft: "1px solid #C8C3B8", borderRight: "none", borderTop: "none", borderBottom: "none", background: "none", cursor: "pointer", flexShrink: 0 }}
+            style={{
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "2.75rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
             aria-label="Activity feed"
           >
-            <Bell size={16} color={feedOpen ? "#C94C2E" : "#7A7268"} />
+            <Bell size={18} color={feedOpen ? COLORS.sage : COLORS.plumMid} />
             {unread > 0 && (
-              <span style={{ position: "absolute", top: "0.625rem", right: "0.5rem", width: "0.875rem", height: "0.875rem", background: "#C94C2E", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.45rem", color: "#fff", fontWeight: 700 }}>
+              <span style={{
+                position: "absolute",
+                top: "0.5rem",
+                right: "0.375rem",
+                width: "0.875rem",
+                height: "0.875rem",
+                background: COLORS.sage,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: FONTS.mono,
+                fontSize: "0.45rem",
+                color: COLORS.white,
+                fontWeight: 700,
+              }}>
                 {unread > 9 ? "9+" : unread}
               </span>
             )}
@@ -195,14 +216,14 @@ export function Layout({ children }: LayoutProps) {
           {/* Desktop user area */}
           <div
             className="rsp-nav-user"
-            style={{ marginLeft: "auto", padding: "0 1.5rem", borderLeft: "1px solid #C8C3B8" }}
+            style={{ paddingLeft: "1rem" }}
           >
             {principal && (
               <span style={{
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: FONTS.mono,
                 fontSize: "0.65rem",
-                color: "#7A7268",
-                letterSpacing: "0.06em",
+                color: COLORS.plumMid,
+                letterSpacing: "0.04em",
               }}>
                 {principal.slice(0, 8)}…
               </span>
@@ -210,25 +231,24 @@ export function Layout({ children }: LayoutProps) {
             <button
               onClick={logout}
               style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: "0.688rem",
+                fontFamily: FONTS.sans,
+                fontSize: "0.8rem",
                 fontWeight: 500,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#7A7268",
+                color: COLORS.plumMid,
                 background: "none",
-                border: "1px solid #C8C3B8",
-                padding: "0.375rem 0.875rem",
+                border: `1.5px solid ${COLORS.rule}`,
+                padding: "0.35rem 1rem",
+                borderRadius: 100,
                 cursor: "pointer",
                 transition: "color 0.15s, border-color 0.15s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = "#C94C2E";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#C94C2E";
+                (e.currentTarget as HTMLButtonElement).style.color = COLORS.plum;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = COLORS.plum;
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = "#7A7268";
-                (e.currentTarget as HTMLButtonElement).style.borderColor = "#C8C3B8";
+                (e.currentTarget as HTMLButtonElement).style.color = COLORS.plumMid;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = COLORS.rule;
               }}
             >
               Sign Out
@@ -239,10 +259,10 @@ export function Layout({ children }: LayoutProps) {
           <button
             className="rsp-hamburger"
             onClick={() => setMenuOpen((o) => !o)}
-            style={{ marginLeft: "auto", padding: "0 1rem", borderLeft: "1px solid #C8C3B8" }}
+            style={{ marginLeft: "auto", padding: "0 0.5rem" }}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
           >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            {menuOpen ? <X size={20} color={COLORS.plum} /> : <Menu size={20} color={COLORS.plum} />}
           </button>
         </div>
 
@@ -264,9 +284,9 @@ export function Layout({ children }: LayoutProps) {
           <div className="rsp-mobile-divider" />
           {principal && (
             <span style={{
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: FONTS.mono,
               fontSize: "0.65rem",
-              color: "#7A7268",
+              color: COLORS.plumMid,
               padding: "0.5rem 0",
             }}>
               {principal.slice(0, 16)}…
@@ -275,7 +295,7 @@ export function Layout({ children }: LayoutProps) {
           <button
             className="rsp-mobile-link"
             onClick={() => { logout(); setMenuOpen(false); }}
-            style={{ color: "#C94C2E", borderBottom: "none" }}
+            style={{ color: COLORS.plum, borderBottom: "none" }}
           >
             Sign Out
           </button>
@@ -294,23 +314,45 @@ export function Layout({ children }: LayoutProps) {
           {/* Backdrop */}
           <div
             onClick={() => setFeedOpen(false)}
-            style={{ position: "fixed", inset: 0, background: "rgba(14,14,12,0.35)", zIndex: 200 }}
+            style={{ position: "fixed", inset: 0, background: "rgba(46,37,64,0.3)", zIndex: 200 }}
           />
           {/* Drawer */}
           <div style={{
-            position: "fixed", top: 0, right: 0, bottom: 0, width: "22rem", maxWidth: "100vw",
-            background: "#F4F1EB", borderLeft: "1px solid #C8C3B8", zIndex: 201,
-            display: "flex", flexDirection: "column", overflowY: "auto",
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: "22rem",
+            maxWidth: "100vw",
+            background: COLORS.white,
+            borderLeft: `1px solid ${COLORS.rule}`,
+            zIndex: 201,
+            display: "flex",
+            flexDirection: "column",
+            overflowY: "auto",
           }}>
             {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", borderBottom: "1px solid #C8C3B8", background: "#fff", flexShrink: 0 }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "1rem 1.25rem",
+              borderBottom: `1px solid ${COLORS.rule}`,
+              background: COLORS.white,
+              flexShrink: 0,
+            }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <Bell size={14} color="#C94C2E" />
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#0E0E0C", fontWeight: 600 }}>
+                <Bell size={14} color={COLORS.sage} />
+                <span style={{
+                  fontFamily: FONTS.sans,
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: COLORS.plum,
+                }}>
                   Activity
                 </span>
               </div>
-              <button onClick={() => setFeedOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7268" }}>
+              <button onClick={() => setFeedOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid }}>
                 <X size={16} />
               </button>
             </div>
@@ -322,19 +364,19 @@ export function Layout({ children }: LayoutProps) {
               </div>
             ) : events.length === 0 ? (
               <div style={{ padding: "3rem 1.5rem", textAlign: "center" }}>
-                <CheckCircle2 size={32} color="#C8C3B8" style={{ margin: "0 auto 0.75rem" }} />
-                <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.65rem", letterSpacing: "0.08em", color: "#7A7268" }}>
+                <CheckCircle2 size={32} color={COLORS.sageMid} style={{ margin: "0 auto 0.75rem" }} />
+                <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
                   Nothing to catch up on.
                 </p>
               </div>
             ) : (
               <div style={{ flex: 1 }}>
-                {events.map((event, i) => {
+                {events.map((event) => {
                   const icons: Record<ActivityEvent["type"], React.ReactNode> = {
-                    pending_verification: <ShieldAlert size={14} color="#D4820E" />,
-                    warranty_expiring:    <AlertTriangle size={14} color="#C94C2E" />,
-                    job_pending_sig:      <Clock size={14} color="#C94C2E" />,
-                    recent_job:           <Wrench size={14} color="#7A7268" />,
+                    pending_verification: <ShieldAlert size={14} color={COLORS.plumMid} />,
+                    warranty_expiring:    <AlertTriangle size={14} color={COLORS.sage} />,
+                    job_pending_sig:      <Clock size={14} color={COLORS.sage} />,
+                    recent_job:           <Wrench size={14} color={COLORS.plumMid} />,
                   };
                   const isUnread = event.timestamp > lastReadAt;
                   return (
@@ -342,22 +384,25 @@ export function Layout({ children }: LayoutProps) {
                       key={event.id}
                       onClick={() => { setFeedOpen(false); navigate(event.href); }}
                       style={{
-                        display: "flex", alignItems: "flex-start", gap: "0.875rem",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "0.875rem",
                         padding: "0.875rem 1.25rem",
-                        borderBottom: "1px solid #C8C3B8",
-                        background: isUnread ? "#fff" : "transparent",
+                        borderBottom: `1px solid ${COLORS.rule}`,
+                        background: isUnread ? COLORS.sageLight : "transparent",
                         cursor: "pointer",
+                        transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#FAF0ED"; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = isUnread ? "#fff" : "transparent"; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = COLORS.sageLight; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = isUnread ? COLORS.sageLight : "transparent"; }}
                     >
                       <div style={{ flexShrink: 0, marginTop: "0.1rem" }}>{icons[event.type]}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "0.125rem" }}>
-                          <p style={{ fontSize: "0.813rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{event.title}</p>
-                          {isUnread && <span style={{ width: "6px", height: "6px", background: "#C94C2E", borderRadius: "50%", flexShrink: 0 }} />}
+                          <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 500, color: COLORS.plum, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{event.title}</p>
+                          {isUnread && <span style={{ width: "6px", height: "6px", background: COLORS.sage, borderRadius: "50%", flexShrink: 0 }} />}
                         </div>
-                        <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.04em", color: "#7A7268", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: COLORS.plumMid, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {event.detail}
                         </p>
                       </div>

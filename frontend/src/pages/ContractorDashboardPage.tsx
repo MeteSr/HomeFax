@@ -10,13 +10,18 @@ import { jobService, Job } from "@/services/job";
 import { useAuthStore } from "@/store/authStore";
 import { isNewSince, countNew } from "@/services/notifications";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  amber: "#D4820E",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  amber:    COLORS.plumMid,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -36,7 +41,7 @@ const URGENCY_COLOR: Record<string, string> = {
 };
 
 const URGENCY_BG: Record<string, string> = {
-  emergency: "#FAF0ED", high: "#FEF3DC", medium: S.paper, low: "#F0F6F3",
+  emergency: COLORS.blush, high: COLORS.butter, medium: S.paper, low: COLORS.sageLight,
 };
 
 function urgencyVariant(u: string): "error" | "warning" | "default" | "success" {
@@ -83,7 +88,7 @@ function SubmitQuoteModal({ request, onSubmit, onClose }: SubmitModalProps) {
       onClick={onClose}
     >
       <div
-        style={{ background: "#fff", padding: "1.5rem", maxWidth: "28rem", width: "100%", border: `1px solid ${S.rule}` }}
+        style={{ background: COLORS.white, padding: "1.5rem", maxWidth: "28rem", width: "100%", border: `1px solid ${S.rule}`, borderRadius: RADIUS.card, boxShadow: SHADOWS.modal }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -136,7 +141,7 @@ function SubmitQuoteModal({ request, onSubmit, onClose }: SubmitModalProps) {
         <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.25rem" }}>
           <button
             onClick={onClose}
-            style={{ flex: 1, padding: "0.6rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", color: S.inkLight }}
+            style={{ flex: 1, padding: "0.6rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", color: S.inkLight }}
           >
             Cancel
           </button>
@@ -172,7 +177,8 @@ function LeadCard({ request, alreadyQuoted, isNew, onQuote }: LeadCardProps) {
   return (
     <div style={{
       border: `1px solid ${request.urgency === "emergency" ? S.rust : S.rule}`,
-      background: request.urgency === "emergency" ? "#FFFAF9" : "#fff",
+      background: request.urgency === "emergency" ? COLORS.blush : COLORS.white,
+      borderRadius: RADIUS.sm, boxShadow: SHADOWS.card,
     }}>
       {/* Summary row */}
       <div
@@ -318,11 +324,11 @@ export default function ContractorDashboardPage() {
         <div style={{
           position: "fixed", inset: 0, zIndex: 9999,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: "rgba(14,14,12,0.45)", pointerEvents: "none",
+          background: `rgba(46,37,64,0.45)`, pointerEvents: "none",
         }}>
           <div style={{
             background: S.paper, border: `2px solid ${S.sage}`, padding: "2.5rem 3rem",
-            textAlign: "center", maxWidth: "22rem",
+            textAlign: "center", maxWidth: "22rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.modal,
           }}>
             <CheckCircle2 size={36} color={S.sage} style={{ marginBottom: "0.75rem" }} />
             <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: S.sage, marginBottom: "0.3rem" }}>
@@ -357,12 +363,12 @@ export default function ContractorDashboardPage() {
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
             <button
               onClick={() => navigate("/contractor/profile")}
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
             >
               <UserCog size={12} /> {profile ? "Edit Profile" : "Set Up Profile"}
             </button>
             {newLeadsCount > 0 && (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.rust}`, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.rust, background: "#FAF0ED" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.rust}`, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.rust, background: COLORS.blush }}>
                 <Zap size={12} /> {newLeadsCount} open lead{newLeadsCount !== 1 ? "s" : ""}
               </div>
             )}
@@ -371,14 +377,14 @@ export default function ContractorDashboardPage() {
 
         {/* Profile setup banner */}
         {!loading && !profile && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", border: `1px solid ${S.rust}`, background: "#FAF0ED", padding: "1rem 1.25rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", border: `1px solid ${S.rust}`, background: COLORS.blush, padding: "1rem 1.25rem", marginBottom: "2rem", flexWrap: "wrap" }}>
             <div>
               <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.rust, marginBottom: "0.2rem" }}>Profile incomplete</p>
               <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>Set up your contractor profile to appear in homeowner searches and receive leads.</p>
             </div>
             <button
               onClick={() => navigate("/contractor/profile")}
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", background: S.rust, color: "#F4F1EB", border: "none", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", background: S.rust, color: COLORS.white, border: "none", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap" }}
             >
               <UserCog size={12} /> Set up now
             </button>
@@ -399,9 +405,9 @@ export default function ContractorDashboardPage() {
             const isAccent    = !!(stat as any).accent;
             const isAlert     = !!(stat as any).alert;
             const isHighlight = !!(stat as any).highlight;
-            const bg    = isAccent ? S.ink : isAlert ? "#FAF0ED" : isHighlight ? "#F0F6F3" : "#fff";
-            const color = isAccent ? "#7A7268" : isAlert ? S.rust : isHighlight ? S.sage : S.inkLight;
-            const valColor = isAccent ? "#F4F1EB" : isAlert ? S.rust : isHighlight ? S.sage : S.ink;
+            const bg    = isAccent ? S.ink : isAlert ? COLORS.blush : isHighlight ? COLORS.sageLight : COLORS.white;
+            const color = isAccent ? COLORS.plumMid : isAlert ? S.rust : isHighlight ? S.sage : S.inkLight;
+            const valColor = isAccent ? COLORS.white : isAlert ? S.rust : isHighlight ? S.sage : S.ink;
             return (
               <div key={stat.label} style={{ padding: "1.5rem", borderRight: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`, background: bg }}>
                 <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color, marginBottom: "0.625rem" }}>
@@ -425,9 +431,9 @@ export default function ContractorDashboardPage() {
                 <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.rust, marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
                   <PenLine size={12} /> Awaiting your signature ({pendingJobs.length})
                 </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                   {pendingJobs.map((job) => (
-                    <div key={job.id} style={{ background: "#fff", padding: "1.25rem", borderLeft: `3px solid ${S.rust}` }}>
+                    <div key={job.id} style={{ background: COLORS.white, padding: "1.25rem", borderLeft: `3px solid ${S.rust}`, borderRadius: RADIUS.sm, boxShadow: SHADOWS.card }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <div>
                           <p style={{ fontWeight: 600, fontSize: "0.875rem", marginBottom: "0.125rem" }}>{job.serviceType}</p>
@@ -461,7 +467,7 @@ export default function ContractorDashboardPage() {
               <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
                 Open Requests
               </p>
-              <div style={{ display: "flex", gap: "1px", background: S.rule }}>
+              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
                 {SERVICE_TYPES.map((t) => (
                   <button
                     key={t}
@@ -470,8 +476,9 @@ export default function ContractorDashboardPage() {
                       padding: "0.35rem 0.75rem",
                       fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
                       border: "none", cursor: "pointer",
-                      background: filterType === t ? S.ink : "#fff",
-                      color:      filterType === t ? "#F4F1EB" : S.inkLight,
+                      background: filterType === t ? S.ink : COLORS.white,
+                      color:      filterType === t ? COLORS.white : S.inkLight,
+                      borderRadius: RADIUS.sm,
                     }}
                   >
                     {t}
@@ -499,7 +506,7 @@ export default function ContractorDashboardPage() {
                 )}
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {sorted.map((req) => (
                   <LeadCard
                     key={req.id}
@@ -524,7 +531,7 @@ export default function ContractorDashboardPage() {
                 {showBidHistory ? <ChevronUp size={13} color={S.inkLight} /> : <ChevronDown size={13} color={S.inkLight} />}
               </button>
               {showBidHistory && (
-                <div style={{ border: `1px solid ${S.rule}`, overflow: "hidden" }}>
+                <div style={{ border: `1px solid ${S.rule}`, overflow: "hidden", borderRadius: RADIUS.card }}>
                   <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: S.mono, fontSize: "0.6rem" }}>
                     <thead>
                       <tr style={{ background: S.paper }}>
@@ -538,9 +545,9 @@ export default function ContractorDashboardPage() {
                     <tbody>
                       {[...myBids].sort((a, b) => b.createdAt - a.createdAt).map((bid, i) => {
                         const statusColor = bid.status === "accepted" ? S.sage : bid.status === "rejected" ? S.rust : S.inkLight;
-                        const statusBg    = bid.status === "accepted" ? "#F0F6F3" : bid.status === "rejected" ? "#FAF0ED" : "#fff";
+                        const statusBg    = bid.status === "accepted" ? COLORS.sageLight : bid.status === "rejected" ? COLORS.blush : COLORS.white;
                         return (
-                          <tr key={bid.id} style={{ background: i % 2 === 0 ? "#fff" : S.paper, borderBottom: `1px solid ${S.rule}` }}>
+                          <tr key={bid.id} style={{ background: i % 2 === 0 ? COLORS.white : S.paper, borderBottom: `1px solid ${S.rule}` }}>
                             <td style={{ padding: "0.625rem 0.875rem", color: S.ink }}>{bid.requestId}</td>
                             <td style={{ padding: "0.625rem 0.875rem", color: S.ink, fontWeight: 600 }}>${(bid.amount / 100).toLocaleString()}</td>
                             <td style={{ padding: "0.625rem 0.875rem", color: S.inkLight }}>{bid.timeline}d</td>
@@ -562,7 +569,7 @@ export default function ContractorDashboardPage() {
           </div>
 
           {/* Sidebar: Trust Score */}
-          <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
+          <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
             <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
               <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
                 Trust Score

@@ -12,12 +12,17 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { contractorService, ContractorProfile, JobCredential } from "@/services/contractor";
 import toast from "react-hot-toast";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -31,9 +36,9 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
           onClick={() => onChange(n)}
           onMouseEnter={() => setHover(n)}
           onMouseLeave={() => setHover(0)}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: "0.125rem", color: n <= (hover || value) ? "#C9A84C" : S.rule }}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "0.125rem", color: n <= (hover || value) ? COLORS.plumMid : S.rule }}
         >
-          <Star size={20} fill={n <= (hover || value) ? "#C9A84C" : "none"} />
+          <Star size={20} fill={n <= (hover || value) ? COLORS.plumMid : "none"} />
         </button>
       ))}
     </div>
@@ -120,18 +125,18 @@ export default function ContractorPublicPage() {
         </button>
 
         {/* Profile card */}
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", marginBottom: "1.5rem" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, marginBottom: "1.5rem" }}>
           <div style={{ background: S.ink, padding: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
               <div>
-                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.375rem" }}>
+                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.375rem" }}>
                   {contractor.specialty}
                 </p>
                 <h1 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: S.paper, marginBottom: "0.375rem" }}>
                   {contractor.name}
                 </h1>
                 {contractor.serviceArea && (
-                  <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: "#7A7268" }}>
+                  <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
                     {contractor.serviceArea}
                   </p>
                 )}
@@ -139,7 +144,7 @@ export default function ContractorPublicPage() {
               <div style={{ textAlign: "right", flexShrink: 0 }}>
                 <div style={{ width: "3rem", height: "3rem", border: `2px solid ${S.rust}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.1rem", lineHeight: 1, color: S.paper }}>{contractor.trustScore}</span>
-                  <span style={{ fontFamily: S.mono, fontSize: "0.45rem", color: "#7A7268" }}>/100</span>
+                  <span style={{ fontFamily: S.mono, fontSize: "0.45rem", color: COLORS.plumMid }}>/100</span>
                 </div>
               </div>
             </div>
@@ -185,7 +190,7 @@ export default function ContractorPublicPage() {
         </div>
 
         {/* Request a Quote CTA */}
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>
               Ready to hire?
@@ -196,15 +201,15 @@ export default function ContractorPublicPage() {
           </div>
           <button
             onClick={() => navigate("/quotes/new", { state: { prefill: { serviceType: contractor.specialty, contractorName: contractor.name } } })}
-            style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 1.25rem", background: S.rust, color: "#fff", border: "none", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 1.25rem", background: S.rust, color: COLORS.white, border: "none", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
           >
             <MessageSquare size={13} /> Request Quote
           </button>
         </div>
 
         {/* Verified Work Portfolio */}
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", marginBottom: "1.5rem" }}>
-          <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: "#FAFAF8", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, marginBottom: "1.5rem" }}>
+          <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: COLORS.white, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
               Verified Work Portfolio
             </p>
@@ -223,13 +228,13 @@ export default function ContractorPublicPage() {
               </p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem" }}>
               {credentials.slice().sort((a, b) => b.verifiedAt - a.verifiedAt).map((cred) => (
                 <div
                   key={cred.id}
-                  style={{ background: "#fff", padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem" }}
+                  style={{ background: COLORS.white, padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem", border: `1px solid ${S.rule}`, borderRadius: 0 }}
                 >
-                  <div style={{ width: "2rem", height: "2rem", border: `1px solid ${S.sage}`, background: "#F0F6F3", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: "2rem", height: "2rem", border: `1px solid ${S.sage}`, background: COLORS.sageLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Award size={12} color={S.sage} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -252,8 +257,8 @@ export default function ContractorPublicPage() {
         </div>
 
         {/* Review form */}
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
-          <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: "#FAFAF8" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white }}>
+          <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: COLORS.white }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
               Leave a Review
             </p>

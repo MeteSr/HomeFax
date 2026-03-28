@@ -13,12 +13,17 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { propertyService, Property } from "@/services/property";
 import { jobService, Job, INSURANCE_SERVICE_TYPES } from "@/services/job";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 function fmtDate(iso: string): string {
@@ -87,7 +92,7 @@ export default function InsuranceDefensePage() {
             Print / Export PDF
           </Button>
         </div>
-        <div style={{ padding: "0.75rem 1rem", background: "#F0F6F3", border: "1px solid #B5D4C8", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.625rem" }}>
+        <div style={{ padding: "0.75rem 1rem", background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}`, marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.625rem" }}>
           <ShieldCheck size={14} color={S.sage} />
           <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: S.sage }}>
             This report is formatted for insurer submission. Use <strong>Print → Save as PDF</strong> to generate a file.
@@ -113,7 +118,7 @@ export default function InsuranceDefensePage() {
                 Generated {generatedAt} · Blockchain-verified records
               </p>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", border: `1px solid ${S.sage}`, background: "#F0F6F3" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", border: `1px solid ${S.sage}`, background: COLORS.sageLight }}>
               <ShieldCheck size={18} color={S.sage} />
               <div>
                 <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.sage }}>Insurance Defense</p>
@@ -144,7 +149,7 @@ export default function InsuranceDefensePage() {
                 { label: "Total Documented Value",     value: fmt(totalValue) },
                 { label: "Properties Covered",         value: String(byProperty.length) },
               ].map((stat, i, arr) => (
-                <div key={stat.label} style={{ flex: 1, padding: "1.25rem", borderRight: i < arr.length - 1 ? `1px solid ${S.rule}` : "none", textAlign: "center", background: "#fff" }}>
+                <div key={stat.label} style={{ flex: 1, padding: "1.25rem", borderRight: i < arr.length - 1 ? `1px solid ${S.rule}` : "none", textAlign: "center", background: COLORS.white }}>
                   <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, marginBottom: "0.25rem" }}>{stat.value}</p>
                   <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>{stat.label}</p>
                 </div>
@@ -163,7 +168,7 @@ export default function InsuranceDefensePage() {
                     <div key={type} style={{
                       display: "flex", alignItems: "center", gap: "0.375rem",
                       padding: "0.3rem 0.75rem", border: `1px solid ${hasRecord ? S.sage : S.rule}`,
-                      background: hasRecord ? "#F0F6F3" : "#fff",
+                      background: hasRecord ? COLORS.sageLight : COLORS.white,
                     }}>
                       {hasRecord
                         ? <CheckCircle size={11} color={S.sage} />
@@ -209,7 +214,7 @@ export default function InsuranceDefensePage() {
                         display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
                         padding: "0.875rem 1rem", alignItems: "center",
                         borderBottom: i < pJobs.length - 1 ? `1px solid ${S.rule}` : "none",
-                        background: "#fff",
+                        background: COLORS.white,
                         borderLeft: `3px solid ${isVerified ? S.sage : S.rule}`,
                       }}>
                         <div>
@@ -241,7 +246,7 @@ export default function InsuranceDefensePage() {
                             <span style={{ fontFamily: S.mono, fontSize: "0.55rem", color: S.inkLight }}>Self-reported</span>
                           )}
                           {job.warrantyMonths && job.warrantyMonths > 0 && (
-                            <p style={{ fontFamily: S.mono, fontSize: "0.5rem", color: "#D4820E", marginTop: "0.15rem" }}>
+                            <p style={{ fontFamily: S.mono, fontSize: "0.5rem", color: COLORS.plumMid, marginTop: "0.15rem" }}>
                               {job.warrantyMonths}mo warranty
                             </p>
                           )}
@@ -272,7 +277,7 @@ export default function InsuranceDefensePage() {
       {/* 8.4.5 — Insurance success story prompt */}
       {showSuccessPrompt && !successSubmitted && (
         <div className="no-print" style={{ maxWidth: "56rem", margin: "1.5rem auto", padding: "0 1.5rem" }}>
-          <div style={{ border: `1px solid #B5D4C8`, background: "#F0F6F3", padding: "1.25rem 1.5rem" }}>
+          <div style={{ border: `1px solid ${COLORS.sageMid}`, background: COLORS.sageLight, padding: "1.25rem 1.5rem" }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.sage, marginBottom: "0.5rem" }}>
               Did this help with your insurer?
             </p>
@@ -285,7 +290,7 @@ export default function InsuranceDefensePage() {
                 value={savingsInput}
                 onChange={(e) => setSavingsInput(e.target.value)}
                 placeholder="e.g. insurer accepted all records, saved $1,200/yr"
-                style={{ flex: 1, minWidth: "200px", padding: "0.5rem 0.75rem", fontFamily: S.mono, fontSize: "0.7rem", border: `1px solid #B5D4C8`, background: "#fff", outline: "none" }}
+                style={{ flex: 1, minWidth: "200px", padding: "0.5rem 0.75rem", fontFamily: S.mono, fontSize: "0.7rem", border: `1px solid ${COLORS.sageMid}`, background: COLORS.white, outline: "none" }}
               />
               <button
                 onClick={() => {
@@ -294,7 +299,7 @@ export default function InsuranceDefensePage() {
                   }
                   setSuccessSubmitted(true);
                 }}
-                style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: S.sage, color: "#fff", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
+                style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: S.sage, color: COLORS.white, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 Share Story
               </button>
@@ -310,7 +315,7 @@ export default function InsuranceDefensePage() {
       )}
       {showSuccessPrompt && successSubmitted && (
         <div className="no-print" style={{ maxWidth: "56rem", margin: "1.5rem auto", padding: "0 1.5rem" }}>
-          <div style={{ border: `1px solid #B5D4C8`, background: "#F0F6F3", padding: "1rem 1.5rem", display: "flex", alignItems: "center", gap: "0.625rem" }}>
+          <div style={{ border: `1px solid ${COLORS.sageMid}`, background: COLORS.sageLight, padding: "1rem 1.5rem", display: "flex", alignItems: "center", gap: "0.625rem" }}>
             <CheckCircle size={14} color={S.sage} />
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.sage }}>Thank you — your story helps other HomeFax users know what's possible.</p>
           </div>

@@ -7,6 +7,7 @@ import { Badge } from "@/components/Badge";
 import { usePropertyStore } from "@/store/propertyStore";
 import { sensorService, SensorDevice, SensorEvent, DeviceSource } from "@/services/sensor";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 function inferServiceType(eventType: string): string {
   if (/water|leak|flood/i.test(eventType)) return "Plumbing";
@@ -15,10 +16,14 @@ function inferServiceType(eventType: string): string {
 }
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const SOURCES: { value: DeviceSource; label: string }[] = [
@@ -119,7 +124,7 @@ export default function SensorPage() {
               onChange={(e) => setSelectedPropertyId(e.target.value)}
               style={{
                 fontFamily: S.mono, fontSize: "0.75rem", padding: "0.5rem 0.75rem",
-                border: `1px solid ${S.rule}`, background: "#fff", color: S.ink, cursor: "pointer",
+                border: `1px solid ${S.rule}`, background: COLORS.white, color: S.ink, cursor: "pointer",
               }}
             >
               {properties.map((p) => (
@@ -131,15 +136,15 @@ export default function SensorPage() {
 
         {/* Stats bar */}
         {(devices.length > 0 || alerts.length > 0) && (
-          <div style={{ display: "flex", gap: "1px", background: S.rule, marginBottom: "1.5rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem", marginBottom: "1.5rem" }}>
             {[
               { label: "Active Devices", value: devices.filter((d) => d.isActive).length },
               { label: "Active Alerts",  value: alerts.length,                             accent: alerts.length > 0 ? S.rust : undefined },
-              { label: "Auto-Created Jobs", value: alerts.filter((a) => a.jobId).length,   accent: alerts.filter((a) => a.jobId).length > 0 ? "#C9A84C" : undefined },
+              { label: "Auto-Created Jobs", value: alerts.filter((a) => a.jobId).length,   accent: alerts.filter((a) => a.jobId).length > 0 ? COLORS.plumMid : undefined },
             ].map((stat) => (
-              <div key={stat.label} style={{ flex: 1, background: "#fff", padding: "0.875rem 1.25rem" }}>
+              <div key={stat.label} style={{ background: COLORS.white, padding: "0.875rem 1.25rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
                 <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>{stat.label}</p>
-                <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: stat.accent ?? S.ink }}>{stat.value}</p>
+                <p style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: stat.accent ?? S.ink }}>{stat.value}</p>
               </div>
             ))}
           </div>
@@ -149,7 +154,7 @@ export default function SensorPage() {
         {showForm && (
           <form
             onSubmit={handleRegister}
-            style={{ border: `1px solid ${S.rust}`, padding: "1.25rem", marginBottom: "2rem", background: "#FAF0ED" }}
+            style={{ border: `1px solid ${S.rust}`, padding: "1.25rem", marginBottom: "2rem", background: COLORS.blush }}
           >
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "1rem" }}>
               New Device
@@ -174,7 +179,7 @@ export default function SensorPage() {
                 <select
                   value={form.source}
                   onChange={(e) => setForm((f) => ({ ...f, source: e.target.value as DeviceSource }))}
-                  style={{ width: "100%", padding: "0.5rem 0.75rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.75rem", background: "#fff", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "0.5rem 0.75rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.75rem", background: COLORS.white, boxSizing: "border-box" }}
                 >
                   {SOURCES.map((s) => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -210,12 +215,13 @@ export default function SensorPage() {
             <h2 style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.rust, marginBottom: "0.75rem" }}>
               Active Alerts
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               {alerts.map((evt) => (
                 <div key={evt.id} style={{
-                  background: "#fff", padding: "1rem 1.25rem",
+                  background: COLORS.white, padding: "1rem 1.25rem",
                   display: "flex", alignItems: "center", gap: "1rem",
                   borderLeft: `3px solid ${sensorService.severityColor(evt.severity)}`,
+                  borderRadius: RADIUS.card, boxShadow: SHADOWS.card,
                 }}>
                   <AlertTriangle size={16} color={sensorService.severityColor(evt.severity)} style={{ flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
@@ -233,7 +239,7 @@ export default function SensorPage() {
                     <button
                       onClick={() => navigate("/jobs/new", { state: { prefill: { serviceType: inferServiceType(evt.eventType) } } })}
                       title="Log a job for this alert"
-                      style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 0.75rem", background: S.rust, color: "#fff", border: "none", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 0.75rem", background: S.rust, color: COLORS.white, border: "none", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
                     >
                       <Wrench size={11} /> Log Job
                     </button>
@@ -273,11 +279,11 @@ export default function SensorPage() {
             <div style={{ border: `1px solid ${S.rule}` }}>
               {devices.map((device, i) => (
                 <div key={device.id} style={{
-                  display: "flex", alignItems: "center", gap: "1rem", padding: "1rem 1.25rem", background: "#fff",
+                  display: "flex", alignItems: "center", gap: "1rem", padding: "1rem 1.25rem", background: COLORS.white,
                   borderBottom: i < devices.length - 1 ? `1px solid ${S.rule}` : "none",
                 }}>
                   {device.isActive
-                    ? <Wifi size={16} color="#16a34a" style={{ flexShrink: 0 }} />
+                    ? <Wifi size={16} color={COLORS.sage} style={{ flexShrink: 0 }} />
                     : <WifiOff size={16} color={S.rule} style={{ flexShrink: 0 }} />}
                   <div style={{ flex: 1 }}>
                     <p style={{ fontWeight: 500, fontSize: "0.875rem", marginBottom: "0.125rem" }}>{device.name}</p>
@@ -302,7 +308,7 @@ export default function SensorPage() {
         </div>
 
         {/* Info callout */}
-        <div style={{ marginTop: "2rem", border: `1px solid ${S.rule}`, padding: "1rem 1.25rem", background: "#fff" }}>
+        <div style={{ marginTop: "2rem", border: `1px solid ${S.rule}`, padding: "1rem 1.25rem", background: COLORS.white }}>
           <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.5rem", color: S.inkLight }}>
             How it works
           </p>

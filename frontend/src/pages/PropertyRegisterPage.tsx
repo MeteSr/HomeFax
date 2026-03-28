@@ -7,12 +7,16 @@ import { propertyService, PropertyType, SubscriptionTier } from "@/services/prop
 import { usePropertyStore } from "@/store/propertyStore";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import toast from "react-hot-toast";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 interface FormData {
@@ -85,8 +89,8 @@ export default function PropertyRegisterPage() {
               flex: 1, padding: "0.625rem", textAlign: "center",
               borderRight: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`,
               fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase",
-              color: step === n ? S.rust : step > n ? S.inkLight : "#CCC",
-              background: step === n ? "#FAF0ED" : "#fff",
+              color: step === n ? S.rust : step > n ? S.inkLight : COLORS.rule,
+              background: step === n ? COLORS.blush : COLORS.white,
             }}>
               {n === 1 ? "Address" : n === 2 ? "Details" : "Confirm"}
             </div>
@@ -95,7 +99,7 @@ export default function PropertyRegisterPage() {
 
         {/* Step 1 */}
         {step === 1 && (
-          <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.75rem" }}>
+          <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.75rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
                 <label className="form-label">Street Address *</label>
@@ -137,7 +141,7 @@ export default function PropertyRegisterPage() {
 
         {/* Step 2 */}
         {step === 2 && (
-          <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.75rem" }}>
+          <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.75rem" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
                 <label className="form-label">Property Type *</label>
@@ -145,7 +149,7 @@ export default function PropertyRegisterPage() {
                   {PROPERTY_TYPES.map((t) => (
                     <div key={t} onClick={() => update("propertyType", t)} style={{
                       padding: "0.75rem", cursor: "pointer",
-                      background: form.propertyType === t ? "#FAF0ED" : "#fff",
+                      background: form.propertyType === t ? COLORS.blush : COLORS.white,
                       fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em",
                       textTransform: "uppercase", textAlign: "center",
                       color: form.propertyType === t ? S.rust : S.inkLight,
@@ -172,7 +176,7 @@ export default function PropertyRegisterPage() {
                   {TIERS.map((t) => (
                     <div key={t.value} onClick={() => update("tier", t.value)} style={{
                       padding: "0.875rem 1rem", cursor: "pointer",
-                      background: form.tier === t.value ? "#FAF0ED" : "#fff",
+                      background: form.tier === t.value ? COLORS.blush : COLORS.white,
                       display: "flex", justifyContent: "space-between", alignItems: "center",
                     }}>
                       <div>
@@ -194,7 +198,7 @@ export default function PropertyRegisterPage() {
 
         {/* Step 3 */}
         {step === 3 && (
-          <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
+          <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white }}>
             <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
               <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Review & Confirm</p>
             </div>

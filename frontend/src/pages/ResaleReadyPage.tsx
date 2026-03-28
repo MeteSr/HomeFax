@@ -15,14 +15,19 @@ import { jobService, Job } from "@/services/job";
 import { reportService } from "@/services/report";
 import { computeScore, getScoreGrade, premiumEstimate, isCertified, generateCertToken, loadHistory } from "@/services/scoreService";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  gold: "#C9A84C",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
-  sans:  "'IBM Plex Sans', sans-serif" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  gold:     COLORS.plumMid,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
+  sans:     FONTS.sans,
 };
 
 function ScoreArc({ score }: { score: number }) {
@@ -30,7 +35,7 @@ function ScoreArc({ score }: { score: number }) {
   const C  = 2 * Math.PI * r;
   const arc    = C * 0.75;
   const filled = arc * (score / 100);
-  const color  = score >= 88 ? S.gold : score >= 75 ? S.sage : score >= 50 ? "#D4820E" : S.rust;
+  const color  = score >= 88 ? S.gold : score >= 75 ? S.sage : score >= 50 ? COLORS.plumMid : S.rust;
   const grade  = score >= 88 ? "CERTIFIED" : score >= 75 ? "GREAT" : score >= 50 ? "GOOD" : "FAIR";
   return (
     <svg viewBox="0 0 140 130" style={{ width: "9rem", height: "auto" }}>
@@ -38,11 +43,11 @@ function ScoreArc({ score }: { score: number }) {
         strokeDasharray={`${arc} ${C}`} strokeLinecap="butt" transform={`rotate(-225, ${cx}, ${cy})`} />
       <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={9}
         strokeDasharray={`${filled.toFixed(2)} ${C}`} strokeLinecap="butt" transform={`rotate(-225, ${cx}, ${cy})`} />
-      <text x={cx} y={cy - 4} textAnchor="middle" fontFamily="'Playfair Display', Georgia, serif"
+      <text x={cx} y={cy - 4} textAnchor="middle" fontFamily={FONTS.serif}
         fontWeight="900" fontSize="30" fill={S.ink}>{score}</text>
-      <text x={cx} y={cy + 14} textAnchor="middle" fontFamily="'IBM Plex Mono', monospace"
+      <text x={cx} y={cy + 14} textAnchor="middle" fontFamily={FONTS.mono}
         fontSize="8" fill={S.inkLight} letterSpacing="1">/100</text>
-      <text x={cx} y={cy + 28} textAnchor="middle" fontFamily="'IBM Plex Mono', monospace"
+      <text x={cx} y={cy + 28} textAnchor="middle" fontFamily={FONTS.mono}
         fontSize="8" fill={color} letterSpacing="2">{grade}</text>
     </svg>
   );
@@ -162,7 +167,7 @@ export default function ResaleReadyPage() {
             { label: "Systems Covered",   value: String(uniqueTypes),                    sub: "service categories" },
           ].map((stat, i, arr) => (
             <div key={stat.label} style={{
-              padding: "1.25rem", textAlign: "center", background: "#fff",
+              padding: "1.25rem", textAlign: "center", background: COLORS.white,
               borderRight: i < arr.length - 1 ? `1px solid ${S.rule}` : "none",
             }}>
               <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.625rem", lineHeight: 1 }}>{stat.value}</p>
@@ -174,7 +179,7 @@ export default function ResaleReadyPage() {
 
         {/* Buyer premium estimate */}
         {premium && (
-          <div style={{ border: `1px solid ${S.rule}`, padding: "1.5rem", marginBottom: "2rem", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+          <div style={{ border: `1px solid ${S.rule}`, padding: "1.5rem", marginBottom: "2rem", background: COLORS.white, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
             <div>
               <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>
                 Estimated Buyer Premium
@@ -192,7 +197,7 @@ export default function ResaleReadyPage() {
 
         {/* HomeFax Certified badge */}
         {certified && (
-          <div style={{ border: `2px solid ${S.gold}`, padding: "1.25rem 1.5rem", marginBottom: "2rem", background: "#FFFDF5", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ border: `2px solid ${S.gold}`, padding: "1.25rem 1.5rem", marginBottom: "2rem", background: COLORS.butter, display: "flex", alignItems: "center", gap: "1rem" }}>
             <Shield size={28} color={S.gold} />
             <div>
               <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: S.gold, marginBottom: "0.125rem" }}>
@@ -306,7 +311,7 @@ export default function ResaleReadyPage() {
                 </a>
               )}
             </div>
-            <div style={{ padding: "1.25rem", background: "#fff" }}>
+            <div style={{ padding: "1.25rem", background: COLORS.white }}>
               <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
                 <div>
                   <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.2rem" }}>Property</p>
@@ -315,7 +320,7 @@ export default function ResaleReadyPage() {
                 </div>
                 <div>
                   <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.2rem" }}>Verification</p>
-                  <p style={{ fontSize: "0.875rem", fontWeight: 500, color: property.verificationLevel === "Premium" ? S.sage : property.verificationLevel === "Basic" ? "#1e40af" : S.inkLight }}>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 500, color: property.verificationLevel === "Premium" ? S.sage : property.verificationLevel === "Basic" ? COLORS.plum : S.inkLight }}>
                     {property.verificationLevel}
                   </p>
                 </div>
@@ -336,7 +341,7 @@ export default function ResaleReadyPage() {
         )}
 
         {/* 8.5.5 — Advocate / referral prompt */}
-        <div style={{ border: `1px solid ${S.rule}`, background: "#FAF9F6", padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
           <div>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.rust, marginBottom: "0.375rem" }}>
               Know a homeowner who should have this?

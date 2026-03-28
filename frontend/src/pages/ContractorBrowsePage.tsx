@@ -11,12 +11,17 @@ import { useNavigate } from "react-router-dom";
 import { Search, ShieldCheck, ArrowRight, Users } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { contractorService, ContractorProfile } from "@/services/contractor";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 type SortBy = "trust" | "jobs";
@@ -27,28 +32,28 @@ function ContractorCard({ contractor, onClick }: { contractor: ContractorProfile
   return (
     <div
       onClick={onClick}
-      style={{ background: "#fff", border: `1px solid ${S.rule}`, cursor: "pointer", display: "flex", flexDirection: "column" }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#FAF0ED"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#fff"; }}
+      style={{ background: COLORS.white, border: `1px solid ${S.rule}`, cursor: "pointer", display: "flex", flexDirection: "column", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = COLORS.blush; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = COLORS.white; }}
     >
       {/* Header */}
       <div style={{ background: S.ink, padding: "1rem 1.25rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.25rem" }}>
+          <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.25rem" }}>
             {contractor.specialty}
           </p>
           <h3 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1rem", lineHeight: 1.2, color: S.paper, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {contractor.name}
           </h3>
           {contractor.serviceArea && (
-            <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.04em", color: "#7A7268", marginTop: "0.2rem" }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.04em", color: COLORS.plumMid, marginTop: "0.2rem" }}>
               {contractor.serviceArea}
             </p>
           )}
         </div>
         <div style={{ width: "2.5rem", height: "2.5rem", border: `2px solid ${S.rust}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: "0.75rem" }}>
           <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "0.9rem", lineHeight: 1, color: S.paper }}>{contractor.trustScore}</span>
-          <span style={{ fontFamily: S.mono, fontSize: "0.4rem", color: "#7A7268" }}>/100</span>
+          <span style={{ fontFamily: S.mono, fontSize: "0.4rem", color: COLORS.plumMid }}>/100</span>
         </div>
       </div>
 
@@ -141,17 +146,17 @@ export default function ContractorBrowsePage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name, specialty, or area…"
-              style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.65rem", background: "#fff", boxSizing: "border-box" }}
+              style={{ width: "100%", padding: "0.5rem 0.75rem 0.5rem 2.25rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, fontSize: "0.65rem", background: COLORS.white, boxSizing: "border-box" }}
             />
           </div>
 
           {/* Sort */}
-          <div style={{ display: "flex", gap: "1px", background: S.rule }}>
+          <div style={{ display: "flex", gap: "1rem" }}>
             {(["trust", "jobs"] as SortBy[]).map((s) => (
               <button
                 key={s}
                 onClick={() => setSortBy(s)}
-                style={{ padding: "0.5rem 1rem", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", border: "none", cursor: "pointer", background: sortBy === s ? S.ink : "#fff", color: sortBy === s ? "#F4F1EB" : S.inkLight }}
+                style={{ padding: "0.5rem 1rem", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", border: "none", cursor: "pointer", background: sortBy === s ? S.ink : COLORS.white, color: sortBy === s ? COLORS.white : S.inkLight, borderRadius: RADIUS.sm, boxShadow: SHADOWS.card }}
               >
                 {s === "trust" ? "Trust Score" : "Jobs Done"}
               </button>
@@ -160,12 +165,12 @@ export default function ContractorBrowsePage() {
         </div>
 
         {/* Specialty filter */}
-        <div style={{ display: "flex", gap: "1px", background: S.rule, marginBottom: "1.5rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
           {SPECIALTIES.map((sp) => (
             <button
               key={sp}
               onClick={() => setSpecialty(sp)}
-              style={{ padding: "0.4rem 0.875rem", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", border: "none", cursor: "pointer", background: specialty === sp ? S.rust : "#fff", color: specialty === sp ? "#F4F1EB" : S.inkLight }}
+              style={{ padding: "0.4rem 0.875rem", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", border: "none", cursor: "pointer", background: specialty === sp ? S.rust : COLORS.white, color: specialty === sp ? COLORS.white : S.inkLight, borderRadius: RADIUS.sm, boxShadow: SHADOWS.card }}
             >
               {sp}
             </button>
@@ -205,7 +210,7 @@ export default function ContractorBrowsePage() {
             )}
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(18rem, 1fr))", gap: "1px", background: S.rule }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(18rem, 1fr))", gap: "1rem" }}>
             {filtered.map((c) => (
               <ContractorCard key={c.id} contractor={c} onClick={() => navigate(`/contractor/${c.id}`)} />
             ))}

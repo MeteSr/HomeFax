@@ -6,12 +6,17 @@ import { Button } from "@/components/Button";
 import { recurringService, RecurringServiceType, Frequency, SERVICE_TYPE_LABELS, FREQUENCY_LABELS } from "@/services/recurringService";
 import { usePropertyStore } from "@/store/propertyStore";
 import toast from "react-hot-toast";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const SERVICE_TYPES: RecurringServiceType[] = [
@@ -141,7 +146,7 @@ export default function RecurringServiceCreatePage() {
           Log an ongoing service contract. Attach the contract doc after saving.
         </p>
 
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
           {/* Property selector */}
           {properties.length > 0 && (

@@ -4,14 +4,20 @@ import { ArrowLeft, ShieldCheck, AlertTriangle, Clock } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { jobService, Job } from "@/services/job";
 import { propertyService, Property } from "@/services/property";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  amber: "#D4820E",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
+
+const amber = COLORS.plumMid;
 
 const MS_PER_MONTH = 30.44 * 24 * 60 * 60 * 1000;
 const NINETY_DAYS  = 90 * 24 * 60 * 60 * 1000;
@@ -44,9 +50,9 @@ interface WarrantyJob {
 
 function StatusBadge({ status }: { status: WarrantyStatus }) {
   const cfg = {
-    active:   { label: "Active",        color: S.sage,  bg: "#F0F6F3", border: `${S.sage}40` },
-    expiring: { label: "Expiring Soon", color: S.amber, bg: "#FEF3DC", border: "#D4820E40"   },
-    expired:  { label: "Expired",       color: S.inkLight, bg: S.paper, border: S.rule      },
+    active:   { label: "Active",        color: S.sage,     bg: COLORS.sageLight, border: `${S.sage}40` },
+    expiring: { label: "Expiring Soon", color: amber,      bg: COLORS.butter,    border: `${amber}40`  },
+    expired:  { label: "Expired",       color: S.inkLight, bg: S.paper,          border: S.rule        },
   }[status];
   return (
     <span style={{
@@ -65,7 +71,7 @@ function WarrantyRow({ item, isLast }: { item: WarrantyJob; isLast: boolean }) {
   const icon = item.status === "active"
     ? <ShieldCheck size={16} color={S.sage} />
     : item.status === "expiring"
-    ? <AlertTriangle size={16} color={S.amber} />
+    ? <AlertTriangle size={16} color={amber} />
     : <Clock size={16} color={S.inkLight} />;
 
   return (
@@ -73,7 +79,7 @@ function WarrantyRow({ item, isLast }: { item: WarrantyJob; isLast: boolean }) {
       display: "flex", alignItems: "flex-start", gap: "1rem",
       padding: "1rem 1.25rem",
       borderBottom: isLast ? "none" : `1px solid ${S.rule}`,
-      background: "#fff",
+      background: COLORS.white,
     }}>
       <div style={{ marginTop: "0.1rem", flexShrink: 0 }}>{icon}</div>
 
@@ -101,7 +107,7 @@ function WarrantyRow({ item, isLast }: { item: WarrantyJob; isLast: boolean }) {
       </div>
 
       <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1rem", color: item.status === "expiring" ? S.amber : item.status === "expired" ? S.inkLight : S.sage, lineHeight: 1, marginBottom: "0.2rem" }}>
+        <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1rem", color: item.status === "expiring" ? amber : item.status === "expired" ? S.inkLight : S.sage, lineHeight: 1, marginBottom: "0.2rem" }}>
           {item.status === "expired"
             ? `Exp. ${item.expiry.toLocaleDateString()}`
             : item.daysLeft === 0
@@ -131,7 +137,7 @@ function Section({ title, items, emptyText }: { title: string; items: WarrantyJo
         {title} <span style={{ color: S.rust }}>({items.length})</span>
       </div>
       {items.length === 0 ? (
-        <div style={{ padding: "1.25rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight }}>
+        <div style={{ padding: "1.25rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight }}>
           {emptyText}
         </div>
       ) : (
@@ -200,7 +206,7 @@ export default function WarrantyWalletPage() {
             <div className="spinner-lg" />
           </div>
         ) : warrantyJobs.length === 0 ? (
-          <div style={{ padding: "2rem", border: `1px solid ${S.rule}`, background: "#fff", textAlign: "center" }}>
+          <div style={{ padding: "2rem", border: `1px solid ${S.rule}`, background: COLORS.white, textAlign: "center" }}>
             <p style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1rem", marginBottom: "0.5rem" }}>No warranties logged yet</p>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight, marginBottom: "1.25rem" }}>
               When you log a job with a warranty duration, it will appear here.

@@ -11,12 +11,17 @@ import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { useJobStore } from "@/store/jobStore";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 type Tab = "account" | "subscription" | "notifications" | "privacy";
@@ -55,7 +60,7 @@ export default function SettingsPage() {
                   width: "100%", padding: "0.75rem 1rem",
                   fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase",
                   color: tab === t.key ? S.rust : S.inkLight,
-                  background: tab === t.key ? "#FAF0ED" : "#fff",
+                  background: tab === t.key ? COLORS.blush : COLORS.white,
                   border: "none", borderBottom: i < TABS.length - 1 ? `1px solid ${S.rule}` : "none",
                   cursor: "pointer", textAlign: "left",
                 }}
@@ -148,7 +153,7 @@ function AgentBrandingSection() {
 
   return (
     <div style={{ border: `1px solid ${S.rule}` }}>
-      <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: "#FAFAF8" }}>
+      <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: COLORS.white }}>
         <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>
           Agent Co-Branding
         </p>
@@ -175,7 +180,7 @@ function AgentBrandingSection() {
         </div>
         {/* Preview */}
         {(name || brokerage) && (
-          <div style={{ border: `1px solid ${S.rule}`, padding: "0.875rem 1.25rem", background: "#F4F1EB", display: "flex", alignItems: "center", gap: "0.875rem" }}>
+          <div style={{ border: `1px solid ${S.rule}`, padding: "0.875rem 1.25rem", background: COLORS.white, display: "flex", alignItems: "center", gap: "0.875rem" }}>
             {logoUrl && (
               <img src={logoUrl} alt="logo" style={{ height: "2rem", objectFit: "contain", flexShrink: 0 }} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             )}
@@ -201,7 +206,7 @@ function AgentDashboardLink() {
   const navigate = useNavigate();
   return (
     <div style={{ border: `1px solid ${S.rule}`, marginTop: "1.5rem" }}>
-      <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: "#FAFAF8" }}>
+      <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}`, background: COLORS.white }}>
         <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>
           Agent Dashboard
         </p>
@@ -285,7 +290,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
       {/* Current plan */}
-      <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
+      <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white }}>
         <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
           <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Current Plan</p>
         </div>
@@ -317,7 +322,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
             {isPaid ? "Switch Plan" : "Upgrade Plan"}
           </p>
           {PLANS.filter((p) => p.tier !== "Free" && p.tier !== tier).map((plan) => (
-            <div key={plan.tier} style={{ border: `1px solid ${plan.tier === "Pro" ? S.rust : S.rule}`, background: "#fff", padding: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+            <div key={plan.tier} style={{ border: `1px solid ${plan.tier === "Pro" ? S.rust : S.rule}`, background: COLORS.white, padding: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
                   <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>{plan.tier}</span>
@@ -345,18 +350,18 @@ function SubscriptionTab({ profile }: { profile: any }) {
 
       {/* Pause status banner */}
       {isPaid && pauseState && (
-        <div style={{ border: `1px solid #D4820E`, background: "#FEF3DC", padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
+        <div style={{ border: `1px solid ${COLORS.plumMid}`, background: COLORS.butter, padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
           <div>
-            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B6914", marginBottom: "0.2rem" }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.2rem" }}>
               Subscription Paused
             </p>
-            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: "#8B6914" }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.plumMid }}>
               {pauseState.daysLeft} day{pauseState.daysLeft !== 1 ? "s" : ""} remaining — resumes {new Date(pauseState.pausedUntil).toLocaleDateString()}
             </p>
           </div>
           <button
             onClick={handleResume}
-            style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 1rem", border: "1px solid #D4820E", background: "#fff", color: "#8B6914", cursor: "pointer", whiteSpace: "nowrap" }}
+            style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 1rem", border: `1px solid ${COLORS.plumMid}`, background: COLORS.white, color: COLORS.plumMid, cursor: "pointer", whiteSpace: "nowrap" }}
           >
             Resume now
           </button>
@@ -365,7 +370,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
 
       {/* Cancellation */}
       {isPaid && cancelStep !== "done" && (
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white }}>
           <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Cancel Subscription</p>
           </div>
@@ -381,7 +386,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
                     <button
                       key={m}
                       onClick={() => handlePause(m)}
-                      style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 0.875rem", border: "1px solid #D4820E", background: "#FEF3DC", color: "#8B6914", cursor: "pointer" }}
+                      style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 0.875rem", border: `1px solid ${COLORS.plumMid}`, background: COLORS.butter, color: COLORS.plumMid, cursor: "pointer" }}
                     >
                       Pause {m} month{m > 1 ? "s" : ""}
                     </button>
@@ -404,7 +409,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
 
           {cancelStep === "confirm" && (
             <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ padding: "1rem", background: "#FAF0ED", border: `1px solid ${S.rust}40` }}>
+              <div style={{ padding: "1rem", background: COLORS.blush, border: `1px solid ${S.rust}40` }}>
                 <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.rust, marginBottom: "0.5rem" }}>
                   You will lose access to:
                 </p>
@@ -416,8 +421,8 @@ function SubscriptionTab({ profile }: { profile: any }) {
                   ))}
                 </ul>
               </div>
-              <div style={{ padding: "0.875rem 1rem", background: "#F0F6F3", border: "1px solid #B5D4C8" }}>
-                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: "#3D6B57", lineHeight: 1.6 }}>
+              <div style={{ padding: "0.875rem 1rem", background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}` }}>
+                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: COLORS.sage, lineHeight: 1.6 }}>
                   <strong>Your ICP records are permanent.</strong> All your maintenance history, verified jobs, and blockchain records remain on the Internet Computer after cancellation.
                   You can still view them — you just won't earn new score points or get priority support.
                 </p>
@@ -428,14 +433,14 @@ function SubscriptionTab({ profile }: { profile: any }) {
               <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                 <button
                   onClick={handleCancel}
-                  style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: `1px solid ${S.rust}`, background: S.rust, color: "#F4F1EB", cursor: "pointer" }}
+                  style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: `1px solid ${S.rust}`, background: S.rust, color: COLORS.white, cursor: "pointer" }}
                 >
                   Confirm Cancellation
                 </button>
                 {!pauseState && (
                   <button
                     onClick={() => { handlePause(1); setCancelStep("idle"); }}
-                    style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: "1px solid #D4820E", background: "#FEF3DC", color: "#8B6914", cursor: "pointer" }}
+                    style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1.25rem", border: `1px solid ${COLORS.plumMid}`, background: COLORS.butter, color: COLORS.plumMid, cursor: "pointer" }}
                   >
                     Pause 1 month instead
                   </button>
@@ -461,10 +466,10 @@ function SubscriptionTab({ profile }: { profile: any }) {
 
       {/* Post-cancellation confirmation */}
       {cancelStep === "done" && (
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <CheckCircle size={16} color="#3D6B57" style={{ flexShrink: 0 }} />
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <CheckCircle size={16} color={COLORS.sage} style={{ flexShrink: 0 }} />
           <div>
-            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#3D6B57", marginBottom: "0.2rem" }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "0.2rem" }}>
               Subscription cancelled
             </p>
             <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
@@ -496,7 +501,7 @@ function ToggleRow({ label, desc, value, onChange }: { label: string; desc?: str
           position: "absolute", top: "0.125rem",
           left: value ? "1.375rem" : "0.125rem",
           width: "1rem", height: "1rem",
-          background: "#fff", transition: "left 0.15s",
+          background: COLORS.white, transition: "left 0.15s",
         }} />
       </div>
     </div>

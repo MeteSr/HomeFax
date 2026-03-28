@@ -5,12 +5,17 @@ import { propertyService, Property, VerificationLevel, SubscriptionTier } from "
 import { useAuthStore } from "@/store/authStore";
 import { Shield, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 type Tab = "verifications" | "tiers";
@@ -34,7 +39,7 @@ function VerificationCard({
   };
 
   return (
-    <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+    <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
       <div>
         <p style={{ fontWeight: 700, fontSize: "0.95rem", color: S.ink, marginBottom: "0.25rem" }}>
           {property.address}, {property.city}, {property.state} {property.zipCode}
@@ -53,7 +58,7 @@ function VerificationCard({
             value={level}
             onChange={(e) => setLevel(e.target.value as "Basic" | "Premium")}
             disabled={loading}
-            style={{ padding: "0.375rem 0.625rem", border: `1px solid ${S.rule}`, fontSize: "0.8rem", background: "#fff", cursor: "pointer" }}
+            style={{ padding: "0.375rem 0.625rem", border: `1px solid ${S.rule}`, fontSize: "0.8rem", background: COLORS.white, cursor: "pointer" }}
           >
             <option value="Basic">Basic (Utility Bill)</option>
             <option value="Premium">Premium (Deed / Tax Record)</option>
@@ -62,14 +67,14 @@ function VerificationCard({
         <button
           onClick={() => act(() => onApprove(property.id, level))}
           disabled={loading}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.sage}`, background: "#fff", color: S.sage, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.sage}`, background: COLORS.white, color: S.sage, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1 }}
         >
           <CheckCircle size={12} /> Approve
         </button>
         <button
           onClick={() => act(() => onReject(property.id))}
           disabled={loading}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.rust}`, background: "#fff", color: S.rust, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1 }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.rust}`, background: COLORS.white, color: S.rust, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1 }}
         >
           <XCircle size={12} /> Reject
         </button>
@@ -98,7 +103,7 @@ function TierManager() {
   };
 
   return (
-    <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.5rem" }}>
+    <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.5rem" }}>
       <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "1.25rem" }}>
         Set Subscription Tier
       </p>
@@ -117,7 +122,7 @@ function TierManager() {
 
         <div>
           <label className="form-label" style={{ display: "block", marginBottom: "0.5rem" }}>Tier</label>
-          <div style={{ display: "flex", gap: "1px", background: S.rule }}>
+          <div style={{ display: "flex", gap: "1rem" }}>
             {TIERS.map((t) => (
               <button
                 key={t}
@@ -126,9 +131,9 @@ function TierManager() {
                   flex: 1, padding: "0.5rem 0.75rem",
                   fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase",
                   cursor: "pointer",
-                  border: "none",
-                  background: tier === t ? S.ink : "#fff",
-                  color: tier === t ? "#F4F1EB" : S.inkLight,
+                  border: `1px solid ${S.rule}`,
+                  background: tier === t ? S.ink : COLORS.white,
+                  color: tier === t ? COLORS.white : S.inkLight,
                 }}
               >
                 {t}
@@ -140,7 +145,7 @@ function TierManager() {
         <button
           onClick={handleSet}
           disabled={loading || !principal.trim()}
-          style={{ padding: "0.625rem 1.5rem", border: `1px solid ${S.ink}`, background: S.ink, color: "#F4F1EB", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: loading || !principal.trim() ? "not-allowed" : "pointer", opacity: loading || !principal.trim() ? 0.6 : 1, alignSelf: "flex-start" }}
+          style={{ padding: "0.625rem 1.5rem", border: `1px solid ${S.ink}`, background: S.ink, color: COLORS.white, fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: loading || !principal.trim() ? "not-allowed" : "pointer", opacity: loading || !principal.trim() ? 0.6 : 1, alignSelf: "flex-start" }}
         >
           {loading ? "Saving…" : "Set Tier"}
         </button>
@@ -148,14 +153,14 @@ function TierManager() {
 
       <div style={{ marginTop: "1.5rem", border: `1px solid ${S.rule}`, padding: "1rem" }}>
         <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>Tier limits</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1px", background: S.rule }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1rem" }}>
           {[
             { tier: "Free",          props: "1 property",      quotes: "3 open requests" },
             { tier: "Pro",           props: "5 properties",    quotes: "10 open requests" },
             { tier: "Premium",       props: "25 properties",   quotes: "10 open requests" },
             { tier: "ContractorPro", props: "Unlimited",       quotes: "Unlimited" },
           ].map((r) => (
-            <div key={r.tier} style={{ background: "#fff", padding: "0.625rem 0.875rem" }}>
+            <div key={r.tier} style={{ background: COLORS.white, padding: "0.625rem 0.875rem", border: `1px solid ${S.rule}` }}>
               <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.ink, fontWeight: 700 }}>{r.tier}</p>
               <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>{r.props} · {r.quotes}</p>
             </div>
@@ -240,31 +245,31 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Metrics bar */}
-        <div style={{ display: "flex", gap: "1px", background: S.rule, marginBottom: "1.5rem" }}>
-          <div style={{ flex: 1, background: "#fff", padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem" }}>
+          <div style={{ flex: 1, background: COLORS.white, padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", gap: "0.75rem", border: `1px solid ${S.rule}` }}>
             <div style={{ flex: 1 }}>
               <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>Pending Verifications</p>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: pending.length > 0 ? S.rust : S.ink }}>{pending.length}</span>
+                <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: pending.length > 0 ? S.rust : S.ink }}>{pending.length}</span>
                 {pending.length > 0 && (
-                  <span style={{ display: "inline-flex", alignItems: "center", padding: "0.15rem 0.5rem", background: S.rust, color: "#fff", fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", padding: "0.15rem 0.5rem", background: S.rust, color: COLORS.white, fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>
                     Action needed
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <div style={{ flex: 1, background: "#fff", padding: "0.875rem 1.25rem" }}>
+          <div style={{ flex: 1, background: COLORS.white, padding: "0.875rem 1.25rem", border: `1px solid ${S.rule}` }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>Last Refreshed</p>
             <p style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.ink }}>
               {lastRefreshed ? lastRefreshed.toLocaleTimeString() : "—"}
             </p>
           </div>
-          <div style={{ background: "#fff", padding: "0.875rem 1.25rem", display: "flex", alignItems: "center" }}>
+          <div style={{ background: COLORS.white, padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", border: `1px solid ${S.rule}` }}>
             <button
               onClick={loadPending}
               disabled={loadingPending}
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.rule}`, background: loadingPending ? S.paper : "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: loadingPending ? "not-allowed" : "pointer", color: S.inkLight, opacity: loadingPending ? 0.7 : 1 }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${S.rule}`, background: loadingPending ? S.paper : COLORS.white, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: loadingPending ? "not-allowed" : "pointer", color: S.inkLight, opacity: loadingPending ? 0.7 : 1 }}
             >
               <RefreshCw size={11} style={{ animation: loadingPending ? "spin 1s linear infinite" : "none" }} />
               {loadingPending ? "Refreshing…" : "Refresh"}
@@ -304,7 +309,7 @@ export default function AdminDashboardPage() {
               <button
                 onClick={loadPending}
                 disabled={loadingPending}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 0.875rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", color: S.inkLight }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 0.875rem", border: `1px solid ${S.rule}`, background: COLORS.white, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", color: S.inkLight }}
               >
                 <RefreshCw size={11} style={{ animation: loadingPending ? "spin 1s linear infinite" : "none" }} />
                 Refresh

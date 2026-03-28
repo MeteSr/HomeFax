@@ -1,4 +1,5 @@
 import React from "react";
+import { COLORS, FONTS } from "@/theme";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline" | "ghost";
@@ -10,45 +11,31 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_STYLES: Record<string, React.CSSProperties> = {
   primary: {
-    backgroundColor: "#0E0E0C",
-    color: "#F4F1EB",
-    border: "1px solid #0E0E0C",
+    backgroundColor: COLORS.plum,
+    color: COLORS.white,
+    border: `1.5px solid ${COLORS.plum}`,
   },
   secondary: {
-    backgroundColor: "#F4F1EB",
-    color: "#0E0E0C",
-    border: "1px solid #C8C3B8",
+    backgroundColor: COLORS.sageLight,
+    color: COLORS.plum,
+    border: `1.5px solid ${COLORS.sageMid}`,
   },
   outline: {
     backgroundColor: "transparent",
-    color: "#0E0E0C",
-    border: "1px solid #0E0E0C",
+    color: COLORS.plum,
+    border: `1.5px solid ${COLORS.plum}`,
   },
   ghost: {
     backgroundColor: "transparent",
-    color: "#7A7268",
-    border: "1px solid transparent",
+    color: COLORS.plumMid,
+    border: "1.5px solid transparent",
   },
 };
 
-const HOVER_BG: Record<string, string> = {
-  primary:   "#C94C2E",
-  secondary: "#EDE9E0",
-  outline:   "#F4F1EB",
-  ghost:     "#EDE9E0",
-};
-
-const HOVER_BORDER: Record<string, string> = {
-  primary:   "#C94C2E",
-  secondary: "#C8C3B8",
-  outline:   "#0E0E0C",
-  ghost:     "transparent",
-};
-
 const SIZE_STYLES: Record<string, React.CSSProperties> = {
-  sm: { padding: "0.375rem 0.875rem", fontSize: "0.688rem" },
-  md: { padding: "0.5rem 1.25rem",    fontSize: "0.7rem" },
-  lg: { padding: "0.75rem 2rem",      fontSize: "0.75rem" },
+  sm: { padding: "0.4rem 1rem",   fontSize: "0.8rem"  },
+  md: { padding: "0.55rem 1.4rem", fontSize: "0.875rem" },
+  lg: { padding: "0.75rem 2rem",  fontSize: "0.95rem"  },
 };
 
 export function Button({
@@ -64,42 +51,47 @@ export function Button({
 }: ButtonProps) {
   const [hovered, setHovered] = React.useState(false);
 
+  const isDisabled = disabled || loading;
+
+  const hoverOverrides: React.CSSProperties = (() => {
+    if (!hovered || isDisabled) return {};
+    switch (variant) {
+      case "primary":
+        return { transform: "translateY(-2px)", boxShadow: "0 8px 24px rgba(46,37,64,0.28)" };
+      case "secondary":
+        return { borderColor: COLORS.sage, backgroundColor: COLORS.sageLight };
+      case "outline":
+        return { backgroundColor: COLORS.sageLight, transform: "translateY(-1px)" };
+      case "ghost":
+        return { backgroundColor: COLORS.sageLight, color: COLORS.plum };
+      default:
+        return {};
+    }
+  })();
+
   const baseStyle: React.CSSProperties = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "0.5rem",
-    fontFamily: "'IBM Plex Mono', monospace",
-    fontWeight: 500,
-    letterSpacing: "0.1em",
-    textTransform: "uppercase",
-    borderRadius: 0,
-    cursor: disabled || loading ? "not-allowed" : "pointer",
-    opacity: disabled || loading ? 0.5 : 1,
-    transition: "background-color 0.15s, border-color 0.15s, color 0.15s",
+    fontFamily: FONTS.sans,
+    fontWeight: 600,
+    borderRadius: 100,
+    cursor: isDisabled ? "not-allowed" : "pointer",
+    opacity: isDisabled ? 0.5 : 1,
+    transition: "background-color 0.18s, border-color 0.18s, color 0.18s, transform 0.18s, box-shadow 0.18s",
     outline: "none",
     whiteSpace: "nowrap",
     ...VARIANT_STYLES[variant],
     ...SIZE_STYLES[size],
-    backgroundColor:
-      hovered && !disabled && !loading
-        ? HOVER_BG[variant]
-        : (VARIANT_STYLES[variant].backgroundColor as string),
-    borderColor:
-      hovered && !disabled && !loading
-        ? HOVER_BORDER[variant]
-        : (VARIANT_STYLES[variant].border as string)?.split(" ").pop(),
-    color:
-      hovered && !disabled && !loading && variant === "primary"
-        ? "#F4F1EB"
-        : (VARIANT_STYLES[variant].color as string),
+    ...hoverOverrides,
     ...style,
   };
 
   return (
     <button
       style={baseStyle}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       {...props}

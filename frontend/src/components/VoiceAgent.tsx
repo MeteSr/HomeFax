@@ -2,11 +2,16 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Mic, MicOff, Volume2, X, History, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { useVoiceAgent } from "../hooks/useVoiceAgent";
+import { COLORS, FONTS, RADIUS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  mono: "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  mono:     FONTS.mono,
 };
 
 export function VoiceAgent() {
@@ -42,19 +47,20 @@ export function VoiceAgent() {
               key={i}
               style={{
                 display: "flex", alignItems: "center", gap: "0.5rem",
-                background: S.ink, border: `1px solid ${S.rule}`,
+                background: COLORS.plum, border: `1px solid ${COLORS.rule}`,
                 padding: "0.4rem 0.75rem",
+                borderRadius: RADIUS.sm,
                 maxWidth: "18rem",
               }}
             >
-              <AlertTriangle size={11} color={alert.type === "warranty" ? "#D4820E" : S.rust} style={{ flexShrink: 0 }} />
-              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: "#C8C3B8", flex: 1, lineHeight: 1.4 }}>
+              <AlertTriangle size={11} color={alert.type === "warranty" ? COLORS.butter : COLORS.sage} style={{ flexShrink: 0 }} />
+              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.plumMid, flex: 1, lineHeight: 1.4 }}>
                 {alert.message}
               </span>
               {alert.href && (
                 <button
                   onClick={() => navigate(alert.href!)}
-                  style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.rust, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap", padding: 0 }}
+                  style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap", padding: 0 }}
                 >
                   {alert.actionLabel ?? "View"} →
                 </button>
@@ -68,48 +74,48 @@ export function VoiceAgent() {
       {hasBubble && (
         <div style={{
           position: "relative", width: "20rem",
-          background: S.ink, border: `1px solid ${S.rule}`,
-          padding: "1rem 1.25rem",
+          background: COLORS.plum, border: `1px solid ${COLORS.rule}`,
+          padding: "1rem 1.25rem", borderRadius: RADIUS.card,
         }}>
           <button
             onClick={reset}
-            style={{ position: "absolute", top: "0.75rem", right: "0.75rem", background: "none", border: "none", cursor: "pointer", color: S.inkLight, padding: 0, display: "flex" }}
+            style={{ position: "absolute", top: "0.75rem", right: "0.75rem", background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, padding: 0, display: "flex" }}
             aria-label="Dismiss"
           >
             <X size={13} />
           </button>
 
           {transcript && (
-            <p style={{ marginBottom: "0.5rem", fontFamily: S.mono, fontSize: "0.7rem", color: S.inkLight, fontStyle: "italic", paddingRight: "1.25rem" }}>
+            <p style={{ marginBottom: "0.5rem", fontFamily: S.mono, fontSize: "0.7rem", color: COLORS.plumMid, fontStyle: "italic", paddingRight: "1.25rem" }}>
               "{transcript}"
             </p>
           )}
 
           {response && (
-            <p style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontSize: "0.8rem", color: "#F4F1EB", lineHeight: 1.55, paddingRight: "1.25rem" }}>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.white, lineHeight: 1.55, paddingRight: "1.25rem" }}>
               {response}
               {isProcessing && (
-                <span style={{ display: "inline-block", width: "2px", height: "0.875rem", marginLeft: "2px", backgroundColor: S.rust, animation: "spin 1s step-end infinite", verticalAlign: "middle" }} />
+                <span style={{ display: "inline-block", width: "2px", height: "0.875rem", marginLeft: "2px", backgroundColor: COLORS.sage, animation: "spin 1s step-end infinite", verticalAlign: "middle" }} />
               )}
             </p>
           )}
 
           {isProcessing && !response && (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <Loader2 size={13} color={S.inkLight} style={{ animation: "spin 1s linear infinite" }} />
-              <span style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.inkLight }}>Thinking…</span>
+              <Loader2 size={13} color={COLORS.plumMid} style={{ animation: "spin 1s linear infinite" }} />
+              <span style={{ fontFamily: S.mono, fontSize: "0.7rem", color: COLORS.plumMid }}>Thinking…</span>
             </div>
           )}
 
           {error && (
-            <p style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.rust }}>{error}</p>
+            <p style={{ fontFamily: S.mono, fontSize: "0.7rem", color: COLORS.sage }}>{error}</p>
           )}
         </div>
       )}
 
       {/* Action history panel */}
       {history.length > 0 && (
-        <div style={{ width: "20rem", background: S.ink, border: `1px solid ${S.rule}` }}>
+        <div style={{ width: "20rem", background: COLORS.plum, border: `1px solid ${COLORS.rule}`, borderRadius: RADIUS.card, overflow: "hidden" }}>
           <button
             onClick={() => setShowHistory((v) => !v)}
             style={{
@@ -118,8 +124,8 @@ export function VoiceAgent() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-              <History size={11} color={S.inkLight} />
-              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>
+              <History size={11} color={COLORS.plumMid} />
+              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
                 Agent History ({history.length})
               </span>
             </div>
@@ -127,35 +133,35 @@ export function VoiceAgent() {
               {showHistory && (
                 <button
                   onClick={(e) => { e.stopPropagation(); clearHistory(); setShowHistory(false); }}
-                  style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.rust, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                  style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer", padding: 0 }}
                 >
                   Clear
                 </button>
               )}
-              {showHistory ? <ChevronDown size={11} color={S.inkLight} /> : <ChevronUp size={11} color={S.inkLight} />}
+              {showHistory ? <ChevronDown size={11} color={COLORS.plumMid} /> : <ChevronUp size={11} color={COLORS.plumMid} />}
             </div>
           </button>
 
           {showHistory && (
-            <div style={{ borderTop: `1px solid ${S.rule}`, maxHeight: "12rem", overflowY: "auto" }}>
+            <div style={{ borderTop: `1px solid ${COLORS.rule}`, maxHeight: "12rem", overflowY: "auto" }}>
               {history.slice(0, 20).map((action) => (
                 <div key={action.id} style={{
                   display: "flex", alignItems: "flex-start", gap: "0.5rem",
                   padding: "0.5rem 0.875rem",
-                  borderBottom: `1px solid rgba(200,195,184,0.15)`,
+                  borderBottom: `1px solid rgba(212,207,200,0.15)`,
                 }}>
                   {action.success
-                    ? <CheckCircle size={11} color={S.sage} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
-                    : <XCircle    size={11} color={S.rust}  style={{ flexShrink: 0, marginTop: "0.1rem" }} />
+                    ? <CheckCircle size={11} color={COLORS.sage} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
+                    : <XCircle    size={11} color={COLORS.sage}  style={{ flexShrink: 0, marginTop: "0.1rem" }} />
                   }
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: action.success ? S.sage : S.rust, marginBottom: "0.1rem" }}>
+                    <div style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: action.success ? COLORS.sage : COLORS.plumMid, marginBottom: "0.1rem" }}>
                       {action.label}
                     </div>
-                    <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: "#C8C3B8", lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.plumMid, lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {action.summary}
                     </div>
-                    <div style={{ fontFamily: S.mono, fontSize: "0.5rem", color: S.inkLight, marginTop: "0.1rem" }}>
+                    <div style={{ fontFamily: S.mono, fontSize: "0.5rem", color: COLORS.plumMid, marginTop: "0.1rem" }}>
                       {new Date(action.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
@@ -174,18 +180,19 @@ export function VoiceAgent() {
           aria-label={isListening ? "Stop listening" : "Ask HomeFax"}
           style={{
             width: "3.25rem", height: "3.25rem",
-            borderRadius: 0,
+            borderRadius: RADIUS.pill,
             display: "flex", alignItems: "center", justifyContent: "center",
-            border: `1px solid ${isListening ? S.rust : S.ink}`,
-            backgroundColor: isListening ? S.rust : isProcessing || isSpeaking ? "#EDE9E0" : S.ink,
+            border: `1px solid ${isListening ? COLORS.sage : COLORS.plum}`,
+            backgroundColor: isListening ? COLORS.sage : isProcessing || isSpeaking ? COLORS.sageLight : COLORS.plum,
             cursor: isProcessing || isSpeaking ? "not-allowed" : "pointer",
             transition: "all 0.15s",
+            boxShadow: isIdle ? "0 4px 16px rgba(46,37,64,0.2)" : "none",
           }}
         >
-          {isListening  && <MicOff  size={20} color="#F4F1EB" />}
-          {isProcessing && <Loader2 size={20} color={S.inkLight} style={{ animation: "spin 1s linear infinite" }} />}
-          {isSpeaking   && <Volume2 size={20} color={S.inkLight} />}
-          {isIdle       && <Mic     size={20} color="#F4F1EB" />}
+          {isListening  && <MicOff  size={20} color={COLORS.white} />}
+          {isProcessing && <Loader2 size={20} color={COLORS.plumMid} style={{ animation: "spin 1s linear infinite" }} />}
+          {isSpeaking   && <Volume2 size={20} color={COLORS.plumMid} />}
+          {isIdle       && <Mic     size={20} color={COLORS.white} />}
         </button>
 
         <span style={{

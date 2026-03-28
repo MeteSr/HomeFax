@@ -1,10 +1,14 @@
 import React, { useState, useRef } from "react";
 import { PhotoQuotaDisplay } from "./PhotoQuotaDisplay";
+import { COLORS, FONTS, RADIUS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", rule: "#C8C3B8", rust: "#C94C2E",
-  inkLight: "#7A7268", paper: "#F4F1EB",
-  mono: "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  mono:     FONTS.mono,
 };
 
 export const DOC_TYPES = [
@@ -81,7 +85,7 @@ export function ConstructionPhotoUpload({
           padding: "2rem",
           textAlign: "center",
           cursor: "pointer",
-          background: dragging ? "#FAF0ED" : S.paper,
+          background: dragging ? COLORS.blush : S.paper,
           transition: "border-color 0.15s, background 0.15s",
         }}
       >
@@ -112,8 +116,8 @@ export function ConstructionPhotoUpload({
               />
               <span style={{
                 position: "absolute", bottom: 0, left: 0, right: 0,
-                background: "rgba(14,14,12,0.65)",
-                color: "#F4F1EB",
+                background: "rgba(46,37,64,0.65)",
+                color: COLORS.white,
                 fontFamily: S.mono,
                 fontSize: "0.55rem",
                 letterSpacing: "0.06em",

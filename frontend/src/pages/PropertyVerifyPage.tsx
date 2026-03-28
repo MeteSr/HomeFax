@@ -5,12 +5,17 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { propertyService } from "@/services/property";
 import toast from "react-hot-toast";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 type VerificationMethod = "UtilityBill" | "DeedRecord" | "TaxRecord";
@@ -119,7 +124,7 @@ export default function PropertyVerifyPage() {
         </p>
 
         {/* Info banner */}
-        <div style={{ border: `1px solid ${S.rule}`, background: "#FAF0ED", padding: "0.875rem 1rem", marginBottom: "2rem", display: "flex", gap: "0.75rem" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.blush, padding: "0.875rem 1rem", marginBottom: "2rem", display: "flex", gap: "0.75rem" }}>
           <AlertCircle size={14} color={S.rust} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
           <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.ink, lineHeight: 1.65, margin: 0 }}>
             Verified properties can generate shareable HomeFax reports and command higher buyer trust.
@@ -136,7 +141,7 @@ export default function PropertyVerifyPage() {
               <label key={m.value} style={{
                 display: "flex", alignItems: "flex-start", gap: "1rem",
                 padding: "1rem 1.125rem", cursor: "pointer",
-                background: method === m.value ? "#FAF0ED" : "#fff",
+                background: method === m.value ? COLORS.blush : COLORS.white,
               }}>
                 <input
                   type="radio" name="method" value={m.value}
@@ -167,7 +172,7 @@ export default function PropertyVerifyPage() {
           </p>
 
           {file ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "1rem 1.125rem", border: `1px solid ${S.sage}`, background: "#fff" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "1rem 1.125rem", border: `1px solid ${S.sage}`, background: COLORS.white }}>
               <FileText size={18} color={S.sage} style={{ flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -190,7 +195,7 @@ export default function PropertyVerifyPage() {
               style={{
                 border: `2px dashed ${dragOver ? S.rust : S.rule}`,
                 padding: "2.5rem 1.5rem", textAlign: "center", cursor: "pointer",
-                background: dragOver ? "#FAF0ED" : "#fff",
+                background: dragOver ? COLORS.blush : COLORS.white,
                 transition: "border-color 0.15s, background 0.15s",
               }}
             >

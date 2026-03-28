@@ -12,11 +12,16 @@ import { usePropertyStore } from "@/store/propertyStore";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
 
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
+
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 type Tab = "timeline" | "jobs" | "documents" | "settings";
@@ -135,7 +140,7 @@ export default function PropertyDetailPage() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
           <div>
-            <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: S.rust, marginBottom: "0.5rem" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: COLORS.butter, color: COLORS.plum, padding: "4px 14px", borderRadius: 100, fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.625rem", border: `1px solid rgba(46,37,64,0.1)` }}>
               Property Record
             </div>
             <h1 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, marginBottom: "0.375rem" }}>
@@ -157,7 +162,7 @@ export default function PropertyDetailPage() {
         {property.verificationLevel === "Unverified" && (
           <div style={{
             border: `1px solid ${S.rust}`, padding: "1rem 1.25rem",
-            marginBottom: "1.5rem", background: "#FAF0ED",
+            marginBottom: "1.5rem", background: COLORS.sageLight,
             display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap",
           }}>
             <Shield size={16} color={S.rust} style={{ flexShrink: 0 }} />
@@ -178,10 +183,10 @@ export default function PropertyDetailPage() {
         {property.verificationLevel === "PendingReview" && (
           <div style={{
             border: `1px solid ${S.rule}`, padding: "1rem 1.25rem",
-            marginBottom: "1.5rem", background: "#FFF8EC",
+            marginBottom: "1.5rem", background: COLORS.butter,
             display: "flex", alignItems: "center", gap: "1rem",
           }}>
-            <Shield size={16} color="#B89040" style={{ flexShrink: 0 }} />
+            <Shield size={16} color={COLORS.plum} style={{ flexShrink: 0 }} />
             <div>
               <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.25rem" }}>
                 Under review
@@ -194,14 +199,14 @@ export default function PropertyDetailPage() {
         )}
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", borderTop: `1px solid ${S.rule}`, borderLeft: `1px solid ${S.rule}`, marginBottom: "2rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1rem", marginBottom: "2rem" }}>
           {[
             { label: "Total Jobs",   value: jobs.length },
             { label: "Verified",     value: verifiedCount },
             { label: "Value Added",  value: `$${(totalValue / 100).toLocaleString()}` },
           ].map((s) => (
-            <div key={s.label} style={{ padding: "1.25rem", borderRight: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`, background: "#fff" }}>
-              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>
+            <div key={s.label} style={{ padding: "1.25rem", borderRadius: RADIUS.card, border: `1px solid ${COLORS.rule}`, background: COLORS.white, boxShadow: SHADOWS.card }}>
+              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>
                 {s.label}
               </div>
               <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.75rem", lineHeight: 1, color: S.ink }}>
@@ -212,20 +217,21 @@ export default function PropertyDetailPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: `1px solid ${S.rule}`, marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", borderBottom: `1px solid ${COLORS.rule}`, marginBottom: "1.5rem" }}>
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               style={{
                 padding: "0.625rem 1.25rem",
-                fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase",
-                color: tab === t.key ? S.rust : S.inkLight,
-                background: tab === t.key ? "#FAF0ED" : "none",
+                fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: tab === t.key ? 600 : 400,
+                color: tab === t.key ? COLORS.sage : COLORS.plumMid,
+                background: "none",
                 border: "none",
-                borderBottom: tab === t.key ? `2px solid ${S.rust}` : "2px solid transparent",
+                borderBottom: tab === t.key ? `2px solid ${COLORS.sage}` : "2px solid transparent",
                 marginBottom: "-1px",
                 cursor: "pointer",
+                transition: "color 0.15s",
               }}
             >
               {t.label}
@@ -247,15 +253,14 @@ export default function PropertyDetailPage() {
 }
 
 function SigPill({ signed, label }: { signed: boolean; label: string }) {
-  const S = { sage: "#3D6B57", inkLight: "#7A7268", rule: "#C8C3B8", mono: "'IBM Plex Mono', monospace" as const };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: "0.25rem",
-      fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase",
-      padding: "0.15rem 0.5rem",
-      border: `1px solid ${signed ? S.sage : S.rule}`,
-      color: signed ? S.sage : S.inkLight,
-      background: signed ? "#F0F6F3" : "#fafafa",
+      fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase",
+      padding: "0.15rem 0.625rem", borderRadius: 100,
+      border: `1px solid ${signed ? COLORS.sageMid : COLORS.rule}`,
+      color: signed ? COLORS.sage : COLORS.plumMid,
+      background: signed ? COLORS.sageLight : COLORS.white,
     }}>
       {signed ? "✓" : "○"} {label}
     </span>
@@ -263,7 +268,7 @@ function SigPill({ signed, label }: { signed: boolean; label: string }) {
 }
 
 function PhotoStrip({ photos, jobId, onUpload }: { photos: Photo[]; jobId: string; onUpload: (jobId: string, file: File) => void }) {
-  const LS = { rule: "#C8C3B8", inkLight: "#7A7268", rust: "#C94C2E", mono: "'IBM Plex Mono', monospace" as const };
+  const LS = { rule: COLORS.rule, inkLight: COLORS.plumMid, rust: COLORS.sage, mono: FONTS.mono };
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
@@ -339,7 +344,7 @@ function PhotoStrip({ photos, jobId, onUpload }: { photos: Photo[]; jobId: strin
           <button
             onClick={prev}
             disabled={lightboxIdx === 0}
-            style={{ position: "absolute", left: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: `1px solid #7A7268`, color: "#F4F1EB", padding: "0.75rem", cursor: lightboxIdx === 0 ? "default" : "pointer", opacity: lightboxIdx === 0 ? 0.3 : 1, fontSize: "1.25rem", lineHeight: 1 }}
+            style={{ position: "absolute", left: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: `1px solid rgba(255,255,255,0.3)`, color: COLORS.white, padding: "0.75rem", cursor: lightboxIdx === 0 ? "default" : "pointer", opacity: lightboxIdx === 0 ? 0.3 : 1, fontSize: "1.25rem", lineHeight: 1 }}
           >
             ‹
           </button>
@@ -349,13 +354,13 @@ function PhotoStrip({ photos, jobId, onUpload }: { photos: Photo[]; jobId: strin
             <img
               src={activePh.url}
               alt={activePh.description}
-              style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", border: "1px solid #C8C3B8" }}
+              style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", border: "1px solid rgba(255,255,255,0.2)" }}
             />
             <div style={{ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.08em", color: "#C8C3B8" }}>
+              <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: "rgba(255,255,255,0.6)" }}>
                 {activePh.description || "No description"}
               </span>
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.55rem", color: "#7A7268" }}>
+              <span style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.4)" }}>
                 {(lightboxIdx ?? 0) + 1} / {photos.length}
               </span>
             </div>
@@ -365,7 +370,7 @@ function PhotoStrip({ photos, jobId, onUpload }: { photos: Photo[]; jobId: strin
           <button
             onClick={next}
             disabled={lightboxIdx === photos.length - 1}
-            style={{ position: "absolute", right: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: `1px solid #7A7268`, color: "#F4F1EB", padding: "0.75rem", cursor: lightboxIdx === photos.length - 1 ? "default" : "pointer", opacity: lightboxIdx === photos.length - 1 ? 0.3 : 1, fontSize: "1.25rem", lineHeight: 1 }}
+            style={{ position: "absolute", right: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: `1px solid rgba(255,255,255,0.3)`, color: COLORS.white, padding: "0.75rem", cursor: lightboxIdx === photos.length - 1 ? "default" : "pointer", opacity: lightboxIdx === photos.length - 1 ? 0.3 : 1, fontSize: "1.25rem", lineHeight: 1 }}
           >
             ›
           </button>
@@ -373,7 +378,7 @@ function PhotoStrip({ photos, jobId, onUpload }: { photos: Photo[]; jobId: strin
           {/* Close */}
           <button
             onClick={closeLightbox}
-            style={{ position: "absolute", top: "1.25rem", right: "1.25rem", background: "none", border: `1px solid #7A7268`, color: "#F4F1EB", padding: "0.375rem 0.75rem", fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}
+            style={{ position: "absolute", top: "1.25rem", right: "1.25rem", background: "none", border: `1px solid rgba(255,255,255,0.3)`, color: COLORS.white, padding: "0.375rem 0.75rem", fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}
           >
             Close
           </button>
@@ -389,10 +394,10 @@ function warrantyStatus(job: Job): { label: string; color: string; bg: string } 
   const expiryMs = jobDate + job.warrantyMonths * 30.44 * 24 * 60 * 60 * 1000;
   const now = Date.now();
   const daysLeft = Math.round((expiryMs - now) / (24 * 60 * 60 * 1000));
-  if (daysLeft < 0) return { label: "Warranty expired", color: "#7A7268", bg: "#F4F1EB" };
-  if (daysLeft <= 90) return { label: `Warranty: ${daysLeft}d left`, color: "#C94C2E", bg: "#FAF0ED" };
+  if (daysLeft < 0) return { label: "Warranty expired", color: COLORS.plumMid, bg: COLORS.white };
+  if (daysLeft <= 90) return { label: `Warranty: ${daysLeft}d left`, color: COLORS.sage, bg: COLORS.blush };
   const monthsLeft = Math.round(daysLeft / 30);
-  return { label: `Warranty: ${monthsLeft}mo left`, color: "#3D6B57", bg: "#F0F6F3" };
+  return { label: `Warranty: ${monthsLeft}mo left`, color: COLORS.sage, bg: COLORS.sageLight };
 }
 
 function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, onPhotoUpload }: {
@@ -403,7 +408,7 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
   photosByJob: Record<string, Photo[]>;
   onPhotoUpload: (jobId: string, file: File) => void;
 }) {
-  const S = { ink: "#0E0E0C", rule: "#C8C3B8", rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57", mono: "'IBM Plex Mono', monospace" as const, serif: "'Playfair Display', Georgia, serif" as const };
+  const S = { ink: COLORS.plum, rule: COLORS.rule, rust: COLORS.sage, inkLight: COLORS.plumMid, sage: COLORS.sage, mono: FONTS.mono, serif: FONTS.serif };
   const navigate = useNavigate();
   const [justVerified,        setJustVerified]        = React.useState<string | null>(null);
   const [reviewNudgeJob,      setReviewNudgeJob]      = React.useState<Job | null>(null);
@@ -458,7 +463,7 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
     <>
       {/* 3-service engagement milestone */}
       {verifiedCount >= 3 && (
-        <div style={{ border: `1px solid ${S.sage}`, background: "#F0F6F3", padding: "0.875rem 1.25rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div style={{ border: `1px solid ${S.sage}`, background: COLORS.sageLight, padding: "0.875rem 1.25rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
           <span style={{ fontSize: "1.25rem" }}>🏅</span>
           <div>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.sage, marginBottom: "0.1rem" }}>
@@ -475,16 +480,16 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
       {reviewNudgeJob && (
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
-          border: `1px solid #C9A84C`, padding: "0.875rem 1.25rem", marginBottom: "1rem",
-          background: "#FFFBEE", flexWrap: "wrap",
+          border: `1px solid ${COLORS.sageMid}`, padding: "0.875rem 1.25rem", marginBottom: "1rem",
+          background: COLORS.butter, flexWrap: "wrap",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-            <Star size={14} color="#8B6914" style={{ flexShrink: 0 }} />
+            <Star size={14} color={COLORS.plum} style={{ flexShrink: 0 }} />
             <div>
-              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B6914", marginBottom: "0.15rem" }}>
+              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plum, marginBottom: "0.15rem" }}>
                 Job verified — leave a review
               </p>
-              <p style={{ fontSize: "0.8rem", fontWeight: 300, color: "#8B6914" }}>
+              <p style={{ fontSize: "0.8rem", fontWeight: 300, color: COLORS.plumMid }}>
                 Help other homeowners by reviewing {reviewNudgeJob.contractorName || "this contractor"}.
               </p>
             </div>
@@ -495,7 +500,7 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
                 onClick={() => navigate(`/contractor/${reviewNudgeJob.contractor}`)}
                 style={{
                   fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                  padding: "0.375rem 0.875rem", border: "1px solid #C9A84C", color: "#8B6914",
+                  padding: "0.375rem 0.875rem", border: `1px solid ${COLORS.sageMid}`, color: COLORS.plum,
                   background: "none", cursor: "pointer",
                 }}
               >
@@ -504,7 +509,7 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
             )}
             <button
               onClick={() => setReviewNudgeJob(null)}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#8B6914", padding: "0.25rem" }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, padding: "0.25rem" }}
             >
               ×
             </button>
@@ -570,7 +575,7 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
                 <div
                   data-testid={`job-${job.serviceType.toLowerCase().replace(/\s+/g, "-")}`}
                   style={{
-                    background: isFlashing ? "#F0F6F3" : "#fff",
+                    background: isFlashing ? COLORS.sageLight : COLORS.white,
                     padding: "1.25rem",
                     border: `1px solid ${S.rule}`,
                     transition: "background 0.6s ease",
@@ -697,7 +702,7 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
                           <button
                             onClick={() => warrantyInputRefs.current[job.id]?.click()}
                             disabled={warrantyUploading === job.id}
-                            style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.3rem 0.75rem", border: `1px solid #1d4ed8`, background: "#fff", color: "#1d4ed8", cursor: warrantyUploading === job.id ? "not-allowed" : "pointer", opacity: warrantyUploading === job.id ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
+                            style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.3rem 0.75rem", border: `1px solid ${COLORS.sage}`, background: COLORS.white, color: COLORS.sage, cursor: warrantyUploading === job.id ? "not-allowed" : "pointer", opacity: warrantyUploading === job.id ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
                           >
                             🛡 {warrantyUploading === job.id ? "Uploading…" : "Upload warranty doc"}
                           </button>
@@ -729,7 +734,7 @@ function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, 
 }
 
 function JobsTab({ jobs }: { jobs: Job[] }) {
-  const S = { rule: "#C8C3B8", inkLight: "#7A7268", ink: "#0E0E0C", mono: "'IBM Plex Mono', monospace" as const };
+  const S = { rule: COLORS.rule, inkLight: COLORS.plumMid, ink: COLORS.plum, mono: FONTS.mono };
 
   if (jobs.length === 0) {
     return (
@@ -779,11 +784,11 @@ const DOC_TYPES = ["Receipt", "Permit", "Inspection", "Warranty", "Invoice"] as 
 type DocType = typeof DOC_TYPES[number];
 
 const DOC_TYPE_COLORS: Record<DocType, { color: string; bg: string }> = {
-  Receipt:    { color: "#7A7268", bg: "#F4F1EB" },
-  Permit:     { color: "#1A5C8A", bg: "#EAF3FA" },
-  Inspection: { color: "#3D6B57", bg: "#F0F6F3" },
-  Warranty:   { color: "#7A4E2D", bg: "#FAF3ED" },
-  Invoice:    { color: "#C94C2E", bg: "#FAF0ED" },
+  Receipt:    { color: COLORS.plumMid,  bg: COLORS.white },
+  Permit:     { color: COLORS.plum,     bg: COLORS.sageLight },
+  Inspection: { color: COLORS.sage,     bg: COLORS.sageLight },
+  Warranty:   { color: COLORS.plum,     bg: COLORS.butter },
+  Invoice:    { color: COLORS.sage,     bg: COLORS.blush },
 };
 
 function encodeDoc(type: DocType, filename: string): string {
@@ -837,11 +842,7 @@ type BatchFileStatus = "pending" | "uploading" | "done" | "duplicate" | "error";
 interface BatchFile { name: string; status: BatchFileStatus; error?: string }
 
 function DocumentsTab({ propertyId }: { propertyId: string }) {
-  const S = {
-    ink: "#0E0E0C", rule: "#C8C3B8", inkLight: "#7A7268", rust: "#C94C2E",
-    serif: "'Playfair Display', Georgia, serif" as const,
-    mono:  "'IBM Plex Mono', monospace" as const,
-  };
+  const S = { ink: COLORS.plum, rule: COLORS.rule, inkLight: COLORS.plumMid, rust: COLORS.sage, serif: FONTS.serif, mono: FONTS.mono };
   const DOCS_JOB = `docs_${propertyId}`;
   const inputRef  = React.useRef<HTMLInputElement>(null);
   const permitRef = React.useRef<HTMLInputElement>(null);
@@ -937,27 +938,27 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
   };
 
   const statusIcon = (s: BatchFileStatus) => {
-    if (s === "done")      return <span style={{ color: "#16a34a" }}>✓</span>;
-    if (s === "duplicate") return <span style={{ color: "#7A7268" }}>⊘</span>;
-    if (s === "error")     return <span style={{ color: "#C94C2E" }}>✗</span>;
-    if (s === "uploading") return <span style={{ color: "#2563eb" }}>↑</span>;
-    return <span style={{ color: "#C8C3B8" }}>…</span>;
+    if (s === "done")      return <span style={{ color: COLORS.sage }}>✓</span>;
+    if (s === "duplicate") return <span style={{ color: COLORS.plumMid }}>⊘</span>;
+    if (s === "error")     return <span style={{ color: COLORS.plum }}>✗</span>;
+    if (s === "uploading") return <span style={{ color: COLORS.plum }}>↑</span>;
+    return <span style={{ color: COLORS.rule }}>…</span>;
   };
 
   return (
     <div>
       {/* Permits & Inspections — dedicated section */}
-      <div style={{ border: `1px solid #1A5C8A`, marginBottom: "1.25rem" }}>
-        <div style={{ padding: "0.875rem 1.25rem", borderBottom: `1px solid #C3D9EA`, background: "#EAF3FA", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#1A5C8A" }}>
+      <div style={{ border: `1px solid ${COLORS.rule}`, borderRadius: RADIUS.sm, marginBottom: "1.25rem", overflow: "hidden" }}>
+        <div style={{ padding: "0.875rem 1.25rem", borderBottom: `1px solid ${COLORS.rule}`, background: COLORS.sageLight, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.plum }}>
             Permits &amp; Inspections
           </p>
-          <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: "#5A8BA8" }}>Upload with metadata — status tracked on-chain</p>
+          <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: COLORS.plumMid }}>Upload with metadata — status tracked on-chain</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: "#fff" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: COLORS.white }}>
           {/* Permit */}
           <div style={{ padding: "1rem 1.25rem", borderRight: `1px solid ${S.rule}` }}>
-            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C8A", marginBottom: "0.75rem" }}>Permit</p>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plum, marginBottom: "0.75rem" }}>Permit</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
               <input
                 className="form-input"
@@ -987,7 +988,7 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
             <button
               disabled={permitUploading}
               onClick={() => permitRef.current?.click()}
-              style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid #1A5C8A`, color: "#1A5C8A", background: "none", cursor: permitUploading ? "not-allowed" : "pointer", opacity: permitUploading ? 0.5 : 1 }}
+              style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid ${COLORS.plum}`, color: COLORS.plum, background: "none", cursor: permitUploading ? "not-allowed" : "pointer", opacity: permitUploading ? 0.5 : 1 }}
             >
               {permitUploading ? "Uploading…" : "+ Upload Permit"}
             </button>
@@ -995,7 +996,7 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
           </div>
           {/* Inspection */}
           <div style={{ padding: "1rem 1.25rem" }}>
-            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#3D6B57", marginBottom: "0.75rem" }}>Inspection Report</p>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "0.75rem" }}>Inspection Report</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
               <input
                 className="form-input"
@@ -1018,7 +1019,7 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
             <button
               disabled={inspectionUploading}
               onClick={() => inspectionRef.current?.click()}
-              style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid #3D6B57`, color: "#3D6B57", background: "none", cursor: inspectionUploading ? "not-allowed" : "pointer", opacity: inspectionUploading ? 0.5 : 1 }}
+              style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid ${COLORS.sage}`, color: COLORS.sage, background: "none", cursor: inspectionUploading ? "not-allowed" : "pointer", opacity: inspectionUploading ? 0.5 : 1 }}
             >
               {inspectionUploading ? "Uploading…" : "+ Upload Report"}
             </button>
@@ -1048,8 +1049,8 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
                   padding: "0.35rem 0.75rem",
                   fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
                   border: "none", cursor: "pointer",
-                  background: docType === t ? S.ink : "#fff",
-                  color:      docType === t ? "#F4F1EB" : S.inkLight,
+                  background: docType === t ? COLORS.plum : COLORS.white,
+                  color:      docType === t ? COLORS.white : S.inkLight,
                 }}
               >
                 {t}
@@ -1075,10 +1076,10 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
         {queue.length > 0 && (
           <div style={{ borderTop: `1px solid ${S.rule}` }}>
             {queue.map((f, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem 1.25rem", borderBottom: i < queue.length - 1 ? `1px solid ${S.rule}` : "none", background: f.status === "error" ? "#FEF2F2" : f.status === "duplicate" ? "#F9FAFB" : "#fff" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem 1.25rem", borderBottom: i < queue.length - 1 ? `1px solid ${S.rule}` : "none", background: f.status === "error" ? COLORS.blush : f.status === "duplicate" ? COLORS.sageLight : COLORS.white }}>
                 <span style={{ fontFamily: S.mono, fontSize: "0.8rem", width: "1rem", textAlign: "center" }}>{statusIcon(f.status)}</span>
                 <span style={{ flex: 1, fontFamily: S.mono, fontSize: "0.65rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
-                <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", color: f.status === "error" ? S.rust : f.status === "duplicate" ? S.inkLight : f.status === "done" ? "#16a34a" : S.inkLight }}>
+                <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", textTransform: "uppercase", color: f.status === "error" ? S.rust : f.status === "duplicate" ? S.inkLight : f.status === "done" ? COLORS.sage : S.inkLight }}>
                   {f.status === "error" ? (f.error ?? "Error") : f.status === "duplicate" ? "Duplicate — skipped" : f.status === "done" ? "Uploaded" : f.status === "uploading" ? "Uploading…" : "Queued"}
                 </span>
               </div>
@@ -1128,14 +1129,14 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
                   </p>
                   {/* Permit metadata */}
                   {type === "Permit" && parsed.permitNumber && (
-                    <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: "#1A5C8A", letterSpacing: "0.06em", marginBottom: "0.1rem" }}>
-                      {parsed.permitNumber} · {parsed.authority} · <span style={{ textTransform: "uppercase", fontWeight: 700, color: parsed.status === "Closed" ? "#3D6B57" : parsed.status === "Expired" ? "#7A7268" : "#D4820E" }}>{parsed.status}</span>
+                    <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: COLORS.plum, letterSpacing: "0.06em", marginBottom: "0.1rem" }}>
+                      {parsed.permitNumber} · {parsed.authority} · <span style={{ textTransform: "uppercase", fontWeight: 700, color: parsed.status === "Closed" ? COLORS.sage : parsed.status === "Expired" ? COLORS.plumMid : COLORS.plum }}>{parsed.status}</span>
                     </p>
                   )}
                   {/* Inspection metadata */}
                   {type === "Inspection" && parsed.inspector && (
-                    <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: "#3D6B57", letterSpacing: "0.06em", marginBottom: "0.1rem" }}>
-                      {parsed.inspector} · <span style={{ textTransform: "uppercase", fontWeight: 700, color: parsed.status === "Pass" ? "#3D6B57" : parsed.status === "Fail" ? "#C94C2E" : "#D4820E" }}>{parsed.status}</span>
+                    <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: COLORS.sage, letterSpacing: "0.06em", marginBottom: "0.1rem" }}>
+                      {parsed.inspector} · <span style={{ textTransform: "uppercase", fontWeight: 700, color: parsed.status === "Pass" ? COLORS.sage : parsed.status === "Fail" ? COLORS.plum : COLORS.plumMid }}>{parsed.status}</span>
                     </p>
                   )}
                   <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, letterSpacing: "0.06em" }}>
@@ -1160,7 +1161,7 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
 }
 
 function SettingsTab({ property, currentPrincipal }: { property: Property; currentPrincipal: string }) {
-  const S = { rule: "#C8C3B8", inkLight: "#7A7268", ink: "#0E0E0C", rust: "#C94C2E", sage: "#3D6B57", paper: "#F4F1EB", serif: "'Playfair Display', Georgia, serif" as const, mono: "'IBM Plex Mono', monospace" as const };
+  const S = { rule: COLORS.rule, inkLight: COLORS.plumMid, ink: COLORS.plum, rust: COLORS.sage, sage: COLORS.sage, paper: COLORS.white, serif: FONTS.serif, mono: FONTS.mono };
   const navigate = useNavigate();
 
   const [transferPrincipal, setTransferPrincipal] = React.useState("");
@@ -1220,7 +1221,7 @@ function SettingsTab({ property, currentPrincipal }: { property: Property; curre
         <div style={{ padding: "1.25rem", background: "#fff", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.25rem",
-              color: property.verificationLevel === "Premium" ? S.sage : property.verificationLevel === "Basic" ? "#1e40af" : property.verificationLevel === "PendingReview" ? "#D4820E" : S.inkLight }}>
+              color: property.verificationLevel === "Premium" ? S.sage : property.verificationLevel === "Basic" ? COLORS.plum : property.verificationLevel === "PendingReview" ? COLORS.plumMid : S.inkLight }}>
               {property.verificationLevel}
             </p>
             <p style={{ fontSize: "0.8rem", color: S.inkLight, fontWeight: 300, lineHeight: 1.5 }}>
@@ -1300,10 +1301,10 @@ function SettingsTab({ property, currentPrincipal }: { property: Property; curre
 
       {/* Incoming Transfer — shown when this user is the designated recipient */}
       {incomingTransfer && (
-        <div style={{ border: `1px solid #1e40af`, background: "#EFF6FF" }}>
+        <div style={{ border: `1px solid ${COLORS.sage}`, background: COLORS.sageLight }}>
           {section("Incoming Transfer")}
           <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.875rem" }}>
-            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: "#1e40af", lineHeight: 1.6 }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: COLORS.plum, lineHeight: 1.6 }}>
               <strong>{incomingTransfer.from}</strong> has proposed to transfer this property to you. Accept to become the owner on-chain.
             </p>
             <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -1322,7 +1323,7 @@ function SettingsTab({ property, currentPrincipal }: { property: Property; curre
                     setIncomingLoading(false);
                   }
                 }}
-                style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: "#1e40af", color: "#fff", border: "none", cursor: "pointer" }}
+                style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: COLORS.sage, color: COLORS.white, border: "none", cursor: "pointer" }}
               >
                 {incomingLoading ? "Accepting…" : "Accept Transfer"}
               </button>
@@ -1388,7 +1389,7 @@ function SettingsTab({ property, currentPrincipal }: { property: Property; curre
               )}
               {transferStep === "confirm" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  <div style={{ padding: "0.875rem", background: "#FEF2F0", border: `1px solid ${S.rust}` }}>
+                  <div style={{ padding: "0.875rem", background: COLORS.blush, border: `1px solid ${S.rust}`, borderRadius: RADIUS.sm }}>
                     <p style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.rust, marginBottom: "0.25rem" }}>Confirm transfer to:</p>
                     <p style={{ fontFamily: S.mono, fontSize: "0.7rem", color: S.ink, wordBreak: "break-all" }}>{transferPrincipal}</p>
                   </div>

@@ -9,12 +9,17 @@ import { jobService, Job } from "@/services/job";
 import { getPriceRange, PriceRange, SERVICE_SUBCATEGORIES } from "@/services/market";
 import { usePropertyStore } from "@/store/propertyStore";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const SERVICE_TYPES = ["HVAC","Roofing","Plumbing","Electrical","Flooring","Painting","Landscaping","Windows","Foundation","Other"];
@@ -134,7 +139,7 @@ export default function QuoteRequestPage() {
 
         {/* Preferred contractor banner (when arriving from contractor profile) */}
         {prefill?.contractorName && (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", border: `1px solid ${S.sage}`, background: "#F0F6F3", marginBottom: "1.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.875rem 1rem", border: `1px solid ${S.sage}`, background: COLORS.sageLight, marginBottom: "1.25rem" }}>
             <User size={13} color={S.sage} style={{ flexShrink: 0 }} />
             <div>
               <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.sage, marginBottom: "0.1rem" }}>Preferred contractor</p>
@@ -143,7 +148,7 @@ export default function QuoteRequestPage() {
           </div>
         )}
 
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.75rem", display: "flex", flexDirection: "column", gap: "1.25rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
 
           <div>
             <label className="form-label" style={{ display: "block", marginBottom: "0.5rem" }}>Open Requests</label>
@@ -172,12 +177,13 @@ export default function QuoteRequestPage() {
                 What specifically do you need?
                 <span style={{ color: S.inkLight, fontWeight: 300, marginLeft: "0.375rem" }}>(optional — refines your price estimate)</span>
               </label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(10rem, 1fr))", gap: "1px", background: S.rule }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(10rem, 1fr))", gap: "1rem" }}>
                 <div
                   onClick={() => update("subCategory", "")}
                   style={{
                     padding: "0.625rem 0.875rem", cursor: "pointer",
-                    background: form.subCategory === "" ? "#FAF0ED" : "#fff",
+                    background: form.subCategory === "" ? COLORS.blush : COLORS.white,
+                    borderRadius: RADIUS.sm, boxShadow: SHADOWS.card,
                   }}
                 >
                   <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: form.subCategory === "" ? S.rust : S.ink }}>
@@ -190,7 +196,8 @@ export default function QuoteRequestPage() {
                     onClick={() => update("subCategory", opt.label)}
                     style={{
                       padding: "0.625rem 0.875rem", cursor: "pointer",
-                      background: form.subCategory === opt.label ? "#FAF0ED" : "#fff",
+                      background: form.subCategory === opt.label ? COLORS.blush : COLORS.white,
+                      borderRadius: RADIUS.sm, boxShadow: SHADOWS.card,
                     }}
                   >
                     <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: form.subCategory === opt.label ? S.rust : S.ink, marginBottom: "0.2rem" }}>
@@ -233,11 +240,12 @@ export default function QuoteRequestPage() {
 
           <div>
             <label className="form-label">Urgency *</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: S.rule }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               {URGENCY_OPTIONS.map((opt) => (
                 <div key={opt.value} onClick={() => update("urgency", opt.value)} style={{
                   padding: "0.75rem 1rem", cursor: "pointer",
-                  background: form.urgency === opt.value ? "#FAF0ED" : "#fff",
+                  background: form.urgency === opt.value ? COLORS.blush : COLORS.white,
+                  borderRadius: RADIUS.sm, boxShadow: SHADOWS.card,
                 }}>
                   <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: form.urgency === opt.value ? S.rust : S.ink, marginBottom: "0.2rem", display: "flex", alignItems: "center", gap: "0.375rem" }}>
                     {opt.value === "emergency" && <Zap size={11} />}

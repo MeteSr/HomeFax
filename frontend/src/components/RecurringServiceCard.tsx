@@ -2,17 +2,22 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { RecurringService, VisitLog, SERVICE_TYPE_LABELS, FREQUENCY_LABELS } from "@/services/recurringService";
+import { COLORS, FONTS, RADIUS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  mono: "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  mono:     FONTS.mono,
 };
 
 const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
-  Active:    { color: S.sage,      bg: "#F0F6F3" },
-  Paused:    { color: "#92611B",   bg: "#FEF3DC" },
-  Cancelled: { color: S.inkLight,  bg: S.paper   },
+  Active:    { color: COLORS.sage,     bg: COLORS.sageLight },
+  Paused:    { color: COLORS.plumMid,  bg: COLORS.butter    },
+  Cancelled: { color: COLORS.plumMid,  bg: COLORS.white     },
 };
 
 const SERVICE_ICONS: Record<string, string> = {
@@ -47,8 +52,8 @@ export function RecurringServiceCard({ service, visitLogs }: Props) {
     <div
       onClick={() => navigate(`/recurring/${service.id}`)}
       style={{
-        border: `1px solid ${S.rule}`, background: "#fff",
-        padding: "1rem 1.25rem", cursor: "pointer",
+        border: `1px solid ${S.rule}`, background: COLORS.white,
+        borderRadius: RADIUS.card, padding: "1rem 1.25rem", cursor: "pointer",
         display: "flex", alignItems: "center", gap: "1rem",
         transition: "border-color 0.15s",
       }}

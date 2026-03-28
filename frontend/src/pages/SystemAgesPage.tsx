@@ -6,12 +6,17 @@ import { Button } from "@/components/Button";
 import { usePropertyStore } from "@/store/propertyStore";
 import { systemAgesService, TRACKED_SYSTEMS, SystemName, SystemAges } from "@/services/systemAges";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const SYSTEM_DESCRIPTIONS: Record<SystemName, string> = {
@@ -104,7 +109,7 @@ export default function SystemAgesPage() {
           Defaults to the house's build year ({yearBuilt}) when left unchanged.
         </p>
 
-        <div style={{ border: `1px solid ${S.rule}`, background: "#fff" }}>
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white }}>
           {TRACKED_SYSTEMS.map((sys, i) => {
             const isTouched = touched.has(sys);
             const isCustom = isTouched && ages[sys] !== String(yearBuilt);
@@ -118,7 +123,7 @@ export default function SystemAgesPage() {
                   gap: "1rem",
                   padding: "1rem 1.25rem",
                   borderBottom: i < TRACKED_SYSTEMS.length - 1 ? `1px solid ${S.rule}` : "none",
-                  background: isCustom ? "#FAFAF7" : "#fff",
+                  background: isCustom ? COLORS.white : COLORS.white,
                 }}
               >
                 <div>
@@ -155,7 +160,7 @@ export default function SystemAgesPage() {
                         fontSize: "0.8rem",
                         textAlign: "center",
                         outline: "none",
-                        background: isCustom ? "#FFF8F7" : "#fff",
+                        background: isCustom ? COLORS.sageLight : COLORS.white,
                         color: isCustom ? S.rust : S.ink,
                       }}
                     />

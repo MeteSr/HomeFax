@@ -213,8 +213,8 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | 5.1.2 | Agentic tool-use loop (up to 5 turns) | ✅ Exists | — | `POST /api/agent` in voice server |
 | 5.1.3 | Issue classification tool | ✅ Exists | — | `classify_home_issue` → confirms with user → `create_quote_request` → `quoteService.createRequest()`; full classify-then-act loop in `tools.ts` and `agentTools.ts` |
 | 5.1.4 | Contractor search + schedule via agent | ⬜ Missing | L | Agent calls `contractor.search()`, proposes top 3, and pre-fills `QuoteRequestPage` |
-| 5.1.5 | Work order auto-draft from NL input | ⬜ Missing | M | Agent generates structured job description from homeowner's natural language input |
-| 5.1.6 | Auto-log completed job from conversation | ⬜ Missing | M | After contractor confirmation, agent calls `job.createJob()` with parsed fields |
+| 5.1.5 | Work order auto-draft from NL input | ✅ Done | M | Agent generates structured job description from homeowner's natural language input |
+| 5.1.6 | Auto-log completed job from conversation | ✅ Done | M | After contractor confirmation, agent calls `job.createJob()` with parsed fields |
 
 ### 5.2 Negotiation Agents
 **Vision:** AI negotiates contractor bids on homeowner's behalf using network-wide pricing history.
@@ -1149,12 +1149,12 @@ border-radius: pills (100px) for buttons; 20–24px for cards
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 11.1.1 | Create `theme.ts` with new token constants | ⬜ Missing | S | Export `COLORS`, `FONTS`, `RADIUS` objects; replace inline `s = {...}` pattern used in every page component |
-| 11.1.2 | Update Google Fonts in `index.html` | ⬜ Missing | S | Add Fraunces + Plus Jakarta Sans; keep IBM Plex Mono; remove Playfair Display after migration complete |
-| 11.1.3 | Update global CSS resets in `index.css` | ⬜ Missing | S | Body font, background color, scrollbar, selection color aligned to new palette |
-| 11.1.4 | Update shared `Button.tsx` component | ⬜ Missing | S | Primary (plum fill, pill), secondary (sage-light fill, pill), ghost (border); replace current sharp-corner variants |
-| 11.1.5 | Update shared `Badge.tsx` component | ⬜ Missing | S | Pill shape, sage/blush/sky/butter surface variants matching new card language |
-| 11.1.6 | Update shared `Layout.tsx` nav + sidebar | ⬜ Missing | M | New nav: plum logo, sage accent on active item, white background with sage-mid bottom border; sidebar uses plum-mid text |
+| 11.1.1 | Create `theme.ts` with new token constants | ✅ Done | S | Export `COLORS`, `FONTS`, `RADIUS` objects; replace inline `s = {...}` pattern used in every page component |
+| 11.1.2 | Update Google Fonts in `index.html` | ✅ Done | S | Add Fraunces + Plus Jakarta Sans; keep IBM Plex Mono; remove Playfair Display after migration complete |
+| 11.1.3 | Update global CSS resets in `index.css` | ✅ Done | S | Body font, background color, scrollbar, selection color aligned to new palette |
+| 11.1.4 | Update shared `Button.tsx` component | ✅ Done | S | Primary (plum fill, pill), secondary (sage-light fill, pill), ghost (border); replace current sharp-corner variants |
+| 11.1.5 | Update shared `Badge.tsx` component | ✅ Done | S | Pill shape, sage/blush/sky/butter surface variants matching new card language |
+| 11.1.6 | Update shared `Layout.tsx` nav + sidebar | ✅ Done | M | New nav: plum logo, sage accent on active item, white background with sage-mid bottom border; sidebar uses plum-mid text |
 
 ---
 
@@ -1162,12 +1162,12 @@ border-radius: pills (100px) for buttons; 20–24px for cards
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 11.2.1 | `DashboardPage.tsx` | ⬜ Missing | M | Property cards → 20px radius, sage-light surface; score ring → sage gradient; section headers → Fraunces; stat pills → new palette |
-| 11.2.2 | `PropertyDetailPage.tsx` | ⬜ Missing | M | Tab bar → plum active state; cards → new radius + surface colors; action buttons → pill style |
-| 11.2.3 | `JobCreatePage.tsx` | ⬜ Missing | S | Form inputs → plum focus border; submit button → plum pill; success screen → sage-light background |
-| 11.2.4 | `SettingsPage.tsx` | ⬜ Missing | S | Section cards → 20px radius; tier badges → new badge variants; save button → plum pill |
-| 11.2.5 | `PricingPage.tsx` | ⬜ Missing | M | Tier cards → blush/sky/sage-light surfaces; CTA buttons → plum pill; recommended tier → plum card (dark) |
-| 11.2.6 | `OnboardingPage.tsx` | ⬜ Missing | M | Step indicators → sage dots; form cards → new radius; progress bar → sage gradient |
+| 11.2.1 | `DashboardPage.tsx` | ✅ Done | M | Property cards → 20px radius, sage-light surface; score ring → sage gradient; section headers → Fraunces; stat pills → new palette |
+| 11.2.2 | `PropertyDetailPage.tsx` | ✅ Done | M | Tab bar → plum active state; cards → new radius + surface colors; action buttons → pill style |
+| 11.2.3 | `JobCreatePage.tsx` | ✅ Done | S | Form inputs → plum focus border; submit button → plum pill; success screen → sage-light background |
+| 11.2.4 | `SettingsPage.tsx` | ✅ Done | S | Section cards → 20px radius; tier badges → new badge variants; save button → plum pill |
+| 11.2.5 | `PricingPage.tsx` | ✅ Done | M | Tier cards → blush/sky/sage-light surfaces; CTA buttons → plum pill; recommended tier → plum card (dark) |
+| 11.2.6 | `OnboardingPage.tsx` | ✅ Done | M | Step indicators → sage dots; form cards → new radius; progress bar → sage gradient |
 
 ---
 
@@ -1175,11 +1175,11 @@ border-radius: pills (100px) for buttons; 20–24px for cards
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 11.3.1 | `ContractorDashboardPage.tsx` | ⬜ Missing | M | Job cards → new card style; trust score display → sage gradient bar; status badges → new variants |
-| 11.3.2 | `ContractorProfilePage.tsx` | ⬜ Missing | S | Profile header → plum background; form fields → new focus state; save → plum pill |
-| 11.3.3 | `ContractorBrowsePage.tsx` | ⬜ Missing | M | Contractor cards → 20px radius, hover sage border; filter pills → sage-light; search → plum focus |
-| 11.3.4 | `ContractorPublicPage.tsx` | ⬜ Missing | M | Public-facing — must look polished; hero → plum gradient; review cards → new card style |
-| 11.3.5 | `QuoteRequestPage.tsx` + `QuoteDetailPage.tsx` | ⬜ Missing | M | Quote cards → blush surface; status badges → new variants; action buttons → pill style |
+| 11.3.1 | `ContractorDashboardPage.tsx` | ✅ Done | M | Job cards → new card style; trust score display → sage gradient bar; status badges → new variants |
+| 11.3.2 | `ContractorProfilePage.tsx` | ✅ Done | S | Profile header → plum background; form fields → new focus state; save → plum pill |
+| 11.3.3 | `ContractorBrowsePage.tsx` | ✅ Done | M | Contractor cards → 20px radius, hover sage border; filter pills → sage-light; search → plum focus |
+| 11.3.4 | `ContractorPublicPage.tsx` | ✅ Done | M | Public-facing — must look polished; hero → plum gradient; review cards → new card style |
+| 11.3.5 | `QuoteRequestPage.tsx` + `QuoteDetailPage.tsx` | ✅ Done | M | Quote cards → blush surface; status badges → new variants; action buttons → pill style |
 
 ---
 
@@ -1187,14 +1187,14 @@ border-radius: pills (100px) for buttons; 20–24px for cards
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 11.4.1 | `PredictiveMaintenancePage.tsx` | ⬜ Missing | M | Calendar grid → sage-light cells; urgency badges → blush (Soon) / sky (Watch) / sage (Good); tab bar → new style |
-| 11.4.2 | `MarketIntelligencePage.tsx` | ⬜ Missing | S | ROI bars → sage gradient; project cards → 20px radius; category headers → Fraunces |
-| 11.4.3 | `WarrantyWalletPage.tsx` | ⬜ Missing | S | Warranty cards → butter surface for active, plum-mid text for expired; expiry badges → new variants |
-| 11.4.4 | `InsuranceDefensePage.tsx` | ⬜ Missing | S | Evidence cards → sky surface; score indicators → sage; action buttons → plum pill |
-| 11.4.5 | `ResaleReadyPage.tsx` | ⬜ Missing | S | Checklist items → sage checkmark; progress ring → sage gradient; CTA → plum pill |
-| 11.4.6 | `RecurringServiceCreatePage.tsx` + `RecurringServiceDetailPage.tsx` | ⬜ Missing | S | New pages — apply new design from the start rather than retrofitting |
-| 11.4.7 | `SensorPage.tsx` | ⬜ Missing | S | Device cards → sky surface (IoT = tech/cool); alert badges → blush for warning |
-| 11.4.8 | `SystemAgesPage.tsx` | ⬜ Missing | S | Age bars → sage (good) / blush (aging) / rust-equivalent warning; Fraunces system names |
+| 11.4.1 | `PredictiveMaintenancePage.tsx` | ✅ Done | M | Calendar grid → sage-light cells; urgency badges → blush (Soon) / sky (Watch) / sage (Good); tab bar → new style |
+| 11.4.2 | `MarketIntelligencePage.tsx` | ✅ Done | S | ROI bars → sage gradient; project cards → 20px radius; category headers → Fraunces |
+| 11.4.3 | `WarrantyWalletPage.tsx` | ✅ Done | S | Warranty cards → butter surface for active, plum-mid text for expired; expiry badges → new variants |
+| 11.4.4 | `InsuranceDefensePage.tsx` | ✅ Done | S | Evidence cards → sky surface; score indicators → sage; action buttons → plum pill |
+| 11.4.5 | `ResaleReadyPage.tsx` | ✅ Done | S | Checklist items → sage checkmark; progress ring → sage gradient; CTA → plum pill |
+| 11.4.6 | `RecurringServiceCreatePage.tsx` + `RecurringServiceDetailPage.tsx` | ✅ Done | S | New pages — apply new design from the start rather than retrofitting |
+| 11.4.7 | `SensorPage.tsx` | ✅ Done | S | Device cards → sky surface (IoT = tech/cool); alert badges → blush for warning |
+| 11.4.8 | `SystemAgesPage.tsx` | ✅ Done | S | Age bars → sage (good) / blush (aging) / rust-equivalent warning; Fraunces system names |
 
 ---
 
@@ -1202,9 +1202,9 @@ border-radius: pills (100px) for buttons; 20–24px for cards
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 11.5.1 | `ReportPage.tsx` (public share page) | ⬜ Missing | L | Highest-stakes public page; score display → Fraunces large number + sage gradient bar; section cards → new style; HomeFax badge → pill; "Powered by HomeFax" footer → plum |
-| 11.5.2 | `ScoreCertPage.tsx` | ⬜ Missing | M | Certificate → Fraunces display type + plum/sage palette; shareable badge → new style |
-| 11.5.3 | `GenerateReportModal.tsx` | ⬜ Missing | S | Modal → 20px radius, white background; form inputs → plum focus; generate button → plum pill |
+| 11.5.1 | `ReportPage.tsx` (public share page) | ✅ Done | L | Highest-stakes public page; score display → Fraunces large number + sage gradient bar; section cards → new style; HomeFax badge → pill; "Powered by HomeFax" footer → plum |
+| 11.5.2 | `ScoreCertPage.tsx` | ✅ Done | M | Certificate → Fraunces display type + plum/sage palette; shareable badge → new style |
+| 11.5.3 | `GenerateReportModal.tsx` | ✅ Done | S | Modal → 20px radius, white background; form inputs → plum focus; generate button → plum pill |
 
 ---
 
@@ -1212,8 +1212,8 @@ border-radius: pills (100px) for buttons; 20–24px for cards
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 11.6.1 | `AdminDashboardPage.tsx` | ⬜ Missing | M | Metric cards → new card style; charts → sage/plum palette; admin-only badge → plum dark |
-| 11.6.2 | `AgentDashboardPage.tsx` | ⬜ Missing | M | Pipeline cards → blush surface; proposal status badges → new variants; earnings summary → Fraunces numerals |
+| 11.6.1 | `AdminDashboardPage.tsx` | ✅ Done | M | Metric cards → new card style; charts → sage/plum palette; admin-only badge → plum dark |
+| 11.6.2 | `AgentDashboardPage.tsx` | ✅ Done | M | Pipeline cards → blush surface; proposal status badges → new variants; earnings summary → Fraunces numerals |
 
 ---
 
@@ -1221,8 +1221,8 @@ border-radius: pills (100px) for buttons; 20–24px for cards
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 11.7.1 | `LoginPage.tsx` | ⬜ Missing | S | Page background → sage-light; card → white, 24px radius; Internet Identity button → plum pill; dev login → ghost pill |
-| 11.7.2 | `RegisterPage.tsx` | ⬜ Missing | S | Same card style as login; role selector → pill toggle (Homeowner / Contractor / Agent) in plum/sage |
+| 11.7.1 | `LoginPage.tsx` | ✅ Done | S | Page background → sage-light; card → white, 24px radius; Internet Identity button → plum pill; dev login → ghost pill |
+| 11.7.2 | `RegisterPage.tsx` | ✅ Done | S | Same card style as login; role selector → pill toggle (Homeowner / Contractor / Agent) in plum/sage |
 
 ---
 

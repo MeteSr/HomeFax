@@ -12,21 +12,26 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import { Shield, AlertTriangle } from "lucide-react";
 import { parseCertToken } from "@/services/scoreService";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 const GRADE_CONFIG: Record<string, { color: string; bg: string }> = {
-  "A+": { color: S.sage,    bg: "#F0F6F3" },
-  "A":  { color: S.sage,    bg: "#F0F6F3" },
-  "B":  { color: "#1A5C8A", bg: "#EAF3FA" },
-  "C":  { color: "#D4820E", bg: "#FEF3DC" },
-  "D":  { color: S.rust,    bg: "#FAF0ED" },
-  "F":  { color: S.rust,    bg: "#FAF0ED" },
+  "A+": { color: S.sage,        bg: COLORS.sageLight },
+  "A":  { color: S.sage,        bg: COLORS.sageLight },
+  "B":  { color: COLORS.plum,   bg: COLORS.sky },
+  "C":  { color: COLORS.plumMid, bg: COLORS.butter },
+  "D":  { color: S.rust,        bg: COLORS.blush },
+  "F":  { color: S.rust,        bg: COLORS.blush },
 };
 
 export default function ScoreCertPage() {
@@ -59,21 +64,21 @@ export default function ScoreCertPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: S.paper, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-      <div style={{ width: "100%", maxWidth: "32rem", background: "#fff", border: `1px solid ${S.rule}` }}>
+      <div style={{ width: "100%", maxWidth: "32rem", background: COLORS.white, border: `1px solid ${S.rule}` }}>
 
         {/* Header */}
         <div style={{ background: S.ink, padding: "2rem 2.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.5rem", opacity: 0.7 }}>
-            <Shield size={14} color="#F4F1EB" />
-            <span style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#F4F1EB" }}>
+            <Shield size={14} color={COLORS.white} />
+            <span style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: COLORS.white }}>
               HOMEFAX
             </span>
-            <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: "#7A7268" }}>Score Certificate</span>
+            <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.plumMid }}>Score Certificate</span>
           </div>
-          <h1 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1.2, color: "#F4F1EB", marginBottom: "0.375rem" }}>
+          <h1 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1.2, color: COLORS.white, marginBottom: "0.375rem" }}>
             {payload.address}
           </h1>
-          <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: "#7A7268" }}>
+          <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
             Issued {generatedDate}
           </p>
         </div>
@@ -109,7 +114,7 @@ export default function ScoreCertPage() {
 
           {/* Certified badge */}
           {payload.certified ? (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", border: "1px solid #C9A84C", padding: "0.625rem 1.25rem", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#8B6914", background: "#FFFBEE" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", border: `1px solid ${COLORS.plumMid}`, padding: "0.625rem 1.25rem", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, background: COLORS.butter }}>
               ★ HomeFax Certified™ — Pre-Inspection Ready
             </div>
           ) : (
@@ -120,7 +125,7 @@ export default function ScoreCertPage() {
         </div>
 
         {/* What this means */}
-        <div style={{ padding: "1.5rem 2.5rem", borderBottom: `1px solid ${S.rule}`, background: "#FAFAF8" }}>
+        <div style={{ padding: "1.5rem 2.5rem", borderBottom: `1px solid ${S.rule}`, background: COLORS.white }}>
           <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.875rem" }}>
             What this means
           </p>

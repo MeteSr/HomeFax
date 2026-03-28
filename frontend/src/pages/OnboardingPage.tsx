@@ -7,11 +7,17 @@ import { photoService } from "@/services/photo";
 import { systemAgesService } from "@/services/systemAges";
 import { useAuthStore } from "@/store/authStore";
 
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
+
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 interface Step {
@@ -44,39 +50,40 @@ function StepCard({ step, index, isNext, onClick }: { step: Step; index: number;
     <div style={{
       display: "flex", alignItems: "flex-start", gap: "1rem",
       padding: "1.25rem 1.5rem",
-      border: `1px solid ${step.done ? S.sage : isNext ? S.rust : S.rule}`,
-      background: step.done ? "#F0F6F3" : "#fff",
+      borderRadius: RADIUS.sm,
+      border: `1.5px solid ${step.done ? COLORS.sageMid : isNext ? COLORS.sage : COLORS.rule}`,
+      background: step.done ? COLORS.sageLight : COLORS.white,
     }}>
       {/* Icon */}
-      <div style={{ width: "2.75rem", height: "2.75rem", border: `1px solid ${step.done ? S.sage : isNext ? S.rust : S.rule}`, color: step.done ? S.sage : isNext ? S.rust : S.inkLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", background: step.done ? COLORS.sageLight : isNext ? COLORS.sage : COLORS.rule, color: step.done ? COLORS.sage : isNext ? COLORS.white : COLORS.plumMid, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         {step.icon}
       </div>
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-          <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
+          <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
             Step {index + 1}
           </span>
           {step.done && (
-            <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.sage, border: `1px solid ${S.sage}40`, padding: "0.1rem 0.5rem" }}>
+            <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}`, padding: "0.1rem 0.5rem", borderRadius: 100 }}>
               Done
             </span>
           )}
         </div>
-        <h3 style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "0.938rem", color: step.done ? S.inkLight : S.ink, marginBottom: "0.25rem", textDecoration: step.done ? "line-through" : "none" }}>
+        <h3 style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "0.938rem", color: step.done ? COLORS.plumMid : COLORS.plum, marginBottom: "0.25rem", textDecoration: step.done ? "line-through" : "none" }}>
           {step.title}
         </h3>
-        <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight, lineHeight: 1.6 }}>{step.body}</p>
+        <p style={{ fontFamily: FONTS.sans, fontSize: "0.85rem", color: COLORS.plumMid, lineHeight: 1.6, fontWeight: 300 }}>{step.body}</p>
       </div>
 
       {!step.done && (
-        <button onClick={onClick} style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${isNext ? S.rust : S.rule}`, background: isNext ? S.rust : "#fff", color: isNext ? "#F4F1EB" : S.inkLight, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap" }}>
+        <button onClick={onClick} style={{ flexShrink: 0, display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1.25rem", borderRadius: 100, border: `1.5px solid ${isNext ? COLORS.sage : COLORS.rule}`, background: isNext ? COLORS.sage : COLORS.white, color: isNext ? COLORS.white : COLORS.plumMid, fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
           {step.cta} {isNext && <ArrowRight size={12} />}
         </button>
       )}
 
-      {step.done && <CheckCircle size={20} color={S.sage} style={{ flexShrink: 0 }} />}
+      {step.done && <CheckCircle size={20} color={COLORS.sage} style={{ flexShrink: 0 }} />}
     </div>
   );
 }
@@ -112,19 +119,16 @@ export default function OnboardingPage() {
     <div style={{ minHeight: "100vh", background: S.paper, display: "flex", flexDirection: "column", alignItems: "center", padding: "3rem 1.25rem 4rem" }}>
 
       {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", marginBottom: "3rem", cursor: "pointer" }} onClick={() => navigate("/")}>
-        <div style={{ width: "1.5rem", height: "1.5rem", background: S.rust, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Home size={14} color="#F4F1EB" />
-        </div>
-        <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.125rem", color: S.ink, letterSpacing: "-0.01em" }}>HomeFax</span>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: "3rem", cursor: "pointer" }} onClick={() => navigate("/")}>
+        <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", letterSpacing: "-0.5px", color: COLORS.plum }}>Home<span style={{ color: COLORS.sage }}>Fax</span></span>
       </div>
 
       {/* Card */}
-      <div style={{ border: `1px solid ${S.rule}`, background: "#fff", padding: "2.5rem", maxWidth: "38rem", width: "100%" }}>
+      <div style={{ borderRadius: RADIUS.card, border: `1px solid ${COLORS.rule}`, background: COLORS.white, padding: "2.5rem", maxWidth: "38rem", width: "100%", boxShadow: SHADOWS.modal }}>
 
         {/* Welcome header */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: S.rust, marginBottom: "0.5rem" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: COLORS.butter, color: COLORS.plum, padding: "5px 16px", borderRadius: 100, fontSize: "0.75rem", fontWeight: 600, marginBottom: "1rem", border: `1px solid rgba(46,37,64,0.1)` }}>
             Welcome
           </div>
           <h1 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: S.ink, marginBottom: "0.5rem" }}>
@@ -154,8 +158,8 @@ export default function OnboardingPage() {
                     </span>
                   </div>
                 </div>
-                <div style={{ height: "5px", background: S.rule }}>
-                  <div style={{ height: "5px", width: `${pct}%`, background: barColor, transition: "width 0.5s ease" }} />
+                <div style={{ height: "6px", background: COLORS.rule, borderRadius: 100 }}>
+                  <div style={{ height: "6px", width: `${pct}%`, background: barColor, borderRadius: 100, transition: "width 0.5s ease" }} />
                 </div>
                 {allDone && (
                   <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: S.sage, marginTop: "0.5rem", textAlign: "center" }}>
@@ -173,7 +177,7 @@ export default function OnboardingPage() {
             <div className="spinner-lg" />
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {steps.map((step, i) => (
               <StepCard key={step.id} step={step} index={i} isNext={step === nextStep} onClick={() => handleStep(step)} />
             ))}

@@ -17,12 +17,17 @@ import { getWeeklyPulse } from "@/services/pulseService";
 import { marketService, jobToSummary, type PropertyProfile, type ProjectRecommendation } from "@/services/market";
 import { getRecentScoreEvents, categoryColor, categoryBg, type ScoreEvent } from "@/services/scoreEventService";
 import toast from "react-hot-toast";
+import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268", sage: "#3D6B57",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,       // primary accent: sage replaces rust
+  inkLight: COLORS.plumMid,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 export default function DashboardPage() {
@@ -298,7 +303,7 @@ export default function DashboardPage() {
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
             border: `1px solid ${S.rust}`, padding: "1rem 1.25rem", marginBottom: "2rem",
-            background: "#FAF0ED", flexWrap: "wrap",
+            background: COLORS.sageLight, flexWrap: "wrap",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <Sparkles size={16} color={S.rust} style={{ flexShrink: 0 }} />
@@ -356,7 +361,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => { localStorage.setItem(milestoneKey, "1"); setMilestoneDismissed(true); }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7268", flexShrink: 0 }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, flexShrink: 0 }}
             >
               <X size={15} />
             </button>
@@ -368,7 +373,7 @@ export default function DashboardPage() {
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
             border: `1px solid ${S.sage}`, padding: "1rem 1.25rem", marginBottom: "2rem",
-            background: "#F0F6F3", flexWrap: "wrap",
+            background: COLORS.sageLight, flexWrap: "wrap",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
               <div style={{ width: "2rem", height: "2rem", border: `2px solid ${S.sage}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: S.sage }}>
@@ -462,14 +467,14 @@ export default function DashboardPage() {
         {showScoreIncrease && (
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
-            border: `1px solid #B5D4C8`, padding: "0.875rem 1.25rem", marginBottom: "1.5rem",
-            background: "#F0F7F4", flexWrap: "wrap",
+            border: `1px solid ${COLORS.sageMid}`, padding: "0.875rem 1.25rem", marginBottom: "1.5rem",
+            background: COLORS.sageLight, flexWrap: "wrap",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
               <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.sage }}>
                 Score Up +{delta} pts
               </span>
-              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: "#3D6B57", opacity: 0.75 }}>
+              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.sage, opacity: 0.75 }}>
                 — Your HomeFax Score is now {homefaxScore}. Keep logging jobs to grow your record.
               </span>
             </div>
@@ -483,15 +488,15 @@ export default function DashboardPage() {
         )}
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", borderTop: `1px solid ${S.rule}`, borderLeft: `1px solid ${S.rule}`, marginBottom: "2.5rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: "1rem", marginBottom: "2.5rem" }}>
           {[
-            { label: "Properties",       value: String(properties.length),                                         accent: false },
-            { label: "Verified Jobs",    value: String(verifiedCount),                                             accent: false },
-            { label: "Total Value",      value: `$${(totalValue / 100).toLocaleString()}`,                         accent: false },
-            { label: "HomeFax Premium™", value: `$${Math.round((totalValue / 100) * 0.03).toLocaleString()}`,      accent: false },
+            { label: "Properties",       value: String(properties.length) },
+            { label: "Verified Jobs",    value: String(verifiedCount) },
+            { label: "Total Value",      value: `$${(totalValue / 100).toLocaleString()}` },
+            { label: "HomeFax Premium™", value: `$${Math.round((totalValue / 100) * 0.03).toLocaleString()}` },
           ].map((stat) => (
-            <div key={stat.label} style={{ padding: "1.5rem", borderRight: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`, background: "#fff" }}>
-              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.625rem" }}>
+            <div key={stat.label} style={{ padding: "1.25rem 1.5rem", borderRadius: RADIUS.card, background: COLORS.white, border: `1px solid ${COLORS.rule}`, boxShadow: SHADOWS.card }}>
+              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.625rem" }}>
                 {stat.label}
               </div>
               <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "2rem", lineHeight: 1, color: S.ink }}>
@@ -500,16 +505,16 @@ export default function DashboardPage() {
             </div>
           ))}
           {/* HomeFax Score — accent cell */}
-          <div style={{ padding: "1.5rem", borderRight: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`, background: S.ink }}>
-            <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.625rem" }}>
+          <div style={{ padding: "1.25rem 1.5rem", borderRadius: RADIUS.card, background: COLORS.plum, boxShadow: SHADOWS.hover }}>
+            <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.625rem" }}>
               HomeFax Score
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", marginBottom: "0.5rem" }}>
-              <span style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "2rem", lineHeight: 1, color: "#F4F1EB" }}>{homefaxScore}</span>
-              <span style={{ fontFamily: S.mono, fontSize: "0.7rem", color: "#7A7268" }}>/100 · {scoreGrade}</span>
+              <span style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "2rem", lineHeight: 1, color: COLORS.white }}>{homefaxScore}</span>
+              <span style={{ fontFamily: S.mono, fontSize: "0.7rem", color: COLORS.plumMid }}>/100 · {scoreGrade}</span>
             </div>
             {delta !== 0 && (
-              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: delta > 0 ? "#6EAF8A" : "#C94C2E", letterSpacing: "0.06em" }}>
+              <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: delta > 0 ? COLORS.sage : COLORS.blush, letterSpacing: "0.06em" }}>
                 {delta > 0 ? "+" : ""}{delta} pts this period
               </div>
             )}
@@ -520,7 +525,7 @@ export default function DashboardPage() {
         {/* Score history chart */}
         {showScoreChart && scoreHistory.length >= 2 && (
           <div style={{ marginBottom: "2rem", border: `1px solid ${S.rule}`, background: "#fff" }}>
-            <div style={{ padding: "0.75rem 1rem", borderBottom: `1px solid ${S.rule}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFAF8" }}>
+            <div style={{ padding: "0.75rem 1rem", borderBottom: `1px solid ${S.rule}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.white }}>
               <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight }}>Score History</span>
               <button onClick={() => setShowScoreChart(false)} style={{ background: "none", border: "none", cursor: "pointer", color: S.inkLight, fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase" }}>Close ✕</button>
             </div>
@@ -536,7 +541,7 @@ export default function DashboardPage() {
               style={{
                 display: "flex", alignItems: "center", gap: "0.5rem", width: "100%",
                 padding: "0.75rem 1rem", border: `1px solid ${S.rule}`,
-                background: showScoreBreakdown ? "#FAFAF8" : "#fff",
+                background: showScoreBreakdown ? COLORS.sageLight : COLORS.white,
                 fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase",
                 color: S.inkLight, cursor: "pointer", textAlign: "left",
               }}
@@ -545,7 +550,7 @@ export default function DashboardPage() {
               <span style={{ fontSize: "0.75rem" }}>{showScoreBreakdown ? "▲" : "▼"}</span>
             </button>
             {showScoreBreakdown && (
-              <div style={{ border: `1px solid ${S.rule}`, borderTop: "none", background: "#fff" }}>
+              <div style={{ border: `1px solid ${S.rule}`, borderTop: "none", background: COLORS.white }}>
                 {scoreBreakdown.map((row) => (
                   <div key={row.label} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.875rem 1rem", borderBottom: `1px solid ${S.rule}` }}>
                     <div style={{ width: "10rem", flexShrink: 0 }}>
@@ -565,7 +570,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
-                <div style={{ padding: "0.875rem 1rem", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.5rem", background: "#FAFAF8" }}>
+                <div style={{ padding: "0.875rem 1rem", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.5rem", background: COLORS.white }}>
                   <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight }}>Total</span>
                   <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.25rem", color: S.ink }}>{homefaxScore}</span>
                   <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>/100</span>
@@ -577,8 +582,8 @@ export default function DashboardPage() {
 
         {/* Score Goal Widget */}
         {!loading && hasProperty && (
-          <div style={{ marginBottom: "2.5rem", border: `1px solid ${S.rule}`, background: "#fff" }}>
-            <div style={{ padding: "0.875rem 1.25rem", borderBottom: `1px solid ${S.rule}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFAF8" }}>
+          <div style={{ marginBottom: "2.5rem", border: `1px solid ${S.rule}`, background: COLORS.white }}>
+            <div style={{ padding: "0.875rem 1.25rem", borderBottom: `1px solid ${S.rule}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: COLORS.white }}>
               <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
                 Score Goal
               </p>
@@ -598,26 +603,26 @@ export default function DashboardPage() {
                 <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, marginBottom: "0.875rem" }}>
                   Set a target score to track your progress:
                 </p>
-                <div style={{ display: "flex", gap: "1px", background: S.rule }}>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
                   {[60, 75, 88, 100].map((g) => (
                     <button
                       key={g}
                       onClick={() => setScoreGoal(g)}
                       disabled={homefaxScore >= g}
                       style={{
-                        flex: 1, padding: "0.875rem", border: "none", cursor: homefaxScore >= g ? "default" : "pointer",
-                        background: homefaxScore >= g ? "#F0F6F3" : "#fff",
+                        flex: 1, padding: "0.875rem", border: `1px solid ${COLORS.rule}`, borderRadius: RADIUS.sm, cursor: homefaxScore >= g ? "default" : "pointer",
+                        background: homefaxScore >= g ? COLORS.sageLight : COLORS.white,
                         opacity: homefaxScore >= g ? 0.6 : 1,
                       }}
                     >
-                      <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: homefaxScore >= g ? "#3D6B57" : S.ink }}>
+                      <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: homefaxScore >= g ? COLORS.sage : S.ink }}>
                         {g}
                       </div>
                       <div style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: S.inkLight, marginTop: "0.25rem" }}>
                         {g === 60 ? "Good" : g === 75 ? "Great" : g === 88 ? "Excellent" : "Perfect"}
                       </div>
                       {homefaxScore >= g && (
-                        <div style={{ fontFamily: S.mono, fontSize: "0.5rem", color: "#3D6B57", marginTop: "0.2rem" }}>✓ Achieved</div>
+                        <div style={{ fontFamily: S.mono, fontSize: "0.5rem", color: COLORS.sage, marginTop: "0.2rem" }}>✓ Achieved</div>
                       )}
                     </button>
                   ))}
@@ -626,7 +631,7 @@ export default function DashboardPage() {
             ) : homefaxScore >= scoreGoal ? (
               /* Goal achieved celebration */
               <div style={{ padding: "1.5rem", textAlign: "center" }}>
-                <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", color: "#3D6B57", marginBottom: "0.375rem" }}>
+                <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", color: COLORS.sage, marginBottom: "0.375rem" }}>
                   Goal reached — {homefaxScore}/{scoreGoal} ✓
                 </p>
                 <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, marginBottom: "1rem" }}>
@@ -654,7 +659,7 @@ export default function DashboardPage() {
                   <div style={{
                     height: "100%",
                     width: `${(homefaxScore / scoreGoal) * 100}%`,
-                    background: `linear-gradient(to right, ${S.rust}, #D4820E)`,
+                    background: `linear-gradient(to right, ${COLORS.sage}, ${COLORS.sageMid})`,
                     transition: "width 0.5s ease",
                   }} />
                 </div>
@@ -694,11 +699,11 @@ export default function DashboardPage() {
                 See all →
               </button>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(15rem, 1fr))", gap: "1px", background: S.rule }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(15rem, 1fr))", gap: "1rem" }}>
               {recommendations.map((rec) => {
-                const priorityColor = rec.priority === "High" ? S.rust : rec.priority === "Medium" ? "#D4820E" : S.inkLight;
+                const priorityColor = rec.priority === "High" ? S.rust : rec.priority === "Medium" ? COLORS.plumMid : S.inkLight;
                 return (
-                  <div key={rec.name} style={{ background: "#fff", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                  <div key={rec.name} style={{ background: COLORS.white, padding: "1.25rem", borderRadius: RADIUS.sm, border: `1px solid ${COLORS.rule}`, display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
                       <p style={{ fontSize: "0.875rem", fontWeight: 600, color: S.ink, lineHeight: 1.2 }}>{rec.name}</p>
                       <span style={{ fontFamily: S.mono, fontSize: "0.5rem", letterSpacing: "0.1em", textTransform: "uppercase", color: priorityColor, border: `1px solid ${priorityColor}`, padding: "0.1rem 0.4rem", flexShrink: 0, opacity: 0.8 }}>
@@ -739,14 +744,14 @@ export default function DashboardPage() {
           return (
             <div style={{
               border: `1px solid ${S.rust}30`, padding: "1.25rem 1.5rem", marginBottom: "2.5rem",
-              background: "#FAF9F6",
+              background: COLORS.sageLight,
             }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
                 <div>
                   <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.rust, marginBottom: "0.375rem" }}>
                     Your Score in {market}
                   </p>
-                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: "2rem", lineHeight: 1, color: S.ink }}>
+                  <p style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2rem", lineHeight: 1, color: S.ink }}>
                     ${est.low.toLocaleString()} – ${est.high.toLocaleString()}
                   </p>
                   <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.inkLight, marginTop: "0.375rem" }}>
@@ -809,9 +814,9 @@ export default function DashboardPage() {
               {expiringWarranties.map((job, i) => {
                 const expiry   = new Date(job.date).getTime() + (job.warrantyMonths ?? 0) * 30.44 * 24 * 60 * 60 * 1000;
                 const daysLeft = Math.round((expiry - Date.now()) / (24 * 60 * 60 * 1000));
-                const color    = daysLeft <= 30 ? S.rust : "#D4820E";
+                const color    = daysLeft <= 30 ? S.rust : COLORS.plumMid;
                 return (
-                  <div key={job.id} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.75rem 1rem", borderBottom: i < expiringWarranties.length - 1 ? `1px solid ${S.rule}` : "none", background: "#fff" }}>
+                  <div key={job.id} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.75rem 1rem", borderBottom: i < expiringWarranties.length - 1 ? `1px solid ${S.rule}` : "none", background: COLORS.white }}>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: "0.875rem", fontWeight: 500 }}>{job.serviceType}</p>
                       <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.inkLight }}>{job.isDiy ? "DIY" : job.contractorName} · {job.date}</p>
@@ -849,12 +854,12 @@ export default function DashboardPage() {
                       display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
                       padding: "0.875rem 1rem", alignItems: "center",
                       borderBottom: i < propertyComparison.length - 1 ? `1px solid ${S.rule}` : "none",
-                      background: isTop ? "#FAFAF8" : "#fff",
+                      background: isTop ? COLORS.sageLight : COLORS.white,
                       cursor: "pointer",
                       borderLeft: isTop ? `3px solid ${S.sage}` : "3px solid transparent",
                     }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#FAF0ED"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = isTop ? "#FAFAF8" : "#fff"; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = COLORS.sageLight; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = isTop ? COLORS.sageLight : COLORS.white; }}
                   >
                     <div>
                       <p style={{ fontSize: "0.8rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.property.address}</p>
@@ -909,7 +914,7 @@ export default function DashboardPage() {
               </div>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "1px", background: S.rule }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "1rem" }}>
               {properties.map((property) => (
                 <PropertyCard key={String(property.id)} property={property} onClick={() => navigate(`/properties/${property.id}`)} badge={verificationBadge(property.verificationLevel)} />
               ))}
@@ -951,7 +956,7 @@ export default function DashboardPage() {
                 const daysAgo    = Math.floor((Date.now() - req.createdAt) / 86400000);
                 const ageLabel   = daysAgo === 0 ? "Today" : daysAgo === 1 ? "1d ago" : `${daysAgo}d ago`;
                 const stale      = req.status === "open" && daysAgo >= 5;
-                const rowBg      = hasBids ? "#FDFAF9" : "#fff";
+                const rowBg      = hasBids ? COLORS.sageLight : COLORS.white;
                 return (
                   <div
                     key={req.id}
@@ -960,9 +965,9 @@ export default function DashboardPage() {
                       display: "flex", alignItems: "center", gap: "1rem", padding: "0.875rem 1rem",
                       borderBottom: i < quoteRequests.length - 1 ? `1px solid ${S.rule}` : "none",
                       background: rowBg, cursor: "pointer",
-                      borderLeft: hasBids ? `3px solid ${S.rust}` : stale ? `3px solid #D4820E` : "3px solid transparent",
+                      borderLeft: hasBids ? `3px solid ${S.rust}` : stale ? `3px solid ${COLORS.plumMid}` : "3px solid transparent",
                     }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#FAF0ED"; }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = COLORS.sageLight; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = rowBg; }}
                   >
                     <div style={{ width: "2rem", height: "2rem", border: `1px solid ${S.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -972,7 +977,7 @@ export default function DashboardPage() {
                       <p style={{ fontSize: "0.875rem", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {req.serviceType}
                         {stale && (
-                          <span style={{ marginLeft: "0.5rem", fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#D4820E" }}>
+                          <span style={{ marginLeft: "0.5rem", fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid }}>
                             No bids yet
                           </span>
                         )}
@@ -1171,17 +1176,17 @@ function ScoreSparkline({ history, onExpand }: { history: ScoreSnapshot[]; onExp
   return (
     <div onClick={onExpand} style={{ cursor: onExpand ? "pointer" : "default", marginTop: "0.5rem" }}>
       <svg width={W} height={H} style={{ display: "block", opacity: 0.7 }}>
-        <polyline points={pts} fill="none" stroke="#C8C3B8" strokeWidth="1.5" strokeLinejoin="round" />
+        <polyline points={pts} fill="none" stroke={COLORS.sageMid} strokeWidth="1.5" strokeLinejoin="round" />
         {scores.map((s, i) => {
           const x = pad + (i / (scores.length - 1)) * (W - pad * 2);
           const y = H - pad - ((s - min) / range) * (H - pad * 2);
           return i === scores.length - 1
-            ? <circle key={i} cx={x} cy={y} r="2.5" fill="#F4F1EB" />
+            ? <circle key={i} cx={x} cy={y} r="2.5" fill={COLORS.sage} />
             : null;
         })}
       </svg>
       {onExpand && (
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.5rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7268", marginTop: "0.25rem" }}>
+        <div style={{ fontFamily: FONTS.mono, fontSize: "0.5rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, marginTop: "0.25rem" }}>
           View history ↗
         </div>
       )}
@@ -1218,16 +1223,16 @@ function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: W, height: H, display: "block" }}>
         <defs>
           <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#C94C2E" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#C94C2E" stopOpacity="0" />
+            <stop offset="0%"   stopColor={COLORS.sage} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={COLORS.sage} stopOpacity="0" />
           </linearGradient>
         </defs>
 
         {/* Y grid */}
         {yGridLines.map((v) => (
           <g key={v}>
-            <line x1={padL} y1={toY(v)} x2={padL + innerW} y2={toY(v)} stroke="#C8C3B8" strokeWidth="0.5" strokeDasharray="3,3" />
-            <text x={padL - 4} y={toY(v)} textAnchor="end" dominantBaseline="middle" fill="#7A7268" fontSize="9" fontFamily="'IBM Plex Mono', monospace">{v}</text>
+            <line x1={padL} y1={toY(v)} x2={padL + innerW} y2={toY(v)} stroke={COLORS.rule} strokeWidth="0.5" strokeDasharray="3,3" />
+            <text x={padL - 4} y={toY(v)} textAnchor="end" dominantBaseline="middle" fill={COLORS.plumMid} fontSize="9" fontFamily="'IBM Plex Mono', monospace">{v}</text>
           </g>
         ))}
 
@@ -1235,11 +1240,11 @@ function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
         <path d={areaD} fill="url(#scoreAreaGrad)" />
 
         {/* Line */}
-        <polyline points={pts} fill="none" stroke="#C94C2E" strokeWidth="1.5" strokeLinejoin="round" />
+        <polyline points={pts} fill="none" stroke={COLORS.sage} strokeWidth="1.5" strokeLinejoin="round" />
 
         {/* Data points */}
         {history.map((s, i) => (
-          <circle key={i} cx={toX(i)} cy={toY(s.score)} r="2.5" fill="#C94C2E" />
+          <circle key={i} cx={toX(i)} cy={toY(s.score)} r="2.5" fill={COLORS.sage} />
         ))}
 
         {/* X labels */}
@@ -1248,7 +1253,7 @@ function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
           const d   = new Date(s.timestamp);
           const lbl = `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, "0")}`;
           return (
-            <text key={i} x={toX(i)} y={padT + innerH + 14} textAnchor="middle" fill="#7A7268" fontSize="8" fontFamily="'IBM Plex Mono', monospace">
+            <text key={i} x={toX(i)} y={padT + innerH + 14} textAnchor="middle" fill={COLORS.plumMid} fontSize="8" fontFamily="'IBM Plex Mono', monospace">
               {lbl}
             </text>
           );
@@ -1259,25 +1264,29 @@ function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
 }
 
 function PropertyCard({ property, onClick, badge }: { property: Property; onClick: () => void; badge: React.ReactNode }) {
+  const [hovered, setHovered] = React.useState(false);
   return (
     <div
       onClick={onClick}
-      style={{ background: "#fff", cursor: "pointer", padding: "1.5rem", transition: "background 0.15s" }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#FAF0ED"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#fff"; }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: COLORS.white,
+        cursor: "pointer",
+        padding: "1.5rem",
+        borderRadius: RADIUS.card,
+        border: `1.5px solid ${hovered ? COLORS.sageMid : COLORS.rule}`,
+        boxShadow: hovered ? SHADOWS.hover : SHADOWS.card,
+        transition: "border-color 0.2s, box-shadow 0.2s",
+      }}
     >
-      {/* Blueprint thumbnail */}
-      <div style={{ height: "6rem", background: "#E8E4DC", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{
-          position: "absolute", inset: 0,
-          backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 11px,#C8C3B8 11px,#C8C3B8 12px),repeating-linear-gradient(90deg,transparent,transparent 11px,#C8C3B8 11px,#C8C3B8 12px)",
-          opacity: 0.3,
-        }} />
-        <Home size={28} color="#C8C3B8" />
+      {/* Property thumbnail */}
+      <div style={{ height: "6rem", background: COLORS.sageLight, borderRadius: RADIUS.sm, marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+        <Home size={28} color={COLORS.sageMid} />
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "0.375rem" }}>
-        <h3 style={{ fontSize: "0.875rem", fontWeight: 500 }}>{property.address}</h3>
+        <h3 style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 600, color: COLORS.plum }}>{property.address}</h3>
         {badge}
       </div>
       <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight, marginBottom: "0.75rem" }}>

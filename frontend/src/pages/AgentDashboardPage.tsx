@@ -16,12 +16,16 @@ import { useAuthStore } from "@/store/authStore";
 import { propertyService } from "@/services/property";
 import { reportService, ShareLink } from "@/services/report";
 import toast from "react-hot-toast";
+import { COLORS, FONTS } from "@/theme";
 
 const S = {
-  ink: "#0E0E0C", paper: "#F4F1EB", rule: "#C8C3B8",
-  rust: "#C94C2E", inkLight: "#7A7268",
-  serif: "'Playfair Display', Georgia, serif" as const,
-  mono:  "'IBM Plex Mono', monospace" as const,
+  ink:      COLORS.plum,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  rust:     COLORS.sage,
+  inkLight: COLORS.plumMid,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
 };
 
 interface LinkRow extends ShareLink {
@@ -118,7 +122,7 @@ export default function AgentDashboardPage() {
               { label: "Active Links",  value: String(activeCount) },
               { label: "Total Views",   value: String(totalViews) },
             ].map((s) => (
-              <div key={s.label} style={{ padding: "1.25rem 1.5rem", borderRight: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`, background: "#fff" }}>
+              <div key={s.label} style={{ padding: "1.25rem 1.5rem", borderRight: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`, background: COLORS.white }}>
                 <div style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>{s.label}</div>
                 <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.75rem", lineHeight: 1 }}>{s.value}</div>
               </div>
@@ -164,7 +168,7 @@ export default function AgentDashboardPage() {
                     display: "grid", gridTemplateColumns: "2fr 1fr 1fr auto auto auto",
                     gap: "0.75rem", padding: "0.875rem 1rem", alignItems: "center",
                     borderBottom: i < rows.length - 1 ? `1px solid ${S.rule}` : "none",
-                    background: row.isActive ? "#fff" : "#FAFAF8",
+                    background: row.isActive ? COLORS.white : COLORS.white,
                     opacity: !row.isActive || isExpired ? 0.65 : 1,
                   }}
                 >
