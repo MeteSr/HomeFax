@@ -39,8 +39,9 @@ const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: Photo, err: Error })],
       []
     ),
-    getPhotosByJob: IDL.Func([IDL.Text], [IDL.Vec(Photo)], ["query"]),
-    getPhotosByProperty: IDL.Func([IDL.Text], [IDL.Vec(Photo)], ["query"]),
+    getPhotosByJob:      IDL.Func([IDL.Text], [IDL.Vec(Photo)], []),
+    getPhotosByProperty: IDL.Func([IDL.Text], [IDL.Vec(Photo)], []),
+    getPhotosByRoom:     IDL.Func([IDL.Text], [IDL.Vec(Photo)], []),
     deletePhoto: IDL.Func(
       [IDL.Text],
       [IDL.Variant({ ok: IDL.Null, err: Error })],
@@ -163,6 +164,23 @@ export const photoService = {
     if (!PHOTO_CANISTER_ID) return [];
     const a = await getActor();
     return (await a.getPhotosByProperty(propertyId) as any[]).map(fromPhoto);
+  },
+
+  async getByRoom(roomId: string): Promise<Photo[]> {
+    if (!PHOTO_CANISTER_ID) return [];
+    const a = await getActor();
+    return (await a.getPhotosByRoom(roomId) as any[]).map(fromPhoto);
+  },
+
+  /** Upload a photo for a room (no job required). Uses synthetic jobId internally. */
+  async uploadRoomPhoto(
+    file:        File,
+    roomId:      string,
+    propertyId:  string,
+    phase:       string,
+    description: string
+  ): Promise<Photo> {
+    return this.upload(file, `ROOM_${roomId}`, propertyId, phase, description);
   },
 
   async deletePhoto(photoId: string): Promise<void> {

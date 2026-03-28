@@ -309,6 +309,17 @@ persistent actor Photo {
     }
   };
 
+  /// All photos linked to a room (stored with synthetic jobId "ROOM_<roomId>").
+  /// Caller must be the photo owner or an admin.
+  public shared(msg) func getPhotosByRoom(roomId: Text) : async [Photo] {
+    let syntheticJobId = "ROOM_" # roomId;
+    let caller = msg.caller;
+    let admin  = isAdmin(caller);
+    Iter.toArray(Iter.filter(photos.vals(), func(p: Photo) : Bool {
+      p.jobId == syntheticJobId and (admin or p.owner == caller)
+    }))
+  };
+
   /// All photos for a job the caller owns. Admins see all photos for the job.
   public shared(msg) func getPhotosByJob(jobId: Text) : async [Photo] {
     let caller = msg.caller;
