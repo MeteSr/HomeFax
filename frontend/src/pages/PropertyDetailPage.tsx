@@ -790,12 +790,45 @@ function encodeDoc(type: DocType, filename: string): string {
   return `[${type}] ${filename}`;
 }
 
-function parseDoc(description: string): { type: DocType; filename: string } {
+// Extended encoders for rich metadata types
+function encodePermit(permitNumber: string, authority: string, status: string, filename: string): string {
+  return `[Permit] ${permitNumber}|${authority}|${status}|${filename}`;
+}
+
+function encodeInspection(inspector: string, status: string, filename: string): string {
+  return `[Inspection] ${inspector}|${status}|${filename}`;
+}
+
+interface ParsedDoc {
+  type: DocType;
+  filename: string;
+  permitNumber?: string;
+  authority?: string;
+  inspector?: string;
+  status?: string;
+}
+
+function parseDoc(description: string): ParsedDoc {
   const m = description.match(/^\[(\w+)\] (.+)$/);
-  if (m && DOC_TYPES.includes(m[1] as DocType)) {
-    return { type: m[1] as DocType, filename: m[2] };
+  if (!m || !DOC_TYPES.includes(m[1] as DocType)) {
+    return { type: "Receipt", filename: description };
   }
-  return { type: "Receipt", filename: description };
+  const type = m[1] as DocType;
+  const rest = m[2];
+
+  if (type === "Permit") {
+    const parts = rest.split("|");
+    if (parts.length >= 4) {
+      return { type, permitNumber: parts[0], authority: parts[1], status: parts[2], filename: parts.slice(3).join("|") };
+    }
+  }
+  if (type === "Inspection") {
+    const parts = rest.split("|");
+    if (parts.length >= 3) {
+      return { type, inspector: parts[0], status: parts[1], filename: parts.slice(2).join("|") };
+    }
+  }
+  return { type, filename: rest };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -811,10 +844,62 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
   };
   const DOCS_JOB = `docs_${propertyId}`;
   const inputRef  = React.useRef<HTMLInputElement>(null);
+  const permitRef = React.useRef<HTMLInputElement>(null);
+  const inspectionRef = React.useRef<HTMLInputElement>(null);
+
   const [docs,     setDocs]     = useState<Photo[]>([]);
   const [docType,  setDocType]  = useState<DocType>("Receipt");
   const [queue,    setQueue]    = useState<BatchFile[]>([]);
   const batchActive = queue.some((f) => f.status === "pending" || f.status === "uploading");
+
+  // Permit metadata
+  const [permitNumber,    setPermitNumber]    = useState("");
+  const [permitAuthority, setPermitAuthority] = useState("");
+  const [permitStatus,    setPermitStatus]    = useState<"Open" | "Closed" | "Expired">("Open");
+  const [permitUploading, setPermitUploading] = useState(false);
+
+  // Inspection metadata
+  const [inspectorName,     setInspectorName]     = useState("");
+  const [inspectionStatus,  setInspectionStatus]  = useState<"Pass" | "Fail" | "Conditional">("Pass");
+  const [inspectionUploading, setInspectionUploading] = useState(false);
+
+  const handlePermitUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (permitRef.current) permitRef.current.value = "";
+    setPermitUploading(true);
+    try {
+      const description = encodePermit(permitNumber || "No #", permitAuthority || "Unknown", permitStatus, file.name);
+      const doc = await photoService.upload(file, DOCS_JOB, propertyId, "PostConstruction", description);
+      setDocs((prev) => [doc, ...prev]);
+      toast.success("Permit uploaded");
+      setPermitNumber(""); setPermitAuthority("");
+    } catch (err: any) {
+      const msg: string = err.message ?? "Upload failed";
+      toast.error(msg === "Duplicate" ? "Already uploaded" : msg);
+    } finally {
+      setPermitUploading(false);
+    }
+  };
+
+  const handleInspectionUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (inspectionRef.current) inspectionRef.current.value = "";
+    setInspectionUploading(true);
+    try {
+      const description = encodeInspection(inspectorName || "Unknown", inspectionStatus, file.name);
+      const doc = await photoService.upload(file, DOCS_JOB, propertyId, "PostConstruction", description);
+      setDocs((prev) => [doc, ...prev]);
+      toast.success("Inspection report uploaded");
+      setInspectorName("");
+    } catch (err: any) {
+      const msg: string = err.message ?? "Upload failed";
+      toast.error(msg === "Duplicate" ? "Already uploaded" : msg);
+    } finally {
+      setInspectionUploading(false);
+    }
+  };
 
   useEffect(() => {
     // Load both legacy "receipts_" key and new "docs_" key
@@ -861,6 +946,87 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
 
   return (
     <div>
+      {/* Permits & Inspections — dedicated section */}
+      <div style={{ border: `1px solid #1A5C8A`, marginBottom: "1.25rem" }}>
+        <div style={{ padding: "0.875rem 1.25rem", borderBottom: `1px solid #C3D9EA`, background: "#EAF3FA", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#1A5C8A" }}>
+            Permits &amp; Inspections
+          </p>
+          <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: "#5A8BA8" }}>Upload with metadata — status tracked on-chain</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: "#fff" }}>
+          {/* Permit */}
+          <div style={{ padding: "1rem 1.25rem", borderRight: `1px solid ${S.rule}` }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#1A5C8A", marginBottom: "0.75rem" }}>Permit</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
+              <input
+                className="form-input"
+                placeholder="Permit #"
+                value={permitNumber}
+                onChange={(e) => setPermitNumber(e.target.value)}
+                style={{ fontSize: "0.8rem" }}
+              />
+              <input
+                className="form-input"
+                placeholder="Issuing authority (e.g. City of Austin)"
+                value={permitAuthority}
+                onChange={(e) => setPermitAuthority(e.target.value)}
+                style={{ fontSize: "0.8rem" }}
+              />
+              <select
+                className="form-input"
+                value={permitStatus}
+                onChange={(e) => setPermitStatus(e.target.value as any)}
+                style={{ fontSize: "0.8rem" }}
+              >
+                <option value="Open">Open</option>
+                <option value="Closed">Closed</option>
+                <option value="Expired">Expired</option>
+              </select>
+            </div>
+            <button
+              disabled={permitUploading}
+              onClick={() => permitRef.current?.click()}
+              style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid #1A5C8A`, color: "#1A5C8A", background: "none", cursor: permitUploading ? "not-allowed" : "pointer", opacity: permitUploading ? 0.5 : 1 }}
+            >
+              {permitUploading ? "Uploading…" : "+ Upload Permit"}
+            </button>
+            <input ref={permitRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={handlePermitUpload} />
+          </div>
+          {/* Inspection */}
+          <div style={{ padding: "1rem 1.25rem" }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#3D6B57", marginBottom: "0.75rem" }}>Inspection Report</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
+              <input
+                className="form-input"
+                placeholder="Inspector name or company"
+                value={inspectorName}
+                onChange={(e) => setInspectorName(e.target.value)}
+                style={{ fontSize: "0.8rem" }}
+              />
+              <select
+                className="form-input"
+                value={inspectionStatus}
+                onChange={(e) => setInspectionStatus(e.target.value as any)}
+                style={{ fontSize: "0.8rem" }}
+              >
+                <option value="Pass">Pass</option>
+                <option value="Conditional">Conditional</option>
+                <option value="Fail">Fail</option>
+              </select>
+            </div>
+            <button
+              disabled={inspectionUploading}
+              onClick={() => inspectionRef.current?.click()}
+              style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid #3D6B57`, color: "#3D6B57", background: "none", cursor: inspectionUploading ? "not-allowed" : "pointer", opacity: inspectionUploading ? 0.5 : 1 }}
+            >
+              {inspectionUploading ? "Uploading…" : "+ Upload Report"}
+            </button>
+            <input ref={inspectionRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={handleInspectionUpload} />
+          </div>
+        </div>
+      </div>
+
       {/* Upload controls */}
       <div style={{ border: `1px solid ${S.rule}`, marginBottom: "1.5rem" }}>
         <div style={{ padding: "0.875rem 1.25rem", borderBottom: `1px solid ${S.rule}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -940,7 +1106,8 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
       ) : (
         <div style={{ border: `1px solid ${S.rule}` }}>
           {docs.map((doc, i) => {
-            const { type, filename } = parseDoc(doc.description);
+            const parsed = parseDoc(doc.description);
+            const { type, filename } = parsed;
             const tc = DOC_TYPE_COLORS[type];
             return (
               <div key={doc.id} style={{
@@ -959,6 +1126,18 @@ function DocumentsTab({ propertyId }: { propertyId: string }) {
                   <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.125rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {filename}
                   </p>
+                  {/* Permit metadata */}
+                  {type === "Permit" && parsed.permitNumber && (
+                    <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: "#1A5C8A", letterSpacing: "0.06em", marginBottom: "0.1rem" }}>
+                      {parsed.permitNumber} · {parsed.authority} · <span style={{ textTransform: "uppercase", fontWeight: 700, color: parsed.status === "Closed" ? "#3D6B57" : parsed.status === "Expired" ? "#7A7268" : "#D4820E" }}>{parsed.status}</span>
+                    </p>
+                  )}
+                  {/* Inspection metadata */}
+                  {type === "Inspection" && parsed.inspector && (
+                    <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: "#3D6B57", letterSpacing: "0.06em", marginBottom: "0.1rem" }}>
+                      {parsed.inspector} · <span style={{ textTransform: "uppercase", fontWeight: 700, color: parsed.status === "Pass" ? "#3D6B57" : parsed.status === "Fail" ? "#C94C2E" : "#D4820E" }}>{parsed.status}</span>
+                    </p>
+                  )}
                   <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, letterSpacing: "0.06em" }}>
                     {(doc.size / 1024).toFixed(1)} KB · {doc.hash.slice(0, 16)}… · {new Date(doc.createdAt).toLocaleDateString()}
                   </p>
