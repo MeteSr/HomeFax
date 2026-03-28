@@ -7,6 +7,7 @@ import { agentProfileService } from "@/services/agentProfile";
 import { jobService } from "@/services/job";
 import { recurringService } from "@/services/recurringService";
 import { computeScore, getScoreGrade } from "@/services/scoreService";
+import { paymentService, type PlanTier } from "@/services/payment";
 import type { Property } from "@/services/property";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
@@ -49,6 +50,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
   // Per-link disclosure overrides (keyed by token); defaults to the global disclosure
   const [linkDisclosures, setLinkDisclosures] = useState<Record<string, DisclosureOptions>>({});
   const [expandedToken, setExpandedToken] = useState<string | null>(null);
+  const [userTier, setUserTier] = useState<PlanTier>("Free");
 
   const getLinkDisclosure = (token: string): DisclosureOptions =>
     linkDisclosures[token] ?? { hideAmounts: false, hideContractors: false, hidePermits: false, hideDescriptions: false };
@@ -63,6 +65,11 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
   const propertyId = String(property.id);
 
   useEffect(() => {
+    paymentService.getMySubscription().then((s) => {
+      setUserTier(s.tier);
+      // Free tier: cap expiry at 7 days (15.2.1)
+      if (s.tier === "Free") setExpiryDays(7);
+    }).catch(() => {});
     reportService.listShareLinks(propertyId)
       .then(setLinks)
       .finally(() => setLoadingLinks(false));
@@ -184,25 +191,35 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
             </p>
 
             {/* Expiry picker */}
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
-              {EXPIRY_OPTIONS.map((opt) => (
-                <button
-                  key={String(opt.value)}
-                  onClick={() => setExpiryDays(opt.value)}
-                  style={{
-                    flex: 1, padding: "0.45rem 0",
-                    fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                    border: `1px solid ${expiryDays === opt.value ? COLORS.plum : S.rule}`,
-                    borderRadius: RADIUS.sm,
-                    cursor: "pointer",
-                    background: expiryDays === opt.value ? COLORS.plum : COLORS.white,
-                    color:      expiryDays === opt.value ? COLORS.white : S.inkLight,
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: userTier === "Free" ? "0.5rem" : "1rem" }}>
+              {EXPIRY_OPTIONS.map((opt) => {
+                const locked = userTier === "Free" && (opt.value === null || (opt.value !== null && opt.value > 7));
+                return (
+                  <button
+                    key={String(opt.value)}
+                    onClick={() => !locked && setExpiryDays(opt.value)}
+                    title={locked ? "Upgrade to Pro for longer expiry" : undefined}
+                    style={{
+                      flex: 1, padding: "0.45rem 0",
+                      fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
+                      border: `1px solid ${locked ? S.rule : expiryDays === opt.value ? COLORS.plum : S.rule}`,
+                      borderRadius: RADIUS.sm,
+                      cursor: locked ? "not-allowed" : "pointer",
+                      background: locked ? S.paper : expiryDays === opt.value ? COLORS.plum : COLORS.white,
+                      color: locked ? `${S.inkLight}60` : expiryDays === opt.value ? COLORS.white : S.inkLight,
+                      opacity: locked ? 0.5 : 1,
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
+            {userTier === "Free" && (
+              <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: S.inkLight, marginBottom: "1rem" }}>
+                Free plan links expire after 7 days. <a href="/pricing" style={{ color: COLORS.plum, textDecoration: "underline" }}>Upgrade to Pro</a> for longer or permanent links.
+              </p>
+            )}
 
             {/* Disclosure toggles */}
             <div style={{ border: `1px solid ${S.rule}`, borderRadius: RADIUS.sm, marginBottom: "1rem", overflow: "hidden" }}>
