@@ -735,49 +735,61 @@ export default function DashboardPage() {
         {!loading && hasJob && hasProperty && (() => {
           const est = premiumEstimate(homefaxScore);
           if (!est) return null;
+          const market = properties[0] ? `${properties[0].city}, ${properties[0].state}` : "your market";
           return (
             <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem",
-              border: `1px solid ${S.rule}`, padding: "1.25rem 1.5rem", marginBottom: "2.5rem",
-              background: "#fff",
+              border: `1px solid ${S.rust}30`, padding: "1.25rem 1.5rem", marginBottom: "2.5rem",
+              background: "#FAF9F6",
             }}>
-              <div>
-                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.375rem" }}>
-                  Estimated Buyer Premium
-                </p>
-                <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: S.ink }}>
-                  ${est.low.toLocaleString()} – ${est.high.toLocaleString()}
-                </p>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+                <div>
+                  <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.rust, marginBottom: "0.375rem" }}>
+                    Your Score in {market}
+                  </p>
+                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: "2rem", lineHeight: 1, color: S.ink }}>
+                    ${est.low.toLocaleString()} – ${est.high.toLocaleString()}
+                  </p>
+                  <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.inkLight, marginTop: "0.375rem" }}>
+                    estimated buyer premium above unverified comparable
+                  </p>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight, marginBottom: "0.625rem" }}>
+                    HomeFax Score <strong style={{ color: S.ink }}>{homefaxScore}</strong> · Grade <strong style={{ color: S.ink }}>{scoreGrade}</strong>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => navigate("/resale-ready")}
+                      style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid ${S.rust}`, color: S.rust, background: "none", cursor: "pointer" }}
+                    >
+                      See Full Analysis →
+                    </button>
+                    {properties[0] && (
+                      <button
+                        onClick={() => {
+                          const token = generateCertToken({
+                            address:     properties[0].address,
+                            score:       homefaxScore,
+                            grade:       scoreGrade,
+                            certified,
+                            generatedAt: Date.now(),
+                          });
+                          const url = `${window.location.origin}/cert/${token}`;
+                          navigator.clipboard.writeText(url);
+                          toast.success("Lender certificate link copied!");
+                        }}
+                        style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.375rem 0.875rem", border: `1px solid ${S.rule}`, color: S.inkLight, background: "none", cursor: "pointer" }}
+                      >
+                        Copy Cert Link
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: S.inkLight, maxWidth: "20rem", marginBottom: "0.75rem" }}>
-                  Based on HomeFax Score {homefaxScore} ({scoreGrade}). Verified maintenance history typically
-                  adds 1–10% to sale price in US markets.
-                </p>
-                {properties[0] && (
-                  <button
-                    onClick={() => {
-                      const token = generateCertToken({
-                        address:     properties[0].address,
-                        score:       homefaxScore,
-                        grade:       scoreGrade,
-                        certified,
-                        generatedAt: Date.now(),
-                      });
-                      const url = `${window.location.origin}/cert/${token}`;
-                      navigator.clipboard.writeText(url);
-                      toast.success("Lender certificate link copied!");
-                    }}
-                    style={{
-                      fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase",
-                      padding: "0.375rem 0.875rem", border: `1px solid ${S.rule}`, color: S.inkLight,
-                      background: "none", cursor: "pointer",
-                    }}
-                  >
-                    Copy Lender Certificate Link
-                  </button>
-                )}
-              </div>
+              <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.04em", color: S.inkLight, marginTop: "0.875rem", borderTop: `1px solid ${S.rule}`, paddingTop: "0.625rem", lineHeight: 1.6 }}>
+                Based on verified maintenance records for score band {homefaxScore < 55 ? "40–54" : homefaxScore < 70 ? "55–69" : homefaxScore < 85 ? "70–84" : "85+"}.
+                Buyers and lenders pay more for homes with documented, verified maintenance history. Individual market conditions vary.
+              </p>
             </div>
           );
         })()}
