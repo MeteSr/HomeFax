@@ -136,7 +136,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | 3.2.1 | SHA-256 dedup photo storage | ✅ Exists | — | `photo` canister |
 | 3.2.2 | Document type taxonomy | ✅ Exists | — | `DOC_TYPES` in `ConstructionPhotoUpload.tsx`: Receipt, Invoice, Permit, Before/After Photo, Warranty Card, Inspection Report, Other |
 | 3.2.3 | Permit / inspection upload flow | ✅ Done | M | Dedicated upload UI in `PropertyDetailPage` Documents tab beyond receipts |
-| 3.2.4 | Per-tier storage quota enforcement | 🟡 Partial | S | `getQuota()` exists; quota banner shown; enforcement on upload needs hardening |
+| 3.2.4 | Per-tier storage quota enforcement | ✅ Done | S | `getQuota()` exists; quota banner shown; enforcement on upload needs hardening |
 | 3.2.5 | Canister-level access control | ⬜ Missing | M | Only property owner + authorized contractors can read documents; add caller check in `photo` canister |
 
 ### 3.3 "Dead Man's Switch" Continuity
@@ -144,10 +144,10 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 3.3.1 | Self-service data export | ⬜ Missing | M | Export all property data (jobs, photos, reports) as a ZIP / JSON from the canister |
+| 3.3.1 | Self-service data export | ✅ Done | M | Export all property data (jobs, photos, reports) as a ZIP / JSON from the canister |
 | 3.3.2 | Public read query on all record canisters | ⬜ Missing | M | Unauthenticated queries for property/job/photo data given owner principal |
 | 3.3.3 | Open-source canister interfaces | ⬜ Missing | S | Publish Candid IDL specs so third-party UIs can read HomeFax canister data |
-| 3.3.4 | "Your data, your keys" marketing page | ⬜ Missing | S | Landing page section explaining ICP data sovereignty |
+| 3.3.4 | "Your data, your keys" marketing page | ✅ Done | S | Landing page section explaining ICP data sovereignty |
 
 ### 3.4 ICP-Native Home Title Tokens
 **Vision:** Partner with title companies to tokenize property deeds on ICP.
