@@ -8,10 +8,11 @@
  * NOTE: Canister-signed issuance is backlog item 4.2.1 — this is the frontend MVP.
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Shield, AlertTriangle } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle } from "lucide-react";
 import { parseCertToken } from "@/services/scoreService";
+import { certService } from "@/services/cert";
 import { COLORS, FONTS } from "@/theme";
 
 const S = {
@@ -37,6 +38,15 @@ const GRADE_CONFIG: Record<string, { color: string; bg: string }> = {
 export default function ScoreCertPage() {
   const { token } = useParams<{ token: string }>();
   const payload = token ? parseCertToken(token) : null;
+  const certId  = (payload as any)?.certId as string | undefined;
+
+  // On-chain verification status: null = pending, true = verified, false = not found
+  const [onChain, setOnChain] = useState<boolean | null>(certId ? null : false);
+
+  useEffect(() => {
+    if (!certId) { setOnChain(false); return; }
+    certService.verifyCert(certId).then((result) => setOnChain(result !== null));
+  }, [certId]);
 
   if (!payload) {
     return (
@@ -122,6 +132,33 @@ export default function ScoreCertPage() {
               <Shield size={12} /> Verified HomeFax Property
             </div>
           )}
+        </div>
+
+        {/* On-chain verification status */}
+        <div style={{ padding: "0.875rem 2.5rem", borderBottom: `1px solid ${S.rule}`, background: onChain === true ? COLORS.sageLight : onChain === false ? COLORS.butter : COLORS.white }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {onChain === null && (
+              <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: S.inkLight }}>
+                Checking on-chain record…
+              </span>
+            )}
+            {onChain === true && (
+              <>
+                <CheckCircle size={13} color={COLORS.sage} />
+                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: COLORS.sage, fontWeight: 700 }}>
+                  On-chain verified · {certId}
+                </span>
+              </>
+            )}
+            {onChain === false && (
+              <>
+                <AlertTriangle size={13} color={COLORS.plumMid} />
+                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
+                  {certId ? `Cert ${certId} not found on-chain — may be from a local session` : "Client-generated certificate — not stored on-chain"}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* What this means */}

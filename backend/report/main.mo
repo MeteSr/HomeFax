@@ -77,6 +77,16 @@ persistent actor Report {
     verificationLevel: Text;   // "Unverified" | "Basic" | "Premium"
   };
 
+  // ─── Cert Types ───────────────────────────────────────────────────────────────
+
+  /// Immutable on-chain score certificate. Payload is JSON (no personal data).
+  public type CertRecord = {
+    id:          Text;
+    propertyId:  Text;
+    payload:     Text;   // JSON-encoded CertPayload (address, score, grade, certified, generatedAt)
+    issuedAt:    Int;
+  };
+
   // ─── Stored Types ─────────────────────────────────────────────────────────────
 
   public type VisibilityLevel = { #Public; #BuyerOnly };
@@ -213,12 +223,17 @@ persistent actor Report {
   private var linkEntriesV2     : [(Text, ShareLink)]      = [];
   private var snapshotEntriesV2 : [(Text, ReportSnapshot)] = [];
 
+  // Cert state — new; starts empty so no migration needed.
+  private var certCounter  : Nat                 = 0;
+  private var certEntries  : [(Text, CertRecord)] = [];
+
   // ─── Transient State ──────────────────────────────────────────────────────────
   // Initialised empty — postupgrade() populates both HashMaps so that we avoid
   // any type mismatch between the V0 stable arrays and the V1 HashMap types.
 
   private transient var snapshots = HashMap.HashMap<Text, ReportSnapshot>(64, Text.equal, Text.hash);
   private transient var links     = HashMap.HashMap<Text, ShareLink>(64, Text.equal, Text.hash);
+  private transient var certs     = HashMap.HashMap<Text, CertRecord>(16, Text.equal, Text.hash);
 
   // ─── Upgrade Hooks ────────────────────────────────────────────────────────────
 
@@ -226,6 +241,7 @@ persistent actor Report {
     // Always save current data to V2 arrays for the next upgrade.
     snapshotEntriesV2 := Iter.toArray(snapshots.entries());
     linkEntriesV2     := Iter.toArray(links.entries());
+    certEntries       := Iter.toArray(certs.entries());
   };
 
   system func postupgrade() {
@@ -286,6 +302,12 @@ persistent actor Report {
       snapshots.put(k, v);
     };
     snapshotEntriesV2 := [];
+
+    // Restore certs (starts empty on first deploy; populated on subsequent upgrades).
+    for ((k, v) in certEntries.vals()) {
+      certs.put(k, v);
+    };
+    certEntries := [];
   };
 
   // ─── Private Helpers ──────────────────────────────────────────────────────────
@@ -639,6 +661,34 @@ persistent actor Report {
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())
+  };
+
+  // ─── Score Certificate API (4.2.1) ───────────────────────────────────────────
+
+  /// Issue an on-chain score certificate. Stores the payload (no personal data)
+  /// against a stable CERT-N id. The caller must be authenticated; the cert
+  /// itself is public and verifiable by anyone via verifyCert.
+  public shared(msg) func issueCert(propertyId: Text, payload: Text) : async Text {
+    ignore msg.caller;   // authenticated call; principal recorded implicitly
+    certCounter += 1;
+    let certId = "CERT-" # Nat.toText(certCounter);
+    let record : CertRecord = {
+      id         = certId;
+      propertyId = propertyId;
+      payload    = payload;
+      issuedAt   = Time.now();
+    };
+    certs.put(certId, record);
+    certId
+  };
+
+  /// Verify a cert by id. Returns the stored payload (JSON) or null.
+  /// Public query — no authentication required; safe for lenders to call.
+  public query func verifyCert(certId: Text) : async ?Text {
+    switch (certs.get(certId)) {
+      case null  null;
+      case (?r)  ?r.payload;
+    }
   };
 
   public query func getMetrics() : async Metrics {

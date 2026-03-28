@@ -13,7 +13,8 @@ import { Button } from "@/components/Button";
 import { propertyService, Property } from "@/services/property";
 import { jobService, Job } from "@/services/job";
 import { reportService } from "@/services/report";
-import { computeScore, getScoreGrade, premiumEstimate, isCertified, generateCertToken, loadHistory } from "@/services/scoreService";
+import { computeScore, getScoreGrade, premiumEstimate, isCertified, loadHistory } from "@/services/scoreService";
+import { certService } from "@/services/cert";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
@@ -109,8 +110,9 @@ export default function ResaleReadyPage() {
     }
   }
 
-  function handleCopyCert() {
-    const token = generateCertToken({ address: property?.address ?? "", score, grade, certified, generatedAt: Date.now() });
+  async function handleCopyCert() {
+    const payload = { address: property?.address ?? "", score, grade, certified, generatedAt: Date.now() };
+    const { token } = await certService.issueCert(String(properties[0]?.id ?? ""), payload);
     const url = `${window.location.origin}/cert/${token}`;
     navigator.clipboard.writeText(url);
     toast.success("Lender certificate link copied!");

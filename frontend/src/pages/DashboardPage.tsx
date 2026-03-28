@@ -14,7 +14,8 @@ import { RecurringServiceCard } from "@/components/RecurringServiceCard";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { isNewSince, hasQuoteActivity, pendingQuoteCount } from "@/services/notifications";
-import { computeScore, getScoreGrade, loadHistory, recordSnapshot, scoreDelta, premiumEstimate, isCertified, generateCertToken, type ScoreSnapshot } from "@/services/scoreService";
+import { computeScore, getScoreGrade, loadHistory, recordSnapshot, scoreDelta, premiumEstimate, isCertified, type ScoreSnapshot } from "@/services/scoreService";
+import { certService } from "@/services/cert";
 import { getWeeklyPulse } from "@/services/pulseService";
 import { marketService, jobToSummary, type PropertyProfile, type ProjectRecommendation } from "@/services/market";
 import { getRecentScoreEvents, categoryColor, categoryBg, type ScoreEvent } from "@/services/scoreEventService";
@@ -922,14 +923,15 @@ export default function DashboardPage() {
                     </button>
                     {activeProperty && (
                       <button
-                        onClick={() => {
-                          const token = generateCertToken({
+                        onClick={async () => {
+                          const payload = {
                             address:     activeProperty.address,
                             score:       homefaxScore,
                             grade:       scoreGrade,
                             certified,
                             generatedAt: Date.now(),
-                          });
+                          };
+                          const { token } = await certService.issueCert(String(activeProperty.id), payload);
                           const url = `${window.location.origin}/cert/${token}`;
                           navigator.clipboard.writeText(url);
                           toast.success("Lender certificate link copied!");
