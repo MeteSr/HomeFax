@@ -11,6 +11,7 @@ import { propertyService, Property } from "@/services/property";
 import { jobService, Job } from "@/services/job";
 import { photoService, Photo } from "@/services/photo";
 import { computeScore, getScoreGrade, recordSnapshot } from "@/services/scoreService";
+import { roomService, Room as RoomRecord, type CreateRoomArgs, type UpdateRoomArgs, type AddFixtureArgs, type Fixture } from "@/services/room";
 import { usePropertyStore } from "@/store/propertyStore";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
@@ -27,7 +28,7 @@ const S = {
   mono:     FONTS.mono,
 };
 
-type Tab = "timeline" | "jobs" | "documents" | "settings";
+type Tab = "timeline" | "jobs" | "rooms" | "documents" | "settings";
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,7 @@ export default function PropertyDetailPage() {
   const [showLogJobModal,  setShowLogJobModal]  = useState(false);
   const [showQuoteModal,   setShowQuoteModal]   = useState(false);
   const [photosByJob, setPhotosByJob] = useState<Record<string, Photo[]>>({});
+  const [rooms, setRooms] = useState<RoomRecord[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -53,6 +55,7 @@ export default function PropertyDetailPage() {
         if (cached) setProperty(cached);
       }),
       jobService.getByProperty(id).then(setJobs).catch(() => {}),
+      roomService.getRoomsByProperty(id).then(setRooms).catch(() => {}),
       photoService.getByProperty(id).then((photos) => {
         const map: Record<string, Photo[]> = {};
         for (const p of photos) {
@@ -98,10 +101,11 @@ export default function PropertyDetailPage() {
   const scoreGrade   = getScoreGrade(homefaxScore);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "timeline", label: "Timeline" },
-    { key: "jobs",     label: `Jobs (${jobs.length})` },
-    { key: "documents",label: "Documents" },
-    { key: "settings", label: "Settings" },
+    { key: "timeline",  label: "Timeline" },
+    { key: "jobs",      label: `Jobs (${jobs.length})` },
+    { key: "rooms",     label: `Rooms (${rooms.length})` },
+    { key: "documents", label: "Documents" },
+    { key: "settings",  label: "Settings" },
   ];
 
   if (loading) {
@@ -274,6 +278,7 @@ export default function PropertyDetailPage() {
 
         {tab === "timeline"  && <TimelineTab property={property} jobs={jobs} onVerify={handleVerify} currentPrincipal={principal} photosByJob={photosByJob} onPhotoUpload={handlePhotoUpload} />}
         {tab === "jobs"      && <JobsTab jobs={jobs} />}
+        {tab === "rooms"     && <RoomsTab propertyId={id!} rooms={rooms} onRoomsChange={setRooms} />}
         {tab === "documents" && <DocumentsTab propertyId={id!} />}
         {tab === "settings"  && <SettingsTab property={property} currentPrincipal={principal ?? ""} />}
       </div>
@@ -1503,6 +1508,397 @@ function SettingsTab({ property, currentPrincipal }: { property: Property; curre
         </div>
       )}
 
+    </div>
+  );
+}
+
+// ─── Rooms Tab ────────────────────────────────────────────────────────────────
+
+const FLOOR_TYPES = ["Hardwood", "Tile", "Carpet", "Laminate", "Vinyl", "Concrete", "Stone", "Other"];
+
+const EMPTY_ROOM_FORM: CreateRoomArgs = {
+  propertyId: "",
+  name: "",
+  floorType: "",
+  paintColor: "",
+  paintBrand: "",
+  paintCode: "",
+  notes: "",
+};
+
+const EMPTY_FIXTURE_FORM: AddFixtureArgs = {
+  brand: "",
+  model: "",
+  serialNumber: "",
+  installedDate: "",
+  warrantyExpiry: "",
+  notes: "",
+};
+
+function RoomsTab({
+  propertyId,
+  rooms,
+  onRoomsChange,
+}: {
+  propertyId:    string;
+  rooms:         RoomRecord[];
+  onRoomsChange: (rooms: RoomRecord[]) => void;
+}) {
+  const [showAddRoom,    setShowAddRoom]    = useState(false);
+  const [roomForm,       setRoomForm]       = useState<CreateRoomArgs>({ ...EMPTY_ROOM_FORM, propertyId });
+  const [savingRoom,     setSavingRoom]     = useState(false);
+  const [expandedRoom,   setExpandedRoom]   = useState<string | null>(null);
+  const [editingRoom,    setEditingRoom]    = useState<string | null>(null);
+  const [editForm,       setEditForm]       = useState<UpdateRoomArgs | null>(null);
+  const [addFixtureRoom, setAddFixtureRoom] = useState<string | null>(null);
+  const [fixtureForm,    setFixtureForm]    = useState<AddFixtureArgs>({ ...EMPTY_FIXTURE_FORM });
+  const [savingFixture,  setSavingFixture]  = useState(false);
+
+  const handleCreateRoom = async () => {
+    if (!roomForm.name.trim()) return;
+    setSavingRoom(true);
+    try {
+      const room = await roomService.createRoom({ ...roomForm, propertyId });
+      onRoomsChange([...rooms, room]);
+      setRoomForm({ ...EMPTY_ROOM_FORM, propertyId });
+      setShowAddRoom(false);
+      setExpandedRoom(room.id);
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to create room");
+    } finally {
+      setSavingRoom(false);
+    }
+  };
+
+  const handleUpdateRoom = async (id: string) => {
+    if (!editForm || !editForm.name.trim()) return;
+    setSavingRoom(true);
+    try {
+      const updated = await roomService.updateRoom(id, editForm);
+      onRoomsChange(rooms.map((r) => r.id === id ? updated : r));
+      setEditingRoom(null);
+      setEditForm(null);
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to update room");
+    } finally {
+      setSavingRoom(false);
+    }
+  };
+
+  const handleDeleteRoom = async (id: string) => {
+    try {
+      await roomService.deleteRoom(id);
+      onRoomsChange(rooms.filter((r) => r.id !== id));
+      if (expandedRoom === id) setExpandedRoom(null);
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to delete room");
+    }
+  };
+
+  const handleAddFixture = async (roomId: string) => {
+    setSavingFixture(true);
+    try {
+      const updated = await roomService.addFixture(roomId, fixtureForm);
+      onRoomsChange(rooms.map((r) => r.id === roomId ? updated : r));
+      setAddFixtureRoom(null);
+      setFixtureForm({ ...EMPTY_FIXTURE_FORM });
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to add fixture");
+    } finally {
+      setSavingFixture(false);
+    }
+  };
+
+  const handleRemoveFixture = async (roomId: string, fixtureId: string) => {
+    try {
+      const updated = await roomService.removeFixture(roomId, fixtureId);
+      onRoomsChange(rooms.map((r) => r.id === roomId ? updated : r));
+    } catch (err: any) {
+      toast.error(err.message ?? "Failed to remove fixture");
+    }
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "0.5rem 0.625rem",
+    fontFamily: FONTS.sans, fontSize: "0.8rem",
+    border: `1px solid ${COLORS.rule}`, background: COLORS.white,
+    color: COLORS.plum, outline: "none",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block", fontFamily: FONTS.mono, fontSize: "0.6rem",
+    letterSpacing: "0.08em", textTransform: "uppercase",
+    color: COLORS.plumMid, marginBottom: "0.25rem",
+  };
+
+  return (
+    <div>
+      {/* Header row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+        <p style={{ fontFamily: FONTS.sans, fontSize: "0.85rem", color: COLORS.plumMid, fontWeight: 300 }}>
+          Track finishes, paint, and appliances room by room.
+        </p>
+        {!showAddRoom && (
+          <Button size="sm" onClick={() => setShowAddRoom(true)}>+ Add Room</Button>
+        )}
+      </div>
+
+      {/* Add Room form */}
+      {showAddRoom && (
+        <div style={{ border: `1px solid ${COLORS.sage}`, padding: "1.25rem", marginBottom: "1.25rem", background: COLORS.sageLight }}>
+          <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "1rem" }}>
+            New Room
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+            <div>
+              <label style={labelStyle}>Room Name *</label>
+              <input style={inputStyle} placeholder="e.g. Kitchen" value={roomForm.name}
+                onChange={(e) => setRoomForm((f) => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div>
+              <label style={labelStyle}>Floor Type</label>
+              <select style={inputStyle} value={roomForm.floorType}
+                onChange={(e) => setRoomForm((f) => ({ ...f, floorType: e.target.value }))}>
+                <option value="">— Select —</option>
+                {FLOOR_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Paint Color</label>
+              <input style={inputStyle} placeholder="e.g. Agreeable Gray" value={roomForm.paintColor}
+                onChange={(e) => setRoomForm((f) => ({ ...f, paintColor: e.target.value }))} />
+            </div>
+            <div>
+              <label style={labelStyle}>Paint Brand</label>
+              <input style={inputStyle} placeholder="e.g. Sherwin-Williams" value={roomForm.paintBrand}
+                onChange={(e) => setRoomForm((f) => ({ ...f, paintBrand: e.target.value }))} />
+            </div>
+            <div>
+              <label style={labelStyle}>Paint Code</label>
+              <input style={inputStyle} placeholder="e.g. SW 7029" value={roomForm.paintCode}
+                onChange={(e) => setRoomForm((f) => ({ ...f, paintCode: e.target.value }))} />
+            </div>
+          </div>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={labelStyle}>Notes</label>
+            <textarea style={{ ...inputStyle, minHeight: "4rem", resize: "vertical" }} placeholder="Anything useful to remember about this room…"
+              value={roomForm.notes} onChange={(e) => setRoomForm((f) => ({ ...f, notes: e.target.value }))} />
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <Button size="sm" onClick={handleCreateRoom} disabled={savingRoom || !roomForm.name.trim()}>
+              {savingRoom ? "Saving…" : "Save Room"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setShowAddRoom(false); setRoomForm({ ...EMPTY_ROOM_FORM, propertyId }); }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Room list */}
+      {rooms.length === 0 && !showAddRoom && (
+        <div style={{ textAlign: "center", padding: "3rem 1rem", border: `1px dashed ${COLORS.rule}` }}>
+          <p style={{ fontFamily: FONTS.sans, color: COLORS.plumMid, fontSize: "0.875rem", fontWeight: 300 }}>
+            No rooms yet. Add your first room to start building your digital twin.
+          </p>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+        {rooms.map((room) => {
+          const isExpanded = expandedRoom === room.id;
+          const isEditing  = editingRoom  === room.id;
+
+          return (
+            <div key={room.id} style={{ border: `1px solid ${COLORS.rule}`, background: COLORS.white, boxShadow: SHADOWS.card }}>
+              {/* Room header */}
+              <div
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 1.25rem", cursor: "pointer" }}
+                onClick={() => setExpandedRoom(isExpanded ? null : room.id)}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <div>
+                    <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.plum }}>{room.name}</div>
+                    <div style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginTop: "0.2rem" }}>
+                      {[room.floorType, room.paintColor && `${room.paintColor}${room.paintCode ? ` (${room.paintCode})` : ""}`]
+                        .filter(Boolean).join(" · ") || "No finishes recorded"}
+                      {room.fixtures.length > 0 && ` · ${room.fixtures.length} fixture${room.fixtures.length === 1 ? "" : "s"}`}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }} onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => { setEditingRoom(room.id); setEditForm({ name: room.name, floorType: room.floorType, paintColor: room.paintColor, paintBrand: room.paintBrand, paintCode: room.paintCode, notes: room.notes }); setExpandedRoom(room.id); }}
+                    style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
+                  >Edit</button>
+                  <button
+                    onClick={() => { if (window.confirm(`Delete "${room.name}"?`)) handleDeleteRoom(room.id); }}
+                    style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
+                  >Delete</button>
+                  <span style={{ color: COLORS.plumMid, fontSize: "0.75rem" }}>{isExpanded ? "▲" : "▼"}</span>
+                </div>
+              </div>
+
+              {/* Expanded body */}
+              {isExpanded && (
+                <div style={{ borderTop: `1px solid ${COLORS.rule}`, padding: "1rem 1.25rem" }}>
+
+                  {/* Edit form */}
+                  {isEditing && editForm && (
+                    <div style={{ marginBottom: "1.25rem", padding: "1rem", background: COLORS.paper, border: `1px solid ${COLORS.rule}` }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
+                        <div>
+                          <label style={labelStyle}>Room Name *</label>
+                          <input style={inputStyle} value={editForm.name}
+                            onChange={(e) => setEditForm((f) => f && ({ ...f, name: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Floor Type</label>
+                          <select style={inputStyle} value={editForm.floorType}
+                            onChange={(e) => setEditForm((f) => f && ({ ...f, floorType: e.target.value }))}>
+                            <option value="">— Select —</option>
+                            {FLOOR_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Paint Color</label>
+                          <input style={inputStyle} value={editForm.paintColor}
+                            onChange={(e) => setEditForm((f) => f && ({ ...f, paintColor: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Paint Brand</label>
+                          <input style={inputStyle} value={editForm.paintBrand}
+                            onChange={(e) => setEditForm((f) => f && ({ ...f, paintBrand: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Paint Code</label>
+                          <input style={inputStyle} value={editForm.paintCode}
+                            onChange={(e) => setEditForm((f) => f && ({ ...f, paintCode: e.target.value }))} />
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: "1rem" }}>
+                        <label style={labelStyle}>Notes</label>
+                        <textarea style={{ ...inputStyle, minHeight: "3.5rem", resize: "vertical" }} value={editForm.notes}
+                          onChange={(e) => setEditForm((f) => f && ({ ...f, notes: e.target.value }))} />
+                      </div>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <Button size="sm" onClick={() => handleUpdateRoom(room.id)} disabled={savingRoom}>
+                          {savingRoom ? "Saving…" : "Save Changes"}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => { setEditingRoom(null); setEditForm(null); }}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes display */}
+                  {!isEditing && room.notes && (
+                    <p style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plumMid, fontWeight: 300, marginBottom: "1rem", fontStyle: "italic" }}>
+                      {room.notes}
+                    </p>
+                  )}
+
+                  {/* Fixtures */}
+                  <div style={{ marginBottom: "0.75rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                      <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
+                        Appliances & Fixtures
+                      </span>
+                      {addFixtureRoom !== room.id && (
+                        <button
+                          onClick={() => { setAddFixtureRoom(room.id); setFixtureForm({ ...EMPTY_FIXTURE_FORM }); }}
+                          style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer" }}
+                        >+ Add Fixture</button>
+                      )}
+                    </div>
+
+                    {/* Add fixture form */}
+                    {addFixtureRoom === room.id && (
+                      <div style={{ border: `1px solid ${COLORS.rule}`, padding: "1rem", marginBottom: "0.75rem", background: COLORS.paper }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.625rem", marginBottom: "0.625rem" }}>
+                          <div>
+                            <label style={labelStyle}>Brand</label>
+                            <input style={inputStyle} placeholder="e.g. KitchenAid" value={fixtureForm.brand}
+                              onChange={(e) => setFixtureForm((f) => ({ ...f, brand: e.target.value }))} />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Model</label>
+                            <input style={inputStyle} placeholder="e.g. KFIS29PBMS" value={fixtureForm.model}
+                              onChange={(e) => setFixtureForm((f) => ({ ...f, model: e.target.value }))} />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Serial Number</label>
+                            <input style={inputStyle} value={fixtureForm.serialNumber}
+                              onChange={(e) => setFixtureForm((f) => ({ ...f, serialNumber: e.target.value }))} />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Installed Date</label>
+                            <input style={inputStyle} type="date" value={fixtureForm.installedDate}
+                              onChange={(e) => setFixtureForm((f) => ({ ...f, installedDate: e.target.value }))} />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Warranty Expires</label>
+                            <input style={inputStyle} type="date" value={fixtureForm.warrantyExpiry}
+                              onChange={(e) => setFixtureForm((f) => ({ ...f, warrantyExpiry: e.target.value }))} />
+                          </div>
+                          <div>
+                            <label style={labelStyle}>Notes</label>
+                            <input style={inputStyle} placeholder="e.g. French door refrigerator" value={fixtureForm.notes}
+                              onChange={(e) => setFixtureForm((f) => ({ ...f, notes: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <Button size="sm" onClick={() => handleAddFixture(room.id)} disabled={savingFixture}>
+                            {savingFixture ? "Saving…" : "Add Fixture"}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setAddFixtureRoom(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fixture list */}
+                    {room.fixtures.length === 0 && addFixtureRoom !== room.id && (
+                      <p style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", color: COLORS.plumMid, fontWeight: 300, fontStyle: "italic" }}>
+                        No fixtures recorded.
+                      </p>
+                    )}
+                    {room.fixtures.map((f) => {
+                      const isExpired = f.warrantyExpiry && new Date(f.warrantyExpiry) < new Date();
+                      const expiringSoon = f.warrantyExpiry && !isExpired && new Date(f.warrantyExpiry) < new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+                      return (
+                        <div key={f.id} style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "0.625rem 0", borderBottom: `1px solid ${COLORS.rule}` }}>
+                          <div>
+                            <div style={{ fontFamily: FONTS.sans, fontWeight: 500, fontSize: "0.825rem", color: COLORS.plum }}>
+                              {f.brand} {f.model}
+                            </div>
+                            <div style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginTop: "0.2rem" }}>
+                              {f.serialNumber && `S/N ${f.serialNumber}`}
+                              {f.installedDate && ` · Installed ${f.installedDate}`}
+                              {f.warrantyExpiry && (
+                                <span style={{ color: isExpired ? COLORS.sage : expiringSoon ? "#C94C2E" : COLORS.plumMid }}>
+                                  {` · Warranty ${isExpired ? "expired" : "expires"} ${f.warrantyExpiry}`}
+                                </span>
+                              )}
+                            </div>
+                            {f.notes && (
+                              <div style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", color: COLORS.plumMid, fontWeight: 300, marginTop: "0.2rem" }}>
+                                {f.notes}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleRemoveFixture(room.id, f.id)}
+                            style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.plumMid, background: "none", border: "none", cursor: "pointer", flexShrink: 0, marginLeft: "1rem" }}
+                          >Remove</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
