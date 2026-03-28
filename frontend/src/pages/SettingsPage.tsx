@@ -290,30 +290,62 @@ function SubscriptionTab({ profile }: { profile: any }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
 
       {/* Current plan */}
-      <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white }}>
-        <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
-          <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Current Plan</p>
-        </div>
-        <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <Badge variant="info" size="lg">{tier}</Badge>
-            <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight }}>
-              {!isPaid
-                ? "Free forever"
-                : expiresAt
-                ? `Renews ${new Date(expiresAt).toLocaleDateString()}`
-                : "Active subscription"}
-            </span>
+      {!isPaid ? (
+        /* Free tier — prominent upgrade callout (15.7.5) */
+        <div style={{ border: `1.5px solid ${COLORS.sageMid}`, background: COLORS.sageLight, padding: "1.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+            <div>
+              <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.18em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "0.3rem" }}>
+                Current Plan
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+                <span style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", color: S.ink }}>Free</span>
+                <Badge variant="default" size="sm">Active</Badge>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate("/pricing")}
+              style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.55rem 1.25rem", border: "none", background: COLORS.plum, color: COLORS.white, cursor: "pointer" }}
+            >
+              Upgrade to Pro →
+            </button>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
-            {currentPlan.features.map((f) => (
-              <span key={f} style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: S.inkLight, border: `1px solid ${S.rule}`, padding: "0.15rem 0.5rem", background: S.paper }}>
-                {f}
+          <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight, marginBottom: "0.75rem" }}>
+            You're on the Free plan. Upgrade to unlock:
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.375rem 1.5rem" }}>
+            {["Score Breakdown", "Warranty Wallet", "Recurring Services", "Market Intelligence", "Insurance Defense Mode", "5-Year Maintenance Calendar"].map((f) => (
+              <span key={f} style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.plumMid, display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <Lock size={10} /> {f}
               </span>
             ))}
           </div>
         </div>
-      </div>
+      ) : (
+        /* Paid tier — standard compact plan card */
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white }}>
+          <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Current Plan</p>
+          </div>
+          <div style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <Badge variant="info" size="lg">{tier}</Badge>
+              <span style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight }}>
+                {expiresAt
+                  ? `Renews ${new Date(expiresAt).toLocaleDateString()}`
+                  : "Active subscription"}
+              </span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
+              {currentPlan.features.map((f) => (
+                <span key={f} style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: S.inkLight, border: `1px solid ${S.rule}`, padding: "0.15rem 0.5rem", background: S.paper }}>
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upgrade options */}
       {PLANS.filter((p) => p.tier !== "Free" && p.tier !== tier).length > 0 && (
