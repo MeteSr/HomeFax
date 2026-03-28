@@ -279,7 +279,7 @@ persistent actor Photo {
 
   /// Fetch the full photo record (including raw bytes).
   /// Caller must be the photo's owner or an admin.
-  public shared(msg) query func getPhoto(photoId: Text) : async Result.Result<Photo, Error> {
+  public shared(msg) func getPhoto(photoId: Text) : async Result.Result<Photo, Error> {
     switch (photos.get(photoId)) {
       case null  { #err(#NotFound) };
       case (?p)  {
@@ -292,7 +292,7 @@ persistent actor Photo {
 
   /// Fetch only the raw bytes — avoids sending the full record for metadata-only callers.
   /// Caller must be the photo's owner or an admin.
-  public shared(msg) query func getPhotoData(photoId: Text) : async Result.Result<[Nat8], Error> {
+  public shared(msg) func getPhotoData(photoId: Text) : async Result.Result<[Nat8], Error> {
     switch (photos.get(photoId)) {
       case null  { #err(#NotFound) };
       case (?p)  {
@@ -304,7 +304,7 @@ persistent actor Photo {
   };
 
   /// All photos for a job the caller owns. Admins see all photos for the job.
-  public shared(msg) query func getPhotosByJob(jobId: Text) : async [Photo] {
+  public shared(msg) func getPhotosByJob(jobId: Text) : async [Photo] {
     let caller = msg.caller;
     let admin  = isAdmin(caller);
     Iter.toArray(Iter.filter(photos.vals(), func(p: Photo) : Bool {
@@ -313,7 +313,7 @@ persistent actor Photo {
   };
 
   /// All photos for a property the caller owns. Admins see all photos for the property.
-  public shared(msg) query func getPhotosByProperty(propertyId: Text) : async [Photo] {
+  public shared(msg) func getPhotosByProperty(propertyId: Text) : async [Photo] {
     let caller = msg.caller;
     let admin  = isAdmin(caller);
     Iter.toArray(Iter.filter(photos.vals(), func(p: Photo) : Bool {
@@ -322,7 +322,7 @@ persistent actor Photo {
   };
 
   /// Photos for a specific job+phase the caller owns. Admins see all.
-  public shared(msg) query func getPhotosByPhase(jobId: Text, phase: ConstructionPhase) : async [Photo] {
+  public shared(msg) func getPhotosByPhase(jobId: Text, phase: ConstructionPhase) : async [Photo] {
     let caller = msg.caller;
     let admin  = isAdmin(caller);
     Iter.toArray(Iter.filter(photos.vals(), func(p: Photo) : Bool {
