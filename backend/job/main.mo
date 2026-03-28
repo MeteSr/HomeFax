@@ -451,6 +451,42 @@ persistent actor Job {
     #ok(())
   };
 
+  /// Certification data for a property.
+  /// Returns how many jobs are verified, how many distinct key systems are verified,
+  /// and which key systems (HVAC / Roofing / Plumbing / Electrical) have at least
+  /// one verified job.  Callers apply their own score threshold (≥ 88) on top.
+  public query func getCertificationData(propertyId: Text) : async {
+    verifiedJobCount   : Nat;
+    verifiedKeySystems : [Text];
+    meetsStructural    : Bool;   // verifiedJobCount >= 3 AND verifiedKeySystems.size() >= 2
+  } {
+    let KEY_SYSTEMS : [Text] = ["HVAC", "Roofing", "Plumbing", "Electrical"];
+    var verifiedCount : Nat = 0;
+    var foundSystems : [Text] = [];
+
+    for (j in jobs.vals()) {
+      if (j.propertyId == propertyId and j.verified) {
+        verifiedCount += 1;
+        let svcText = switch (j.serviceType) {
+          case (#HVAC)       "HVAC";
+          case (#Roofing)    "Roofing";
+          case (#Plumbing)   "Plumbing";
+          case (#Electrical) "Electrical";
+          case _             "";
+        };
+        if (svcText != "" and Option.isNull(Array.find<Text>(foundSystems, func(s) { s == svcText }))) {
+          foundSystems := Array.append(foundSystems, [svcText]);
+        };
+      };
+    };
+
+    {
+      verifiedJobCount   = verifiedCount;
+      verifiedKeySystems = foundSystems;
+      meetsStructural    = verifiedCount >= 3 and foundSystems.size() >= 2;
+    }
+  };
+
   public query func getMetrics() : async Metrics {
     var pending   = 0;
     var completed = 0;

@@ -137,7 +137,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | 3.2.2 | Document type taxonomy | ✅ Exists | — | `DOC_TYPES` in `ConstructionPhotoUpload.tsx`: Receipt, Invoice, Permit, Before/After Photo, Warranty Card, Inspection Report, Other |
 | 3.2.3 | Permit / inspection upload flow | ✅ Done | M | Dedicated upload UI in `PropertyDetailPage` Documents tab beyond receipts |
 | 3.2.4 | Per-tier storage quota enforcement | ✅ Done | S | `getQuota()` exists; quota banner shown; enforcement on upload needs hardening |
-| 3.2.5 | Canister-level access control | ⬜ Missing | M | Only property owner + authorized contractors can read documents; add caller check in `photo` canister |
+| 3.2.5 | Canister-level access control | ✅ Done | M | Only property owner + authorized contractors can read documents; add caller check in `photo` canister |
 
 ### 3.3 "Dead Man's Switch" Continuity
 **Vision:** If HomeFax ceases to exist, homeowner records remain fully accessible on ICP.
@@ -146,7 +146,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 |---|------|--------|------|-------|
 | 3.3.1 | Self-service data export | ✅ Done | M | Export all property data (jobs, photos, reports) as a ZIP / JSON from the canister |
 | 3.3.2 | Public read query on all record canisters | ⬜ Missing | M | Unauthenticated queries for property/job/photo data given owner principal |
-| 3.3.3 | Open-source canister interfaces | ⬜ Missing | S | Publish Candid IDL specs so third-party UIs can read HomeFax canister data |
+| 3.3.3 | Open-source canister interfaces | ✅ Done | S | Publish Candid IDL specs so third-party UIs can read HomeFax canister data |
 | 3.3.4 | "Your data, your keys" marketing page | ✅ Done | S | Landing page section explaining ICP data sovereignty |
 
 ### 3.4 ICP-Native Home Title Tokens
@@ -258,7 +258,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | 6.1.1 | HomeFax score computation | ✅ Exists | — | `market` canister `analyzeCompetitivePosition()` returns score + grade |
 | 6.1.2 | Score-to-dollar premium model | ⬜ Missing | L | Needs market data (5.3.2); map score band → estimated premium range per zip |
 | 6.1.3 | Dollar premium display on Dashboard | ✅ Done | M | "Your score is worth an estimated $X–$Y in your market" card |
-| 6.1.4 | Premium estimate in HomeFax Report | ⬜ Missing | M | Include dollar value range in generated report for buyer/agent view |
+| 6.1.4 | Premium estimate in HomeFax Report | ✅ Done | M | Include dollar value range in generated report for buyer/agent view |
 
 ### 6.2 Listing Platform Integration & Badge
 **Vision:** HomeFax-verified homes display a badge on Zillow/Realtor.com.
@@ -294,8 +294,8 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 6.5.1 | Certification threshold logic | ⬜ Missing | M | Canister query: `isCertified(propertyId)` → true if score ≥ 88 and all key systems verified |
-| 6.5.2 | Certified badge in HomeFax Report | ⬜ Missing | S | Visual badge on report + certification date |
+| 6.5.1 | Certification threshold logic | ✅ Done | M | Canister query: `getCertificationData(propertyId)` → verifiedJobCount, verifiedKeySystems, meetsStructural (≥3 verified + ≥2 key systems) |
+| 6.5.2 | Certified badge in HomeFax Report | ✅ Done | S | Visual badge on report + certification date |
 | 6.5.3 | Insurance / buyer agent API | ⬜ Missing | XL | Partner program for insurers/agents to programmatically verify certification; legal framework needed |
 
 ---

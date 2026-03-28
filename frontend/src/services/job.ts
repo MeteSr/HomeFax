@@ -103,6 +103,15 @@ const idlFactory = ({ IDL }: any) => {
       diyJobs:       IDL.Nat,
       isPaused:      IDL.Bool,
     })], ["query"]),
+    getCertificationData: IDL.Func(
+      [IDL.Text],
+      [IDL.Record({
+        verifiedJobCount:   IDL.Nat,
+        verifiedKeySystems: IDL.Vec(IDL.Text),
+        meetsStructural:    IDL.Bool,
+      })],
+      ["query"]
+    ),
   });
 };
 
@@ -318,6 +327,26 @@ export const jobService = {
     const a = await getActor();
     const result = await a.getJobsPendingMySignature();
     return (result as any[]).map(fromJob);
+  },
+
+  async getCertificationData(propertyId: string): Promise<{ verifiedJobCount: number; verifiedKeySystems: string[]; meetsStructural: boolean }> {
+    if (!JOB_CANISTER_ID) {
+      const KEY_SYSTEMS = ["HVAC", "Roofing", "Plumbing", "Electrical"];
+      const propertyJobs = MOCK_JOBS.filter((j) => j.propertyId === propertyId && j.verified);
+      const systems = [...new Set(propertyJobs.map((j) => j.serviceType).filter((s) => KEY_SYSTEMS.includes(s)))];
+      return {
+        verifiedJobCount:   propertyJobs.length,
+        verifiedKeySystems: systems,
+        meetsStructural:    propertyJobs.length >= 3 && systems.length >= 2,
+      };
+    }
+    const a = await getActor();
+    const raw = await a.getCertificationData(propertyId);
+    return {
+      verifiedJobCount:   Number(raw.verifiedJobCount),
+      verifiedKeySystems: raw.verifiedKeySystems as string[],
+      meetsStructural:    raw.meetsStructural as boolean,
+    };
   },
 
   isDiy(job: Job): boolean {

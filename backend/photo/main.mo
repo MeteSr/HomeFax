@@ -278,39 +278,55 @@ persistent actor Photo {
   };
 
   /// Fetch the full photo record (including raw bytes).
-  public query func getPhoto(photoId: Text) : async Result.Result<Photo, Error> {
+  /// Caller must be the photo's owner or an admin.
+  public shared(msg) query func getPhoto(photoId: Text) : async Result.Result<Photo, Error> {
     switch (photos.get(photoId)) {
       case null  { #err(#NotFound) };
-      case (?p)  { #ok(p) };
+      case (?p)  {
+        if (p.owner != msg.caller and not isAdmin(msg.caller))
+          return #err(#Unauthorized);
+        #ok(p)
+      };
     }
   };
 
   /// Fetch only the raw bytes — avoids sending the full record for metadata-only callers.
-  public query func getPhotoData(photoId: Text) : async Result.Result<[Nat8], Error> {
+  /// Caller must be the photo's owner or an admin.
+  public shared(msg) query func getPhotoData(photoId: Text) : async Result.Result<[Nat8], Error> {
     switch (photos.get(photoId)) {
       case null  { #err(#NotFound) };
-      case (?p)  { #ok(p.data) };
+      case (?p)  {
+        if (p.owner != msg.caller and not isAdmin(msg.caller))
+          return #err(#Unauthorized);
+        #ok(p.data)
+      };
     }
   };
 
-  /// All photos for a job, across all phases.
-  public query func getPhotosByJob(jobId: Text) : async [Photo] {
+  /// All photos for a job the caller owns. Admins see all photos for the job.
+  public shared(msg) query func getPhotosByJob(jobId: Text) : async [Photo] {
+    let caller = msg.caller;
+    let admin  = isAdmin(caller);
     Iter.toArray(Iter.filter(photos.vals(), func(p: Photo) : Bool {
-      p.jobId == jobId
+      p.jobId == jobId and (admin or p.owner == caller)
     }))
   };
 
-  /// All photos for a property, across all jobs and phases.
-  public query func getPhotosByProperty(propertyId: Text) : async [Photo] {
+  /// All photos for a property the caller owns. Admins see all photos for the property.
+  public shared(msg) query func getPhotosByProperty(propertyId: Text) : async [Photo] {
+    let caller = msg.caller;
+    let admin  = isAdmin(caller);
     Iter.toArray(Iter.filter(photos.vals(), func(p: Photo) : Bool {
-      p.propertyId == propertyId
+      p.propertyId == propertyId and (admin or p.owner == caller)
     }))
   };
 
-  /// Photos for a specific job filtered to a single construction phase.
-  public query func getPhotosByPhase(jobId: Text, phase: ConstructionPhase) : async [Photo] {
+  /// Photos for a specific job+phase the caller owns. Admins see all.
+  public shared(msg) query func getPhotosByPhase(jobId: Text, phase: ConstructionPhase) : async [Photo] {
+    let caller = msg.caller;
+    let admin  = isAdmin(caller);
     Iter.toArray(Iter.filter(photos.vals(), func(p: Photo) : Bool {
-      p.jobId == jobId and p.phase == phase
+      p.jobId == jobId and p.phase == phase and (admin or p.owner == caller)
     }))
   };
 
