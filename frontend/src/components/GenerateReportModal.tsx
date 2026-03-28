@@ -40,6 +40,19 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
     hideAmounts: false, hideContractors: false,
     hidePermits: false, hideDescriptions: false,
   });
+  // Per-link disclosure overrides (keyed by token); defaults to the global disclosure
+  const [linkDisclosures, setLinkDisclosures] = useState<Record<string, DisclosureOptions>>({});
+  const [expandedToken, setExpandedToken] = useState<string | null>(null);
+
+  const getLinkDisclosure = (token: string): DisclosureOptions =>
+    linkDisclosures[token] ?? { hideAmounts: false, hideContractors: false, hidePermits: false, hideDescriptions: false };
+
+  const setLinkField = (token: string, field: keyof DisclosureOptions, value: boolean) => {
+    setLinkDisclosures((prev) => ({
+      ...prev,
+      [token]: { ...getLinkDisclosure(token), [field]: value },
+    }));
+  };
 
   const propertyId = String(property.id);
 
@@ -286,55 +299,109 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                 Active links ({activeLinks.length})
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
-                {activeLinks.map((link) => (
-                  <div key={link.token} style={{ background: "#fff", padding: "1rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-                      <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-                          <Clock size={11} color={S.inkLight} />
-                          <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.inkLight }}>
-                            {reportService.expiryLabel(link)}
-                          </span>
+                {activeLinks.map((link) => {
+                  const ld = getLinkDisclosure(link.token);
+                  const hiddenCount = Object.values(ld).filter(Boolean).length;
+                  const isExpanded = expandedToken === link.token;
+                  return (
+                    <div key={link.token} style={{ background: "#fff" }}>
+                      <div style={{ padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                            <Clock size={11} color={S.inkLight} />
+                            <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.inkLight }}>
+                              {reportService.expiryLabel(link)}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <Eye size={11} color={S.inkLight} />
+                            <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
+                              {link.viewCount} view{link.viewCount !== 1 ? "s" : ""}
+                            </span>
+                            {hiddenCount > 0 && (
+                              <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: S.rust, background: "#FAF0ED", padding: "0.1rem 0.35rem", border: `1px solid ${S.rust}30` }}>
+                                {hiddenCount} field{hiddenCount > 1 ? "s" : ""} hidden
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-                          <Eye size={11} color={S.inkLight} />
-                          <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
-                            {link.viewCount} view{link.viewCount !== 1 ? "s" : ""}
-                          </span>
+                        <div style={{ display: "flex", gap: "0.375rem" }}>
+                          <button
+                            onClick={() => setExpandedToken(isExpanded ? null : link.token)}
+                            title="Disclosure settings"
+                            style={{
+                              display: "inline-flex", alignItems: "center",
+                              padding: "0.35rem 0.5rem",
+                              border: `1px solid ${isExpanded ? S.ink : S.rule}`,
+                              color: isExpanded ? S.ink : S.inkLight,
+                              background: "none", cursor: "pointer",
+                            }}
+                          >
+                            <EyeOff size={11} />
+                          </button>
+                          <button
+                            onClick={() => handleCopy(link.token, ld)}
+                            title="Copy link"
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: "0.3rem",
+                              padding: "0.35rem 0.75rem",
+                              fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
+                              border: `1px solid ${copiedToken === link.token ? S.sage : S.rule}`,
+                              color:  copiedToken === link.token ? S.sage : S.inkLight,
+                              background: "none", cursor: "pointer",
+                            }}
+                          >
+                            {copiedToken === link.token ? <CheckCircle size={11} /> : <Copy size={11} />}
+                            {copiedToken === link.token ? "Copied" : "Copy"}
+                          </button>
+                          <button
+                            onClick={() => handleRevoke(link.token)}
+                            title="Revoke link"
+                            style={{
+                              display: "inline-flex", alignItems: "center",
+                              padding: "0.35rem 0.5rem",
+                              border: `1px solid ${S.rule}`, color: S.rust,
+                              background: "none", cursor: "pointer",
+                            }}
+                          >
+                            <Trash2 size={11} />
+                          </button>
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: "0.375rem" }}>
-                        <button
-                          onClick={() => handleCopy(link.token)}
-                          title="Copy link"
-                          style={{
-                            display: "inline-flex", alignItems: "center", gap: "0.3rem",
-                            padding: "0.35rem 0.75rem",
-                            fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                            border: `1px solid ${copiedToken === link.token ? S.sage : S.rule}`,
-                            color:  copiedToken === link.token ? S.sage : S.inkLight,
-                            background: "none", cursor: "pointer",
-                          }}
-                        >
-                          {copiedToken === link.token ? <CheckCircle size={11} /> : <Copy size={11} />}
-                          {copiedToken === link.token ? "Copied" : "Copy"}
-                        </button>
-                        <button
-                          onClick={() => handleRevoke(link.token)}
-                          title="Revoke link"
-                          style={{
-                            display: "inline-flex", alignItems: "center",
-                            padding: "0.35rem 0.5rem",
-                            border: `1px solid ${S.rule}`, color: S.rust,
-                            background: "none", cursor: "pointer",
-                          }}
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
+                      {/* Per-link disclosure toggles */}
+                      {isExpanded && (
+                        <div style={{ borderTop: `1px solid ${S.rule}`, background: "#FAFAF8", padding: "0.75rem 1rem" }}>
+                          <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>
+                            Hide from viewer for this link
+                          </p>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.375rem" }}>
+                            {(
+                              [
+                                { key: "hideAmounts"      as const, label: "Job amounts"      },
+                                { key: "hideContractors"  as const, label: "Contractor names" },
+                                { key: "hidePermits"      as const, label: "Permit numbers"   },
+                                { key: "hideDescriptions" as const, label: "Job descriptions" },
+                              ]
+                            ).map(({ key, label }) => (
+                              <label key={key} style={{ display: "flex", alignItems: "center", gap: "0.375rem", cursor: "pointer" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={ld[key]}
+                                  onChange={(e) => setLinkField(link.token, key, e.target.checked)}
+                                  style={{ accentColor: S.rust, width: "0.75rem", height: "0.75rem" }}
+                                />
+                                <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.ink }}>{label}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <p style={{ fontFamily: S.mono, fontSize: "0.55rem", color: S.inkLight, marginTop: "0.5rem" }}>
+                            Settings are encoded in the URL — copy again to share with new settings.
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : null}
