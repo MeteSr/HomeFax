@@ -55,6 +55,20 @@ export default defineConfig(({ mode }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
+      coverage: {
+        provider: "v8",
+        // Only measure coverage for service-layer files that have unit tests
+        include: ["src/services/**/*.ts"],
+        exclude: ["src/services/actor.ts"],   // ICP transport layer — not unit-testable
+        reporter: ["text", "html", "lcov"],   // terminal summary + browsable HTML + CI/tooling
+        reportsDirectory: "./coverage",
+        thresholds: {
+          lines:     70,
+          functions: 70,
+          branches:  60,
+          statements: 70,
+        },
+      },
     },
   };
 });
