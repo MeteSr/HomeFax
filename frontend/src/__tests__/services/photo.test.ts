@@ -137,6 +137,40 @@ describe("photoService", () => {
     });
   });
 
+  // ── getByRoom (mock path returns empty) ─────────────────────────────────────
+  describe("getByRoom", () => {
+    it("returns an empty array in mock mode", async () => {
+      const photos = await photoService.getByRoom("any-room");
+      expect(photos).toEqual([]);
+    });
+  });
+
+  // ── uploadRoomPhoto ──────────────────────────────────────────────────────────
+  describe("uploadRoomPhoto", () => {
+    it("stores photo with synthetic ROOM_<roomId> jobId", async () => {
+      const file = makeFile("room image", "kitchen.jpg");
+      const photo = await photoService.uploadRoomPhoto(file, "room-42", "prop-1", "PostConstruction", "Kitchen wall");
+      expect(photo.jobId).toBe("ROOM_room-42");
+    });
+
+    it("preserves the supplied propertyId", async () => {
+      const photo = await photoService.uploadRoomPhoto(makeFile(), "room-1", "prop-99", "PostConstruction", "desc");
+      expect(photo.propertyId).toBe("prop-99");
+    });
+
+    it("preserves phase and description", async () => {
+      const photo = await photoService.uploadRoomPhoto(makeFile(), "r1", "p1", "Finishing", "Paint color reference");
+      expect(photo.phase).toBe("Finishing");
+      expect(photo.description).toBe("Paint color reference");
+    });
+
+    it("different rooms produce different synthetic jobIds", async () => {
+      const a = await photoService.uploadRoomPhoto(makeFile(), "room-A", "p1", "PostConstruction", "d");
+      const b = await photoService.uploadRoomPhoto(makeFile(), "room-B", "p1", "PostConstruction", "d");
+      expect(a.jobId).not.toBe(b.jobId);
+    });
+  });
+
   // ── deletePhoto (mock path is no-op) ────────────────────────────────────────
   describe("deletePhoto", () => {
     it("resolves without throwing in mock mode", async () => {
