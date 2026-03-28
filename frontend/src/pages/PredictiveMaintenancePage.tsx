@@ -11,7 +11,7 @@ import {
 } from "@/services/maintenance";
 import {
   AlertTriangle, Clock, Eye, CheckCircle2, Calendar,
-  Bot, Send, Wrench, ChevronDown, ChevronUp, PlusCircle, X, Settings2,
+  Bot, Send, Wrench, ChevronDown, ChevronUp, PlusCircle, X, Settings2, Download,
 } from "lucide-react";
 import { systemAgesService } from "@/services/systemAges";
 import { marketService, buildPropertySummary, type ProjectRecommendation } from "@/services/market";
@@ -513,7 +513,7 @@ export default function PredictiveMaintenancePage() {
   useEffect(() => {
     if (!property) return;
     const systemAges = systemAgesService.get(selectedId);
-    setReport(maintenanceService.predict(Number(property.yearBuilt), propJobs, systemAges));
+    setReport(maintenanceService.predict(Number(property.yearBuilt), propJobs, systemAges, String(property.state)));
     maintenanceService.getScheduleByProperty(String(property.id)).then(setScheduleEntries);
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -530,7 +530,7 @@ export default function PredictiveMaintenancePage() {
     return properties.map((p) => {
       const pJobs = jobs.filter((j) => j.propertyId === String(p.id));
       const ages  = systemAgesService.get(String(p.id));
-      const r     = maintenanceService.predict(Number(p.yearBuilt), pJobs, ages);
+      const r     = maintenanceService.predict(Number(p.yearBuilt), pJobs, ages, String(p.state));
       return {
         property: p,
         critical: r.systemPredictions.filter((s) => s.urgency === "Critical").length,
@@ -549,6 +549,33 @@ export default function PredictiveMaintenancePage() {
 
   return (
     <Layout>
+      <style>{`
+        @media print {
+          /* Hide everything except the print calendar */
+          body > * { display: none !important; }
+          #hf-print-calendar { display: block !important; }
+
+          #hf-print-calendar {
+            font-family: 'IBM Plex Mono', monospace;
+            color: #0E0E0C;
+            padding: 2rem;
+          }
+          .hf-print-header { margin-bottom: 1.5rem; border-bottom: 2px solid #0E0E0C; padding-bottom: 0.75rem; }
+          .hf-print-header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.6rem; font-weight: 900; margin: 0 0 0.25rem; }
+          .hf-print-header p  { font-size: 0.65rem; letter-spacing: 0.06em; color: #7A7268; margin: 0; }
+          .hf-print-section   { margin-bottom: 1.5rem; }
+          .hf-print-section-title { font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid #C8C3B8; padding-bottom: 0.25rem; margin-bottom: 0.5rem; }
+          .hf-print-row { display: flex; justify-content: space-between; align-items: baseline; padding: 0.3rem 0; border-bottom: 1px dotted #C8C3B8; font-size: 0.72rem; }
+          .hf-print-row-label { flex: 1; }
+          .hf-print-row-meta  { font-size: 0.6rem; color: #7A7268; margin-left: 1rem; }
+          .hf-print-row-cost  { font-weight: 700; margin-left: 1rem; }
+          .hf-print-urgency-critical { color: #C94C2E; font-weight: 700; }
+          .hf-print-urgency-soon     { color: #D4820E; font-weight: 700; }
+          .hf-print-footer { margin-top: 2rem; font-size: 0.55rem; color: #7A7268; letter-spacing: 0.05em; border-top: 1px solid #C8C3B8; padding-top: 0.5rem; }
+        }
+        @media screen { #hf-print-calendar { display: none; } }
+      `}</style>
+
       <div style={{ maxWidth: "72rem", margin: "0 auto", padding: "2rem 1.5rem" }}>
 
         <div style={{ marginBottom: "2rem" }}>
@@ -657,6 +684,14 @@ export default function PredictiveMaintenancePage() {
                   )}
                 </div>
               )}
+              {report && (
+                <button
+                  onClick={() => window.print()}
+                  style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${S.rule}`, background: "#fff", fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: S.inkLight, cursor: "pointer" }}
+                >
+                  <Download size={12} /> Export PDF
+                </button>
+              )}
             </div>
 
             {/* Tabs */}
@@ -671,8 +706,23 @@ export default function PredictiveMaintenancePage() {
             {activeTab === "systems" && report && (() => {
               const active = report.systemPredictions.filter((p) => taskStates[taskKey(p.systemName)] !== "done");
               const done   = report.systemPredictions.filter((p) => taskStates[taskKey(p.systemName)] === "done");
+              const zone   = report.climateZone;
+              const adjustedSystems = Object.keys(zone.lifespanMultipliers);
               return (
                 <>
+                  {zone.id !== "mixed" && (
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "0.6rem", padding: "0.65rem 0.875rem", background: "#EFF6FF", border: `1px solid #BFDBFE`, marginBottom: "0.75rem" }}>
+                      <span style={{ fontSize: "0.85rem", lineHeight: 1 }}>🌡️</span>
+                      <div>
+                        <span style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#1D4ED8", fontWeight: 700 }}>
+                          {zone.name} Climate
+                        </span>
+                        <span style={{ fontFamily: S.sans, fontSize: "0.75rem", color: "#1E40AF", marginLeft: "0.5rem" }}>
+                          {adjustedSystems.join(", ")} lifespans adjusted for local conditions
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: S.rule }}>
                     {active.map((pred) => (
                       <SystemCard
@@ -837,6 +887,81 @@ export default function PredictiveMaintenancePage() {
       {scheduleTarget && property && (
         <AddToScheduleModal pred={scheduleTarget} propertyId={String(property.id)} onSave={handleScheduleSave} onClose={() => setScheduleTarget(null)} />
       )}
+
+      {/* ── Print-only calendar ───────────────────────────────────────────── */}
+      <div id="hf-print-calendar">
+        {report && property && (() => {
+          const zone = report.climateZone;
+          const urgent = report.systemPredictions.filter((p) => p.urgency === "Critical" || p.urgency === "Soon");
+          const watching = report.systemPredictions.filter((p) => p.urgency === "Watch" || p.urgency === "Good");
+          const totalReplacementLow  = urgent.reduce((s, p) => s + p.estimatedCostLowCents, 0);
+          const totalReplacementHigh = urgent.reduce((s, p) => s + p.estimatedCostHighCents, 0);
+
+          const tasksBySeason: Record<string, typeof report.annualTasks> = { Spring: [], Summer: [], Fall: [], Winter: [], "Year-round": [] };
+          for (const t of report.annualTasks) {
+            const bucket = t.season ?? "Year-round";
+            (tasksBySeason[bucket] ??= []).push(t);
+          }
+
+          return (
+            <>
+              <div className="hf-print-header">
+                <h1>HomeFax Maintenance Calendar</h1>
+                <p>{property.address}, {property.city}, {property.state} {property.zipCode} · Built {String(property.yearBuilt)} · Generated {new Date().toLocaleDateString()}</p>
+                {zone.id !== "mixed" && <p style={{ marginTop: "0.25rem" }}>Climate zone: {zone.name} — {zone.description}</p>}
+              </div>
+
+              <div className="hf-print-section">
+                <div className="hf-print-section-title">System Health Summary</div>
+                {urgent.map((p) => (
+                  <div key={p.systemName} className="hf-print-row">
+                    <span className={`hf-print-row-label hf-print-urgency-${p.urgency.toLowerCase()}`}>{p.urgency === "Critical" ? "⚠" : "⏰"} {p.systemName}</span>
+                    <span className="hf-print-row-meta">{p.yearsRemaining < 0 ? `${Math.abs(p.yearsRemaining)}y overdue` : `${p.yearsRemaining}y remaining`}</span>
+                    <span className="hf-print-row-cost">{maintenanceService.formatCents(p.estimatedCostLowCents)}–{maintenanceService.formatCents(p.estimatedCostHighCents)}</span>
+                  </div>
+                ))}
+                {watching.map((p) => (
+                  <div key={p.systemName} className="hf-print-row">
+                    <span className="hf-print-row-label">{p.systemName}</span>
+                    <span className="hf-print-row-meta">{p.yearsRemaining}y remaining · {p.urgency}</span>
+                    <span className="hf-print-row-cost">—</span>
+                  </div>
+                ))}
+                {totalReplacementLow > 0 && (
+                  <div className="hf-print-row" style={{ marginTop: "0.5rem", borderBottom: "none", fontWeight: 700 }}>
+                    <span className="hf-print-row-label">Replacement budget (Critical + Soon)</span>
+                    <span className="hf-print-row-cost">{maintenanceService.formatCents(totalReplacementLow)}–{maintenanceService.formatCents(totalReplacementHigh)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="hf-print-section">
+                <div className="hf-print-section-title">Annual Maintenance Tasks by Season</div>
+                {Object.entries(tasksBySeason).filter(([, tasks]) => tasks.length > 0).map(([season, tasks]) => (
+                  <div key={season} style={{ marginBottom: "0.75rem" }}>
+                    <div style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#7A7268", marginBottom: "0.25rem" }}>{season}</div>
+                    {tasks.map((t) => (
+                      <div key={t.task} className="hf-print-row">
+                        <span className="hf-print-row-label">□ {t.task}</span>
+                        <span className="hf-print-row-meta">{t.frequency}</span>
+                        <span className="hf-print-row-cost">{t.estimatedCost}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                <div className="hf-print-row" style={{ borderBottom: "none", fontWeight: 700 }}>
+                  <span className="hf-print-row-label">Annual task budget</span>
+                  <span className="hf-print-row-cost">{maintenanceService.formatCents(report.annualTaskBudgetLowCents)}–{maintenanceService.formatCents(report.annualTaskBudgetHighCents)}</span>
+                </div>
+              </div>
+
+              <div className="hf-print-footer">
+                Generated by HomeFax · Records verified on Internet Computer Protocol · homefax.app
+              </div>
+            </>
+          );
+        })()}
+      </div>
     </Layout>
   );
 }

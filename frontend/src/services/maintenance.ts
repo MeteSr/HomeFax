@@ -69,6 +69,99 @@ function fromEntry(raw: any): ScheduleEntry {
   };
 }
 
+// ─── Climate Zone Model ──────────────────────────────────────────────────────
+//
+// Five practical zones derived from DOE Building America climate zones.
+// Multipliers < 1.0 shorten effective lifespan (harsher conditions).
+// Only systems meaningfully affected by a zone carry a non-1.0 multiplier.
+
+export interface ClimateZone {
+  id: string;
+  name: string;
+  description: string;
+  /** Per-system lifespan multiplier. Missing key = 1.0 (no adjustment). */
+  lifespanMultipliers: Partial<Record<string, number>>;
+}
+
+const CLIMATE_ZONES: Record<string, ClimateZone> = {
+  hotHumid: {
+    id: "hotHumid",
+    name: "Hot-Humid",
+    description: "Year-round AC load, high UV, and moisture accelerate HVAC, roofing, and insulation wear.",
+    lifespanMultipliers: {
+      "HVAC":         0.85,   // runs year-round; humidity corrodes components
+      "Roofing":      0.88,   // UV + humidity + mold
+      "Water Heater": 0.90,   // mineral buildup, ambient heat
+      "Windows":      0.90,   // UV, humidity-driven seal failure
+      "Insulation":   0.85,   // moisture intrusion over time
+    },
+  },
+  hotDry: {
+    id: "hotDry",
+    name: "Hot-Dry",
+    description: "Intense UV and thermal cycling stress roofing and windows; expansive soils affect plumbing.",
+    lifespanMultipliers: {
+      "HVAC":      0.90,   // heavy cooling load but dry air is easier on components
+      "Roofing":   0.92,   // intense UV, but no freeze/thaw or moisture
+      "Windows":   0.90,   // UV and thermal stress
+      "Plumbing":  0.90,   // expansive clay soils shift foundations
+    },
+  },
+  cold: {
+    id: "cold",
+    name: "Cold",
+    description: "Freeze-thaw cycles damage roofing and plumbing; heavy heating load stresses HVAC.",
+    lifespanMultipliers: {
+      "Roofing":    0.88,   // freeze-thaw, ice dams
+      "Plumbing":   0.88,   // freezing risk, pipe stress
+      "HVAC":       0.88,   // heavy heating season
+      "Windows":    0.88,   // thermal cycling, condensation
+      "Insulation": 0.90,   // compression from freeze-thaw
+    },
+  },
+  veryCold: {
+    id: "veryCold",
+    name: "Very Cold",
+    description: "Extreme winters cause accelerated wear across roofing, plumbing, HVAC, and windows.",
+    lifespanMultipliers: {
+      "Roofing":    0.82,
+      "Plumbing":   0.83,
+      "HVAC":       0.83,
+      "Windows":    0.83,
+      "Insulation": 0.85,
+    },
+  },
+  mixed: {
+    id: "mixed",
+    name: "Mixed/Moderate",
+    description: "Moderate climate — national average lifespans apply.",
+    lifespanMultipliers: {},
+  },
+};
+
+/** Map US state abbreviations to a climate zone. */
+const STATE_TO_ZONE: Record<string, keyof typeof CLIMATE_ZONES> = {
+  // Hot-Humid
+  FL: "hotHumid", LA: "hotHumid", MS: "hotHumid", AL: "hotHumid",
+  GA: "hotHumid", SC: "hotHumid", HI: "hotHumid",
+  // Hot-Dry
+  AZ: "hotDry", NM: "hotDry", NV: "hotDry", UT: "hotDry",
+  // Very Cold
+  MN: "veryCold", ND: "veryCold", SD: "veryCold", WI: "veryCold",
+  AK: "veryCold", ME: "veryCold", VT: "veryCold", NH: "veryCold",
+  // Cold
+  MI: "cold", WY: "cold", MT: "cold", ID: "cold", CO: "cold",
+  IA: "cold", NE: "cold", KS: "cold", MO: "cold", IL: "cold",
+  IN: "cold", OH: "cold", PA: "cold", NY: "cold", MA: "cold",
+  RI: "cold", CT: "cold", NJ: "cold", WV: "cold",
+  // Everything else → mixed
+};
+
+export function getClimateZone(state: string): ClimateZone {
+  const zoneKey = STATE_TO_ZONE[state.toUpperCase().trim()];
+  return CLIMATE_ZONES[zoneKey ?? "mixed"];
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type UrgencyLevel = "Critical" | "Soon" | "Watch" | "Good";
@@ -104,6 +197,7 @@ export interface MaintenanceReport {
   totalBudgetHighCents: number;
   annualTaskBudgetLowCents: number;
   annualTaskBudgetHighCents: number;
+  climateZone: ClimateZone;
   generatedAt: number;
 }
 
@@ -198,9 +292,11 @@ function recommendationFor(
 export function predictMaintenance(
   yearBuilt: number,
   jobs: Job[],
-  systemInstallYears: Partial<Record<string, number>> = {}
+  systemInstallYears: Partial<Record<string, number>> = {},
+  state?: string
 ): MaintenanceReport {
-  const year = currentYear();
+  const year  = currentYear();
+  const zone  = state ? getClimateZone(state) : CLIMATE_ZONES.mixed;
   let predictions: SystemPrediction[] = [];
   let budgetLow  = 0;
   let budgetHigh = 0;
@@ -215,10 +311,14 @@ export function predictMaintenance(
       }
     }
 
-    const age        = Math.max(0, year - lastYear);
-    const pctUsed    = Math.round((age / sys.lifespanYears) * 100);
-    const remaining  = sys.lifespanYears - age;
-    const urgency    = urgencyFor(pctUsed);
+    // Apply climate multiplier to effective lifespan
+    const multiplier       = zone.lifespanMultipliers[sys.name] ?? 1.0;
+    const effectiveLifespan = Math.round(sys.lifespanYears * multiplier);
+
+    const age       = Math.max(0, year - lastYear);
+    const pctUsed   = Math.round((age / effectiveLifespan) * 100);
+    const remaining = effectiveLifespan - age;
+    const urgency   = urgencyFor(pctUsed);
 
     predictions.push({
       systemName:             sys.name,
@@ -253,6 +353,7 @@ export function predictMaintenance(
     totalBudgetHighCents:      budgetHigh,
     annualTaskBudgetLowCents:  annualLow,
     annualTaskBudgetHighCents: annualHigh,
+    climateZone:               zone,
     generatedAt:               Date.now(),
   };
 }
@@ -263,8 +364,8 @@ const scheduleStore = new Map<string, ScheduleEntry>();
 let scheduleCounter = 0;
 
 export const maintenanceService = {
-  predict(yearBuilt: number, jobs: Job[], systemInstallYears?: Partial<Record<string, number>>): MaintenanceReport {
-    return predictMaintenance(yearBuilt, jobs, systemInstallYears);
+  predict(yearBuilt: number, jobs: Job[], systemInstallYears?: Partial<Record<string, number>>, state?: string): MaintenanceReport {
+    return predictMaintenance(yearBuilt, jobs, systemInstallYears, state);
   },
 
   async createScheduleEntry(
