@@ -18,16 +18,22 @@ const S = {
 };
 
 const FEATURES_TABLE = [
-  { feature: "Properties",               Free: "1",    Pro: "5",    Premium: "Unlimited", ContractorPro: "—" },
-  { feature: "Photos per job",            Free: "5",    Pro: "20",   Premium: "Unlimited", ContractorPro: "50" },
-  { feature: "Quote requests/mo",         Free: "3",    Pro: "10",   Premium: "Unlimited", ContractorPro: "Unlimited" },
-  { feature: "Public HomeFax report",     Free: true,   Pro: true,   Premium: true,        ContractorPro: false },
-  { feature: "Blockchain verified",       Free: true,   Pro: true,   Premium: true,        ContractorPro: true },
-  { feature: "Contractor search",         Free: false,  Pro: true,   Premium: true,        ContractorPro: true },
-  { feature: "PDF export",               Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
-  { feature: "Priority support",         Free: false,  Pro: false,  Premium: true,        ContractorPro: true },
-  { feature: "Contractor profile listing", Free: false, Pro: false,  Premium: false,       ContractorPro: true },
-  { feature: "Trust score & reviews",    Free: false,  Pro: false,  Premium: false,       ContractorPro: true },
+  { feature: "Properties",                   Free: "1",    Pro: "5",    Premium: "Unlimited", ContractorPro: "—" },
+  { feature: "Photos per job",               Free: "5",    Pro: "20",   Premium: "Unlimited", ContractorPro: "50" },
+  { feature: "Quote requests/mo",            Free: "3",    Pro: "10",   Premium: "Unlimited", ContractorPro: "Unlimited" },
+  { feature: "Public HomeFax report",        Free: true,   Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "Blockchain verified",          Free: true,   Pro: true,   Premium: true,        ContractorPro: true },
+  { feature: "Score breakdown",             Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "Warranty Wallet",             Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "Recurring Services",          Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "Market Intelligence",         Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "Insurance Defense Mode",      Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "5-Year Maintenance Calendar", Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "Contractor search",           Free: false,  Pro: true,   Premium: true,        ContractorPro: true },
+  { feature: "PDF export",                  Free: false,  Pro: true,   Premium: true,        ContractorPro: false },
+  { feature: "Priority support",            Free: false,  Pro: false,  Premium: true,        ContractorPro: true },
+  { feature: "Contractor profile listing",  Free: false,  Pro: false,  Premium: false,       ContractorPro: true },
+  { feature: "Trust score & reviews",       Free: false,  Pro: false,  Premium: false,       ContractorPro: true },
 ];
 
 const FAQS = [
