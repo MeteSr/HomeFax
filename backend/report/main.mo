@@ -56,6 +56,16 @@ persistent actor Report {
     totalVisits:    Nat;
   };
 
+  /// Buyer-facing summary for one room. Built by the frontend from room canister data.
+  public type RoomInput = {
+    name:         Text;
+    floorType:    Text;
+    paintColor:   Text;
+    paintBrand:   Text;
+    paintCode:    Text;
+    fixtureCount: Nat;
+  };
+
   public type PropertyInput = {
     address:           Text;
     city:              Text;
@@ -86,6 +96,7 @@ persistent actor Report {
     verificationLevel:  Text;
     jobs:               [JobInput];
     recurringServices:  [RecurringServiceInput];
+    rooms:              ?[RoomInput];   // null for reports generated before 1.4.7
     totalAmountCents:   Nat;
     verifiedJobCount:   Nat;
     diyJobCount:        Nat;
@@ -95,6 +106,11 @@ persistent actor Report {
 
   /// Share link record — separate from the snapshot so we can revoke without
   /// destroying the snapshot.
+  ///
+  /// hideAmounts / hideContractors / hidePermits / hideDescriptions are stored
+  /// as ?Bool so that links created before these fields were added deserialize
+  /// cleanly with null (treated as false). This is the Motoko-idiomatic way to
+  /// add fields to a stable record type without breaking upgrade compatibility.
   public type ShareLink = {
     token:            Text;
     snapshotId:       Text;
@@ -106,10 +122,10 @@ persistent actor Report {
     isActive:         Bool;
     createdAt:        Time.Time;
     // 14.2.3 — disclosure flags stored on-chain and enforced in getReport()
-    hideAmounts:      Bool;
-    hideContractors:  Bool;
-    hidePermits:      Bool;
-    hideDescriptions: Bool;
+    hideAmounts:      ?Bool;   // null = false (pre-14.2.3 links)
+    hideContractors:  ?Bool;
+    hidePermits:      ?Bool;
+    hideDescriptions: ?Bool;
   };
 
   public type Error = {
@@ -252,20 +268,25 @@ persistent actor Report {
   /// to the caller, ensuring disclosure is enforced on-chain rather than
   /// relying on the frontend to filter URL params.
   private func applyDisclosure(snap: ReportSnapshot, link: ShareLink) : ReportSnapshot {
-    if (not link.hideAmounts and not link.hideContractors
-        and not link.hidePermits and not link.hideDescriptions) {
+    let doHideAmounts      = Option.get(link.hideAmounts,      false);
+    let doHideContractors  = Option.get(link.hideContractors,  false);
+    let doHidePermits      = Option.get(link.hidePermits,      false);
+    let doHideDescriptions = Option.get(link.hideDescriptions, false);
+
+    if (not doHideAmounts and not doHideContractors
+        and not doHidePermits and not doHideDescriptions) {
       return snap;  // fast-path: nothing to hide
     };
 
     let filteredJobs : [JobInput] = Array.map<JobInput, JobInput>(snap.jobs, func(j) {
       {
         serviceType    = j.serviceType;
-        description    = if (link.hideDescriptions) { "" } else { j.description };
-        contractorName = if (link.hideContractors) { null } else { j.contractorName };
-        amountCents    = if (link.hideAmounts) { 0 } else { j.amountCents };
+        description    = if (doHideDescriptions) { "" }   else { j.description };
+        contractorName = if (doHideContractors)  { null } else { j.contractorName };
+        amountCents    = if (doHideAmounts)      { 0 }    else { j.amountCents };
         date           = j.date;
         isDiy          = j.isDiy;
-        permitNumber   = if (link.hidePermits) { null } else { j.permitNumber };
+        permitNumber   = if (doHidePermits)      { null } else { j.permitNumber };
         warrantyMonths = j.warrantyMonths;
         isVerified     = j.isVerified;
         status         = j.status;
@@ -286,10 +307,11 @@ persistent actor Report {
       verificationLevel = snap.verificationLevel;
       jobs              = filteredJobs;
       recurringServices = snap.recurringServices;
-      totalAmountCents  = if (link.hideAmounts) { 0 } else { snap.totalAmountCents };
+      rooms             = snap.rooms;
+      totalAmountCents  = if (doHideAmounts) { 0 } else { snap.totalAmountCents };
       verifiedJobCount  = snap.verifiedJobCount;
       diyJobCount       = snap.diyJobCount;
-      permitCount       = if (link.hidePermits) { 0 } else { snap.permitCount };
+      permitCount       = if (doHidePermits) { 0 } else { snap.permitCount };
       generatedAt       = snap.generatedAt;
     }
   };
@@ -309,6 +331,7 @@ persistent actor Report {
     property:          PropertyInput,
     jobs:              [JobInput],
     recurringServices: [RecurringServiceInput],
+    rooms:             [RoomInput],
     expiryDays:        ?Nat,
     visibility:        VisibilityLevel,
     hideAmounts:       Bool,
@@ -360,6 +383,7 @@ persistent actor Report {
       verificationLevel  = property.verificationLevel;
       jobs;
       recurringServices;
+      rooms              = if (rooms.size() > 0) { ?rooms } else { null };
       totalAmountCents   = totalAmount(jobs);
       verifiedJobCount   = countVerified(jobs);
       diyJobCount        = countDiy(jobs);
@@ -383,10 +407,10 @@ persistent actor Report {
       viewCount        = 0;
       isActive         = true;
       createdAt        = now;
-      hideAmounts;
-      hideContractors;
-      hidePermits;
-      hideDescriptions;
+      hideAmounts      = ?hideAmounts;
+      hideContractors  = ?hideContractors;
+      hidePermits      = ?hidePermits;
+      hideDescriptions = ?hideDescriptions;
     };
     links.put(token, link);
     #ok(link)
@@ -417,7 +441,7 @@ persistent actor Report {
               viewCount        = link.viewCount + 1;
               isActive         = link.isActive;
               createdAt        = link.createdAt;
-              hideAmounts      = link.hideAmounts;
+              hideAmounts      = link.hideAmounts;      // preserve ?Bool as-is
               hideContractors  = link.hideContractors;
               hidePermits      = link.hidePermits;
               hideDescriptions = link.hideDescriptions;
@@ -457,7 +481,7 @@ persistent actor Report {
           viewCount        = link.viewCount;
           isActive         = false;
           createdAt        = link.createdAt;
-          hideAmounts      = link.hideAmounts;
+          hideAmounts      = link.hideAmounts;      // preserve ?Bool as-is
           hideContractors  = link.hideContractors;
           hidePermits      = link.hidePermits;
           hideDescriptions = link.hideDescriptions;
