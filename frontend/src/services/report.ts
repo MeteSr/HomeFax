@@ -9,6 +9,7 @@ import { getAgent } from "./actor";
 import { Job } from "./job";
 import type { Property } from "./property";
 import type { RecurringServiceSummary } from "./recurringService";
+import type { Room } from "./room";
 
 const REPORT_CANISTER_ID = (process.env as any).REPORT_CANISTER_ID || "";
 
@@ -51,6 +52,15 @@ const idlFactory = ({ IDL }: any) => {
     totalVisits:   IDL.Nat,
   });
 
+  const RoomInput = IDL.Record({
+    name:         IDL.Text,
+    floorType:    IDL.Text,
+    paintColor:   IDL.Text,
+    paintBrand:   IDL.Text,
+    paintCode:    IDL.Text,
+    fixtureCount: IDL.Nat,
+  });
+
   const ReportSnapshot = IDL.Record({
     snapshotId:        IDL.Text,
     propertyId:        IDL.Text,
@@ -65,6 +75,7 @@ const idlFactory = ({ IDL }: any) => {
     verificationLevel: IDL.Text,
     jobs:              IDL.Vec(JobInput),
     recurringServices: IDL.Vec(RecurringServiceInput),
+    rooms:             IDL.Opt(IDL.Vec(RoomInput)),
     totalAmountCents:  IDL.Nat,
     verifiedJobCount:  IDL.Nat,
     diyJobCount:       IDL.Nat,
@@ -94,8 +105,11 @@ const idlFactory = ({ IDL }: any) => {
   });
 
   return IDL.Service({
+    // Params 1-6 match the original interface; 7-11 are new trailing opt args.
     generateReport: IDL.Func(
-      [IDL.Text, PropertyInput, IDL.Vec(JobInput), IDL.Vec(RecurringServiceInput), IDL.Opt(IDL.Nat), VisibilityLevel],
+      [IDL.Text, PropertyInput, IDL.Vec(JobInput), IDL.Vec(RecurringServiceInput),
+       IDL.Opt(IDL.Nat), VisibilityLevel,
+       IDL.Opt(IDL.Vec(RoomInput)), IDL.Opt(IDL.Bool), IDL.Opt(IDL.Bool), IDL.Opt(IDL.Bool), IDL.Opt(IDL.Bool)],
       [IDL.Variant({ ok: ShareLink, err: Error })],
       []
     ),
@@ -164,6 +178,15 @@ export function disclosureFromParams(params: URLSearchParams): DisclosureOptions
   };
 }
 
+export interface RoomInput {
+  name:         string;
+  floorType:    string;
+  paintColor:   string;
+  paintBrand:   string;
+  paintCode:    string;
+  fixtureCount: number;
+}
+
 export interface ReportSnapshot {
   snapshotId:        string;
   propertyId:        string;
@@ -178,6 +201,7 @@ export interface ReportSnapshot {
   verificationLevel: string;
   jobs:              JobInput[];
   recurringServices: RecurringServiceSummary[];
+  rooms:             RoomInput[];
   totalAmountCents:  number;
   verifiedJobCount:  number;
   diyJobCount:       number;
@@ -212,6 +236,17 @@ export function jobToInput(job: Job): JobInput {
     warrantyMonths: job.warrantyMonths,
     isVerified:     job.verified ?? job.status === "verified",
     status:         job.status,
+  };
+}
+
+export function roomToInput(r: Room): RoomInput {
+  return {
+    name:         r.name,
+    floorType:    r.floorType,
+    paintColor:   r.paintColor,
+    paintBrand:   r.paintBrand,
+    paintCode:    r.paintCode,
+    fixtureCount: r.fixtures.length,
   };
 }
 
@@ -297,6 +332,14 @@ function fromSnapshot(raw: any): ReportSnapshot {
       lastVisitDate: r.lastVisitDate[0] ?? undefined,
       totalVisits:   Number(r.totalVisits),
     })),
+    rooms: ((raw.rooms?.[0] ?? []) as any[]).map((r: any) => ({
+      name:         r.name,
+      floorType:    r.floorType,
+      paintColor:   r.paintColor,
+      paintBrand:   r.paintBrand,
+      paintCode:    r.paintCode,
+      fixtureCount: Number(r.fixtureCount),
+    })),
     totalAmountCents:  Number(raw.totalAmountCents),
     verifiedJobCount:  Number(raw.verifiedJobCount),
     diyJobCount:       Number(raw.diyJobCount),
@@ -328,6 +371,7 @@ export const reportService = {
     property:          PropertyInput,
     jobs:              JobInput[],
     recurringServices: RecurringServiceSummary[],
+    rooms:             RoomInput[],
     expiryDays:        number | null,
     visibility:        VisibilityLevel
   ): Promise<ShareLink> {
@@ -348,6 +392,7 @@ export const reportService = {
         verificationLevel: property.verificationLevel,
         jobs,
         recurringServices,
+        rooms,
         totalAmountCents:  jobs.reduce((s, j) => s + j.amountCents, 0),
         verifiedJobCount:  jobs.filter((j) => j.isVerified).length,
         diyJobCount:       jobs.filter((j) => j.isDiy).length,
@@ -388,7 +433,17 @@ export const reportService = {
         totalVisits:   BigInt(r.totalVisits),
       })),
       expiryDays ? [BigInt(expiryDays)] : [],
-      { [visibility]: null }
+      { [visibility]: null },
+      // Trailing opt params (new in 1.4.7 — old callers omit these)
+      rooms.length > 0 ? [rooms.map((r) => ({
+        name:         r.name,
+        floorType:    r.floorType,
+        paintColor:   r.paintColor,
+        paintBrand:   r.paintBrand,
+        paintCode:    r.paintCode,
+        fixtureCount: BigInt(r.fixtureCount),
+      }))] : [],
+      [false], [false], [false], [false]   // hideAmounts, hideContractors, hidePermits, hideDescriptions
     );
     if ("ok" in result) return fromShareLink(result.ok);
     const key = Object.keys(result.err)[0];

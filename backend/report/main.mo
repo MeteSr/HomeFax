@@ -150,7 +150,7 @@ persistent actor Report {
 
   // ─── Stable State ─────────────────────────────────────────────────────────────
 
-  private var reportCounter    : Nat       = 0;
+  private var _reportCounter   : Nat       = 0;   // reserved for future use
   private var isPaused          : Bool        = false;
   private var pauseExpiryNs     : ?Int        = null;   // 14.4.4 auto-expiry
   private var adminListEntries  : [Principal] = [];
@@ -159,7 +159,7 @@ persistent actor Report {
   private var linkEntries      : [(Text, ShareLink)] = [];
   /// 14.4.3 — incremented when ReportSnapshot type changes incompatibly.
   /// Current version: 1 (added recurringServices, disclosure flags on ShareLink).
-  private var snapshotSchemaVersion : Nat = 1;
+  private var _snapshotSchemaVersion : Nat = 1;   // reserved for future migration checks
 
   /// Property canister ID — set post-deploy via setPropertyCanisterId().
   /// When non-empty, generateReport() cross-canister calls
@@ -326,18 +326,30 @@ persistent actor Report {
   /// reports with buyers or insurers.
   ///
   /// Pass expiryDays = null for a link that never expires.
+  /// Generate a certified property history snapshot and issue a share link.
+  ///
+  /// Candid evolution note: params 1-6 match the original signature exactly.
+  /// Params 7-11 are NEW and placed at the END as opt types so that callers
+  /// built against the previous 6-param interface continue to work — Candid
+  /// fills missing trailing opt args with null on the receiving end.
+  ///
+  ///   7. rooms            — room digital-twin data (null → no room section)
+  ///   8. hideAmounts      — redact job costs in getReport response
+  ///   9. hideContractors  — redact contractor names
+  ///  10. hidePermits      — redact permit numbers
+  ///  11. hideDescriptions — redact job description text
   public shared(msg) func generateReport(
     propertyId:        Text,
     property:          PropertyInput,
     jobs:              [JobInput],
     recurringServices: [RecurringServiceInput],
-    rooms:             [RoomInput],
     expiryDays:        ?Nat,
     visibility:        VisibilityLevel,
-    hideAmounts:       Bool,
-    hideContractors:   Bool,
-    hidePermits:       Bool,
-    hideDescriptions:  Bool
+    rooms:             ?[RoomInput],   // opt — null for pre-1.4.7 callers
+    hideAmounts:       ?Bool,          // opt — null treated as false
+    hideContractors:   ?Bool,
+    hidePermits:       ?Bool,
+    hideDescriptions:  ?Bool
   ) : async Result.Result<ShareLink, Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
     if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
@@ -383,7 +395,7 @@ persistent actor Report {
       verificationLevel  = property.verificationLevel;
       jobs;
       recurringServices;
-      rooms              = if (rooms.size() > 0) { ?rooms } else { null };
+      rooms;   // already ?[RoomInput] — null for old callers, ?arr for new ones
       totalAmountCents   = totalAmount(jobs);
       verifiedJobCount   = countVerified(jobs);
       diyJobCount        = countDiy(jobs);
@@ -407,10 +419,10 @@ persistent actor Report {
       viewCount        = 0;
       isActive         = true;
       createdAt        = now;
-      hideAmounts      = ?hideAmounts;
-      hideContractors  = ?hideContractors;
-      hidePermits      = ?hidePermits;
-      hideDescriptions = ?hideDescriptions;
+      hideAmounts;        // already ?Bool — passed through as-is
+      hideContractors;
+      hidePermits;
+      hideDescriptions;
     };
     links.put(token, link);
     #ok(link)
