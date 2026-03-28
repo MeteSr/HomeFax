@@ -96,15 +96,20 @@ persistent actor Report {
   /// Share link record — separate from the snapshot so we can revoke without
   /// destroying the snapshot.
   public type ShareLink = {
-    token:       Text;
-    snapshotId:  Text;
-    propertyId:  Text;
-    createdBy:   Principal;
-    expiresAt:   ?Time.Time;   // null = never
-    visibility:  VisibilityLevel;
-    viewCount:   Nat;
-    isActive:    Bool;
-    createdAt:   Time.Time;
+    token:            Text;
+    snapshotId:       Text;
+    propertyId:       Text;
+    createdBy:        Principal;
+    expiresAt:        ?Time.Time;   // null = never
+    visibility:       VisibilityLevel;
+    viewCount:        Nat;
+    isActive:         Bool;
+    createdAt:        Time.Time;
+    // 14.2.3 — disclosure flags stored on-chain and enforced in getReport()
+    hideAmounts:      Bool;
+    hideContractors:  Bool;
+    hidePermits:      Bool;
+    hideDescriptions: Bool;
   };
 
   public type Error = {
@@ -131,10 +136,14 @@ persistent actor Report {
 
   private var reportCounter    : Nat       = 0;
   private var isPaused          : Bool        = false;
+  private var pauseExpiryNs     : ?Int        = null;   // 14.4.4 auto-expiry
   private var adminListEntries  : [Principal] = [];
   private var adminInitialized  : Bool        = false;
   private var snapshotEntries  : [(Text, ReportSnapshot)] = [];
   private var linkEntries      : [(Text, ShareLink)] = [];
+  /// 14.4.3 — incremented when ReportSnapshot type changes incompatibly.
+  /// Current version: 1 (added recurringServices, disclosure flags on ShareLink).
+  private var snapshotSchemaVersion : Nat = 1;
 
   /// Property canister ID — set post-deploy via setPropertyCanisterId().
   /// When non-empty, generateReport() cross-canister calls
@@ -170,7 +179,13 @@ persistent actor Report {
   };
 
   private func requireActive() : Result.Result<(), Error> {
-    if (isPaused) #err(#InvalidInput("Canister is paused")) else #ok(())
+    if (not isPaused) return #ok(());
+    // 14.4.4 — auto-expire timed pauses
+    switch (pauseExpiryNs) {
+      case (?expiry) { if (Time.now() >= expiry) return #ok(()) };
+      case null {};
+    };
+    #err(#InvalidInput("Canister is paused"))
   };
 
   /// Convert a Blob to a lowercase hex string.
@@ -232,6 +247,53 @@ persistent actor Report {
     n
   };
 
+  /// 14.2.3 — Apply disclosure flags stored on the ShareLink to the snapshot.
+  /// Fields set to hide are replaced with empty/zero values before returning
+  /// to the caller, ensuring disclosure is enforced on-chain rather than
+  /// relying on the frontend to filter URL params.
+  private func applyDisclosure(snap: ReportSnapshot, link: ShareLink) : ReportSnapshot {
+    if (not link.hideAmounts and not link.hideContractors
+        and not link.hidePermits and not link.hideDescriptions) {
+      return snap;  // fast-path: nothing to hide
+    };
+
+    let filteredJobs : [JobInput] = Array.map<JobInput, JobInput>(snap.jobs, func(j) {
+      {
+        serviceType    = j.serviceType;
+        description    = if (link.hideDescriptions) { "" } else { j.description };
+        contractorName = if (link.hideContractors) { null } else { j.contractorName };
+        amountCents    = if (link.hideAmounts) { 0 } else { j.amountCents };
+        date           = j.date;
+        isDiy          = j.isDiy;
+        permitNumber   = if (link.hidePermits) { null } else { j.permitNumber };
+        warrantyMonths = j.warrantyMonths;
+        isVerified     = j.isVerified;
+        status         = j.status;
+      }
+    });
+
+    {
+      snapshotId        = snap.snapshotId;
+      propertyId        = snap.propertyId;
+      generatedBy       = snap.generatedBy;
+      address           = snap.address;
+      city              = snap.city;
+      state             = snap.state;
+      zipCode           = snap.zipCode;
+      propertyType      = snap.propertyType;
+      yearBuilt         = snap.yearBuilt;
+      squareFeet        = snap.squareFeet;
+      verificationLevel = snap.verificationLevel;
+      jobs              = filteredJobs;
+      recurringServices = snap.recurringServices;
+      totalAmountCents  = if (link.hideAmounts) { 0 } else { snap.totalAmountCents };
+      verifiedJobCount  = snap.verifiedJobCount;
+      diyJobCount       = snap.diyJobCount;
+      permitCount       = if (link.hidePermits) { 0 } else { snap.permitCount };
+      generatedAt       = snap.generatedAt;
+    }
+  };
+
   // ─── Core: Generate Report ────────────────────────────────────────────────────
 
   /// Create an immutable snapshot and issue a share link.
@@ -248,7 +310,11 @@ persistent actor Report {
     jobs:              [JobInput],
     recurringServices: [RecurringServiceInput],
     expiryDays:        ?Nat,
-    visibility:        VisibilityLevel
+    visibility:        VisibilityLevel,
+    hideAmounts:       Bool,
+    hideContractors:   Bool,
+    hidePermits:       Bool,
+    hideDescriptions:  Bool
   ) : async Result.Result<ShareLink, Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
     if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
@@ -311,12 +377,16 @@ persistent actor Report {
       token;
       snapshotId;
       propertyId;
-      createdBy  = msg.caller;
+      createdBy        = msg.caller;
       expiresAt;
       visibility;
-      viewCount  = 0;
-      isActive   = true;
-      createdAt  = now;
+      viewCount        = 0;
+      isActive         = true;
+      createdAt        = now;
+      hideAmounts;
+      hideContractors;
+      hidePermits;
+      hideDescriptions;
     };
     links.put(token, link);
     #ok(link)
@@ -338,18 +408,23 @@ persistent actor Report {
           case (?snap)   {
             // Increment view count
             let updated : ShareLink = {
-              token        = link.token;
-              snapshotId   = link.snapshotId;
-              propertyId   = link.propertyId;
-              createdBy    = link.createdBy;
-              expiresAt    = link.expiresAt;
-              visibility   = link.visibility;
-              viewCount    = link.viewCount + 1;
-              isActive     = link.isActive;
-              createdAt    = link.createdAt;
+              token            = link.token;
+              snapshotId       = link.snapshotId;
+              propertyId       = link.propertyId;
+              createdBy        = link.createdBy;
+              expiresAt        = link.expiresAt;
+              visibility       = link.visibility;
+              viewCount        = link.viewCount + 1;
+              isActive         = link.isActive;
+              createdAt        = link.createdAt;
+              hideAmounts      = link.hideAmounts;
+              hideContractors  = link.hideContractors;
+              hidePermits      = link.hidePermits;
+              hideDescriptions = link.hideDescriptions;
             };
             links.put(token, updated);
-            #ok((updated, snap))
+            // 14.2.3 — enforce disclosure flags on-chain before returning
+            #ok((updated, applyDisclosure(snap, updated)))
           };
         }
       };
@@ -373,15 +448,19 @@ persistent actor Report {
         if (link.createdBy != msg.caller and not isAdmin(msg.caller))
           return #err(#Unauthorized);
         let revoked : ShareLink = {
-          token        = link.token;
-          snapshotId   = link.snapshotId;
-          propertyId   = link.propertyId;
-          createdBy    = link.createdBy;
-          expiresAt    = link.expiresAt;
-          visibility   = link.visibility;
-          viewCount    = link.viewCount;
-          isActive     = false;
-          createdAt    = link.createdAt;
+          token            = link.token;
+          snapshotId       = link.snapshotId;
+          propertyId       = link.propertyId;
+          createdBy        = link.createdBy;
+          expiresAt        = link.expiresAt;
+          visibility       = link.visibility;
+          viewCount        = link.viewCount;
+          isActive         = false;
+          createdAt        = link.createdAt;
+          hideAmounts      = link.hideAmounts;
+          hideContractors  = link.hideContractors;
+          hidePermits      = link.hidePermits;
+          hideDescriptions = link.hideDescriptions;
         };
         links.put(token, revoked);
         #ok(())
@@ -407,15 +486,22 @@ persistent actor Report {
     #ok(())
   };
 
-  public shared(msg) func pause() : async Result.Result<(), Error> {
+  /// Pause the canister. Pass durationSeconds = null for an indefinite pause.
+  /// 14.4.4 — timed pauses auto-expire without requiring admin action.
+  public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := true;
+    pauseExpiryNs := switch (durationSeconds) {
+      case null    { null };
+      case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
+    };
     #ok(())
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := false;
+    pauseExpiryNs := null;
     #ok(())
   };
 

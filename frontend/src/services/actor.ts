@@ -41,6 +41,10 @@ export function resetAgent() {
  * Returns the principal text so callers can update auth state.
  */
 export async function loginWithLocalIdentity(): Promise<string> {
+  // 14.2.2 — hard-block in production builds; Vite dead-code-eliminates this
+  if (!import.meta.env.DEV) {
+    throw new Error("loginWithLocalIdentity() must not be called in production");
+  }
   // Fixed seed → same principal every time, survives hot-reload
   const seed = new Uint8Array(32);
   seed[0] = 42;

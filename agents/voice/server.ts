@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { Request, Response } from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "./prompts";
 import { buildMaintenanceSystemPrompt } from "../maintenance/prompts";
@@ -10,10 +11,29 @@ import type { MaintenanceContext } from "../maintenance/prompts";
 
 const app = express();
 const port = Number(process.env.VOICE_AGENT_PORT) || 3001;
-const allowedOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
 
-app.use(cors({ origin: allowedOrigin }));
+// 14.3.3 — fail-secure: require FRONTEND_ORIGIN in production
+const allowedOrigin = process.env.FRONTEND_ORIGIN;
+if (!allowedOrigin) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("FRONTEND_ORIGIN env var must be set in production");
+  }
+  console.warn("[voice-agent] FRONTEND_ORIGIN not set — defaulting to http://localhost:5173 (dev only)");
+}
+const origin = allowedOrigin ?? "http://localhost:5173";
+
+app.use(cors({ origin }));
 app.use(express.json({ limit: "64kb" }));
+
+// 14.3.2 — rate limiting: 30 req/min/IP on all /api/ routes
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests — please wait before retrying." },
+});
+app.use("/api/", apiLimiter);
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -165,5 +185,5 @@ app.get("/health", (_req, res) => {
 
 app.listen(port, () => {
   console.log(`HomeFax voice agent proxy → http://localhost:${port}`);
-  console.log(`Accepting requests from ${allowedOrigin}`);
+  console.log(`Accepting requests from ${origin}`);
 });

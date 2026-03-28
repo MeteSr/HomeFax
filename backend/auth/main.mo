@@ -65,6 +65,7 @@ persistent actor Auth {
   // ─── Stable State (persists across upgrades) ─────────────────────────────────
 
   private var isPaused: Bool = false;
+  private var pauseExpiryNs: ?Int = null;
   private var admins: [Principal] = [];
   private var adminInitialized: Bool = false;
 
@@ -100,7 +101,12 @@ persistent actor Auth {
   };
 
   private func requireActive() : Result.Result<(), Error> {
-    if (isPaused) #err(#Paused) else #ok(())
+    if (not isPaused) return #ok(());
+    switch (pauseExpiryNs) {
+      case (?expiry) { if (Time.now() >= expiry) return #ok(()) };
+      case null {};
+    };
+    #err(#Paused)
   };
 
   // ─── Admin Controls ───────────────────────────────────────────────────────────
@@ -114,9 +120,13 @@ persistent actor Auth {
   };
 
   /// Pause the canister (admin only) — prevents all write operations
-  public shared(msg) func pause() : async Result.Result<(), Error> {
+  public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
+    pauseExpiryNs := switch (durationSeconds) {
+      case null    { null };
+      case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
+    };
     #ok(())
   };
 
@@ -124,6 +134,7 @@ persistent actor Auth {
   public shared(msg) func unpause() : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
+    pauseExpiryNs := null;
     #ok(())
   };
 
@@ -137,6 +148,8 @@ persistent actor Auth {
 
     if (users.get(caller) != null) return #err(#AlreadyExists);
     // Email and phone are optional; validate format only when provided
+    if (Text.size(args.email) > 256) return #err(#InvalidInput("email exceeds 256 characters"));
+    if (Text.size(args.phone) > 30)  return #err(#InvalidInput("phone exceeds 30 characters"));
     if (Text.size(args.email) > 0 and not Text.contains(args.email, #text "@"))
       return #err(#InvalidInput("Email must contain @"));
 
@@ -171,6 +184,8 @@ persistent actor Auth {
     switch (users.get(msg.caller)) {
       case null { #err(#NotFound) };
       case (?existing) {
+        if (Text.size(args.email) > 256) return #err(#InvalidInput("email exceeds 256 characters"));
+        if (Text.size(args.phone) > 30)  return #err(#InvalidInput("phone exceeds 30 characters"));
         if (Text.size(args.email) > 0 and not Text.contains(args.email, #text "@"))
           return #err(#InvalidInput("Email must contain @"));
 

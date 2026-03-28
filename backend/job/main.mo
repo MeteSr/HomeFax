@@ -79,6 +79,7 @@ persistent actor Job {
 
   private var jobCounter: Nat = 0;
   private var isPaused:           Bool        = false;
+  private var pauseExpiryNs:      ?Int        = null;
   private var adminListEntries:   [Principal] = [];
   private var adminInitialized:   Bool        = false;
   private var authorizedSensors: [Principal] = [];
@@ -86,6 +87,10 @@ persistent actor Job {
   /// Contractor canister ID — set post-deploy via setContractorCanisterId().
   /// When set, verifyJob() notifies the contractor canister on full verification.
   private var contrCanisterId:    Text        = "";
+  /// Property canister ID — set post-deploy via setPropertyCanisterId().
+  /// When set, createSensorJob() cross-calls getPropertyOwner() to verify
+  /// that the sensor device's stored homeowner actually owns the property.
+  private var propCanisterId:     Text        = "";
 
   // ─── Transient State ─────────────────────────────────────────────────────────
 
@@ -114,7 +119,12 @@ persistent actor Job {
   };
 
   private func requireActive() : Result.Result<(), Error> {
-    if (isPaused) #err(#InvalidInput("Canister is paused")) else #ok(())
+    if (not isPaused) return #ok(());
+    switch (pauseExpiryNs) {
+      case (?expiry) { if (Time.now() >= expiry) return #ok(()) };
+      case null {};
+    };
+    #err(#InvalidInput("Canister is paused"))
   };
 
   private func nextJobId() : Text {
@@ -142,7 +152,9 @@ persistent actor Job {
 
     if (Text.size(propertyId)   == 0) return #err(#InvalidInput("propertyId cannot be empty"));
     if (Text.size(title)        == 0) return #err(#InvalidInput("title cannot be empty"));
+    if (Text.size(title)        > 200)  return #err(#InvalidInput("title exceeds 200 characters"));
     if (Text.size(description)  == 0) return #err(#InvalidInput("description cannot be empty"));
+    if (Text.size(description)  > 5000) return #err(#InvalidInput("description exceeds 5000 characters"));
     if (amount == 0 and not isDiy)    return #err(#InvalidInput("amount must be greater than 0 for contractor jobs"));
     if (completedDate > Time.now())   return #err(#InvalidInput("completedDate cannot be in the future"));
 
@@ -150,7 +162,10 @@ persistent actor Job {
     if (not isDiy) {
       switch (contractorName) {
         case null    { return #err(#InvalidInput("contractorName is required for non-DIY jobs")) };
-        case (?name) { if (Text.size(name) == 0) return #err(#InvalidInput("contractorName cannot be empty")) };
+        case (?name) {
+          if (Text.size(name) == 0)   return #err(#InvalidInput("contractorName cannot be empty"));
+          if (Text.size(name) > 200)  return #err(#InvalidInput("contractorName exceeds 200 characters"));
+        };
       };
     };
 
@@ -387,6 +402,26 @@ persistent actor Job {
     if (Text.size(propertyId) == 0) return #err("propertyId required");
     if (Text.size(title)      == 0) return #err("title required");
 
+    // 14.2.1 — verify that the sensor device's stored homeowner actually owns
+    // the property before creating a job on their behalf.
+    if (Text.size(propCanisterId) > 0) {
+      switch (Nat.fromText(propertyId)) {
+        case null { return #err("Invalid propertyId format") };
+        case (?natId) {
+          let propActor = actor(propCanisterId) : actor {
+            getPropertyOwner : (Nat) -> async ?Principal;
+          };
+          switch (await propActor.getPropertyOwner(natId)) {
+            case null        { return #err("Property not found") };
+            case (?owner) {
+              if (owner != homeowner)
+                return #err("Sensor homeowner does not match property owner");
+            };
+          };
+        };
+      };
+    };
+
     let id  = nextJobId();
     let now = Time.now();
 
@@ -425,6 +460,14 @@ persistent actor Job {
     #ok(())
   };
 
+  /// Wire the job canister to the property canister for ownership verification.
+  /// Must be called once after both canisters are deployed.
+  public shared(msg) func setPropertyCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    propCanisterId := id;
+    #ok(())
+  };
+
   /// Authorize a Sensor canister principal to call createSensorJob().
   public shared(msg) func addSensorCanister(sensor: Principal) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
@@ -439,15 +482,20 @@ persistent actor Job {
     #ok(())
   };
 
-  public shared(msg) func pause() : async Result.Result<(), Error> {
+  public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := true;
+    pauseExpiryNs := switch (durationSeconds) {
+      case null    { null };
+      case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
+    };
     #ok(())
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := false;
+    pauseExpiryNs := null;
     #ok(())
   };
 

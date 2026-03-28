@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && npm run check:security",
+    "check:security": "node scripts/security-checks.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:unit": "vitest run",

@@ -51,8 +51,10 @@ export interface UseVoiceAgentReturn {
 
 const PROXY_URL    = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http://localhost:3001";
 const MAX_TURNS    = 5;
-const MS_PER_MONTH = 30.44 * 24 * 60 * 60 * 1000;
-const NINETY_DAYS  = 90 * 24 * 60 * 60 * 1000;
+const MS_PER_MONTH  = 30.44 * 24 * 60 * 60 * 1000;
+const NINETY_DAYS   = 90 * 24 * 60 * 60 * 1000;
+// 14.4.1 — clamp warranty expiry to prevent Number overflow on extreme inputs
+const MAX_EXPIRY_MS = new Date("2100-01-01").getTime();
 
 // ── Hook ───────────────────────────────────────────────────────────────────────
 
@@ -93,7 +95,7 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
       .filter((j) => j.warrantyMonths && j.warrantyMonths > 0)
       .map((j) => ({
         job:    j,
-        expiry: new Date(j.date).getTime() + (j.warrantyMonths ?? 0) * MS_PER_MONTH,
+        expiry: Math.min(new Date(j.date).getTime() + (j.warrantyMonths ?? 0) * MS_PER_MONTH, MAX_EXPIRY_MS),
       }))
       .filter(({ expiry }) => expiry > now && expiry - now <= NINETY_DAYS)
       .map(({ job, expiry }) => ({

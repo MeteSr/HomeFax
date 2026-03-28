@@ -94,6 +94,7 @@ persistent actor Recurring {
   private var recurringCounter  : Nat         = 0;
   private var visitCounter      : Nat         = 0;
   private var isPaused          : Bool        = false;
+  private var pauseExpiryNs     : ?Int        = null;
   private var adminListEntries  : [Principal] = [];
   private var adminInitialized  : Bool        = false;
   private var recurringEntries  : [(Text, RecurringService)] = [];
@@ -128,7 +129,12 @@ persistent actor Recurring {
   };
 
   private func requireActive() : Result.Result<(), Error> {
-    if (isPaused) #err(#InvalidInput("Canister is paused")) else #ok(())
+    if (not isPaused) return #ok(());
+    switch (pauseExpiryNs) {
+      case (?expiry) { if (Time.now() >= expiry) return #ok(()) };
+      case null {};
+    };
+    #err(#InvalidInput("Canister is paused"))
   };
 
   private func nextRecurringId() : Text {
@@ -338,15 +344,20 @@ persistent actor Recurring {
     #ok(())
   };
 
-  public shared(msg) func pause() : async Result.Result<(), Error> {
+  public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := true;
+    pauseExpiryNs := switch (durationSeconds) {
+      case null    { null };
+      case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
+    };
     #ok(())
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := false;
+    pauseExpiryNs := null;
     #ok(())
   };
 

@@ -107,6 +107,7 @@ persistent actor Contractor {
   // ─── Stable State ─────────────────────────────────────────────────────────────
 
   private var isPaused:           Bool        = false;
+  private var pauseExpiryNs:      ?Int        = null;
   private var admins:             [Principal] = [];
   private var adminInitialized:   Bool        = false;
   private var reviewCounter:      Nat         = 0;
@@ -176,7 +177,12 @@ persistent actor Contractor {
   };
 
   private func requireActive() : Result.Result<(), Error> {
-    if (isPaused) #err(#Paused) else #ok(())
+    if (not isPaused) return #ok(());
+    switch (pauseExpiryNs) {
+      case (?expiry) { if (Time.now() >= expiry) return #ok(()) };
+      case null {};
+    };
+    #err(#Paused)
   };
 
   private let oneDayNs      : Int = 24 * 60 * 60 * 1_000_000_000;
@@ -213,11 +219,14 @@ persistent actor Contractor {
     switch (requireActive()) { case (#err e) return #err e; case _ {} };
     if (contractors.get(msg.caller) != null) return #err(#AlreadyExists);
 
-    if (Text.size(args.name)  == 0) return #err(#InvalidInput("name cannot be empty"));
-    if (Text.size(args.email) == 0) return #err(#InvalidInput("email cannot be empty"));
+    if (Text.size(args.name)  == 0)   return #err(#InvalidInput("name cannot be empty"));
+    if (Text.size(args.name)  > 200)  return #err(#InvalidInput("name exceeds 200 characters"));
+    if (Text.size(args.email) == 0)   return #err(#InvalidInput("email cannot be empty"));
+    if (Text.size(args.email) > 256)  return #err(#InvalidInput("email exceeds 256 characters"));
     if (not Text.contains(args.email, #text "@"))
       return #err(#InvalidInput("email must contain @"));
-    if (Text.size(args.phone) == 0) return #err(#InvalidInput("phone cannot be empty"));
+    if (Text.size(args.phone) == 0)   return #err(#InvalidInput("phone cannot be empty"));
+    if (Text.size(args.phone) > 30)   return #err(#InvalidInput("phone exceeds 30 characters"));
 
     let profile: ContractorProfile = {
       id            = msg.caller;
@@ -254,10 +263,9 @@ persistent actor Contractor {
     if (contractors.get(contractorPrincipal) == null) return #err(#NotFound);
     if (rating < 1 or rating > 5)
       return #err(#InvalidInput("rating must be between 1 and 5"));
-    if (Text.size(comment) == 0)
-      return #err(#InvalidInput("comment cannot be empty"));
-    if (Text.size(jobId)   == 0)
-      return #err(#InvalidInput("jobId cannot be empty"));
+    if (Text.size(comment) == 0)    return #err(#InvalidInput("comment cannot be empty"));
+    if (Text.size(comment) > 2000)  return #err(#InvalidInput("comment exceeds 2000 characters"));
+    if (Text.size(jobId)   == 0)    return #err(#InvalidInput("jobId cannot be empty"));
 
     // Composite duplicate check: one review per reviewer+job
     let compositeKey = Principal.toText(msg.caller) # "|" # jobId;
@@ -291,11 +299,14 @@ persistent actor Contractor {
   public shared(msg) func updateProfile(args: UpdateArgs) : async Result.Result<ContractorProfile, Error> {
     switch (requireActive()) { case (#err e) return #err e; case _ {} };
 
-    if (Text.size(args.name)  == 0) return #err(#InvalidInput("name cannot be empty"));
-    if (Text.size(args.email) == 0) return #err(#InvalidInput("email cannot be empty"));
+    if (Text.size(args.name)  == 0)   return #err(#InvalidInput("name cannot be empty"));
+    if (Text.size(args.name)  > 200)  return #err(#InvalidInput("name exceeds 200 characters"));
+    if (Text.size(args.email) == 0)   return #err(#InvalidInput("email cannot be empty"));
+    if (Text.size(args.email) > 256)  return #err(#InvalidInput("email exceeds 256 characters"));
     if (not Text.contains(args.email, #text "@"))
       return #err(#InvalidInput("email must contain @"));
-    if (Text.size(args.phone) == 0) return #err(#InvalidInput("phone cannot be empty"));
+    if (Text.size(args.phone) == 0)   return #err(#InvalidInput("phone cannot be empty"));
+    if (Text.size(args.phone) > 30)   return #err(#InvalidInput("phone exceeds 30 characters"));
 
     switch (contractors.get(msg.caller)) {
       case null { #err(#NotFound) };
@@ -448,15 +459,20 @@ persistent actor Contractor {
     #ok(())
   };
 
-  public shared(msg) func pause() : async Result.Result<(), Error> {
+  public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := true;
+    pauseExpiryNs := switch (durationSeconds) {
+      case null    { null };
+      case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
+    };
     #ok(())
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := false;
+    pauseExpiryNs := null;
     #ok(())
   };
 

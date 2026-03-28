@@ -156,6 +156,7 @@ persistent actor Property {
 
   private var nextId     : Nat       = 1;
   private var isPaused          : Bool        = false;
+  private var pauseExpiryNs     : ?Int        = null;
   private var admins            : [Principal] = [];
   private var adminInitialized  : Bool        = false;
 
@@ -220,7 +221,12 @@ persistent actor Property {
   };
 
   private func requireActive() : Result.Result<(), Error> {
-    if (isPaused) #err(#Paused) else #ok(())
+    if (not isPaused) return #ok(());
+    switch (pauseExpiryNs) {
+      case (?expiry) { if (Time.now() >= expiry) return #ok(()) };
+      case null {};
+    };
+    #err(#Paused)
   };
 
   private func countOwnerProperties(owner: Principal) : Nat {
@@ -283,6 +289,10 @@ persistent actor Property {
 
     if (Text.size(args.address) == 0)
       return #err(#InvalidInput("Address cannot be empty"));
+    if (Text.size(args.address) > 500) return #err(#InvalidInput("address exceeds 500 characters"));
+    if (Text.size(args.city)    > 100) return #err(#InvalidInput("city exceeds 100 characters"));
+    if (Text.size(args.state)   > 50)  return #err(#InvalidInput("state exceeds 50 characters"));
+    if (Text.size(args.zipCode) > 20)  return #err(#InvalidInput("zipCode exceeds 20 characters"));
 
     let caller = msg.caller;
     let key    = addressKey(args.address, args.city, args.state, args.zipCode);
@@ -509,6 +519,17 @@ persistent actor Property {
     }
   };
 
+  /// Returns the owner Principal of a property, or null if not found.
+  /// Called cross-canister by the Job canister (14.2.1) to verify that
+  /// the homeowner stored on a sensor device actually owns the property
+  /// before auto-creating a sensor-triggered job.
+  public query func getPropertyOwner(id: Nat) : async ?Principal {
+    switch (properties.get(id)) {
+      case null  { null };
+      case (?p)  { ?p.owner };
+    }
+  };
+
   /// Returns all properties currently awaiting admin verification review.
   public query func getPendingVerifications() : async [Property] {
     Iter.toArray(
@@ -666,15 +687,20 @@ persistent actor Property {
     #ok(())
   };
 
-  public shared(msg) func pause() : async Result.Result<(), Error> {
+  public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
+    pauseExpiryNs := switch (durationSeconds) {
+      case null    { null };
+      case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
+    };
     #ok(())
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
+    pauseExpiryNs := null;
     #ok(())
   };
 
