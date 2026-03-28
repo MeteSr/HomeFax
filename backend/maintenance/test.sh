@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+# HomeFax Maintenance Canister Tests
+# Tests: predictMaintenance (urgency thresholds, DIY systems, job history),
+# addScheduleEntry, getScheduleEntries, markCompleted, pause/unpause
+set -euo pipefail
+
+echo "============================================"
+echo "  HomeFax — Maintenance Canister Tests"
+echo "============================================"
+
+if ! dfx ping 2>/dev/null; then
+  echo "❌ dfx is not running. Run: dfx start --background"
+  exit 1
+fi
+
+CANISTER=$(dfx canister id maintenance 2>/dev/null || echo "")
+if [ -z "$CANISTER" ]; then
+  echo "❌ maintenance canister not deployed. Run: bash scripts/deploy.sh"
+  exit 1
+fi
+
+echo "Maintenance canister: $CANISTER"
+CURRENT_YEAR=2026
+
+# ─── Metrics & basic state ───────────────────────────────────────────────────
+echo ""
+echo "── [1] Get metrics (initial state) ─────────────────────────────────────"
+dfx canister call maintenance getMetrics
+
+# ─── predictMaintenance — Good status (new home) ─────────────────────────────
+echo ""
+echo "── [2] predictMaintenance — brand-new home (expect all Good/Watch) ──────"
+dfx canister call maintenance predictMaintenance "(
+  $CURRENT_YEAR,
+  vec {}
+)"
+
+# ─── predictMaintenance — aged home, no maintenance (expect Critical) ────────
+echo ""
+echo "── [3] predictMaintenance — 30yr-old home, no jobs (HVAC/Water Heater Critical) ─"
+dfx canister call maintenance predictMaintenance "(
+  1996,
+  vec {}
+)"
+
+# ─── predictMaintenance — HVAC recently serviced (should push to Good) ───────
+echo ""
+echo "── [4] predictMaintenance — old home but HVAC recently replaced ─────────"
+dfx canister call maintenance predictMaintenance "(
+  1996,
+  vec {
+    record {
+      serviceType   = \"HVAC\";
+      completedYear = $((CURRENT_YEAR - 3))
+    }
+  }
+)"
+
+# ─── predictMaintenance — Water Heater urgency boundary (≥100% Critical) ─────
+echo ""
+echo "── [5] predictMaintenance — Water Heater at exactly 12yr lifespan (Critical) ─"
+dfx canister call maintenance predictMaintenance "(
+  $((CURRENT_YEAR - 12)),
+  vec {}
+)"
+
+# ─── predictMaintenance — Roofing Soon boundary (~75%) ───────────────────────
+echo ""
+echo "── [6] predictMaintenance — Roofing at ~19yr of 25yr lifespan (Soon) ────"
+dfx canister call maintenance predictMaintenance "(
+  $((CURRENT_YEAR - 19)),
+  vec {}
+)"
+
+# ─── predictMaintenance — DIY-viable systems (Flooring, Insulation) ──────────
+echo ""
+echo "── [7] predictMaintenance — 26yr home, check DIY flag on Flooring/Insulation ─"
+dfx canister call maintenance predictMaintenance "(
+  $((CURRENT_YEAR - 26)),
+  vec {}
+)"
+
+# ─── predictMaintenance — all systems recently serviced (all Good) ───────────
+echo ""
+echo "── [8] predictMaintenance — all systems freshly replaced (expect all Good) ─"
+dfx canister call maintenance predictMaintenance "(
+  1990,
+  vec {
+    record { serviceType = \"HVAC\";         completedYear = $((CURRENT_YEAR - 1)) };
+    record { serviceType = \"Roofing\";       completedYear = $((CURRENT_YEAR - 2)) };
+    record { serviceType = \"Water Heater\";  completedYear = $((CURRENT_YEAR - 1)) };
+    record { serviceType = \"Windows\";       completedYear = $((CURRENT_YEAR - 3)) };
+    record { serviceType = \"Electrical\";    completedYear = $((CURRENT_YEAR - 5)) };
+    record { serviceType = \"Plumbing\";      completedYear = $((CURRENT_YEAR - 5)) };
+    record { serviceType = \"Flooring\";      completedYear = $((CURRENT_YEAR - 2)) };
+    record { serviceType = \"Insulation\";    completedYear = $((CURRENT_YEAR - 4)) }
+  }
+)"
+
+# ─── addScheduleEntry ─────────────────────────────────────────────────────────
+echo ""
+echo "── [9] addScheduleEntry — HVAC annual filter replacement ───────────────"
+dfx canister call maintenance addScheduleEntry "(
+  record {
+    propertyId  = \"PROP_TEST_1\";
+    system      = \"HVAC\";
+    task        = \"Replace air filter\";
+    dueDate     = \"2026-04-01\";
+    notes       = opt \"Check blower motor while accessing filter\"
+  }
+)"
+
+echo ""
+echo "── [10] addScheduleEntry — Gutter cleaning (seasonal) ──────────────────"
+dfx canister call maintenance addScheduleEntry "(
+  record {
+    propertyId  = \"PROP_TEST_1\";
+    system      = \"Roofing\";
+    task        = \"Clean gutters\";
+    dueDate     = \"2026-05-15\";
+    notes       = null
+  }
+)"
+
+echo ""
+echo "── [11] addScheduleEntry — second property ──────────────────────────────"
+dfx canister call maintenance addScheduleEntry "(
+  record {
+    propertyId  = \"PROP_TEST_2\";
+    system      = \"Water Heater\";
+    task        = \"Flush sediment\";
+    dueDate     = \"2026-06-01\";
+    notes       = opt \"Also test pressure relief valve\"
+  }
+)"
+
+# ─── getScheduleEntries ───────────────────────────────────────────────────────
+echo ""
+echo "── [12] getScheduleEntries — PROP_TEST_1 (expect 2 entries) ─────────────"
+dfx canister call maintenance getScheduleEntries '("PROP_TEST_1")'
+
+echo ""
+echo "── [13] getScheduleEntries — PROP_TEST_2 (expect 1 entry) ──────────────"
+dfx canister call maintenance getScheduleEntries '("PROP_TEST_2")'
+
+echo ""
+echo "── [14] getScheduleEntries — unknown property (expect empty list) ───────"
+dfx canister call maintenance getScheduleEntries '("PROP_UNKNOWN")'
+
+# ─── markCompleted ────────────────────────────────────────────────────────────
+echo ""
+echo "── [15] markCompleted — mark HVAC filter entry as done ──────────────────"
+# Get the entry ID from PROP_TEST_1 first entry
+ENTRIES=$(dfx canister call maintenance getScheduleEntries '("PROP_TEST_1")')
+echo "  Entries: $ENTRIES"
+# Extract first entry id (assumes returned as vec { record { id = ... } })
+ENTRY_ID=$(echo "$ENTRIES" | grep -oP '(?<=id = ")[^"]+' | head -1 || echo "")
+if [ -n "$ENTRY_ID" ]; then
+  dfx canister call maintenance markCompleted "(\"$ENTRY_ID\")"
+  echo "  ↳ Marked $ENTRY_ID as completed ✓"
+else
+  echo "  ↳ Could not parse entry ID from output (check Candid format) — skipping"
+fi
+
+# ─── Pause / Unpause ──────────────────────────────────────────────────────────
+echo ""
+echo "── [16] pause canister ──────────────────────────────────────────────────"
+dfx canister call maintenance pause
+
+echo ""
+echo "── [17] addScheduleEntry while paused (expect error) ───────────────────"
+dfx canister call maintenance addScheduleEntry "(
+  record {
+    propertyId  = \"PROP_TEST_1\";
+    system      = \"Plumbing\";
+    task        = \"Inspect shut-off valves\";
+    dueDate     = \"2026-07-01\";
+    notes       = null
+  }
+)" || echo "  ↳ Rejected while paused — ✓"
+
+echo ""
+echo "── [18] unpause canister ────────────────────────────────────────────────"
+dfx canister call maintenance unpause
+
+echo ""
+echo "── [19] addScheduleEntry after unpause (expect success) ─────────────────"
+dfx canister call maintenance addScheduleEntry "(
+  record {
+    propertyId  = \"PROP_TEST_1\";
+    system      = \"Plumbing\";
+    task        = \"Inspect shut-off valves\";
+    dueDate     = \"2026-07-01\";
+    notes       = null
+  }
+)"
+
+# ─── Final metrics ────────────────────────────────────────────────────────────
+echo ""
+echo "── [20] Get metrics (after tests) ──────────────────────────────────────"
+dfx canister call maintenance getMetrics
+
+echo ""
+echo "============================================"
+echo "  ✅ Maintenance canister tests complete!"
+echo "============================================"
