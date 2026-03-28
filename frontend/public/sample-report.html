@@ -337,16 +337,6 @@
       cursor: pointer; text-decoration: none; display: inline-block;
     }
     .cta-back:hover { border-color: rgba(255,255,255,0.5); color: rgba(255,255,255,0.85); }
-    .print-bar {
-      position: fixed; top: 3.25rem; right: 1rem; z-index: 50; display: flex; gap: 0.5rem;
-    }
-    .print-btn {
-      display: flex; align-items: center; gap: 0.5rem;
-      background: #2E2540; color: #FDFCFA; border: none; padding: 0.625rem 1rem;
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em;
-      text-transform: uppercase; cursor: pointer;
-    }
-    .print-btn:hover { background: #1E1928; }
   </style>
 </head>
 <body>
@@ -362,13 +352,6 @@
   </div>
 </div>
 
-<!-- Print controls -->
-<div class="print-bar no-print">
-  <button class="print-btn" onclick="window.print()">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-    Save as PDF
-  </button>
-</div>
 
 <div class="report">
 
