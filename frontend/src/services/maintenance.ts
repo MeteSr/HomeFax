@@ -45,16 +45,6 @@ const idlFactory = ({ IDL }: any) => {
   });
 };
 
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: MAINTENANCE_CANISTER_ID });
-  }
-  return _actor;
-}
-
 function fromEntry(raw: any): ScheduleEntry {
   return {
     id:                 raw.id,
@@ -422,12 +412,22 @@ export function predictMaintenance(
   };
 }
 
-// ─── Mock fallback for schedule store ────────────────────────────────────────
+// ─── Service factory ─────────────────────────────────────────────────────────
 
-const scheduleStore = new Map<string, ScheduleEntry>();
-let scheduleCounter = 0;
+function createMaintenanceService() {
+  let _actor: any = null;
+  const scheduleStore = new Map<string, ScheduleEntry>();
+  let scheduleCounter = 0;
 
-export const maintenanceService = {
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: MAINTENANCE_CANISTER_ID });
+    }
+    return _actor;
+  }
+
+  return {
   predict(yearBuilt: number, jobs: Job[], systemInstallYears?: Partial<Record<string, number>>, state?: string, materialOverrides?: Partial<Record<string, string>>): MaintenanceReport {
     return predictMaintenance(yearBuilt, jobs, systemInstallYears, state, materialOverrides);
   },
@@ -556,4 +556,13 @@ export const maintenanceService = {
       default:         return "#f0fdf4";
     }
   },
-};
+
+  reset() {
+    _actor = null;
+    scheduleStore.clear();
+    scheduleCounter = 0;
+  },
+  };
+}
+
+export const maintenanceService = createMaintenanceService();

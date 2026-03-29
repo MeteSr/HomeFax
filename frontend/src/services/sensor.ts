@@ -98,23 +98,6 @@ export interface SensorEvent {
   jobId:      string | null;
 }
 
-// ─── Mock stores ──────────────────────────────────────────────────────────────
-
-const MOCK_DEVICES: SensorDevice[] = [];
-let   deviceCounter = 0;
-
-// ─── Actor ────────────────────────────────────────────────────────────────────
-
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: SENSOR_CANISTER_ID });
-  }
-  return _actor;
-}
-
 // ─── Converters ───────────────────────────────────────────────────────────────
 
 function fromDevice(raw: any): SensorDevice {
@@ -144,9 +127,22 @@ function fromEvent(raw: any): SensorEvent {
   };
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-export const sensorService = {
+function createSensorService() {
+  let _actor: any = null;
+  const devices: SensorDevice[] = [];
+  let deviceCounter = 0;
+
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: SENSOR_CANISTER_ID });
+    }
+    return _actor;
+  }
+
+  return {
   async registerDevice(
     propertyId:       string,
     externalDeviceId: string,
@@ -165,7 +161,7 @@ export const sensorService = {
         registeredAt:     Date.now(),
         isActive:         true,
       };
-      MOCK_DEVICES.push(device);
+      devices.push(device);
       return device;
     }
     const a = await getActor();
@@ -178,8 +174,8 @@ export const sensorService = {
 
   async deactivateDevice(deviceId: string): Promise<void> {
     if (!SENSOR_CANISTER_ID) {
-      const idx = MOCK_DEVICES.findIndex((d) => d.id === deviceId);
-      if (idx !== -1) MOCK_DEVICES[idx] = { ...MOCK_DEVICES[idx], isActive: false };
+      const idx = devices.findIndex((d) => d.id === deviceId);
+      if (idx !== -1) devices[idx] = { ...devices[idx], isActive: false };
       return;
     }
     const a = await getActor();
@@ -189,7 +185,7 @@ export const sensorService = {
 
   async getDevicesForProperty(propertyId: string): Promise<SensorDevice[]> {
     if (!SENSOR_CANISTER_ID) {
-      return MOCK_DEVICES.filter((d) => d.propertyId === propertyId && d.isActive);
+      return devices.filter((d) => d.propertyId === propertyId && d.isActive);
     }
     const a = await getActor();
     return (await a.getDevicesForProperty(propertyId) as any[]).map(fromDevice);
@@ -228,5 +224,12 @@ export const sensorService = {
          : "#6b7280";
   },
 
-  reset() { _actor = null; },
-};
+  reset() {
+    _actor = null;
+    devices.length = 0;
+    deviceCounter = 0;
+  },
+  };
+}
+
+export const sensorService = createSensorService();

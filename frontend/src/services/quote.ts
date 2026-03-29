@@ -108,15 +108,15 @@ export interface Quote {
   createdAt:  number;  // ms
 }
 
-// ─── Mock fallback ────────────────────────────────────────────────────────────
+// ─── Mock seed data (static fixtures for UI display) ─────────────────────────
 
-const MOCK_REQUESTS: QuoteRequest[] = [
+const SEED_MY_REQUESTS: QuoteRequest[] = [
   { id: "MY_REQ_1", propertyId: "prop_1", homeowner: "local", serviceType: "HVAC",     urgency: "high",   description: "AC unit not cooling. 12-year-old unit — needs diagnosis.", status: "quoted",   createdAt: Date.now() - 86400000 * 3 },
   { id: "MY_REQ_2", propertyId: "prop_1", homeowner: "local", serviceType: "Roofing",  urgency: "medium", description: "Several shingles missing after last storm. Small attic leak.", status: "open",     createdAt: Date.now() - 86400000 * 8 },
   { id: "MY_REQ_3", propertyId: "prop_1", homeowner: "local", serviceType: "Plumbing", urgency: "low",    description: "Slow drain in master bathroom. Snaking hasn't resolved it.", status: "accepted", createdAt: Date.now() - 86400000 * 14 },
 ];
 
-const MOCK_MY_BIDS: Quote[] = [
+const SEED_MY_BIDS: Quote[] = [
   { id: "QUOTE_101", requestId: "REQ_101", contractor: "local", amount: 185000, timeline: 3,  validUntil: Date.now() - 86400000 * 30, status: "accepted",  createdAt: Date.now() - 86400000 * 90 },
   { id: "QUOTE_102", requestId: "REQ_102", contractor: "local", amount: 320000, timeline: 5,  validUntil: Date.now() - 86400000 * 20, status: "rejected",  createdAt: Date.now() - 86400000 * 75 },
   { id: "QUOTE_103", requestId: "REQ_103", contractor: "local", amount: 95000,  timeline: 2,  validUntil: Date.now() - 86400000 * 10, status: "accepted",  createdAt: Date.now() - 86400000 * 60 },
@@ -126,7 +126,7 @@ const MOCK_MY_BIDS: Quote[] = [
   { id: "QUOTE_107", requestId: "REQ_107", contractor: "local", amount: 560000, timeline: 10, validUntil: Date.now() + 86400000 * 20, status: "pending",   createdAt: Date.now() - 86400000 * 2  },
 ];
 
-const MOCK_OPEN_REQUESTS: QuoteRequest[] = [
+const SEED_OPEN_REQUESTS: QuoteRequest[] = [
   {
     id: "REQ_1", propertyId: "prop_1", homeowner: "owner-principal-1",
     serviceType: "HVAC", urgency: "high",
@@ -158,18 +158,6 @@ const MOCK_OPEN_REQUESTS: QuoteRequest[] = [
     status: "open", createdAt: Date.now() - 1000 * 60 * 60 * 72,
   },
 ];
-
-// ─── Actor ────────────────────────────────────────────────────────────────────
-
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: QUOTE_CANISTER_ID });
-  }
-  return _actor;
-}
 
 // ─── Converters ───────────────────────────────────────────────────────────────
 
@@ -216,9 +204,23 @@ function unwrapRequest(result: any): QuoteRequest {
   throw new Error(typeof val === "string" ? val : key);
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-export const quoteService = {
+function createQuoteService() {
+  let _actor: any = null;
+  const mockRequests: QuoteRequest[] = [...SEED_MY_REQUESTS];
+  const mockMyBids: Quote[]          = [...SEED_MY_BIDS];
+  const mockOpenRequests: QuoteRequest[] = [...SEED_OPEN_REQUESTS];
+
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: QUOTE_CANISTER_ID });
+    }
+    return _actor;
+  }
+
+  return {
   async createRequest(
     req: Omit<QuoteRequest, "id" | "createdAt" | "status" | "homeowner">
   ): Promise<QuoteRequest> {
@@ -230,7 +232,7 @@ export const quoteService = {
         status:    "open",
         createdAt: Date.now(),
       };
-      MOCK_REQUESTS.push(r);
+      mockRequests.push(r);
       return r;
     }
     const a = await getActor();
@@ -246,13 +248,13 @@ export const quoteService = {
   },
 
   async getRequests(): Promise<QuoteRequest[]> {
-    if (!QUOTE_CANISTER_ID) return [...MOCK_REQUESTS];
+    if (!QUOTE_CANISTER_ID) return [...mockRequests];
     const a = await getActor();
     return (await a.getMyQuoteRequests() as any[]).map(fromRequest);
   },
 
   async getOpenRequests(): Promise<QuoteRequest[]> {
-    if (!QUOTE_CANISTER_ID) return [...MOCK_OPEN_REQUESTS];
+    if (!QUOTE_CANISTER_ID) return [...mockOpenRequests];
     const a = await getActor();
     return (await a.getOpenRequests() as any[]).map(fromRequest);
   },
@@ -287,7 +289,7 @@ export const quoteService = {
   },
 
   async getRequest(id: string): Promise<QuoteRequest | undefined> {
-    if (!QUOTE_CANISTER_ID) return MOCK_REQUESTS.find((r) => r.id === id);
+    if (!QUOTE_CANISTER_ID) return mockRequests.find((r) => r.id === id);
     const a = await getActor();
     const result = await a.getQuoteRequest(id);
     if ("err" in result) return undefined;
@@ -299,7 +301,7 @@ export const quoteService = {
       // Mock: infer counts from request status
       const map: Record<string, number> = {};
       for (const id of requestIds) {
-        const req = MOCK_REQUESTS.find((r) => r.id === id);
+        const req = mockRequests.find((r) => r.id === id);
         map[id] = req?.status === "accepted" ? 3 : req?.status === "quoted" ? 2 : 0;
       }
       return map;
@@ -315,7 +317,7 @@ export const quoteService = {
   },
 
   async getMyBids(): Promise<Quote[]> {
-    if (!QUOTE_CANISTER_ID) return [...MOCK_MY_BIDS];
+    if (!QUOTE_CANISTER_ID) return [...mockMyBids];
     // No dedicated canister endpoint yet — return empty; canister can add getMyQuotes later
     return [];
   },
@@ -357,5 +359,14 @@ export const quoteService = {
 
   reset() {
     _actor = null;
+    mockRequests.length = 0;
+    mockRequests.push(...SEED_MY_REQUESTS);
+    mockMyBids.length = 0;
+    mockMyBids.push(...SEED_MY_BIDS);
+    mockOpenRequests.length = 0;
+    mockOpenRequests.push(...SEED_OPEN_REQUESTS);
   },
-};
+  };
+}
+
+export const quoteService = createQuoteService();

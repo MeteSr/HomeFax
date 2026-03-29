@@ -263,24 +263,6 @@ export function propertyToInput(p: Property): PropertyInput {
   };
 }
 
-// ─── Mock fallback ────────────────────────────────────────────────────────────
-
-let mockCounter = 0;
-const mockSnapshots = new Map<string, ReportSnapshot>();
-const mockLinks     = new Map<string, ShareLink>();
-
-// ─── Actor ────────────────────────────────────────────────────────────────────
-
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: REPORT_CANISTER_ID });
-  }
-  return _actor;
-}
-
 // ─── Converters ───────────────────────────────────────────────────────────────
 
 function fromShareLink(raw: any): ShareLink {
@@ -363,9 +345,23 @@ function jobInputToCanister(j: JobInput) {
   };
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-export const reportService = {
+function createReportService() {
+  let _actor: any = null;
+  let mockCounter = 0;
+  const mockSnapshots = new Map<string, ReportSnapshot>();
+  const mockLinks     = new Map<string, ShareLink>();
+
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: REPORT_CANISTER_ID });
+    }
+    return _actor;
+  }
+
+  return {
   async generateReport(
     propertyId:        string,
     property:          PropertyInput,
@@ -524,5 +520,11 @@ export const reportService = {
 
   reset() {
     _actor = null;
+    mockCounter = 0;
+    mockSnapshots.clear();
+    mockLinks.clear();
   },
-};
+  };
+}
+
+export const reportService = createReportService();

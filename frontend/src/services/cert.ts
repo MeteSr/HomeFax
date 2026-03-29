@@ -37,59 +37,61 @@ export interface IssuedCert {
   token:  string;
 }
 
-// ─── Mock state (used when no canister is deployed) ──────────────────────────
-
-let _counter = 0;
-const _store  = new Map<string, CertPayload>();
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function buildToken(payload: CertPayload, certId: string): string {
   return btoa(JSON.stringify({ ...payload, certId })).replace(/=/g, "");
 }
 
-// ─── Service ─────────────────────────────────────────────────────────────────
+// ─── Service factory ─────────────────────────────────────────────────────────
 
-export const certService = {
-  /** Reset mock store — used in tests and dev hot-reload. */
-  reset() {
-    _counter = 0;
-    _store.clear();
-  },
+function createCertService() {
+  let counter = 0;
+  const store = new Map<string, CertPayload>();
 
-  /**
-   * Issue a canister-backed certificate for a property's current score.
-   * Returns { certId, token } — token is safe to embed in a URL.
-   */
-  async issueCert(propertyId: string, payload: CertPayload): Promise<IssuedCert> {
-    if (!REPORT_CANISTER_ID) {
-      _counter++;
-      const certId = `CERT-${_counter}`;
-      _store.set(certId, payload);
+  return {
+    /** Reset mock store — used in tests and dev hot-reload. */
+    reset() {
+      counter = 0;
+      store.clear();
+    },
+
+    /**
+     * Issue a canister-backed certificate for a property's current score.
+     * Returns { certId, token } — token is safe to embed in a URL.
+     */
+    async issueCert(propertyId: string, payload: CertPayload): Promise<IssuedCert> {
+      if (!REPORT_CANISTER_ID) {
+        counter++;
+        const certId = `CERT-${counter}`;
+        store.set(certId, payload);
+        return { certId, token: buildToken(payload, certId) };
+      }
+      const a      = await getActor();
+      const certId = await (a as any).issueCert(propertyId, JSON.stringify(payload)) as string;
       return { certId, token: buildToken(payload, certId) };
-    }
-    const a      = await getActor();
-    const certId = await (a as any).issueCert(propertyId, JSON.stringify(payload)) as string;
-    return { certId, token: buildToken(payload, certId) };
-  },
+    },
 
-  /**
-   * Verify a certId against the canister (or in-memory store in mock mode).
-   * Returns the stored CertPayload, or null if the certId is unknown.
-   */
-  async verifyCert(certId: string): Promise<CertPayload | null> {
-    if (!certId) return null;
+    /**
+     * Verify a certId against the canister (or in-memory store in mock mode).
+     * Returns the stored CertPayload, or null if the certId is unknown.
+     */
+    async verifyCert(certId: string): Promise<CertPayload | null> {
+      if (!certId) return null;
 
-    if (!REPORT_CANISTER_ID) {
-      return _store.get(certId) ?? null;
-    }
-    const a      = await getActor();
-    const result = await (a as any).verifyCert(certId) as [string] | [];
-    if (result.length === 0) return null;
-    try {
-      return JSON.parse(result[0]) as CertPayload;
-    } catch {
-      return null;
-    }
-  },
-};
+      if (!REPORT_CANISTER_ID) {
+        return store.get(certId) ?? null;
+      }
+      const a      = await getActor();
+      const result = await (a as any).verifyCert(certId) as [string] | [];
+      if (result.length === 0) return null;
+      try {
+        return JSON.parse(result[0]) as CertPayload;
+      } catch {
+        return null;
+      }
+    },
+  };
+}
+
+export const certService = createCertService();

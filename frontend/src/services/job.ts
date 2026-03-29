@@ -140,27 +140,6 @@ export interface Job {
   createdAt: number;         // ms
 }
 
-// ─── Mock store ───────────────────────────────────────────────────────────────
-// Used when JOB_CANISTER_ID is not configured (local dev without dfx, E2E tests).
-
-// Seed from Playwright test globals if present (window.__e2e_jobs set by addInitScript)
-const MOCK_JOBS: Job[] =
-  typeof window !== "undefined" && (window as any).__e2e_jobs
-    ? [...(window as any).__e2e_jobs]
-    : [];
-
-// ─── Actor ────────────────────────────────────────────────────────────────────
-
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: JOB_CANISTER_ID });
-  }
-  return _actor;
-}
-
 // ─── Converters ───────────────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<string, JobStatus> = {
@@ -205,12 +184,29 @@ function unwrapJob(result: any): Job {
   throw new Error(typeof val === "string" ? val : key);
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-export const jobService = {
+function createJobService() {
+  // Seed from Playwright test globals if present (window.__e2e_jobs set by addInitScript)
+  const mockJobs: Job[] =
+    typeof window !== "undefined" && (window as any).__e2e_jobs
+      ? [...(window as any).__e2e_jobs]
+      : [];
+
+  let _actor: any = null;
+
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: JOB_CANISTER_ID });
+    }
+    return _actor;
+  }
+
+  return {
   async getByProperty(propertyId: string): Promise<Job[]> {
     if (!JOB_CANISTER_ID) {
-      return MOCK_JOBS.filter((j) => j.propertyId === propertyId);
+      return mockJobs.filter((j) => j.propertyId === propertyId);
     }
     const a = await getActor();
     const result = await a.getJobsForProperty(propertyId);
@@ -219,7 +215,7 @@ export const jobService = {
   },
 
   async getAll(): Promise<Job[]> {
-    if (!JOB_CANISTER_ID) return [...MOCK_JOBS];
+    if (!JOB_CANISTER_ID) return [...mockJobs];
     // No canister equivalent for getAll — callers should use getByProperty
     return [];
   },
@@ -238,7 +234,7 @@ export const jobService = {
         photos: [],
         createdAt: Date.now(),
       };
-      MOCK_JOBS.push(newJob);
+      mockJobs.push(newJob);
       return newJob;
     }
     const a = await getActor();
@@ -260,10 +256,10 @@ export const jobService = {
 
   async updateJob(jobId: string, updates: Partial<Pick<Job, "serviceType" | "contractorName" | "amount" | "date" | "description" | "permitNumber" | "warrantyMonths" | "isDiy">>): Promise<Job> {
     if (!JOB_CANISTER_ID) {
-      const idx = MOCK_JOBS.findIndex((j) => j.id === jobId);
+      const idx = mockJobs.findIndex((j) => j.id === jobId);
       if (idx === -1) throw new Error("Job not found");
-      MOCK_JOBS[idx] = { ...MOCK_JOBS[idx], ...updates };
-      return MOCK_JOBS[idx];
+      mockJobs[idx] = { ...mockJobs[idx], ...updates };
+      return mockJobs[idx];
     }
     // Canister updateJob not yet implemented — throw to signal unsupported
     throw new Error("Job editing is not yet available on-chain. Please contact support.");
@@ -271,10 +267,10 @@ export const jobService = {
 
   async updateJobStatus(jobId: string, status: JobStatus): Promise<Job> {
     if (!JOB_CANISTER_ID) {
-      const idx = MOCK_JOBS.findIndex((j) => j.id === jobId);
+      const idx = mockJobs.findIndex((j) => j.id === jobId);
       if (idx === -1) throw new Error("Job not found");
-      MOCK_JOBS[idx] = { ...MOCK_JOBS[idx], status };
-      return MOCK_JOBS[idx];
+      mockJobs[idx] = { ...mockJobs[idx], status };
+      return mockJobs[idx];
     }
     const STATUS_CANISTER_MAP: Record<JobStatus, object> = {
       pending:     { Pending: null },
@@ -289,20 +285,20 @@ export const jobService = {
 
   async verifyJob(jobId: string): Promise<Job> {
     if (!JOB_CANISTER_ID) {
-      const idx = MOCK_JOBS.findIndex((j) => j.id === jobId);
+      const idx = mockJobs.findIndex((j) => j.id === jobId);
       if (idx === -1) throw new Error("Job not found");
-      const job = MOCK_JOBS[idx];
+      const job = mockJobs[idx];
       const newHomeownerSigned  = true;
       const newContractorSigned = job.contractorSigned || job.isDiy;
       const fullyVerified       = newHomeownerSigned && newContractorSigned;
-      MOCK_JOBS[idx] = {
+      mockJobs[idx] = {
         ...job,
         homeownerSigned:  newHomeownerSigned,
         contractorSigned: newContractorSigned,
         verified:         fullyVerified,
         status:           fullyVerified ? "verified" : job.status,
       };
-      return MOCK_JOBS[idx];
+      return mockJobs[idx];
     }
     const a = await getActor();
     const result = await a.verifyJob(jobId);
@@ -311,10 +307,10 @@ export const jobService = {
 
   async linkContractor(jobId: string, contractorPrincipal: string): Promise<Job> {
     if (!JOB_CANISTER_ID) {
-      const idx = MOCK_JOBS.findIndex((j) => j.id === jobId);
+      const idx = mockJobs.findIndex((j) => j.id === jobId);
       if (idx === -1) throw new Error("Job not found");
-      MOCK_JOBS[idx] = { ...MOCK_JOBS[idx], contractor: contractorPrincipal };
-      return MOCK_JOBS[idx];
+      mockJobs[idx] = { ...mockJobs[idx], contractor: contractorPrincipal };
+      return mockJobs[idx];
     }
     const a = await getActor();
     const { Principal: P } = await import("@dfinity/principal");
@@ -332,7 +328,7 @@ export const jobService = {
   async getCertificationData(propertyId: string): Promise<{ verifiedJobCount: number; verifiedKeySystems: string[]; meetsStructural: boolean }> {
     if (!JOB_CANISTER_ID) {
       const KEY_SYSTEMS = ["HVAC", "Roofing", "Plumbing", "Electrical"];
-      const propertyJobs = MOCK_JOBS.filter((j) => j.propertyId === propertyId && j.verified);
+      const propertyJobs = mockJobs.filter((j) => j.propertyId === propertyId && j.verified);
       const systems = [...new Set(propertyJobs.map((j) => j.serviceType).filter((s) => KEY_SYSTEMS.includes(s)))];
       return {
         verifiedJobCount:   propertyJobs.length,
@@ -363,8 +359,12 @@ export const jobService = {
 
   reset() {
     _actor = null;
+    mockJobs.length = 0;
   },
-};
+  };
+}
+
+export const jobService = createJobService();
 
 // ─── Insurance relevance ──────────────────────────────────────────────────────
 

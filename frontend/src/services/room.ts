@@ -228,12 +228,13 @@ function unwrap<T>(result: any): T {
   throw new Error(errVal ?? errKey);
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-let mockRooms = MOCK_ROOMS.map((r) => ({ ...r, fixtures: [...r.fixtures] }));
-let mockFixtureCounter = 100; // start above seed fixture IDs
+function createRoomService() {
+  let mockRooms = MOCK_ROOMS.map((r) => ({ ...r, fixtures: [...r.fixtures] }));
+  let mockFixtureCounter = 100; // start above seed fixture IDs
 
-export const roomService = {
+  return {
   async getRoomsByProperty(propertyId: string): Promise<Room[]> {
     if (!ROOM_CANISTER_ID) {
       return mockRooms.filter((r) => r.propertyId === propertyId);
@@ -325,4 +326,7 @@ export const roomService = {
     const actor = await getActor();
     return mapRoom(unwrap(await (actor as any).removeFixture(roomId, fixtureId)));
   },
-};
+  };
+}
+
+export const roomService = createRoomService();

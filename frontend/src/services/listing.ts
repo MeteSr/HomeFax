@@ -165,11 +165,6 @@ export function isDeadlinePassed(deadlineMs: number): boolean {
   return deadlineMs <= Date.now();
 }
 
-// ─── Mock state ───────────────────────────────────────────────────────────────
-
-let MOCK_REQUESTS: ListingBidRequest[] = [];
-let MOCK_PROPOSALS: ListingProposal[]  = [];
-
 // ─── Canister type converters ─────────────────────────────────────────────────
 
 function fromRawRequest(raw: any): ListingBidRequest {
@@ -208,22 +203,25 @@ function fromRawProposal(raw: any): ListingProposal {
   };
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-let _actor: any = null;
+function createListingService() {
+  let _actor: any = null;
+  let requests: ListingBidRequest[] = [];
+  let proposals: ListingProposal[]  = [];
 
-async function getActor() {
-  if (_actor) return _actor;
-  const agent = await getAgent();
-  _actor = Actor.createActor(idlFactory, { agent, canisterId: LISTING_CANISTER_ID });
-  return _actor;
-}
+  async function getActor() {
+    if (_actor) return _actor;
+    const agent = await getAgent();
+    _actor = Actor.createActor(idlFactory, { agent, canisterId: LISTING_CANISTER_ID });
+    return _actor;
+  }
 
-export const listingService = {
+  return {
   reset() {
     _actor = null;
-    MOCK_REQUESTS = [];
-    MOCK_PROPOSALS = [];
+    requests = [];
+    proposals = [];
   },
 
   // ── createBidRequest ────────────────────────────────────────────────────────
@@ -240,7 +238,7 @@ export const listingService = {
         status:           "Open",
         createdAt:        Date.now(),
       };
-      MOCK_REQUESTS.push(req);
+      requests.push(req);
       return { ...req };
     }
     const actor = await getActor();
@@ -258,7 +256,7 @@ export const listingService = {
   // ── getMyBidRequests ────────────────────────────────────────────────────────
   async getMyBidRequests(): Promise<ListingBidRequest[]> {
     if (!LISTING_CANISTER_ID) {
-      return [...MOCK_REQUESTS];
+      return [...requests];
     }
     const actor = await getActor();
     const raw = await actor.getMyBidRequests();
@@ -268,7 +266,7 @@ export const listingService = {
   // ── getBidRequest ───────────────────────────────────────────────────────────
   async getBidRequest(id: string): Promise<ListingBidRequest | null> {
     if (!LISTING_CANISTER_ID) {
-      return MOCK_REQUESTS.find(r => r.id === id) ?? null;
+      return requests.find(r => r.id === id) ?? null;
     }
     const actor = await getActor();
     const result = await actor.getBidRequest(id);
@@ -279,7 +277,7 @@ export const listingService = {
   // ── cancelBidRequest ────────────────────────────────────────────────────────
   async cancelBidRequest(id: string): Promise<void> {
     if (!LISTING_CANISTER_ID) {
-      const req = MOCK_REQUESTS.find(r => r.id === id);
+      const req = requests.find(r => r.id === id);
       if (!req) throw new Error(`BidRequest ${id} not found`);
       if (req.status !== "Open") throw new Error(`BidRequest ${id} is not Open (status: ${req.status})`);
       req.status = "Cancelled";
@@ -293,7 +291,7 @@ export const listingService = {
   // ── getOpenBidRequests (agent view) ─────────────────────────────────────────
   async getOpenBidRequests(): Promise<ListingBidRequest[]> {
     if (!LISTING_CANISTER_ID) {
-      return MOCK_REQUESTS.filter(
+      return requests.filter(
         r => r.status === "Open" && !isDeadlinePassed(r.bidDeadline)
       );
     }
@@ -305,7 +303,7 @@ export const listingService = {
   // ── submitProposal ──────────────────────────────────────────────────────────
   async submitProposal(requestId: string, input: SubmitProposalInput): Promise<ListingProposal> {
     if (!LISTING_CANISTER_ID) {
-      const req = MOCK_REQUESTS.find(r => r.id === requestId);
+      const req = requests.find(r => r.id === requestId);
       if (!req) throw new Error(`BidRequest ${requestId} not found`);
       if (req.status !== "Open") throw new Error(`BidRequest ${requestId} is not accepting proposals (status: ${req.status})`);
 
@@ -326,7 +324,7 @@ export const listingService = {
         status:                "Pending",
         createdAt:             Date.now(),
       };
-      MOCK_PROPOSALS.push(proposal);
+      proposals.push(proposal);
       return { ...proposal };
     }
     const actor = await getActor();
@@ -349,10 +347,10 @@ export const listingService = {
   // Sealed-bid: proposals are hidden until the request's bidDeadline has passed.
   async getProposalsForRequest(requestId: string): Promise<ListingProposal[]> {
     if (!LISTING_CANISTER_ID) {
-      const req = MOCK_REQUESTS.find(r => r.id === requestId);
+      const req = requests.find(r => r.id === requestId);
       if (!req) return [];
       if (!isDeadlinePassed(req.bidDeadline)) return []; // still sealed
-      return MOCK_PROPOSALS.filter(p => p.requestId === requestId);
+      return proposals.filter(p => p.requestId === requestId);
     }
     const actor = await getActor();
     const raw = await actor.getProposalsForRequest(requestId);
@@ -362,7 +360,7 @@ export const listingService = {
   // ── getMyProposals (agent view) ──────────────────────────────────────────────
   async getMyProposals(): Promise<ListingProposal[]> {
     if (!LISTING_CANISTER_ID) {
-      return [...MOCK_PROPOSALS];
+      return [...proposals];
     }
     const actor = await getActor();
     const raw = await actor.getMyProposals();
@@ -372,19 +370,19 @@ export const listingService = {
   // ── acceptProposal ───────────────────────────────────────────────────────────
   async acceptProposal(proposalId: string): Promise<void> {
     if (!LISTING_CANISTER_ID) {
-      const proposal = MOCK_PROPOSALS.find(p => p.id === proposalId);
+      const proposal = proposals.find(p => p.id === proposalId);
       if (!proposal) throw new Error(`Proposal ${proposalId} not found`);
 
       // Mark the winner as Accepted
       proposal.status = "Accepted";
 
       // Mark all other proposals on the same request as Rejected
-      MOCK_PROPOSALS
+      proposals
         .filter(p => p.requestId === proposal.requestId && p.id !== proposalId)
         .forEach(p => { p.status = "Rejected"; });
 
       // Mark the parent request as Awarded
-      const req = MOCK_REQUESTS.find(r => r.id === proposal.requestId);
+      const req = requests.find(r => r.id === proposal.requestId);
       if (req) req.status = "Awarded";
 
       return;
@@ -393,4 +391,7 @@ export const listingService = {
     const result = await actor.acceptProposal(proposalId);
     if ("err" in result) throw new Error(JSON.stringify(result.err));
   },
-};
+  };
+}
+
+export const listingService = createListingService();

@@ -71,18 +71,6 @@ export interface PhotoQuota {
   tier:  string;
 }
 
-// ─── Actor ────────────────────────────────────────────────────────────────────
-
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: PHOTO_CANISTER_ID });
-  }
-  return _actor;
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fromPhoto(raw: any): Photo {
@@ -113,13 +101,21 @@ async function computeHash(file: File): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// ─── Mock store (used when PHOTO_CANISTER_ID is not configured) ───────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-const MOCK_PHOTOS: Photo[] = [];
+function createPhotoService() {
+  let _actor: any = null;
+  const store: Photo[] = [];
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: PHOTO_CANISTER_ID });
+    }
+    return _actor;
+  }
 
-export const photoService = {
+  return {
   async upload(
     file:        File,
     jobId:       string,
@@ -142,7 +138,7 @@ export const photoService = {
         verified:    false,
         createdAt:   Date.now(),
       };
-      MOCK_PHOTOS.push(photo);
+      store.push(photo);
       return photo;
     }
 
@@ -164,19 +160,19 @@ export const photoService = {
   },
 
   async getByJob(jobId: string): Promise<Photo[]> {
-    if (!PHOTO_CANISTER_ID) return MOCK_PHOTOS.filter((p) => p.jobId === jobId);
+    if (!PHOTO_CANISTER_ID) return store.filter((p) => p.jobId === jobId);
     const a = await getActor();
     return (await a.getPhotosByJob(jobId) as any[]).map(fromPhoto);
   },
 
   async getByProperty(propertyId: string): Promise<Photo[]> {
-    if (!PHOTO_CANISTER_ID) return MOCK_PHOTOS.filter((p) => p.propertyId === propertyId);
+    if (!PHOTO_CANISTER_ID) return store.filter((p) => p.propertyId === propertyId);
     const a = await getActor();
     return (await a.getPhotosByProperty(propertyId) as any[]).map(fromPhoto);
   },
 
   async getByRoom(roomId: string): Promise<Photo[]> {
-    if (!PHOTO_CANISTER_ID) return MOCK_PHOTOS.filter((p) => p.jobId === `ROOM_${roomId}`);
+    if (!PHOTO_CANISTER_ID) return store.filter((p) => p.jobId === `ROOM_${roomId}`);
     const a = await getActor();
     return (await a.getPhotosByRoom(roomId) as any[]).map(fromPhoto);
   },
@@ -209,6 +205,9 @@ export const photoService = {
 
   reset() {
     _actor = null;
-    MOCK_PHOTOS.length = 0;
+    store.length = 0;
   },
-};
+  };
+}
+
+export const photoService = createPhotoService();

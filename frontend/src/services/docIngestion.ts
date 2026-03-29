@@ -72,43 +72,42 @@ type DraftEditableFields = Pick<
   | "isDiy"
 >;
 
-// ─── Mock draft store ─────────────────────────────────────────────────────────
-
-const MOCK_DRAFTS: JobDraft[] = [];
-let _counter = 0;
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function todayIso(): string {
   return new Date().toISOString().split("T")[0];
 }
 
-function isDuplicate(
-  propertyId: string,
-  serviceType: string,
-  date: string,
-  existingJobs: Job[]
-): boolean {
-  // Check against confirmed job history
-  const jobMatch = existingJobs.some(
-    (j) =>
-      j.propertyId  === propertyId &&
-      j.serviceType === serviceType &&
-      j.date        === date
-  );
-  if (jobMatch) return true;
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-  // Check against existing pending drafts in the store
-  return MOCK_DRAFTS.some(
-    (d) =>
-      d.status      === "pending_review" &&
-      d.propertyId  === propertyId &&
-      d.serviceType === serviceType &&
-      d.date        === date
-  );
-}
+function createDocIngestionService() {
+  const drafts: JobDraft[] = [];
+  let counter = 0;
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+  function isDuplicate(
+    propertyId: string,
+    serviceType: string,
+    date: string,
+    existingJobs: Job[]
+  ): boolean {
+    const jobMatch = existingJobs.some(
+      (j) =>
+        j.propertyId  === propertyId &&
+        j.serviceType === serviceType &&
+        j.date        === date
+    );
+    if (jobMatch) return true;
 
-export const docIngestionService = {
+    return drafts.some(
+      (d) =>
+        d.status      === "pending_review" &&
+        d.propertyId  === propertyId &&
+        d.serviceType === serviceType &&
+        d.date        === date
+    );
+  }
+
+  return {
   /**
    * Build a JobDraft from a parsed document extraction.
    * Pass existing jobs for the property to enable duplicate detection.
@@ -122,7 +121,7 @@ export const docIngestionService = {
     const isDiy         = extraction.isDiy ?? false;
 
     const draft: JobDraft = {
-      id:             `DRAFT_${++_counter}_${Date.now()}`,
+      id:             `DRAFT_${++counter}_${Date.now()}`,
       propertyId:     extraction.propertyId,
       extraction,
       serviceType,
@@ -138,13 +137,13 @@ export const docIngestionService = {
       createdAt:      Date.now(),
     };
 
-    MOCK_DRAFTS.push(draft);
+    drafts.push(draft);
     return { ...draft };
   },
 
   /** Return all pending_review drafts, optionally filtered by propertyId. */
   getDrafts(propertyId?: string): JobDraft[] {
-    return MOCK_DRAFTS
+    return drafts
       .filter((d) =>
         d.status === "pending_review" &&
         (propertyId === undefined || d.propertyId === propertyId)
@@ -154,26 +153,26 @@ export const docIngestionService = {
 
   /** Return a single draft by id, regardless of status. */
   getDraft(id: string): JobDraft | undefined {
-    const d = MOCK_DRAFTS.find((d) => d.id === id);
+    const d = drafts.find((d) => d.id === id);
     return d ? { ...d } : undefined;
   },
 
   /** Update editable fields on a pending_review draft. */
   updateDraft(id: string, updates: Partial<DraftEditableFields>): JobDraft {
-    const idx = MOCK_DRAFTS.findIndex((d) => d.id === id);
+    const idx = drafts.findIndex((d) => d.id === id);
     if (idx === -1) throw new Error("Draft not found");
-    const draft = MOCK_DRAFTS[idx];
+    const draft = drafts[idx];
     if (draft.status === "confirmed")  throw new Error("Cannot update a confirmed draft");
     if (draft.status === "discarded")  throw new Error("Cannot update a discarded draft");
-    MOCK_DRAFTS[idx] = { ...draft, ...updates };
-    return { ...MOCK_DRAFTS[idx] };
+    drafts[idx] = { ...draft, ...updates };
+    return { ...drafts[idx] };
   },
 
   /** Confirm the draft: call jobService.create() then mark as confirmed. */
   async confirmDraft(id: string): Promise<Job> {
-    const idx = MOCK_DRAFTS.findIndex((d) => d.id === id);
+    const idx = drafts.findIndex((d) => d.id === id);
     if (idx === -1) throw new Error("Draft not found");
-    const draft = MOCK_DRAFTS[idx];
+    const draft = drafts[idx];
     if (draft.status === "confirmed") throw new Error("Draft already confirmed");
     if (draft.status === "discarded") throw new Error("Draft is discarded");
 
@@ -189,21 +188,24 @@ export const docIngestionService = {
       isDiy:          draft.isDiy,
     });
 
-    MOCK_DRAFTS[idx] = { ...draft, status: "confirmed" };
+    drafts[idx] = { ...draft, status: "confirmed" };
     return job;
   },
 
   /** Discard a draft. Idempotent if already discarded. */
   discardDraft(id: string): void {
-    const idx = MOCK_DRAFTS.findIndex((d) => d.id === id);
+    const idx = drafts.findIndex((d) => d.id === id);
     if (idx === -1) throw new Error("Draft not found");
-    if (MOCK_DRAFTS[idx].status === "discarded") return;
-    MOCK_DRAFTS[idx] = { ...MOCK_DRAFTS[idx], status: "discarded" };
+    if (drafts[idx].status === "discarded") return;
+    drafts[idx] = { ...drafts[idx], status: "discarded" };
   },
 
   /** Clear all drafts — used in tests and on logout. */
   reset(): void {
-    MOCK_DRAFTS.length = 0;
-    _counter = 0;
+    drafts.length = 0;
+    counter = 0;
   },
-};
+  };
+}
+
+export const docIngestionService = createDocIngestionService();

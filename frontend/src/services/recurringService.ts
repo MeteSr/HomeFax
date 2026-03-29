@@ -200,27 +200,6 @@ export const FREQUENCY_LABELS: Record<Frequency, string> = {
   Annually:     "Annually",
 };
 
-// ─── Mock store ───────────────────────────────────────────────────────────────
-
-const MOCK_SERVICES: RecurringService[] =
-  typeof window !== "undefined" && (window as any).__e2e_recurring
-    ? [...(window as any).__e2e_recurring]
-    : [];
-
-const MOCK_VISITS: VisitLog[] = [];
-
-// ─── Actor ────────────────────────────────────────────────────────────────────
-
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: RECURRING_CANISTER_ID });
-  }
-  return _actor;
-}
-
 // ─── Converters ───────────────────────────────────────────────────────────────
 
 function fromService(raw: any): RecurringService {
@@ -267,12 +246,29 @@ function unwrapVisit(result: any): VisitLog {
   throw new Error(typeof val === "string" ? val : key);
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-export const recurringService = {
+function createRecurringService() {
+  let _actor: any = null;
+  // Seed from Playwright test globals if present (window.__e2e_recurring set by addInitScript)
+  const mockServices: RecurringService[] =
+    typeof window !== "undefined" && (window as any).__e2e_recurring
+      ? [...(window as any).__e2e_recurring]
+      : [];
+  const mockVisits: VisitLog[] = [];
+
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: RECURRING_CANISTER_ID });
+    }
+    return _actor;
+  }
+
+  return {
   async getById(serviceId: string): Promise<RecurringService | null> {
     if (!RECURRING_CANISTER_ID) {
-      return MOCK_SERVICES.find((s) => s.id === serviceId) ?? null;
+      return mockServices.find((s) => s.id === serviceId) ?? null;
     }
     const a = await getActor();
     const result = await a.getRecurringService(serviceId);
@@ -282,7 +278,7 @@ export const recurringService = {
 
   async getByProperty(propertyId: string): Promise<RecurringService[]> {
     if (!RECURRING_CANISTER_ID) {
-      return MOCK_SERVICES.filter((s) => s.propertyId === propertyId);
+      return mockServices.filter((s) => s.propertyId === propertyId);
     }
     const a = await getActor();
     return (await a.getByProperty(propertyId) as any[]).map(fromService);
@@ -297,7 +293,7 @@ export const recurringService = {
         status:    "Active",
         createdAt: Date.now(),
       };
-      MOCK_SERVICES.push(svc);
+      mockServices.push(svc);
       return svc;
     }
     const a = await getActor();
@@ -317,10 +313,10 @@ export const recurringService = {
 
   async updateStatus(serviceId: string, status: ServiceStatus): Promise<RecurringService> {
     if (!RECURRING_CANISTER_ID) {
-      const idx = MOCK_SERVICES.findIndex((s) => s.id === serviceId);
+      const idx = mockServices.findIndex((s) => s.id === serviceId);
       if (idx === -1) throw new Error("Service not found");
-      MOCK_SERVICES[idx] = { ...MOCK_SERVICES[idx], status };
-      return MOCK_SERVICES[idx];
+      mockServices[idx] = { ...mockServices[idx], status };
+      return mockServices[idx];
     }
     const a = await getActor();
     const result = await a.updateStatus(serviceId, { [status]: null });
@@ -329,10 +325,10 @@ export const recurringService = {
 
   async attachContractDoc(serviceId: string, photoId: string): Promise<RecurringService> {
     if (!RECURRING_CANISTER_ID) {
-      const idx = MOCK_SERVICES.findIndex((s) => s.id === serviceId);
+      const idx = mockServices.findIndex((s) => s.id === serviceId);
       if (idx === -1) throw new Error("Service not found");
-      MOCK_SERVICES[idx] = { ...MOCK_SERVICES[idx], contractDocPhotoId: photoId };
-      return MOCK_SERVICES[idx];
+      mockServices[idx] = { ...mockServices[idx], contractDocPhotoId: photoId };
+      return mockServices[idx];
     }
     const a = await getActor();
     const result = await a.attachContractDoc(serviceId, photoId);
@@ -341,7 +337,7 @@ export const recurringService = {
 
   async addVisitLog(serviceId: string, visitDate: string, note?: string): Promise<VisitLog> {
     if (!RECURRING_CANISTER_ID) {
-      const svc = MOCK_SERVICES.find((s) => s.id === serviceId);
+      const svc = mockServices.find((s) => s.id === serviceId);
       if (!svc) throw new Error("Service not found");
       const entry: VisitLog = {
         id:         `VISIT_${Date.now()}`,
@@ -351,7 +347,7 @@ export const recurringService = {
         note,
         createdAt:  Date.now(),
       };
-      MOCK_VISITS.push(entry);
+      mockVisits.push(entry);
       return entry;
     }
     const a = await getActor();
@@ -361,7 +357,7 @@ export const recurringService = {
 
   async getVisitLogs(serviceId: string): Promise<VisitLog[]> {
     if (!RECURRING_CANISTER_ID) {
-      return MOCK_VISITS
+      return mockVisits
         .filter((v) => v.serviceId === serviceId)
         .sort((a, b) => b.visitDate.localeCompare(a.visitDate));
     }
@@ -385,5 +381,10 @@ export const recurringService = {
 
   reset() {
     _actor = null;
+    mockServices.length = 0;
+    mockVisits.length = 0;
   },
-};
+  };
+}
+
+export const recurringService = createRecurringService();

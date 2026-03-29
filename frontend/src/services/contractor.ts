@@ -157,22 +157,6 @@ export interface UpdateContractorArgs {
   serviceArea:   string | null;
 }
 
-// ─── Mock fallback ────────────────────────────────────────────────────────────
-
-const MOCK_CONTRACTORS: ContractorProfile[] = [];
-
-// ─── Actor ────────────────────────────────────────────────────────────────────
-
-let _actor: any = null;
-
-async function getActor() {
-  if (!_actor) {
-    const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: CONTRACTOR_CANISTER_ID });
-  }
-  return _actor;
-}
-
 // ─── Converters ───────────────────────────────────────────────────────────────
 
 function fromProfile(raw: any): ContractorProfile {
@@ -199,14 +183,26 @@ function unwrap(result: any): ContractorProfile {
   throw new Error(typeof val === "string" ? val : key);
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
+// ─── Service factory ──────────────────────────────────────────────────────────
 
-export const contractorService = {
+function createContractorService() {
+  let _actor: any = null;
+  const mockContractors: ContractorProfile[] = [];
+
+  async function getActor() {
+    if (!_actor) {
+      const ag = await getAgent();
+      _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: CONTRACTOR_CANISTER_ID });
+    }
+    return _actor;
+  }
+
+  return {
   async search(specialty?: string): Promise<ContractorProfile[]> {
     if (!CONTRACTOR_CANISTER_ID) {
       return specialty
-        ? MOCK_CONTRACTORS.filter((c) => c.specialty === specialty)
-        : [...MOCK_CONTRACTORS];
+        ? mockContractors.filter((c) => c.specialty === specialty)
+        : [...mockContractors];
     }
     const a = await getActor();
     const all = (await a.getAll() as any[]).map(fromProfile);
@@ -215,7 +211,7 @@ export const contractorService = {
 
   async getTopRated(): Promise<ContractorProfile[]> {
     if (!CONTRACTOR_CANISTER_ID) {
-      return [...MOCK_CONTRACTORS].sort((a, b) => b.trustScore - a.trustScore);
+      return [...mockContractors].sort((a, b) => b.trustScore - a.trustScore);
     }
     const a = await getActor();
     const all = (await a.getAll() as any[]).map(fromProfile);
@@ -223,7 +219,7 @@ export const contractorService = {
   },
 
   async getMyProfile(): Promise<ContractorProfile | null> {
-    if (!CONTRACTOR_CANISTER_ID) return MOCK_CONTRACTORS[0] ?? null;
+    if (!CONTRACTOR_CANISTER_ID) return mockContractors[0] ?? null;
     const a = await getActor();
     const result = await a.getMyProfile();
     if ("err" in result) return null;
@@ -232,7 +228,7 @@ export const contractorService = {
 
   async getContractor(principalText: string): Promise<ContractorProfile | null> {
     if (!CONTRACTOR_CANISTER_ID) {
-      return MOCK_CONTRACTORS.find((c) => c.id === principalText) ?? null;
+      return mockContractors.find((c) => c.id === principalText) ?? null;
     }
     const a = await getActor();
     const { Principal: P } = await import("@dfinity/principal");
@@ -299,5 +295,9 @@ export const contractorService = {
 
   reset() {
     _actor = null;
+    mockContractors.length = 0;
   },
-};
+  };
+}
+
+export const contractorService = createContractorService();
