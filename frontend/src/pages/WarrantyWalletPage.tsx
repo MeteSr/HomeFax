@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { jobService, Job } from "@/services/job";
 import { propertyService, Property } from "@/services/property";
 import { paymentService, type PlanTier } from "@/services/payment";
+import { warrantyStatus, warrantyExpiry, daysRemaining, type WarrantyStatus } from "@/services/warranty";
 import { UpgradeGate } from "@/components/UpgradeGate";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
@@ -20,27 +21,6 @@ const S = {
 };
 
 const amber = COLORS.plumMid;
-
-const MS_PER_MONTH = 30.44 * 24 * 60 * 60 * 1000;
-const NINETY_DAYS  = 90 * 24 * 60 * 60 * 1000;
-
-function warrantyExpiry(job: Job): number {
-  return new Date(job.date).getTime() + (job.warrantyMonths ?? 0) * MS_PER_MONTH;
-}
-
-type WarrantyStatus = "active" | "expiring" | "expired";
-
-function warrantyStatus(job: Job): WarrantyStatus {
-  const expiry = warrantyExpiry(job);
-  const now    = Date.now();
-  if (expiry <= now)              return "expired";
-  if (expiry - now <= NINETY_DAYS) return "expiring";
-  return "active";
-}
-
-function daysRemaining(job: Job): number {
-  return Math.round((warrantyExpiry(job) - Date.now()) / (24 * 60 * 60 * 1000));
-}
 
 interface WarrantyJob {
   job:      Job;
