@@ -14,7 +14,7 @@ jobs:
 
       - name: Cache DFX binary
         id: cache-dfx
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/dfinity
           key: dfx-${{ runner.os }}-${{ hashFiles('dfx.json') }}
@@ -23,7 +23,7 @@ jobs:
         uses: dfinity/setup-dfx@main
 
       - name: Cache mops packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/mops
           key: mops-${{ runner.os }}-${{ hashFiles('mops.toml') }}
@@ -75,7 +75,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Cache DFX binary
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/dfinity
           key: dfx-${{ runner.os }}-${{ hashFiles('dfx.json') }}
@@ -84,7 +84,7 @@ jobs:
         uses: dfinity/setup-dfx@main
 
       - name: Cache mops packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/mops
           key: mops-${{ runner.os }}-${{ hashFiles('mops.toml') }}
