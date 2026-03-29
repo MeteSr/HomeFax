@@ -104,8 +104,11 @@ function fromPhoto(raw: any): Photo {
 }
 
 async function computeHash(file: File): Promise<string> {
-  const buffer     = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+  const raw    = await file.arrayBuffer();
+  // Normalise to Uint8Array: jsdom/Node may return a Buffer or other non-ArrayBuffer
+  // subtype that some SubtleCrypto implementations reject with a strict instanceof check.
+  const bytes      = new Uint8Array(raw);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
   const hashArray  = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }

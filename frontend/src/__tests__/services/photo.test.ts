@@ -10,17 +10,18 @@ Object.defineProperty(URL, "createObjectURL", {
   writable: true,
 });
 
-// jsdom does not implement File.prototype.arrayBuffer — polyfill it
-if (!File.prototype.arrayBuffer) {
-  File.prototype.arrayBuffer = function (): Promise<ArrayBuffer> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as ArrayBuffer);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsArrayBuffer(this);
-    });
-  };
-}
+// Override File.prototype.arrayBuffer unconditionally.
+// jsdom 29's native implementation can return a non-ArrayBuffer type on some
+// Linux/CI environments, causing crypto.subtle.digest to reject the argument.
+// The FileReader polyfill is reliable across all supported environments.
+File.prototype.arrayBuffer = function (): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(this);
+  });
+};
 
 // ─── Mock external ICP dependencies ──────────────────────────────────────────
 
