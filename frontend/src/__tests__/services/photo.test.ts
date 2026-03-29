@@ -4,8 +4,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // URL.createObjectURL is not available in jsdom
 const FAKE_BLOB_URL = "blob:http://localhost/fake-object-url";
+const mockCreateObjectURL = vi.fn(() => FAKE_BLOB_URL);
 Object.defineProperty(URL, "createObjectURL", {
-  value: vi.fn(() => FAKE_BLOB_URL),
+  value: mockCreateObjectURL,
   writable: true,
 });
 
@@ -105,7 +106,7 @@ describe("photoService", () => {
 
     it("calls URL.createObjectURL to generate a blob URL", async () => {
       const photo = await photoService.upload(makeFile(), "j1", "p1", "Insulation", "desc");
-      expect(URL.createObjectURL).toHaveBeenCalledWith(expect.any(File));
+      expect(mockCreateObjectURL).toHaveBeenCalledWith(expect.any(File));
       expect(photo.url).toBe(FAKE_BLOB_URL);
     });
 

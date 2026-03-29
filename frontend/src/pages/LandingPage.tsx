@@ -614,7 +614,6 @@ export default function LandingPage() {
                   { label: "🔧 Service History",        val: "47 Records ✓",       cls: "hfl-mock-pass" },
                   { label: "🌿 Recurring Services",     val: "4 Under Contract ✓", cls: "hfl-mock-pass" },
                   { label: "⚖️ Liens & Encumbrances",  val: "None ✓",             cls: "hfl-mock-pass" },
-                  { label: "💧 Environmental Risk",     val: "Zone AE ⚠",         cls: "hfl-mock-flag" },
                 ].map((r) => (
                   <div key={r.label} className="hfl-mock-row">
                     <span className="hfl-mock-row-lbl">{r.label}</span>

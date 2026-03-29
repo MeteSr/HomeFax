@@ -7,6 +7,17 @@ echo "============================================"
 echo "  HomeFax — Deployment ($NETWORK)"
 echo "============================================"
 
+# ── Load DFX identity from CI secret (non-local deploys only) ──────────────────
+if [ "$NETWORK" != "local" ] && [ -n "${DFX_IDENTITY_PEM:-}" ]; then
+  echo "▶ Loading DFX identity from DFX_IDENTITY_PEM secret..."
+  IDENTITY_FILE=$(mktemp /tmp/dfx-identity-XXXXXX.pem)
+  printf '%s' "$DFX_IDENTITY_PEM" > "$IDENTITY_FILE"
+  dfx identity import --storage-mode plaintext ci-deploy "$IDENTITY_FILE" 2>/dev/null || true
+  dfx identity use ci-deploy
+  rm -f "$IDENTITY_FILE"
+  echo "  ✓ Identity loaded"
+fi
+
 if [ "$NETWORK" = "local" ]; then
   echo "▶ Starting dfx local replica..."
   if dfx ping 2>/dev/null; then

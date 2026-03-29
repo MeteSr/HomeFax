@@ -1,20 +1,29 @@
 name: Code Coverage
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
     branches: [main]
+    types: [completed]
 
 jobs:
   coverage-frontend:
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - run: cd frontend && npm install
+
       - name: Run unit tests with coverage
         run: cd frontend && npm run test:unit:coverage
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
@@ -24,15 +33,33 @@ jobs:
 
   coverage-backend:
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache DFX binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/dfinity
+          key: dfx-${{ runner.os }}-${{ hashFiles('dfx.json') }}
+
       - name: Install DFX
         uses: dfinity/setup-dfx@main
+
+      - name: Cache mops packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mops
+          key: mops-${{ runner.os }}-${{ hashFiles('mops.toml') }}
+
       - name: Install mops
         run: npm install -g ic-mops
+
       - name: Start replica
         run: dfx start --background --clean
+
       - name: Deploy canisters
         run: bash scripts/deploy.sh
+
       - name: Run backend tests
         run: bash scripts/test-backend.sh

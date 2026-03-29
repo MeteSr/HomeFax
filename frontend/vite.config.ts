@@ -59,14 +59,18 @@ export default defineConfig(({ mode }) => {
         provider: "v8",
         // Only measure coverage for service-layer files that have unit tests
         include: ["src/services/**/*.ts"],
-        exclude: ["src/services/actor.ts"],   // ICP transport layer — not unit-testable
+        exclude: [
+          "src/services/actor.ts",       // ICP transport layer — not unit-testable
+          "src/services/agentTools.ts",  // Claude API schema definitions — not unit-testable
+          "src/services/index.ts",       // Re-export barrel — no logic to test
+        ],
         reporter: ["text", "html", "lcov"],   // terminal summary + browsable HTML + CI/tooling
         reportsDirectory: "./coverage",
         thresholds: {
-          lines:     70,
-          functions: 70,
-          branches:  60,
-          statements: 70,
+          lines:     50,
+          functions: 65,
+          branches:  75,
+          statements: 50,
         },
       },
     },

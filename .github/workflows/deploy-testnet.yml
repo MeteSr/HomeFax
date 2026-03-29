@@ -12,10 +12,25 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache DFX binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/dfinity
+          key: dfx-${{ runner.os }}-${{ hashFiles('dfx.json') }}
+
       - name: Install DFX
         uses: dfinity/setup-dfx@main
+
+      - name: Cache mops packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mops
+          key: mops-${{ runner.os }}-${{ hashFiles('mops.toml') }}
+
       - name: Install mops
         run: npm install -g ic-mops
+
       - name: Deploy to testnet
         run: bash scripts/deploy.sh testnet
         env:
