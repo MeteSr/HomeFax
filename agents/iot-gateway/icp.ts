@@ -114,12 +114,15 @@ function buildIdentity(): Ed25519KeyIdentity {
     const bytes = Uint8Array.from(Buffer.from(seed, "hex"));
     return Ed25519KeyIdentity.generate(bytes);
   }
-  // Fallback: generate a random identity (ephemeral — dev only)
+  // Fallback: generate a random identity (ephemeral — dev only).
+  // Always pass a cryptographically secure seed explicitly to avoid
+  // CVE-2024-1631 (insecure key generation when no seed is supplied).
   console.warn(
     "[iot-gateway] GATEWAY_IDENTITY_SEED not set — using ephemeral identity. " +
     "Add the gateway principal to the sensor canister before recording events."
   );
-  return Ed25519KeyIdentity.generate();
+  const secureSeed = crypto.getRandomValues(new Uint8Array(32));
+  return Ed25519KeyIdentity.generate(secureSeed);
 }
 
 export async function getSensorActor(): Promise<ActorSubclass<SensorActor>> {
