@@ -21,6 +21,7 @@ import { UpgradeGate } from "@/components/UpgradeGate";
 import { getWeeklyPulse } from "@/services/pulseService";
 import { marketService, jobToSummary, type PropertyProfile, type ProjectRecommendation } from "@/services/market";
 import { getRecentScoreEvents, categoryColor, categoryBg, type ScoreEvent } from "@/services/scoreEventService";
+import { getReEngagementPrompts, type ReEngagementPrompt } from "@/services/reEngagementService";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 import { NeighborhoodBenchmark } from "@/components/NeighborhoodBenchmark";
@@ -189,6 +190,16 @@ export default function DashboardPage() {
     () => !!localStorage.getItem(nextServiceKey)
   );
   const showNextService = !loading && !!nextServiceTip && !nextServiceDismissed;
+
+  // Contractor re-engagement prompts (8.6.4)
+  const reEngagementPrompts: ReEngagementPrompt[] = React.useMemo(
+    () => (!loading ? getReEngagementPrompts(jobs) : []),
+    [jobs, loading]
+  );
+  const [dismissedReEngagements, setDismissedReEngagements] = React.useState<Set<string>>(
+    () => new Set(Object.keys(localStorage).filter((k) => k.startsWith("homefax_reengage_")).map((k) => k.replace("homefax_reengage_", "")))
+  );
+  const visibleReEngagements = reEngagementPrompts.filter((p) => !dismissedReEngagements.has(p.jobId));
 
   // Score events (8.2.1–8.2.2)
   const scoreEvents: ScoreEvent[] = React.useMemo(
@@ -1286,6 +1297,47 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+
+        {/* Contractor re-engagement prompts (8.6.4) */}
+        {visibleReEngagements.map((prompt) => (
+          <div
+            key={prompt.jobId}
+            style={{
+              display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem",
+              border: `1px solid ${S.rule}`, padding: "1rem 1.25rem", marginBottom: "1rem",
+              background: COLORS.white, flexWrap: "wrap", borderRadius: RADIUS.sm,
+            }}
+          >
+            <div style={{ display: "flex", gap: "0.75rem", flex: 1 }}>
+              <div style={{ width: "2rem", height: "2rem", border: `1px solid ${S.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, borderRadius: RADIUS.sm }}>
+                <ShieldCheck size={13} color={S.sage} />
+              </div>
+              <div>
+                <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.sage, marginBottom: "0.2rem" }}>
+                  Book Again — {prompt.serviceType}
+                </p>
+                <p style={{ fontSize: "0.875rem", fontWeight: 400, color: S.ink, marginBottom: "0.5rem" }}>
+                  {prompt.message}
+                </p>
+                <button
+                  onClick={() => navigate(`/quotes/new?contractor=${encodeURIComponent(prompt.contractorName)}&service=${encodeURIComponent(prompt.serviceType)}`)}
+                  style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.35rem 0.875rem", border: `1px solid ${S.sage}`, background: "none", color: S.sage, cursor: "pointer", borderRadius: RADIUS.sm }}
+                >
+                  Request Quote →
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem(`homefax_reengage_${prompt.jobId}`, "1");
+                setDismissedReEngagements((prev) => new Set([...prev, prompt.jobId]));
+              }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: S.inkLight, flexShrink: 0 }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ))}
 
         {/* Score event feed (8.2.1–8.2.2) */}
         {!loading && scoreEvents.length > 0 && (

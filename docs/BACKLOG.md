@@ -463,7 +463,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 | 8.6.1 | Post-job completion notification | ✅ Exists | — | Job success screen in `JobCreatePage` shows "Record Locked On-Chain" with next-service tip after every submission |
 | 8.6.2 | Next-service prompt from completed job | ✅ Exists | — | Dashboard shows follow-up tip for most recent verified job ("Next Step" card) with "Add to Maintenance Schedule →" CTA; dismissible |
 | 8.6.3 | "Add to schedule" one-tap flow | ✅ Done | S | `PredictiveMaintenancePage` has schedule section; needs one-tap add from post-job prompt |
-| 8.6.4 | Contractor re-engagement via job history | ⬜ Missing | M | After 11 months since last HVAC service: "Book Cool Air Services again — they did your last service and you gave no complaints" |
+| 8.6.4 | Contractor re-engagement via job history | ✅ Done | M | `reEngagementService.ts`: surfaces prompts when most recent verified contractor job is 10–13 months old. Dashboard shows dismissible "Book Again" cards with "Request Quote →" CTA. 17 tests. |
 | 8.6.5 | In-app job completion animation | ✅ Exists | — | "Job Verified" overlay in `ContractorDashboardPage` — 2.8s animated card with "Record Locked On-Chain" copy after contractor signs |
 | 8.6.6 | 3-service engagement milestone | ✅ Exists | — | Dismissible milestone banner in DashboardPage when `verifiedCount >= 3` |
 
@@ -499,7 +499,7 @@ Build these alongside Tier 1 MVP polish. Each addresses a root churn cause with 
 - ~~8.5.2 Resale-ready milestone screen (M)~~ ✅ ResaleReadyPage + annual milestone CTA
 - 8.5.3 Year-in-review email (M) — needs email backend
 - ~~8.6.2 Next-service prompt from verified job (M)~~ ✅ Dashboard "Next Step" card
-- 8.6.3–8.6.4 Post-service habit loop remainder (M+M)
+- ~~8.6.4 Contractor re-engagement (M)~~ ✅ `reEngagementService.ts` + dashboard cards
 
 ### Tier 3-R — Retention: Infrastructure-Heavy
 - 8.1.1–8.1.3 Home Pulse digest + email delivery (requires Claude backend + email service)
@@ -508,7 +508,7 @@ Build these alongside Tier 1 MVP polish. Each addresses a root churn cause with 
 - 8.3.5 Win-back email sequence (M)
 - 8.4.4 Insurer-specific export templates (L)
 - 8.5.3 Year-in-review email (M)
-- 8.6.4 Contractor re-engagement (M)
+- ~~8.6.4 Contractor re-engagement (M)~~ ✅
 
 ---
 
@@ -909,9 +909,9 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 14.2.1 | Cross-canister job ownership not verified | ⬜ Missing | M | **HIGH.** `backend/sensor/main.mo` passes `device.homeowner` (its own stored value) directly to `jobCanister.createSensorJob()`, which trusts the principal without verifying it against the Property canister. An attacker who registers a sensor device with a fabricated `homeowner` principal can create jobs attributed to arbitrary users. Fix: in `createSensorJob()`, call the Property canister to verify the passed `homeowner` actually owns `propertyId` before creating the job. |
-| 14.2.2 | Dev identity bypass not structurally isolated | ⬜ Missing | S | **HIGH.** `loginWithLocalIdentity()` in `actor.ts` uses a fixed seed (`seed[0] = 42`), generating the same principal on every call. `AuthContext.tsx` accepts `window.__e2e_principal` injection in DEV mode. Both are intentional for testing but must never reach production. Fix: gate the entire function behind a Vite dead-code elimination check (`if (import.meta.env.DEV)`), add a build-time assertion that verifies neither function is reachable in production builds. |
-| 14.2.3 | Report disclosure options enforced on frontend only | ⬜ Missing | M | **HIGH.** `hideAmounts`, `hideContractors`, `hidePermits`, `hideDescriptions` are URL params interpreted by React only. Any caller can invoke `getReport(token)` directly via the IC agent and receive the full snapshot regardless of disclosure settings. Fix: store disclosure rules inside the `ShareLink` record on-chain; enforce them in `getReport()` by filtering the snapshot fields before returning. File: `backend/report/main.mo`. |
+| 14.2.1 | Cross-canister job ownership not verified | ✅ Done | M | `job/main.mo` `createSensorJob()` cross-calls property canister (`getPropertyOwner`) when `propCanisterId` is set; rejects if passed `homeowner` ≠ actual owner. |
+| 14.2.2 | Dev identity bypass not structurally isolated | ✅ Done | S | `actor.ts` `loginWithLocalIdentity()` hard-throws in production behind `if (!import.meta.env.DEV)`; Vite dead-code-eliminates the branch entirely in prod builds. |
+| 14.2.3 | Report disclosure options enforced on frontend only | ✅ Done | M | `report/main.mo`: `hideAmounts/Contractors/Permits/Descriptions` stored as `?Bool` fields on `ShareLink` record; `applyDisclosure()` filters snapshot fields server-side in `getReport()` before returning to caller. |
 
 ---
 
@@ -1057,11 +1057,11 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 **Tier 1-SEC — Fix Before Production (blocking)**
 - 14.1.1 First-admin privilege escalation (all canisters)
 - 14.1.2 Weak report token generation
-- 14.2.1 Cross-canister job ownership verification
-- 14.2.3 Report disclosure enforcement moved to canister
+- ~~14.2.1 Cross-canister job ownership verification~~ ✅
+- ~~14.2.3 Report disclosure enforcement moved to canister~~ ✅
 
 **Tier 2-SEC — Fix Before Public Beta**
-- 14.2.2 Dev identity isolation in build
+- ~~14.2.2 Dev identity isolation in build~~ ✅
 - 14.3.1 Text field size limits across all canisters
 - 14.3.2 Voice proxy rate limiting
 - 14.4.2 Secrets audit + pre-commit hook
