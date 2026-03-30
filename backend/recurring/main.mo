@@ -163,9 +163,16 @@ persistent actor Recurring {
   ) : async Result.Result<RecurringService, Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
 
-    if (Text.size(propertyId)   == 0) return #err(#InvalidInput("propertyId cannot be empty"));
-    if (Text.size(providerName) == 0) return #err(#InvalidInput("providerName cannot be empty"));
-    if (Text.size(startDate)    == 0) return #err(#InvalidInput("startDate cannot be empty"));
+    if (Text.size(propertyId)   == 0)  return #err(#InvalidInput("propertyId cannot be empty"));
+    if (Text.size(propertyId)   > 200) return #err(#InvalidInput("propertyId exceeds 200 characters"));
+    if (Text.size(providerName) == 0)  return #err(#InvalidInput("providerName cannot be empty"));
+    if (Text.size(providerName) > 200) return #err(#InvalidInput("providerName exceeds 200 characters"));
+    if (Text.size(startDate)    == 0)  return #err(#InvalidInput("startDate cannot be empty"));
+    if (Text.size(startDate)    > 10)  return #err(#InvalidInput("startDate exceeds 10 characters"));
+    switch (providerLicense) { case (?v) { if (Text.size(v) > 200) return #err(#InvalidInput("providerLicense exceeds 200 characters")) }; case null {} };
+    switch (providerPhone)   { case (?v) { if (Text.size(v) > 30)  return #err(#InvalidInput("providerPhone exceeds 30 characters"))   }; case null {} };
+    switch (contractEndDate) { case (?v) { if (Text.size(v) > 10)  return #err(#InvalidInput("contractEndDate exceeds 10 characters"))  }; case null {} };
+    switch (notes)           { case (?v) { if (Text.size(v) > 2000) return #err(#InvalidInput("notes exceed 2000 characters"))          }; case null {} };
 
     let id  = nextRecurringId();
     let now = Time.now();
@@ -298,6 +305,8 @@ persistent actor Recurring {
   ) : async Result.Result<VisitLog, Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
     if (Text.size(visitDate) == 0) return #err(#InvalidInput("visitDate cannot be empty"));
+    if (Text.size(visitDate) > 10) return #err(#InvalidInput("visitDate exceeds 10 characters"));
+    switch (note) { case (?v) { if (Text.size(v) > 2000) return #err(#InvalidInput("note exceeds 2000 characters")) }; case null {} };
 
     switch (Map.get(services, Text.compare, serviceId)) {
       case null { #err(#NotFound) };

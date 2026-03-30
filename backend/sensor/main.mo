@@ -253,9 +253,12 @@ persistent actor Sensor {
   ) : async Result.Result<SensorDevice, Error> {
     switch (requireActive()) { case (#err e) return #err e; case _ {} };
 
-    if (Text.size(propertyId)       == 0) return #err(#InvalidInput("propertyId required"));
-    if (Text.size(externalDeviceId) == 0) return #err(#InvalidInput("externalDeviceId required"));
-    if (Text.size(name)             == 0) return #err(#InvalidInput("name required"));
+    if (Text.size(propertyId)       == 0)  return #err(#InvalidInput("propertyId required"));
+    if (Text.size(propertyId)       > 200) return #err(#InvalidInput("propertyId exceeds 200 characters"));
+    if (Text.size(externalDeviceId) == 0)  return #err(#InvalidInput("externalDeviceId required"));
+    if (Text.size(externalDeviceId) > 200) return #err(#InvalidInput("externalDeviceId exceeds 200 characters"));
+    if (Text.size(name)             == 0)  return #err(#InvalidInput("name required"));
+    if (Text.size(name)             > 200) return #err(#InvalidInput("name exceeds 200 characters"));
 
     switch (Map.get(externalIdIdx, Text.compare, externalDeviceId)) {
       case (?_) { return #err(#AlreadyExists) };

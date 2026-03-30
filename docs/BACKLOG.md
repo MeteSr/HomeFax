@@ -919,9 +919,9 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 14.3.1 | Missing text field size limits across canisters | ⬜ Missing | M | **MEDIUM.** `description`, `title`, `comment`, `bio`, `name` fields are validated for non-empty but not for maximum length. The sensor canister correctly enforces `MAX_PAYLOAD_BYTES = 4096` but other canisters don't follow this pattern. An attacker can submit a multi-gigabyte description and cause memory exhaustion or expensive serialization cycles. Fix: add `MAX_DESCRIPTION: Nat = 5000`, `MAX_COMMENT: Nat = 10000` constants to all canisters that accept free-text input; return `#InvalidInput` if exceeded. |
-| 14.3.2 | No rate limiting on voice agent proxy endpoints | ⬜ Missing | S | **MEDIUM.** `/api/agent` and `/api/chat` on the Express proxy (port 3001) have no rate limiting. An attacker can spam these endpoints, exhausting the `ANTHROPIC_API_KEY` quota or causing denial of service. Fix: add `express-rate-limit` middleware — 30 requests/minute/IP on `/api/` routes. File: `agents/voice/server.ts`. |
-| 14.3.3 | CORS origin fails open if env var missing | ⬜ Missing | S | **MEDIUM.** `FRONTEND_ORIGIN` defaults to `"http://localhost:5173"` if not set. In a misconfigured production environment this silently restricts or opens CORS in unexpected ways. Fix: throw a startup error if `FRONTEND_ORIGIN` is not set (`if (!allowedOrigin) throw new Error(...)`). File: `agents/voice/server.ts`. |
+| 14.3.1 | Missing text field size limits across canisters | ✅ Done | M | Upper-bound `Text.size` guards added to all remaining free-text params: maintenance (`systemName` >100, `taskDescription` >2000, `propertyId` >200), recurring (`providerName` >200, `notes`/`note` >2000, dates >10, optional phone/license), sensor (`name`/`externalDeviceId` >200), monitoring (`message` >2000), market (`zipCode` >20), report (`address` >500, `city` >100, `state` >50, `zipCode` >20). |
+| 14.3.2 | No rate limiting on voice agent proxy endpoints | ✅ Done | S | `express-rate-limit` middleware applied to all `/api/` routes: 30 req/min/IP, standard headers, JSON error body. File: `agents/voice/server.ts`. |
+| 14.3.3 | CORS origin fails open if env var missing | ✅ Done | S | `server.ts` throws on missing `FRONTEND_ORIGIN` in production (`NODE_ENV === "production"`); dev falls back to localhost with a console warn. |
 | 14.3.4 | Content-Security-Policy header | ✅ Done | S | **MEDIUM.** `frontend/index.html` has no CSP meta tag. While no `dangerouslySetInnerHTML` was found in the current codebase, absence of a CSP leaves the door open for XSS introduced by future changes or third-party scripts. Fix: add `<meta http-equiv="Content-Security-Policy">` restricting `script-src`, `style-src` (allow `fonts.googleapis.com`), `font-src` (allow `fonts.gstatic.com`), `connect-src` to IC endpoint. |
 
 ---
@@ -1062,15 +1062,16 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 **Tier 2-SEC — Fix Before Public Beta**
 - ~~14.2.2 Dev identity isolation in build~~ ✅
-- 14.3.1 Text field size limits across all canisters
-- 14.3.2 Voice proxy rate limiting
+- ~~14.3.1 Text field size limits across all canisters~~ ✅
+- ~~14.3.2 Voice proxy rate limiting~~ ✅
+- ~~14.3.3 CORS fail-secure on missing env var~~ ✅
 - 14.4.2 Secrets audit + pre-commit hook
 - 14.4.5 `fetchRootKey` production assertion
 - 14.4.6 API key build-time verification
 
 **Tier 3-SEC — Hardening**
-- 14.3.3 CORS fail-secure on missing env var
-- 14.3.4 Content-Security-Policy header
+- ~~14.3.3 CORS fail-secure on missing env var~~ ✅
+- ~~14.3.4 Content-Security-Policy header~~ ✅
 - 14.4.1 Warranty timestamp overflow clamp
 - 14.4.3 Canister upgrade runbook + schema version
 - 14.4.4 Canister pause timeout / multi-admin approval

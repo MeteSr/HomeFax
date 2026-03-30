@@ -490,6 +490,7 @@ persistent actor MarketIntelligence {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     if (Text.size(zipCode) == 0)  return #err(#InvalidInput("zipCode cannot be empty"));
+    if (Text.size(zipCode) > 20)  return #err(#InvalidInput("zipCode exceeds 20 characters"));
 
     let snap : MarketSnapshot = {
       zipCode;

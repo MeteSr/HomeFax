@@ -276,8 +276,11 @@ persistent actor Maintenance {
     estimatedCostCents: ?Nat
   ) : async Result.Result<ScheduleEntry, Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
-    if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
-    if (Text.size(systemName) == 0) return #err(#InvalidInput("systemName cannot be empty"));
+    if (Text.size(propertyId)    == 0)   return #err(#InvalidInput("propertyId cannot be empty"));
+    if (Text.size(propertyId)    > 200)  return #err(#InvalidInput("propertyId exceeds 200 characters"));
+    if (Text.size(systemName)    == 0)   return #err(#InvalidInput("systemName cannot be empty"));
+    if (Text.size(systemName)    > 100)  return #err(#InvalidInput("systemName exceeds 100 characters"));
+    if (Text.size(taskDescription) > 2000) return #err(#InvalidInput("taskDescription exceeds 2000 characters"));
 
     scheduleCounter += 1;
     let id = "SCH_" # Nat.toText(scheduleCounter);

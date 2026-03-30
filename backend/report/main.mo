@@ -474,8 +474,12 @@ persistent actor Report {
     hideDescriptions:  ?Bool
   ) : async Result.Result<ShareLink, Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
-    if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
+    if (Text.size(propertyId)      == 0)  return #err(#InvalidInput("propertyId cannot be empty"));
     if (Text.size(property.address) == 0) return #err(#InvalidInput("address cannot be empty"));
+    if (Text.size(property.address) > 500) return #err(#InvalidInput("address exceeds 500 characters"));
+    if (Text.size(property.city)    > 100) return #err(#InvalidInput("city exceeds 100 characters"));
+    if (Text.size(property.state)   > 50)  return #err(#InvalidInput("state exceeds 50 characters"));
+    if (Text.size(property.zipCode) > 20)  return #err(#InvalidInput("zipCode exceeds 20 characters"));
 
     // ── Ownership verification gate ──────────────────────────────────────────
     // Cross-canister call to the property canister to fetch the authoritative

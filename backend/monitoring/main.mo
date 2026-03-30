@@ -404,6 +404,8 @@ persistent actor Monitoring {
     message: Text
   ) : async Result.Result<Alert, Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (Text.size(message) == 0)   return #err(#InvalidInput("message cannot be empty"));
+    if (Text.size(message) > 2000) return #err(#InvalidInput("message exceeds 2000 characters"));
     let id = nextAlertId();
     let alert: Alert = {
       id;
