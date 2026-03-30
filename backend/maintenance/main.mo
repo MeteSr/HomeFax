@@ -234,7 +234,7 @@ persistent actor Maintenance {
         recommendation         = recommendationFor(sys, urgency, remaining);
         diyViable              = sys.diyViable;
       };
-      predictions := Array.append(predictions, [pred]);
+      predictions := predictions # [pred];
 
       // Accumulate budget for Critical and Soon items only
       switch (urgency) {
@@ -336,7 +336,7 @@ persistent actor Maintenance {
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
       return #err(#Unauthorized);
-    adminListEntries := Array.append(adminListEntries, [newAdmin]);
+    adminListEntries := adminListEntries # [newAdmin];
     #ok(())
   };
 

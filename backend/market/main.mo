@@ -341,15 +341,15 @@ persistent actor MarketIntelligence {
 
     // Strengths: dimensions ≥ 70
     var strengths : [Text] = [];
-    if (mS   >= 70) { strengths := Array.append(strengths, ["Strong documented maintenance history"]) };
-    if (modS >= 70) { strengths := Array.append(strengths, ["Systems are modern and recently updated"]) };
-    if (vS   >= 70) { strengths := Array.append(strengths, ["High proportion of blockchain-verified records"]) };
+    if (mS   >= 70) { strengths := strengths # ["Strong documented maintenance history"] };
+    if (modS >= 70) { strengths := strengths # ["Systems are modern and recently updated"] };
+    if (vS   >= 70) { strengths := strengths # ["High proportion of blockchain-verified records"] };
 
     // Improvements: dimensions < 50
     var improvements : [Text] = [];
-    if (mS   < 50) { improvements := Array.append(improvements, ["Add maintenance records — buyers discount undocumented homes 3-5 %"]) };
-    if (modS < 50) { improvements := Array.append(improvements, ["Key systems may be near end-of-life — consider targeted upgrades"]) };
-    if (vS   < 50) { improvements := Array.append(improvements, ["Get existing jobs co-signed to boost buyer confidence"]) };
+    if (mS   < 50) { improvements := improvements # ["Add maintenance records — buyers discount undocumented homes 3-5 %"] };
+    if (modS < 50) { improvements := improvements # ["Key systems may be near end-of-life — consider targeted upgrades"] };
+    if (vS   < 50) { improvements := improvements # ["Get existing jobs co-signed to boost buyer confidence"] };
 
     if (strengths.size() == 0 and improvements.size() == 0) {
       improvements := ["Logging more jobs will increase your competitive score"];
@@ -460,7 +460,7 @@ persistent actor MarketIntelligence {
               rationale;
               requiresPermit      = tmpl.requiresPermit;
             };
-            recommendations := Array.append(recommendations, [rec]);
+            recommendations := recommendations # [rec];
           }
         }
       }
@@ -517,7 +517,7 @@ persistent actor MarketIntelligence {
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
       return #err(#Unauthorized);
-    adminListEntries := Array.append(adminListEntries, [newAdmin]);
+    adminListEntries := adminListEntries # [newAdmin];
     #ok(())
   };
 

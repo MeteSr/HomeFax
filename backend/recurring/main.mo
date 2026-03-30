@@ -348,7 +348,7 @@ persistent actor Recurring {
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
-    adminListEntries := Array.append(adminListEntries, [newAdmin]);
+    adminListEntries := adminListEntries # [newAdmin];
     adminInitialized := true;
     #ok(())
   };

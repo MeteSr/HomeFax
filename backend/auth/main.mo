@@ -112,7 +112,7 @@ persistent actor Auth {
   /// Add a new admin principal
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
-    admins := Array.append(admins, [newAdmin]);
+    admins := admins # [newAdmin];
     adminInitialized := true;
     #ok(())
   };

@@ -149,7 +149,7 @@ persistent actor Room {
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
-    admins := Array.append(admins, [newAdmin]);
+    admins := admins # [newAdmin];
     adminInitialized := true;
     #ok(())
   };
@@ -308,7 +308,7 @@ persistent actor Room {
           paintBrand = room.paintBrand;
           paintCode  = room.paintCode;
           notes      = room.notes;
-          fixtures   = Array.append(room.fixtures, [fixture]);
+          fixtures   = room.fixtures # [fixture];
           createdAt  = room.createdAt;
           updatedAt  = Time.now();
         };

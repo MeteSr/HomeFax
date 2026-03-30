@@ -496,7 +496,7 @@ persistent actor Monitoring {
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
       return #err(#Unauthorized);
-    adminListEntries := Array.append(adminListEntries, [newAdmin]);
+    adminListEntries := adminListEntries # [newAdmin];
     #ok(())
   };
 
