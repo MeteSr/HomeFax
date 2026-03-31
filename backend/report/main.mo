@@ -643,7 +643,7 @@ persistent actor Report {
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
-    adminListEntries := adminListEntries # [newAdmin];
+    adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     adminInitialized := true;
     #ok(())
   };

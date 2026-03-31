@@ -375,7 +375,7 @@ persistent actor Photo {
           data        = existing.data;
           size        = existing.size;
           verified    = true;
-          approvals   = existing.approvals # [msg.caller];
+          approvals   = Array.concat(existing.approvals, [msg.caller]);
           createdAt   = existing.createdAt;
         };
         Map.add(photos, Text.compare, photoId, updated);
@@ -415,7 +415,7 @@ persistent actor Photo {
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
       return #err(#Unauthorized);
-    adminListEntries := adminListEntries # [newAdmin];
+    adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     #ok(())
   };
 

@@ -503,13 +503,13 @@ persistent actor Job {
   /// Authorize a Sensor canister principal to call createSensorJob().
   public shared(msg) func addSensorCanister(sensor: Principal) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
-    authorizedSensors := authorizedSensors # [sensor];
+    authorizedSensors := Array.concat(authorizedSensors, [sensor]);
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
-    adminListEntries := adminListEntries # [newAdmin];
+    adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     adminInitialized := true;
     #ok(())
   };
@@ -555,7 +555,7 @@ persistent actor Job {
           case _             "";
         };
         if (svcText != "" and Option.isNull(Array.find<Text>(foundSystems, func(s) { s == svcText }))) {
-          foundSystems := foundSystems # [svcText];
+          foundSystems := Array.concat(foundSystems, [svcText]);
         };
       };
     };

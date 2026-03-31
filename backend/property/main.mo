@@ -681,7 +681,7 @@ persistent actor Property {
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
-    admins := admins # [newAdmin];
+    admins := Array.concat(admins, [newAdmin]);
     adminInitialized := true;
     #ok(())
   };
