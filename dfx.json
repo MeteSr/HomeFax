@@ -56,6 +56,10 @@
       "main": "backend/listing/main.mo",
       "type": "motoko"
     },
+    "agent": {
+      "main": "backend/agent/main.mo",
+      "type": "motoko"
+    },
     "recurring": {
       "main": "backend/recurring/main.mo",
       "type": "motoko"

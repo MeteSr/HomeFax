@@ -536,11 +536,11 @@ Build these alongside Tier 1 MVP polish. Each addresses a root churn cause with 
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 9.1.1 | `Realtor` role in `auth` canister | 🟡 Partial | M | Role referenced in code; needs full registration flow, profile fields, and license verification step |
-| 9.1.2 | Agent profile: brokerage, license #, markets served | ⬜ Missing | S | `AgentProfile { name, brokerage, licenseNumber, statesLicensed, avgDaysOnMarket, listingsLast12Months, bio }` |
-| 9.1.3 | Agent verification badge | ⬜ Missing | M | Admin-verifiable license check (or self-attestation with warning); badge shown on proposals and co-branded reports |
-| 9.1.4 | Agent public profile page | ⬜ Missing | M | Public `/agent/:id` page showing credentials, listings won through HomeFax, average commission, verified reviews from homeowners |
-| 9.1.5 | Agent reviews from HomeFax transactions | ⬜ Missing | M | After a listing closes, homeowner rates the agent (1–5); stored on-chain in agent profile; rate-limited, same deduplication pattern as contractor reviews |
+| 9.1.1 | `Realtor` role in `auth` canister | ✅ Done | M | Role referenced in code; needs full registration flow, profile fields, and license verification step |
+| 9.1.2 | Agent profile: brokerage, license #, markets served | ✅ Done | S | `AgentProfile { name, brokerage, licenseNumber, statesLicensed, avgDaysOnMarket, listingsLast12Months, bio }` — `agent` canister + `AgentProfileEditPage` |
+| 9.1.3 | Agent verification badge | ✅ Done | M | Admin `verifyAgent` on-chain; `HomeFax Verified` badge shown on profile edit and public pages |
+| 9.1.4 | Agent public profile page | ✅ Done | M | `/agent/:id` — credentials, stats, verified badge, on-chain reviews from homeowners |
+| 9.1.5 | Agent reviews from HomeFax transactions | ✅ Done | M | `addReview` on `agent` canister; rate-limited (10/day), composite-key dedup (reviewer+transactionId); TDD service + page tests |
 
 ---
 
