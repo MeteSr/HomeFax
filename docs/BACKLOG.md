@@ -496,7 +496,7 @@ Build these alongside Tier 1 MVP polish. Each addresses a root churn cause with 
 | 12.1.3 | `scoreEventService.ts` unit tests | ✅ Done | S | Test `getRecentScoreEvents()` — 90-day window filter, max-12-events cap, deduplication, category assignment per event type |
 | 12.1.4 | `auth.ts` unit tests | ✅ Done | M | Test: `register()`, `getProfile()`, `updateProfile()`, `hasRole()`, BigInt time-field conversions, Opt unwrapping (`raw.field[0] ?? undefined` pattern), error propagation |
 | 12.1.5 | `pulseService.ts` unit tests | ✅ Done | S | Test `getWeeklyPulse()` — seasonal month detection, overdue service window (12 months), tip selection per season, empty-jobs edge case |
-| 12.1.6 | `agentTools.ts` unit tests | ⬜ Missing | L | Test each Claude tool execution path: `classify_home_issue`, `create_maintenance_job`, `create_quote_request`, `search_contractors`, `sign_job_verification`, `update_job_status`; error recovery when canister call fails mid-tool |
+| 12.1.6 | `agentTools.ts` unit tests | ✅ Done | L | Test each Claude tool execution path: `classify_home_issue`, `create_maintenance_job`, `create_quote_request`, `search_contractors`, `sign_job_verification`, `update_job_status`; error recovery when canister call fails mid-tool |
 | 12.1.7 | `agentProfile.ts` unit tests | ✅ Done | S | Test `appendToUrl()` / `fromParams()` round-trip, empty-param edge cases, `save()` / `load()` / `clear()` localStorage cycle |
 
 ---
