@@ -8,6 +8,12 @@
 export type FsboReadiness  = "NotReady" | "Ready" | "OptimallyReady";
 export type FsboStep       = 1 | 2 | 3 | "done";
 
+/** 10.2.3 — One entry in the price history log */
+export interface PriceEntry {
+  priceCents: number;
+  recordedAt: number; // ms epoch
+}
+
 export interface FsboRecord {
   propertyId:     string;
   isFsbo:         boolean;
@@ -67,9 +73,13 @@ export function computeAgentCommissionSavings(listPriceCents: number): number {
 
 function createFsboService() {
   const _records = new Map<string, FsboRecord>();
+  const _priceHistory = new Map<string, PriceEntry[]>();
 
   return {
-    __reset() { _records.clear(); },
+    __reset() {
+      _records.clear();
+      _priceHistory.clear();
+    },
 
     getRecord(propertyId: string): FsboRecord | null {
       return _records.get(propertyId) ?? null;
@@ -103,6 +113,20 @@ function createFsboService() {
 
     deactivate(propertyId: string): void {
       _records.delete(propertyId);
+    },
+
+    // 10.2.3 — Price history
+
+    logPriceChange(propertyId: string, priceCents: number): void {
+      const existing = _priceHistory.get(propertyId) ?? [];
+      _priceHistory.set(propertyId, [
+        ...existing,
+        { priceCents, recordedAt: Date.now() },
+      ]);
+    },
+
+    getPriceHistory(propertyId: string): PriceEntry[] {
+      return [...(_priceHistory.get(propertyId) ?? [])];
     },
   };
 }
