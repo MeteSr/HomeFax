@@ -42,6 +42,7 @@ import AgentMarketplacePage  from "@/pages/AgentMarketplacePage";
 import AgentProfileEditPage  from "@/pages/AgentProfileEditPage";
 import AgentPublicPage       from "@/pages/AgentPublicPage";
 import AgentBrowsePage       from "@/pages/AgentBrowsePage";
+import FsboListingPage       from "@/pages/FsboListingPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
@@ -86,6 +87,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/for-sale/:propertyId" element={<FsboListingPage />} />
         <Route
           path="/register"
           element={

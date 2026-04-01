@@ -1,0 +1,273 @@
+/**
+ * TDD tests for Epic 10.3.1 — Public FSBO Listing Page
+ *
+ * Unauthenticated /for-sale/:propertyId page showing:
+ *   - Property address and details (type, year built, sq ft)
+ *   - List price (formatted)
+ *   - HomeFax score badge with "Verified on ICP" label
+ *   - Verified job count summary
+ *   - Photo gallery (first photo shown)
+ *   - Contact / showing-request form (name, contact, preferred time)
+ *   - Shows "Not For Sale" when FSBO record is missing or isFsbo=false
+ *   - Shows loading state while data fetches
+ */
+
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+
+// ─── Mock data (hoisted so vi.mock factories can reference them) ───────────────
+
+const {
+  mockProperty,
+  mockFsboRecord,
+  mockJobs,
+  mockPhotos,
+} = vi.hoisted(() => {
+  const mockProperty = {
+    id:                BigInt(42),
+    address:           "123 Maple Street",
+    city:              "Austin",
+    state:             "TX",
+    zipCode:           "78701",
+    propertyType:      "SingleFamily" as const,
+    yearBuilt:         BigInt(1998),
+    squareFeet:        BigInt(2100),
+    verificationLevel: "Basic" as const,
+    tier:              "Pro" as const,
+    owner:             "owner-principal",
+    isActive:          true,
+    createdAt:         BigInt(0),
+    updatedAt:         BigInt(0),
+  };
+
+  const mockFsboRecord = {
+    propertyId:     "42",
+    isFsbo:         true,
+    listPriceCents: 48_500_000,
+    activatedAt:    Date.now(),
+    step:           3 as const,
+    hasReport:      false,
+  };
+
+  const mockJobs = [
+    { id: "j1", verified: true,  serviceType: "Roof",  amount: 800000, date: "2024-01-01", status: "verified" as const,   contractorName: "Apex Roofing", description: "", photos: [], homeownerSigned: true,  contractorSigned: true,  isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: null, createdAt: 0, permitNumber: null, warrantyMonths: null },
+    { id: "j2", verified: true,  serviceType: "HVAC",  amount: 500000, date: "2024-03-01", status: "verified" as const,   contractorName: "CoolAir",      description: "", photos: [], homeownerSigned: true,  contractorSigned: true,  isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: null, createdAt: 0, permitNumber: null, warrantyMonths: null },
+    { id: "j3", verified: false, serviceType: "Paint", amount: 120000, date: "2024-05-01", status: "completed" as const,  contractorName: "PaintPro",     description: "", photos: [], homeownerSigned: true,  contractorSigned: false, isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: null, createdAt: 0, permitNumber: null, warrantyMonths: null },
+  ];
+
+  const mockPhotos = [
+    { id: "ph1", url: "https://example.com/photo1.jpg", jobId: "j1", propertyId: "42", roomId: null, hash: "abc", uploadedAt: 0, approved: true, approvers: [], pendingApprovers: [], uploadedBy: "owner-principal" },
+  ];
+
+  return { mockProperty, mockFsboRecord, mockJobs, mockPhotos };
+});
+
+// ─── Service mocks ────────────────────────────────────────────────────────────
+
+vi.mock("@/services/fsbo", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/fsbo")>();
+  return {
+    ...actual,
+    fsboService: {
+      getRecord:   vi.fn().mockReturnValue(mockFsboRecord),
+      setFsboMode: vi.fn(),
+      advanceStep: vi.fn(),
+      deactivate:  vi.fn(),
+    },
+  };
+});
+
+vi.mock("@/services/property", () => ({
+  propertyService: {
+    getProperty:     vi.fn().mockResolvedValue(mockProperty),
+    getMyProperties: vi.fn().mockResolvedValue([mockProperty]),
+  },
+}));
+
+vi.mock("@/services/job", () => ({
+  jobService: {
+    getByProperty: vi.fn().mockResolvedValue(mockJobs),
+    getAll:        vi.fn().mockResolvedValue(mockJobs),
+  },
+}));
+
+vi.mock("@/services/photo", () => ({
+  photoService: {
+    getByProperty: vi.fn().mockResolvedValue(mockPhotos),
+  },
+}));
+
+import FsboListingPage from "@/pages/FsboListingPage";
+import { fsboService } from "@/services/fsbo";
+import { propertyService } from "@/services/property";
+import { jobService } from "@/services/job";
+import { photoService } from "@/services/photo";
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+function renderPage(propertyId = "42") {
+  return render(
+    <MemoryRouter initialEntries={[`/for-sale/${propertyId}`]}>
+      <Routes>
+        <Route path="/for-sale/:propertyId" element={<FsboListingPage />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+describe("FsboListingPage (10.3.1)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fsboService.getRecord).mockReturnValue(mockFsboRecord);
+    vi.mocked(propertyService.getProperty).mockResolvedValue(mockProperty);
+    vi.mocked(jobService.getByProperty).mockResolvedValue(mockJobs);
+    vi.mocked(photoService.getByProperty).mockResolvedValue(mockPhotos);
+  });
+
+  // ── Property details ────────────────────────────────────────────────────────
+
+  it("shows the property street address", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/123 Maple Street/i)).toBeInTheDocument());
+  });
+
+  it("shows city, state, and zip", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/Austin.*TX|TX.*78701/i)).toBeInTheDocument());
+  });
+
+  it("shows the property type", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/single.?family/i)).toBeInTheDocument());
+  });
+
+  it("shows year built", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/1998/)).toBeInTheDocument());
+  });
+
+  it("shows square footage", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/2,100|2100/)).toBeInTheDocument());
+  });
+
+  // ── List price ──────────────────────────────────────────────────────────────
+
+  it("shows the formatted list price", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/\$485,000/)).toBeInTheDocument());
+  });
+
+  // ── HomeFax score badge ─────────────────────────────────────────────────────
+
+  it("shows the HomeFax score", async () => {
+    renderPage();
+    // score from 2 verified jobs (2*4=8) + value + verification(Basic=5)
+    // Just check a numeric score is displayed inside a score badge
+    await waitFor(() => {
+      expect(screen.getByText(/homefax score/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows 'Verified on ICP Blockchain' label near the score", async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/verified on icp blockchain/i)).toBeInTheDocument());
+  });
+
+  // ── Verified job summary ────────────────────────────────────────────────────
+
+  it("shows the count of verified maintenance jobs", async () => {
+    renderPage();
+    await waitFor(() => {
+      // 2 of 3 jobs are verified
+      expect(screen.getByText(/2 verified/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows verified job service types", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/roof/i)).toBeInTheDocument();
+      expect(screen.getByText(/hvac/i)).toBeInTheDocument();
+    });
+  });
+
+  // ── Photo gallery ───────────────────────────────────────────────────────────
+
+  it("renders a photo when photos are available", async () => {
+    renderPage();
+    await waitFor(() => {
+      const img = screen.getByRole("img", { name: /property photo/i });
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute("src", "https://example.com/photo1.jpg");
+    });
+  });
+
+  it("shows a placeholder when no photos exist", async () => {
+    vi.mocked(photoService.getByProperty).mockResolvedValue([]);
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/no photos/i)).toBeInTheDocument();
+    });
+  });
+
+  // ── Showing-request / contact form ─────────────────────────────────────────
+
+  it("renders a contact form with name, contact, and time fields", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/contact.*email.*phone|email or phone/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/preferred.*time|showing.*time/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows a submit button for the contact form", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /request.*showing|schedule.*showing/i })).toBeInTheDocument();
+    });
+  });
+
+  it("submitting the form shows a confirmation message", async () => {
+    renderPage();
+    await waitFor(() => screen.getByLabelText(/your name/i));
+    fireEvent.change(screen.getByLabelText(/your name/i), { target: { value: "Jane Buyer" } });
+    fireEvent.change(screen.getByLabelText(/contact.*email.*phone|email or phone/i), { target: { value: "jane@example.com" } });
+    fireEvent.change(screen.getByLabelText(/preferred.*time|showing.*time/i), { target: { value: "Weekday evenings" } });
+    fireEvent.submit(screen.getByRole("form", { name: /showing request/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/request.*sent|we'll be in touch|thank you/i)).toBeInTheDocument();
+    });
+  });
+
+  // ── Not-for-sale guard ──────────────────────────────────────────────────────
+
+  it("shows 'not listed for sale' when FSBO record is null", async () => {
+    vi.mocked(fsboService.getRecord).mockReturnValue(null);
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/not listed for sale|not available/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows 'not listed for sale' when isFsbo is false", async () => {
+    vi.mocked(fsboService.getRecord).mockReturnValue({ ...mockFsboRecord, isFsbo: false });
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/not listed for sale|not available/i)).toBeInTheDocument();
+    });
+  });
+
+  // ── Loading ─────────────────────────────────────────────────────────────────
+
+  it("shows a loading indicator before data arrives", () => {
+    vi.mocked(propertyService.getProperty).mockReturnValue(new Promise(() => {})); // never resolves
+    renderPage();
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+});

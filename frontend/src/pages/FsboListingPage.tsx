@@ -1,0 +1,284 @@
+/**
+ * FsboListingPage — Epic 10.3.1
+ *
+ * Public, unauthenticated page at /for-sale/:propertyId.
+ * Shows list price, property details, HomeFax score badge,
+ * verified job summary, photo gallery, and a showing-request form.
+ */
+
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { ShieldCheck } from "lucide-react";
+import { propertyService, type Property } from "@/services/property";
+import { jobService, type Job } from "@/services/job";
+import { photoService, type Photo } from "@/services/photo";
+import { fsboService, type FsboRecord } from "@/services/fsbo";
+import { computeScore } from "@/services/scoreService";
+import { COLORS, FONTS } from "@/theme";
+
+const S = {
+  ink:      COLORS.plum,
+  inkLight: COLORS.plumMid,
+  paper:    COLORS.white,
+  rule:     COLORS.rule,
+  sage:     COLORS.sage,
+  serif:    FONTS.serif,
+  mono:     FONTS.mono,
+  sans:     FONTS.sans,
+};
+
+function formatPrice(cents: number): string {
+  return "$" + (cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+function formatSqFt(sqFt: bigint): string {
+  return Number(sqFt).toLocaleString("en-US");
+}
+
+function humanType(type: string): string {
+  return type.replace(/([A-Z])/g, " $1").trim();
+}
+
+// ─── Showing-request form ─────────────────────────────────────────────────────
+
+function ShowingRequestForm() {
+  const [name,    setName]    = useState("");
+  const [contact, setContact] = useState("");
+  const [time,    setTime]    = useState("");
+  const [sent,    setSent]    = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // In production this would POST to a canister or email endpoint.
+    // For now, mock success immediately.
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div style={{ padding: "1.25rem", background: "#f0faf4", border: "1px solid #c3e6cb", textAlign: "center" }}>
+        <p style={{ fontFamily: S.sans, fontWeight: 600, color: "#188038", margin: 0 }}>
+          Request sent — we'll be in touch shortly!
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form
+      aria-label="Showing Request"
+      onSubmit={handleSubmit}
+      style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+    >
+      <div>
+        <label
+          htmlFor="sr-name"
+          style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.25rem" }}
+        >
+          Your Name
+        </label>
+        <input
+          id="sr-name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          style={{ width: "100%", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.sans, fontSize: "0.875rem", boxSizing: "border-box" }}
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="sr-contact"
+          style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.25rem" }}
+        >
+          Email or Phone
+        </label>
+        <input
+          id="sr-contact"
+          type="text"
+          value={contact}
+          onChange={(e) => setContact(e.target.value)}
+          required
+          style={{ width: "100%", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.sans, fontSize: "0.875rem", boxSizing: "border-box" }}
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="sr-time"
+          style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.25rem" }}
+        >
+          Preferred Showing Time
+        </label>
+        <input
+          id="sr-time"
+          type="text"
+          placeholder="e.g. Weekday evenings, Saturday mornings"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          required
+          style={{ width: "100%", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.sans, fontSize: "0.875rem", boxSizing: "border-box" }}
+        />
+      </div>
+
+      <button
+        type="submit"
+        style={{
+          background:  S.sage,
+          color:       COLORS.white,
+          border:      "none",
+          padding:     "0.65rem 1.25rem",
+          fontFamily:  S.sans,
+          fontWeight:  600,
+          fontSize:    "0.875rem",
+          cursor:      "pointer",
+          alignSelf:   "flex-start",
+        }}
+      >
+        Request a Showing
+      </button>
+    </form>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function FsboListingPage() {
+  const { propertyId } = useParams<{ propertyId: string }>();
+
+  const [loading,  setLoading]  = useState(true);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [jobs,     setJobs]     = useState<Job[]>([]);
+  const [photos,   setPhotos]   = useState<Photo[]>([]);
+  const [fsbo,     setFsbo]     = useState<FsboRecord | null | undefined>(undefined); // undefined = not yet checked
+
+  useEffect(() => {
+    if (!propertyId) { setLoading(false); return; }
+
+    const record = fsboService.getRecord(propertyId);
+    setFsbo(record);
+
+    Promise.all([
+      propertyService.getProperty(BigInt(propertyId)),
+      jobService.getByProperty(propertyId),
+      photoService.getByProperty(propertyId),
+    ]).then(([prop, propJobs, propPhotos]) => {
+      setProperty(prop);
+      setJobs(propJobs);
+      setPhotos(propPhotos);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, [propertyId]);
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: S.mono, color: S.inkLight }}>
+        Loading…
+      </div>
+    );
+  }
+
+  // ── Not for sale ───────────────────────────────────────────────────────────
+  if (!fsbo || !fsbo.isFsbo || !property) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "0.5rem" }}>
+        <p style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.5rem", color: S.ink }}>Not Listed For Sale</p>
+        <p style={{ fontFamily: S.sans, fontSize: "0.875rem", color: S.inkLight }}>This property is not currently available via FSBO.</p>
+      </div>
+    );
+  }
+
+  const verifiedJobs = jobs.filter((j) => j.verified);
+  const score        = computeScore(jobs, [property]);
+  const firstPhoto   = photos[0] ?? null;
+
+  return (
+    <div style={{ maxWidth: "860px", margin: "0 auto", padding: "2rem 1rem", fontFamily: S.sans }}>
+
+      {/* ── Photo ─────────────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: "1.5rem", background: COLORS.rule, minHeight: "260px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        {firstPhoto ? (
+          <img
+            src={firstPhoto.url}
+            alt="Property photo"
+            style={{ width: "100%", maxHeight: "380px", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          <p style={{ fontFamily: S.mono, fontSize: "0.75rem", color: S.inkLight }}>No photos available</p>
+        )}
+      </div>
+
+      {/* ── Price + address ────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "2rem", color: S.ink, marginBottom: "0.25rem" }}>
+          {formatPrice(fsbo.listPriceCents)}
+        </div>
+        <div style={{ fontFamily: S.sans, fontWeight: 600, fontSize: "1.15rem", color: S.ink }}>
+          {property.address}
+        </div>
+        <div style={{ fontFamily: S.sans, fontSize: "0.95rem", color: S.inkLight }}>
+          {property.city}, {property.state} {property.zipCode}
+        </div>
+      </div>
+
+      {/* ── Details grid ────────────────────────────────────────────────────── */}
+      <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginBottom: "1.5rem", borderTop: `1px solid ${S.rule}`, borderBottom: `1px solid ${S.rule}`, padding: "1rem 0" }}>
+        {[
+          { label: "Type",       value: humanType(property.propertyType) },
+          { label: "Year Built", value: String(property.yearBuilt) },
+          { label: "Sq Ft",      value: formatSqFt(property.squareFeet) },
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <div style={{ fontFamily: S.mono, fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.15rem" }}>{label}</div>
+            <div style={{ fontFamily: S.sans, fontWeight: 600, fontSize: "0.95rem", color: S.ink }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── HomeFax score badge ─────────────────────────────────────────────── */}
+      <div style={{ border: `1.5px solid ${S.sage}`, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem", background: COLORS.sageLight }}>
+        <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "2.5rem", color: S.ink, lineHeight: 1 }}>
+          {score}
+        </div>
+        <div>
+          <div style={{ fontFamily: S.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.15rem" }}>
+            HomeFax Score
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontFamily: S.mono, fontSize: "0.65rem", color: S.sage }}>
+            <ShieldCheck size={13} />
+            Verified on ICP Blockchain
+          </div>
+        </div>
+      </div>
+
+      {/* ── Verified jobs summary ────────────────────────────────────────────── */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <div style={{ fontFamily: S.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.5rem" }}>
+          Maintenance Record
+        </div>
+        <div style={{ fontFamily: S.sans, fontSize: "0.875rem", color: S.ink, marginBottom: "0.5rem" }}>
+          <strong>{verifiedJobs.length} verified</strong> maintenance job{verifiedJobs.length !== 1 ? "s" : ""} on record
+        </div>
+        {verifiedJobs.length > 0 && (
+          <ul style={{ margin: 0, padding: "0 0 0 1.1rem", display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+            {verifiedJobs.map((j) => (
+              <li key={j.id} style={{ fontFamily: S.sans, fontSize: "0.8rem", color: S.inkLight }}>
+                {j.serviceType} — {j.date ? new Date(j.date).toLocaleDateString("en-US", { year: "numeric", month: "short" }) : ""}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* ── Showing request ─────────────────────────────────────────────────── */}
+      <div style={{ border: `1px solid ${S.rule}`, padding: "1.5rem" }}>
+        <h2 style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.1rem", color: S.ink, margin: "0 0 1rem" }}>
+          Schedule a Showing
+        </h2>
+        <ShowingRequestForm />
+      </div>
+    </div>
+  );
+}
