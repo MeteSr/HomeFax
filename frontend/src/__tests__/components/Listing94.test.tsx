@@ -72,6 +72,26 @@ vi.mock("@/services/listing", () => ({
     price - Math.round(price * commBps / 10_000) - Math.round(price * closingBps / 10_000),
   formatCommission: (bps: number) => (bps / 100).toFixed(2) + "%",
   isDeadlinePassed: (ms: number) => ms <= Date.now(),
+  MILESTONE_STEPS: [
+    { key: "agreement_signed", label: "Agreement Signed" },
+    { key: "listed_on_mls",    label: "Listed on MLS" },
+    { key: "first_showing",    label: "First Showing" },
+    { key: "offer_received",   label: "Offer Received" },
+    { key: "under_contract",   label: "In Escrow" },
+    { key: "inspection",       label: "Inspection Complete" },
+    { key: "appraisal",        label: "Appraisal Complete" },
+    { key: "closed",           label: "Sale Closed" },
+  ],
+  initMilestones: () => [
+    { key: "agreement_signed", label: "Agreement Signed",    completedAt: null, completedBy: null },
+    { key: "listed_on_mls",    label: "Listed on MLS",       completedAt: null, completedBy: null },
+    { key: "first_showing",    label: "First Showing",       completedAt: null, completedBy: null },
+    { key: "offer_received",   label: "Offer Received",      completedAt: null, completedBy: null },
+    { key: "under_contract",   label: "In Escrow",           completedAt: null, completedBy: null },
+    { key: "inspection",       label: "Inspection Complete", completedAt: null, completedBy: null },
+    { key: "appraisal",        label: "Appraisal Complete",  completedAt: null, completedBy: null },
+    { key: "closed",           label: "Sale Closed",         completedAt: null, completedBy: null },
+  ],
 }));
 
 vi.mock("@/services/scoreService", () => ({

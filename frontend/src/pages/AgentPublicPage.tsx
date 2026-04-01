@@ -8,6 +8,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { agentService, AgentOnChainProfile, AgentReview, computeAverageRating } from "@/services/agent";
+import { listingService, AgentPerformanceRecord } from "@/services/listing";
 import { COLORS, FONTS } from "@/theme";
 
 const S = {
@@ -24,15 +25,18 @@ export default function AgentPublicPage() {
   const { id } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<AgentOnChainProfile | null | undefined>(undefined);
   const [reviews, setReviews] = useState<AgentReview[]>([]);
+  const [perfRecords, setPerfRecords] = useState<AgentPerformanceRecord[]>([]);
 
   useEffect(() => {
     if (!id) return;
     Promise.all([
       agentService.getPublicProfile(id),
       agentService.getReviews(id),
-    ]).then(([p, r]) => {
+      listingService.getAgentPerformanceRecords(id),
+    ]).then(([p, r, perf]) => {
       setProfile(p);
       setReviews(r);
+      setPerfRecords(perf);
     }).catch(() => setProfile(null));
   }, [id]);
 
@@ -136,7 +140,7 @@ export default function AgentPublicPage() {
         )}
 
         {/* Reviews */}
-        <div>
+        <div style={{ marginBottom: "1.5rem" }}>
           <div style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight,
             textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>
             Reviews ({reviews.length})
@@ -163,6 +167,46 @@ export default function AgentPublicPage() {
             ))
           )}
         </div>
+
+        {/* 9.5.4 — Agent Performance scores (from verified transactions) */}
+        {perfRecords.length > 0 && (() => {
+          const avg = (key: keyof AgentPerformanceRecord) =>
+            Math.round(perfRecords.reduce((sum, r) => sum + (r[key] as number), 0) / perfRecords.length);
+          const overallScore     = avg("overallScore");
+          const domScore         = avg("domAccuracyScore");
+          const priceScore       = avg("priceAccuracyScore");
+          const commissionScore  = avg("commissionHonestyScore");
+          return (
+            <div
+              role="region"
+              aria-label="Agent Performance"
+              style={{ border: `1px solid ${S.rule}`, padding: "1.25rem 1.5rem" }}
+            >
+              <div style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight,
+                textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>
+                Agent Performance ({perfRecords.length} transaction{perfRecords.length !== 1 ? "s" : ""})
+              </div>
+              <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Overall Score</div>
+                  <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.5rem", color: S.ink }}>{overallScore}</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>DOM Accuracy</div>
+                  <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.5rem", color: S.ink }}>{domScore}</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Price Accuracy</div>
+                  <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.5rem", color: S.ink }}>{priceScore}</div>
+                </div>
+                <div>
+                  <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Commission Honesty</div>
+                  <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.5rem", color: S.ink }}>{commissionScore}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </Layout>
   );

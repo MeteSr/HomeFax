@@ -128,6 +128,93 @@ export interface CounterProposalInput {
   notes:         string;
 }
 
+// ─── 9.5.1 Milestone types ────────────────────────────────────────────────────
+
+export type MilestoneKey =
+  | "agreement_signed"
+  | "listed_on_mls"
+  | "first_showing"
+  | "offer_received"
+  | "under_contract"
+  | "inspection"
+  | "appraisal"
+  | "closed";
+
+export interface Milestone {
+  key:          MilestoneKey;
+  label:        string;
+  completedAt:  number | null;
+  completedBy:  "homeowner" | "agent" | null;
+}
+
+export const MILESTONE_STEPS: { key: MilestoneKey; label: string }[] = [
+  { key: "agreement_signed", label: "Agreement Signed" },
+  { key: "listed_on_mls",    label: "Listed on MLS" },
+  { key: "first_showing",    label: "First Showing" },
+  { key: "offer_received",   label: "Offer Received" },
+  { key: "under_contract",   label: "In Escrow" },
+  { key: "inspection",       label: "Inspection Complete" },
+  { key: "appraisal",        label: "Appraisal Complete" },
+  { key: "closed",           label: "Sale Closed" },
+];
+
+// ─── 9.5.2 Offer types ────────────────────────────────────────────────────────
+
+export interface OfferEntry {
+  id:                            string;
+  requestId:                     string;
+  offerAmountCents:              number;
+  contingencies:                 string[];
+  closeDate:                     string;
+  loggedAt:                      number;
+  deltaFromListingPriceCents:    number | null;
+  deltaFromHomeFaxEstimateCents: number | null;
+}
+
+export interface LogOfferInput {
+  offerAmountCents: number;
+  contingencies:    string[];
+  closeDate:        string;
+}
+
+// ─── 9.5.3 Transaction close types ───────────────────────────────────────────
+
+export interface TransactionClose {
+  requestId:           string;
+  finalSalePriceCents: number;
+  actualCloseDateMs:   number;
+  homeFaxBaselineCents: number;
+  actualPremiumCents:  number;
+  recordedAt:          number;
+}
+
+export interface LogCloseInput {
+  finalSalePriceCents: number;
+  actualCloseDateMs:   number;
+}
+
+// ─── 9.5.4 Agent performance types ───────────────────────────────────────────
+
+export interface AgentPerformanceRecord {
+  requestId:              string;
+  agentId:                string;
+  estimatedDOM:           number;
+  actualDOM:              number;
+  estimatedSalePrice:     number;
+  actualSalePrice:        number;
+  promisedCommBps:        number;
+  chargedCommBps:         number;
+  domAccuracyScore:       number;
+  priceAccuracyScore:     number;
+  commissionHonestyScore: number;
+  overallScore:           number;
+  recordedAt:             number;
+}
+
+export interface LogAgentPerformanceInput {
+  chargedCommBps: number;
+}
+
 export interface ListingBidRequest {
   id:               string;
   propertyId:       string;
@@ -145,6 +232,11 @@ export interface ListingBidRequest {
   invitedAgentIds:  string[];
   // 9.4.5
   contractFile?:    ContractFile;
+  // 9.5
+  milestones?:      Milestone[];
+  offers?:          OfferEntry[];
+  closedData?:      TransactionClose;
+  agentPerformance?: AgentPerformanceRecord;
 }
 
 export interface ListingProposal {
@@ -223,6 +315,40 @@ export function isDeadlinePassed(deadlineMs: number): boolean {
   return deadlineMs <= Date.now();
 }
 
+/** Initialize a fresh milestone checklist with all steps pending. */
+export function initMilestones(): Milestone[] {
+  return MILESTONE_STEPS.map(({ key, label }) => ({
+    key, label, completedAt: null, completedBy: null,
+  }));
+}
+
+/** Compute delta between an offer and listing/HomeFax price points. */
+export function computeOfferDeltas(
+  offerAmountCents: number,
+  desiredSalePrice: number | null,
+  homeFaxEstimateMidCents: number | null,
+): { deltaFromListingPriceCents: number | null; deltaFromHomeFaxEstimateCents: number | null } {
+  return {
+    deltaFromListingPriceCents:    desiredSalePrice       !== null ? offerAmountCents - desiredSalePrice       : null,
+    deltaFromHomeFaxEstimateCents: homeFaxEstimateMidCents !== null ? offerAmountCents - homeFaxEstimateMidCents : null,
+  };
+}
+
+/** Compute agent accuracy scores (all 0–100) post-close. */
+export function computeAgentPerformanceScore(
+  estimatedDOM: number, actualDOM: number,
+  estimatedSalePrice: number, actualSalePrice: number,
+  promisedCommBps: number, chargedCommBps: number,
+): { domAccuracyScore: number; priceAccuracyScore: number; commissionHonestyScore: number; overallScore: number } {
+  const clamp = (v: number) => Math.max(0, Math.min(100, v));
+  const domAccuracyScore       = clamp(100 - Math.abs(actualDOM - estimatedDOM) / estimatedDOM * 100);
+  const priceAccuracyScore     = clamp(100 - Math.abs(actualSalePrice - estimatedSalePrice) / estimatedSalePrice * 100);
+  const extraBps               = Math.max(0, chargedCommBps - promisedCommBps);
+  const commissionHonestyScore = clamp(100 - Math.floor(extraBps / 25) * 10);
+  const overallScore           = Math.round(domAccuracyScore * 0.35 + priceAccuracyScore * 0.40 + commissionHonestyScore * 0.25);
+  return { domAccuracyScore: Math.round(domAccuracyScore), priceAccuracyScore: Math.round(priceAccuracyScore), commissionHonestyScore, overallScore };
+}
+
 // ─── Canister type converters ─────────────────────────────────────────────────
 
 function fromRawRequest(raw: any): ListingBidRequest {
@@ -268,12 +394,14 @@ function fromRawProposal(raw: any): ListingProposal {
 
 function createListingService() {
   let _actor: any = null;
-  let requests:  ListingBidRequest[] = [];
-  let proposals: ListingProposal[]   = [];
-  let counters:  CounterProposal[]   = [];
+  let requests:     ListingBidRequest[]      = [];
+  let proposals:    ListingProposal[]        = [];
+  let counters:     CounterProposal[]        = [];
+  let perfRecords:  AgentPerformanceRecord[] = [];
   let _reqSeq     = 0;
   let _propSeq    = 0;
   let _counterSeq = 0;
+  let _offerSeq   = 0;
 
   async function getActor() {
     if (_actor) return _actor;
@@ -288,9 +416,11 @@ function createListingService() {
     requests    = [];
     proposals   = [];
     counters    = [];
+    perfRecords = [];
     _reqSeq     = 0;
     _propSeq    = 0;
     _counterSeq = 0;
+    _offerSeq   = 0;
   },
 
   // ── createBidRequest ────────────────────────────────────────────────────────
@@ -529,6 +659,116 @@ function createListingService() {
       return counters.filter((c) => myProposalIds.has(c.proposalId));
     }
     throw new Error("getMyCounters requires deployed canister");
+  },
+
+  // ── updateMilestone (9.5.1) ──────────────────────────────────────────────────
+  async updateMilestone(
+    requestId: string,
+    key: MilestoneKey,
+    completedBy: "homeowner" | "agent",
+  ): Promise<ListingBidRequest> {
+    if (!LISTING_CANISTER_ID) {
+      const req = requests.find((r) => r.id === requestId);
+      if (!req) throw new Error(`BidRequest ${requestId} not found`);
+      if (!req.milestones) req.milestones = initMilestones();
+      const m = req.milestones.find((ms) => ms.key === key);
+      if (m) { m.completedAt = Date.now(); m.completedBy = completedBy; }
+      return { ...req, milestones: [...(req.milestones ?? [])] };
+    }
+    throw new Error("updateMilestone requires deployed canister");
+  },
+
+  // ── logOffer (9.5.2) ─────────────────────────────────────────────────────────
+  async logOffer(requestId: string, input: LogOfferInput): Promise<OfferEntry> {
+    if (!LISTING_CANISTER_ID) {
+      const req = requests.find((r) => r.id === requestId);
+      if (!req) throw new Error(`BidRequest ${requestId} not found`);
+      const { deltaFromListingPriceCents, deltaFromHomeFaxEstimateCents } = computeOfferDeltas(
+        input.offerAmountCents,
+        req.desiredSalePrice,
+        null,
+      );
+      const entry: OfferEntry = {
+        id:                            `OFFER_${++_offerSeq}`,
+        requestId,
+        offerAmountCents:              input.offerAmountCents,
+        contingencies:                 [...input.contingencies],
+        closeDate:                     input.closeDate,
+        loggedAt:                      Date.now(),
+        deltaFromListingPriceCents,
+        deltaFromHomeFaxEstimateCents,
+      };
+      if (!req.offers) req.offers = [];
+      req.offers.push(entry);
+      return { ...entry };
+    }
+    throw new Error("logOffer requires deployed canister");
+  },
+
+  // ── logClose (9.5.3) ─────────────────────────────────────────────────────────
+  async logClose(requestId: string, input: LogCloseInput): Promise<TransactionClose> {
+    if (!LISTING_CANISTER_ID) {
+      const req = requests.find((r) => r.id === requestId);
+      if (!req) throw new Error(`BidRequest ${requestId} not found`);
+      const close: TransactionClose = {
+        requestId,
+        finalSalePriceCents: input.finalSalePriceCents,
+        actualCloseDateMs:   input.actualCloseDateMs,
+        homeFaxBaselineCents: 0,  // set from propertySnapshot.score in real impl
+        actualPremiumCents:  0,
+        recordedAt:          Date.now(),
+      };
+      req.closedData = close;
+      // Auto-complete the "closed" milestone
+      if (!req.milestones) req.milestones = initMilestones();
+      const m = req.milestones.find((ms) => ms.key === "closed");
+      if (m && !m.completedAt) { m.completedAt = input.actualCloseDateMs; m.completedBy = "homeowner"; }
+      return { ...close };
+    }
+    throw new Error("logClose requires deployed canister");
+  },
+
+  // ── logAgentPerformance (9.5.4) ───────────────────────────────────────────────
+  async logAgentPerformance(requestId: string, input: LogAgentPerformanceInput): Promise<AgentPerformanceRecord> {
+    if (!LISTING_CANISTER_ID) {
+      const req = requests.find((r) => r.id === requestId);
+      if (!req) throw new Error(`BidRequest ${requestId} not found`);
+      if (!req.closedData) throw new Error("Cannot log performance before close is recorded");
+      const accepted = proposals.find((p) => p.requestId === requestId && p.status === "Accepted");
+      if (!accepted) throw new Error("No accepted proposal found for this request");
+      const listedMs = req.milestones?.find((m) => m.key === "listed_on_mls")?.completedAt ?? req.createdAt;
+      const closedMs = req.milestones?.find((m) => m.key === "closed")?.completedAt ?? req.closedData.actualCloseDateMs;
+      const actualDOM = Math.max(1, Math.round((closedMs - listedMs) / 86_400_000));
+      const scores = computeAgentPerformanceScore(
+        accepted.estimatedDaysOnMarket, actualDOM,
+        accepted.estimatedSalePrice, req.closedData.finalSalePriceCents,
+        accepted.commissionBps, input.chargedCommBps,
+      );
+      const record: AgentPerformanceRecord = {
+        requestId,
+        agentId:          accepted.agentId,
+        estimatedDOM:     accepted.estimatedDaysOnMarket,
+        actualDOM,
+        estimatedSalePrice: accepted.estimatedSalePrice,
+        actualSalePrice:  req.closedData.finalSalePriceCents,
+        promisedCommBps:  accepted.commissionBps,
+        chargedCommBps:   input.chargedCommBps,
+        ...scores,
+        recordedAt: Date.now(),
+      };
+      req.agentPerformance = record;
+      perfRecords.push(record);
+      return { ...record };
+    }
+    throw new Error("logAgentPerformance requires deployed canister");
+  },
+
+  // ── getAgentPerformanceRecords (9.5.4) — for AgentPublicPage ─────────────────
+  async getAgentPerformanceRecords(agentId: string): Promise<AgentPerformanceRecord[]> {
+    if (!LISTING_CANISTER_ID) {
+      return perfRecords.filter((r) => r.agentId === agentId);
+    }
+    throw new Error("getAgentPerformanceRecords requires deployed canister");
   },
   };
 }

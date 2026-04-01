@@ -592,10 +592,10 @@ Once an agent is selected, HomeFax stays in the transaction rather than disappea
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 9.5.1 | Listing milestone timeline | ⬜ Missing | M | Checklist: listing agreement signed → listed on MLS → first showing → offer received → under contract → inspection → appraisal → close. Agent and homeowner both update milestones |
-| 9.5.2 | Offer log | ⬜ Missing | M | Homeowner logs received offers (amount, contingencies, close date); HomeFax shows delta from listing price and HomeFax estimated premium |
-| 9.5.3 | Final sale price logging | ⬜ Missing | S | After close, record final sale price; compute and display actual premium over HomeFax baseline; feeds into 6.1.2 model training data |
-| 9.5.4 | Agent performance score post-close | ⬜ Missing | M | Compare: estimated days on market vs. actual, estimated sale price vs. actual, commission promised vs. charged; becomes part of agent's public profile |
+| 9.5.1 | Listing milestone timeline | ✅ Done | M | Checklist: listing agreement signed → listed on MLS → first showing → offer received → under contract → inspection → appraisal → close. Agent and homeowner both update milestones |
+| 9.5.2 | Offer log | ✅ Done | M | Homeowner logs received offers (amount, contingencies, close date); HomeFax shows delta from listing price and HomeFax estimated premium |
+| 9.5.3 | Final sale price logging | ✅ Done | S | After close, record final sale price; compute and display actual premium over HomeFax baseline; feeds into 6.1.2 model training data |
+| 9.5.4 | Agent performance score post-close | ✅ Done | M | Compare: estimated days on market vs. actual, estimated sale price vs. actual, commission promised vs. charged; becomes part of agent's public profile |
 
 ---
 
@@ -713,7 +713,7 @@ Require modest new infrastructure; high product value.
 
 - 9.2.4–9.2.6 Bid controls, deadline enforcement, sealed proposals (9.3.6) — ✅ Done
 - 9.4.3–9.4.6 Score context, selection flow, contract upload, counter-proposal — ✅ Done
-- 9.5.1–9.5.4 Transaction tracking + agent performance scoring
+- 9.5.1–9.5.4 Transaction tracking + agent performance scoring — ✅ Done
 - 10.2.1–10.2.4 Pricing intelligence (requires comp data API)
 - 10.4.1–10.4.3 Showing management inbox + calendar
 - 10.6.1–10.6.2 Disclosure generator + completeness score

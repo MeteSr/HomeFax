@@ -1,9 +1,13 @@
 /**
- * ListingDetailPage — Epic 9.4
+ * ListingDetailPage — Epic 9.4 / 9.5
  * Homeowner views submitted proposals, compares side-by-side, and accepts one.
  * 9.4.3 — HomeFax score context per proposal
  * 9.4.5 — Post-selection contract upload
  * 9.4.6 — Counter-proposal flow
+ * 9.5.1 — Listing milestone timeline
+ * 9.5.2 — Offer log
+ * 9.5.3 — Final sale price logging
+ * 9.5.4 — Agent performance logging (homeowner side)
  */
 
 import React, { useState, useEffect } from "react";
@@ -16,9 +20,15 @@ import {
   computeNetProceeds,
   formatCommission,
   isDeadlinePassed,
+  initMilestones,
+  MILESTONE_STEPS,
   type ListingBidRequest,
   type ListingProposal,
   type CounterProposal,
+  type Milestone,
+  type OfferEntry,
+  type TransactionClose,
+  type AgentPerformanceRecord,
 } from "@/services/listing";
 import { premiumEstimate } from "@/services/scoreService";
 import toast from "react-hot-toast";
@@ -73,6 +83,20 @@ export default function ListingDetailPage() {
   const [counterNotes,   setCounterNotes]  = useState("");
   const [uploading,      setUploading]     = useState(false);
   const [uploadDone,     setUploadDone]    = useState(false);
+  // 9.5
+  const [milestones,     setMilestones]    = useState<Milestone[]>([]);
+  const [offers,         setOffers]        = useState<OfferEntry[]>([]);
+  const [closeData,      setCloseData]     = useState<TransactionClose | null>(null);
+  const [perfRecord,     setPerfRecord]    = useState<AgentPerformanceRecord | null>(null);
+  // 9.5.2 — offer form
+  const [offerAmount,    setOfferAmount]   = useState("");
+  const [offerDate,      setOfferDate]     = useState("");
+  const [offerConts,     setOfferConts]    = useState<string[]>([]);
+  // 9.5.3 — final sale form
+  const [finalPrice,     setFinalPrice]    = useState("");
+  const [finalDate,      setFinalDate]     = useState("");
+  // 9.5.4 — performance form
+  const [chargedBps,     setChargedBps]    = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -82,6 +106,15 @@ export default function ListingDetailPage() {
     ]).then(async ([req, props]) => {
       setRequest(req);
       setProposals(props);
+      // 9.5 — initialize transaction state from request
+      if (req) {
+        setMilestones(req.milestones ?? initMilestones());
+        setOffers(req.offers ?? []);
+        setCloseData(req.closedData ?? null);
+        setPerfRecord(req.agentPerformance ?? null);
+        const accepted = props.find((p) => p.status === "Accepted");
+        if (accepted) setChargedBps(String(accepted.commissionBps));
+      }
       // 9.4.6 — load counters for each proposal
       const map: Record<string, CounterProposal[]> = {};
       await Promise.all(props.map(async (p) => {
@@ -143,6 +176,68 @@ export default function ListingDetailPage() {
       toast.success("Counter offer sent to agent.");
     } catch (err: any) {
       toast.error(err?.message ?? "Failed to send counter");
+    }
+  }
+
+  // 9.5.1 — mark milestone complete
+  async function handleMarkMilestone(key: string) {
+    try {
+      const updated = await listingService.updateMilestone(id!, key as any, "homeowner");
+      setMilestones(updated.milestones ?? milestones);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to update milestone");
+    }
+  }
+
+  // 9.5.2 — log an offer
+  async function handleLogOffer(e: React.FormEvent) {
+    e.preventDefault();
+    const cents = Math.round(parseFloat(offerAmount) * 100);
+    if (!cents || cents <= 0) { toast.error("Enter a valid offer amount"); return; }
+    try {
+      const entry = await listingService.logOffer(id!, {
+        offerAmountCents: cents,
+        contingencies:    offerConts,
+        closeDate:        offerDate,
+      });
+      setOffers((prev) => [...prev, entry]);
+      setOfferAmount(""); setOfferDate(""); setOfferConts([]);
+      toast.success("Offer logged.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to log offer");
+    }
+  }
+
+  function toggleContingency(val: string) {
+    setOfferConts((prev) => prev.includes(val) ? prev.filter((v) => v !== val) : [...prev, val]);
+  }
+
+  // 9.5.3 — record final sale
+  async function handleLogClose(e: React.FormEvent) {
+    e.preventDefault();
+    const cents = Math.round(parseFloat(finalPrice) * 100);
+    if (!cents || cents <= 0) { toast.error("Enter a valid sale price"); return; }
+    const ms = finalDate ? new Date(finalDate).getTime() : Date.now();
+    try {
+      const close = await listingService.logClose(id!, { finalSalePriceCents: cents, actualCloseDateMs: ms });
+      setCloseData(close);
+      toast.success("Final sale price recorded.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to record sale");
+    }
+  }
+
+  // 9.5.4 — log agent performance
+  async function handleLogPerformance(e: React.FormEvent) {
+    e.preventDefault();
+    const bps = parseInt(chargedBps, 10);
+    if (!bps || bps <= 0) { toast.error("Enter a valid commission rate"); return; }
+    try {
+      const rec = await listingService.logAgentPerformance(id!, { chargedCommBps: bps });
+      setPerfRecord(rec);
+      toast.success("Agent performance recorded — thank you.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to log performance");
     }
   }
 
@@ -221,7 +316,7 @@ export default function ListingDetailPage() {
                   {/* 9.4.3 — premium potential */}
                   {premiumRange && (
                     <div>
-                      <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>HomeFax Premium Potential</div>
+                      <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Estimated Premium Potential</div>
                       <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.1rem", color: S.sage }}>
                         ${premiumRange.low.toLocaleString()} – ${premiumRange.high.toLocaleString()}
                       </div>
@@ -252,6 +347,227 @@ export default function ListingDetailPage() {
                     {uploading ? "Uploading…" : "Attach File"}
                   </Button>
                 )}
+              </div>
+            )}
+
+            {/* 9.5.1 — Transaction Timeline (Awarded requests) */}
+            {request.status === "Awarded" && (
+              <div
+                role="region"
+                aria-label="Transaction Timeline"
+                style={{ border: `1px solid ${S.rule}`, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}
+              >
+                <h2 style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.1rem", color: S.ink, margin: "0 0 1rem" }}>
+                  Transaction Timeline
+                </h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  {MILESTONE_STEPS.map((step) => {
+                    const ms = milestones.find((m) => m.key === step.key);
+                    const done = !!ms?.completedAt;
+                    return (
+                      <div key={step.key} style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.5rem 0", borderBottom: `1px solid ${S.rule}` }}>
+                        <div style={{ width: 16, height: 16, border: `2px solid ${done ? S.sage : S.rule}`, background: done ? S.sage : "transparent", flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontFamily: S.sans, fontSize: "0.875rem", color: done ? S.inkLight : S.ink }}>
+                            {step.label}
+                          </span>
+                          {done && ms?.completedAt && (
+                            <span style={{ fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight, marginLeft: "0.5rem" }}>
+                              {new Date(ms.completedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </span>
+                          )}
+                        </div>
+                        {!done && (
+                          <button
+                            onClick={() => handleMarkMilestone(step.key)}
+                            aria-label={`Mark ${step.label} complete`}
+                            style={{ background: "none", border: `1px solid ${S.rule}`, cursor: "pointer", fontFamily: S.mono, fontSize: "0.65rem", color: S.ink, padding: "0.25rem 0.6rem", letterSpacing: "0.04em", textTransform: "uppercase" }}
+                          >
+                            Mark Done
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 9.5.2 — Offer Log */}
+            {request.status === "Awarded" && (
+              <div style={{ border: `1px solid ${S.rule}`, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+                <h2 style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.1rem", color: S.ink, margin: "0 0 1rem" }}>
+                  Offers Received
+                </h2>
+                {/* Existing offers */}
+                {offers.length > 0 && (
+                  <div style={{ marginBottom: "1rem" }}>
+                    {offers.map((offer) => (
+                      <div key={offer.id} style={{ border: `1px solid ${S.rule}`, padding: "0.75rem 1rem", marginBottom: "0.5rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+                        <div>
+                          <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Offer Amount</div>
+                          <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1rem", color: S.ink }}>{formatPrice(offer.offerAmountCents)}</div>
+                        </div>
+                        {offer.deltaFromListingPriceCents !== null && (
+                          <div>
+                            <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>vs. List Price</div>
+                            <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1rem", color: offer.deltaFromListingPriceCents >= 0 ? "#188038" : "#c0392b" }}>
+                              {offer.deltaFromListingPriceCents >= 0 ? "+" : ""}{formatPrice(offer.deltaFromListingPriceCents)}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Close Date</div>
+                          <div style={{ fontFamily: S.sans, fontSize: "0.875rem", color: S.ink }}>{offer.closeDate}</div>
+                        </div>
+                        {offer.contingencies.length > 0 && (
+                          <div>
+                            <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Contingencies</div>
+                            <div style={{ fontFamily: S.sans, fontSize: "0.8rem", color: S.ink }}>{offer.contingencies.join(", ")}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Log offer form */}
+                <form aria-label="Log offer" onSubmit={handleLogOffer} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                    <div>
+                      <label htmlFor="offer-amount" style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>
+                        Offer Amount ($)
+                      </label>
+                      <input
+                        id="offer-amount"
+                        aria-label="Offer Amount"
+                        type="number"
+                        min="1"
+                        step="1000"
+                        placeholder="e.g. 505000"
+                        value={offerAmount}
+                        onChange={(e) => setOfferAmount(e.target.value)}
+                        style={{ width: "100%", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="offer-close-date" style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>
+                        Close Date
+                      </label>
+                      <input
+                        id="offer-close-date"
+                        aria-label="Close Date"
+                        type="date"
+                        value={offerDate}
+                        onChange={(e) => setOfferDate(e.target.value)}
+                        style={{ width: "100%", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontFamily: S.sans, fontSize: "0.875rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={offerConts.includes("financing")} onChange={() => toggleContingency("financing")} aria-label="Financing contingency" />
+                      Financing
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontFamily: S.sans, fontSize: "0.875rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={offerConts.includes("inspection")} onChange={() => toggleContingency("inspection")} aria-label="Inspection contingency" />
+                      Inspection
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontFamily: S.sans, fontSize: "0.875rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={offerConts.includes("sale_of_home")} onChange={() => toggleContingency("sale_of_home")} aria-label="Sale of home contingency" />
+                      Sale of Home
+                    </label>
+                  </div>
+                  <Button type="submit" style={{ alignSelf: "flex-start" }}>Log Offer</Button>
+                </form>
+              </div>
+            )}
+
+            {/* 9.5.3 — Final Sale Price */}
+            {request.status === "Awarded" && !closeData && (
+              <div style={{ border: `1px solid ${S.rule}`, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+                <h2 style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.1rem", color: S.ink, margin: "0 0 1rem" }}>
+                  Record Final Sale
+                </h2>
+                <form aria-label="Record final sale" onSubmit={handleLogClose} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                    <div>
+                      <label htmlFor="final-sale-price" style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>
+                        Final Sale Price ($)
+                      </label>
+                      <input
+                        id="final-sale-price"
+                        aria-label="Final Sale Price"
+                        type="number"
+                        min="1"
+                        step="1000"
+                        placeholder="e.g. 518000"
+                        value={finalPrice}
+                        onChange={(e) => setFinalPrice(e.target.value)}
+                        style={{ width: "100%", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="actual-close-date" style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>
+                        Actual Close Date
+                      </label>
+                      <input
+                        id="actual-close-date"
+                        aria-label="Actual Close Date"
+                        type="date"
+                        value={finalDate}
+                        onChange={(e) => setFinalDate(e.target.value)}
+                        style={{ width: "100%", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.mono, boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" style={{ alignSelf: "flex-start" }}>Save Close</Button>
+                </form>
+              </div>
+            )}
+
+            {/* 9.5.3 — Closed summary */}
+            {closeData && (
+              <div style={{ border: `1px solid ${S.rule}`, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+                <div style={{ fontFamily: S.mono, fontSize: "0.62rem", color: S.inkLight, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.75rem" }}>
+                  Transaction Closed
+                </div>
+                <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+                  <div>
+                    <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Final Sale Price</div>
+                    <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.25rem", color: S.ink }}>{formatPrice(closeData.finalSalePriceCents)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, textTransform: "uppercase", marginBottom: "0.2rem" }}>Actual HomeFax Premium</div>
+                    <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.25rem", color: S.sage }}>{formatPrice(closeData.actualPremiumCents)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 9.5.4 — Agent performance logging (after close, before rating submitted) */}
+            {closeData && !perfRecord && proposals.some((p) => p.status === "Accepted") && (
+              <div style={{ border: `1px solid ${S.rule}`, padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
+                <h2 style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.1rem", color: S.ink, margin: "0 0 0.5rem" }}>
+                  Rate This Transaction
+                </h2>
+                <form aria-label="Agent performance" onSubmit={handleLogPerformance} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  <div>
+                    <label htmlFor="charged-commission" style={{ display: "block", fontFamily: S.mono, fontSize: "0.65rem", color: S.inkLight, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>
+                      Bps Charged
+                    </label>
+                    <input
+                      id="charged-commission"
+                      aria-label="Commission Charged"
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={chargedBps}
+                      onChange={(e) => setChargedBps(e.target.value)}
+                      style={{ width: "12rem", padding: "0.5rem", border: `1px solid ${S.rule}`, fontFamily: S.mono }}
+                    />
+                  </div>
+                  <Button type="submit" style={{ alignSelf: "flex-start" }}>Submit Rating</Button>
+                </form>
               </div>
             )}
 
