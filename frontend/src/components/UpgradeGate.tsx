@@ -25,6 +25,8 @@ interface UpgradeGateProps {
   icon?: React.ReactNode;
   /** Override card width/layout when embedded in a specific context */
   style?: React.CSSProperties;
+  /** When provided, called instead of navigating to /pricing */
+  onUpgrade?: () => void;
 }
 
 export function UpgradeGate({
@@ -33,6 +35,7 @@ export function UpgradeGate({
   tier = "Pro",
   icon,
   style,
+  onUpgrade,
 }: UpgradeGateProps) {
   const navigate = useNavigate();
 
@@ -98,7 +101,7 @@ export function UpgradeGate({
 
       {/* CTA */}
       <button
-        onClick={() => navigate("/pricing")}
+        onClick={() => onUpgrade ? onUpgrade() : navigate("/pricing")}
         style={{
           display: "inline-flex",
           alignItems: "center",

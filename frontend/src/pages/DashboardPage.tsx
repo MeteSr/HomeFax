@@ -28,6 +28,7 @@ import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 import { NeighborhoodBenchmark } from "@/components/NeighborhoodBenchmark";
 import { ScoreActivityFeed } from "@/components/ScoreActivityFeed";
+import UpgradeModal from "@/components/UpgradeModal";
 
 const S = {
   ink:      COLORS.plum,
@@ -67,6 +68,7 @@ export default function DashboardPage() {
   const [showQuoteModal,   setShowQuoteModal]   = useState(false);
   const [userTier,         setUserTier]         = useState<PlanTier>("Free");
   const [systemAges,       setSystemAges]       = useState<SystemAges>({});
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     loadProperties().then((props) => {
@@ -595,7 +597,7 @@ export default function DashboardPage() {
             </div>
             <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>
               <button
-                onClick={() => navigate("/pricing")}
+                onClick={() => setShowUpgradeModal(true)}
                 style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.45rem 1rem", border: "none", background: S.sage, color: COLORS.white, cursor: "pointer", borderRadius: RADIUS.sm, fontWeight: 600 }}
               >
                 See Plans →
@@ -785,7 +787,7 @@ export default function DashboardPage() {
             {jobs.length >= 5 ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
                 <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>Job limit reached — upgrade to keep logging</span>
-                <button onClick={() => navigate("/pricing")} style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.25rem 0.625rem", border: "none", background: COLORS.plum, color: COLORS.white, cursor: "pointer", borderRadius: RADIUS.sm, whiteSpace: "nowrap" }}>Upgrade →</button>
+                <button onClick={() => setShowUpgradeModal(true)} style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.25rem 0.625rem", border: "none", background: COLORS.plum, color: COLORS.white, cursor: "pointer", borderRadius: RADIUS.sm, whiteSpace: "nowrap" }}>Upgrade →</button>
               </div>
             ) : (
               <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
@@ -828,6 +830,7 @@ export default function DashboardPage() {
                 feature="Score Breakdown"
                 description="See exactly which factors are dragging your score down — and what to fix first."
                 style={{ borderRadius: `0 0 ${RADIUS.card}px ${RADIUS.card}px`, borderTop: "none" }}
+                onUpgrade={() => setShowUpgradeModal(true)}
               />
             )}
             {showScoreBreakdown && userTier !== "Free" && (
@@ -1470,6 +1473,11 @@ export default function DashboardPage() {
         onClose={() => setShowQuoteModal(false)}
         onSuccess={(quoteId) => { setShowQuoteModal(false); navigate(`/quotes/${quoteId}`); }}
         properties={properties}
+      />
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
       />
 
     </Layout>
