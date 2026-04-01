@@ -641,9 +641,9 @@ Once an agent is selected, HomeFax stays in the transaction rather than disappea
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 10.3.1 | Public listing page per FSBO property | ⬜ Missing | L | Unauthenticated `/for-sale/:propertyId` page: photos, list price, property details, HomeFax score badge, verified record summary, contact form — clean, shareable URL |
-| 10.3.2 | HomeFax score badge as trust anchor | ⬜ Missing | S | On the public listing, the HomeFax score is front-and-center with a "Verified on ICP Blockchain" explainer; replaces the "trust us" gap that kills FSBO credibility |
-| 10.3.3 | Full HomeFax report link on listing | ⬜ Missing | S | A "View Full Maintenance History" button links to the shared HomeFax report (uses existing `report` canister share link); buyer sees everything the seller wants to disclose |
+| 10.3.1 | Public listing page per FSBO property | ✅ Done | L | Unauthenticated `/for-sale/:propertyId` page: photos, list price, property details, HomeFax score badge, verified record summary, contact form — clean, shareable URL |
+| 10.3.2 | HomeFax score badge as trust anchor | ✅ Done | S | On the public listing, the HomeFax score is front-and-center with a "Verified on ICP Blockchain" explainer; replaces the "trust us" gap that kills FSBO credibility |
+| 10.3.3 | Full HomeFax report link on listing | ✅ Done | S | A "View Full Maintenance History" button links to the shared HomeFax report (uses existing `report` canister share link); buyer sees everything the seller wants to disclose |
 | 10.3.4 | Showing request form on listing page | ⬜ Missing | M | Buyer submits name, contact, preferred time; notification sent to seller; all requests logged (no third-party scheduling tool required) |
 | 10.3.5 | Listing page SEO and shareability | ⬜ Missing | M | Open Graph tags, clean title/description with price + location; designed to be shared on Nextdoor, Facebook Marketplace, Craigslist without losing credibility |
 | 10.3.6 | Flat-fee MLS listing integration | ⬜ Missing | XL | Partner with a flat-fee MLS service (e.g. Houzeo, ListingSpark) to submit the FSBO listing to the MLS from within HomeFax; this single item 5×es FSBO buyer exposure |

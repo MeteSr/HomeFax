@@ -99,11 +99,30 @@ vi.mock("@/services/photo", () => ({
   },
 }));
 
+const mockActiveShareLink = {
+  token:      "tok-abc123",
+  snapshotId: "snap-1",
+  propertyId: "42",
+  createdBy:  "owner-principal",
+  expiresAt:  null,
+  visibility: "Public" as const,
+  viewCount:  0,
+  isActive:   true,
+  createdAt:  Date.now(),
+};
+
+vi.mock("@/services/report", () => ({
+  reportService: {
+    listShareLinks: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 import FsboListingPage from "@/pages/FsboListingPage";
 import { fsboService } from "@/services/fsbo";
 import { propertyService } from "@/services/property";
 import { jobService } from "@/services/job";
 import { photoService } from "@/services/photo";
+import { reportService } from "@/services/report";
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -126,6 +145,7 @@ describe("FsboListingPage (10.3.1)", () => {
     vi.mocked(propertyService.getProperty).mockResolvedValue(mockProperty);
     vi.mocked(jobService.getByProperty).mockResolvedValue(mockJobs);
     vi.mocked(photoService.getByProperty).mockResolvedValue(mockPhotos);
+    vi.mocked(reportService.listShareLinks).mockResolvedValue([]);
   });
 
   // ── Property details ────────────────────────────────────────────────────────
@@ -269,5 +289,129 @@ describe("FsboListingPage (10.3.1)", () => {
     vi.mocked(propertyService.getProperty).mockReturnValue(new Promise(() => {})); // never resolves
     renderPage();
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 10.3.2  HomeFax score badge as trust anchor
+// ──────────────────────────────────────────────────────────────────────────────
+describe("HomeFax score badge as trust anchor — (10.3.2)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fsboService.getRecord).mockReturnValue(mockFsboRecord);
+    vi.mocked(propertyService.getProperty).mockResolvedValue(mockProperty);
+    vi.mocked(jobService.getByProperty).mockResolvedValue(mockJobs);
+    vi.mocked(photoService.getByProperty).mockResolvedValue(mockPhotos);
+    vi.mocked(reportService.listShareLinks).mockResolvedValue([]);
+  });
+
+  it("score badge section carries an accessible landmark label", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: /homefax score/i })).toBeInTheDocument();
+    });
+  });
+
+  it("score badge shows a numeric score value", async () => {
+    renderPage();
+    await waitFor(() => {
+      // score region must contain a number
+      const region = screen.getByRole("region", { name: /homefax score/i });
+      expect(region.textContent).toMatch(/\d+/);
+    });
+  });
+
+  it("score badge shows 'Verified on ICP Blockchain' trust label", async () => {
+    renderPage();
+    await waitFor(() => {
+      const region = screen.getByRole("region", { name: /homefax score/i });
+      expect(region).toHaveTextContent(/verified on icp blockchain/i);
+    });
+  });
+
+  it("score badge shows an explainer describing what verification means to buyers", async () => {
+    renderPage();
+    await waitFor(() => {
+      // Explainer copy should reassure buyers that records are tamper-proof
+      expect(
+        screen.getByText(/tamper.?proof|immutable|cannot be altered|on.chain/i)
+      ).toBeInTheDocument();
+    });
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 10.3.3  Full HomeFax report link on listing
+// ──────────────────────────────────────────────────────────────────────────────
+describe("Full HomeFax report link — (10.3.3)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fsboService.getRecord).mockReturnValue({ ...mockFsboRecord, hasReport: true });
+    vi.mocked(propertyService.getProperty).mockResolvedValue(mockProperty);
+    vi.mocked(jobService.getByProperty).mockResolvedValue(mockJobs);
+    vi.mocked(photoService.getByProperty).mockResolvedValue(mockPhotos);
+    vi.mocked(reportService.listShareLinks).mockResolvedValue([mockActiveShareLink]);
+  });
+
+  it("shows 'View Full Maintenance History' link when report is available", async () => {
+    renderPage();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("link", { name: /view full maintenance history/i })
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("report link href points to the share token URL", async () => {
+    renderPage();
+    await waitFor(() => {
+      const link = screen.getByRole("link", { name: /view full maintenance history/i });
+      expect(link.getAttribute("href")).toMatch(/tok-abc123/);
+    });
+  });
+
+  it("report link opens in a new tab", async () => {
+    renderPage();
+    await waitFor(() => {
+      const link = screen.getByRole("link", { name: /view full maintenance history/i });
+      expect(link).toHaveAttribute("target", "_blank");
+    });
+  });
+
+  it("does NOT show the report link when hasReport is false", async () => {
+    vi.mocked(fsboService.getRecord).mockReturnValue({ ...mockFsboRecord, hasReport: false });
+    renderPage();
+    await waitFor(() => screen.getByText(/485,000/));
+    expect(
+      screen.queryByRole("link", { name: /view full maintenance history/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("does NOT show the report link when no active share links exist", async () => {
+    vi.mocked(reportService.listShareLinks).mockResolvedValue([]);
+    renderPage();
+    await waitFor(() => screen.getByText(/485,000/));
+    expect(
+      screen.queryByRole("link", { name: /view full maintenance history/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("does NOT show the report link when the share link is inactive", async () => {
+    vi.mocked(reportService.listShareLinks).mockResolvedValue([
+      { ...mockActiveShareLink, isActive: false },
+    ]);
+    renderPage();
+    await waitFor(() => screen.getByText(/485,000/));
+    expect(
+      screen.queryByRole("link", { name: /view full maintenance history/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("fetches share links using the property's ID", async () => {
+    renderPage("42");
+    await waitFor(() =>
+      screen.getByRole("link", { name: /view full maintenance history/i })
+    );
+    expect(vi.mocked(reportService.listShareLinks)).toHaveBeenCalledWith("42");
   });
 });

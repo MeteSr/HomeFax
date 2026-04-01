@@ -13,6 +13,7 @@ import { propertyService, type Property } from "@/services/property";
 import { jobService, type Job } from "@/services/job";
 import { photoService, type Photo } from "@/services/photo";
 import { fsboService, type FsboRecord } from "@/services/fsbo";
+import { reportService, type ShareLink } from "@/services/report";
 import { computeScore } from "@/services/scoreService";
 import { COLORS, FONTS } from "@/theme";
 
@@ -147,11 +148,12 @@ function ShowingRequestForm() {
 export default function FsboListingPage() {
   const { propertyId } = useParams<{ propertyId: string }>();
 
-  const [loading,  setLoading]  = useState(true);
-  const [property, setProperty] = useState<Property | null>(null);
-  const [jobs,     setJobs]     = useState<Job[]>([]);
-  const [photos,   setPhotos]   = useState<Photo[]>([]);
-  const [fsbo,     setFsbo]     = useState<FsboRecord | null | undefined>(undefined); // undefined = not yet checked
+  const [loading,    setLoading]    = useState(true);
+  const [property,   setProperty]   = useState<Property | null>(null);
+  const [jobs,       setJobs]       = useState<Job[]>([]);
+  const [photos,     setPhotos]     = useState<Photo[]>([]);
+  const [fsbo,       setFsbo]       = useState<FsboRecord | null | undefined>(undefined);
+  const [reportLink, setReportLink] = useState<ShareLink | null>(null);
 
   useEffect(() => {
     if (!propertyId) { setLoading(false); return; }
@@ -159,14 +161,24 @@ export default function FsboListingPage() {
     const record = fsboService.getRecord(propertyId);
     setFsbo(record);
 
-    Promise.all([
+    const fetches: Promise<any>[] = [
       propertyService.getProperty(BigInt(propertyId)),
       jobService.getByProperty(propertyId),
       photoService.getByProperty(propertyId),
-    ]).then(([prop, propJobs, propPhotos]) => {
+    ];
+
+    if (record?.hasReport) {
+      fetches.push(reportService.listShareLinks(propertyId));
+    }
+
+    Promise.all(fetches).then(([prop, propJobs, propPhotos, shareLinks]) => {
       setProperty(prop);
       setJobs(propJobs);
       setPhotos(propPhotos);
+      if (shareLinks) {
+        const active = (shareLinks as ShareLink[]).find((l) => l.isActive) ?? null;
+        setReportLink(active);
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [propertyId]);
@@ -238,20 +250,28 @@ export default function FsboListingPage() {
       </div>
 
       {/* ── HomeFax score badge ─────────────────────────────────────────────── */}
-      <div style={{ border: `1.5px solid ${S.sage}`, padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem", background: COLORS.sageLight }}>
-        <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "2.5rem", color: S.ink, lineHeight: 1 }}>
-          {score}
-        </div>
-        <div>
-          <div style={{ fontFamily: S.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.15rem" }}>
-            HomeFax Score
+      <section
+        aria-label="HomeFax Score"
+        style={{ border: `1.5px solid ${S.sage}`, padding: "1rem 1.25rem", marginBottom: "1.5rem", background: COLORS.sageLight }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.5rem" }}>
+          <div style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "2.5rem", color: S.ink, lineHeight: 1 }}>
+            {score}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontFamily: S.mono, fontSize: "0.65rem", color: S.sage }}>
-            <ShieldCheck size={13} />
-            Verified on ICP Blockchain
+          <div>
+            <div style={{ fontFamily: S.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: S.inkLight, marginBottom: "0.15rem" }}>
+              HomeFax Score
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontFamily: S.mono, fontSize: "0.65rem", color: S.sage }}>
+              <ShieldCheck size={13} />
+              Verified on ICP Blockchain
+            </div>
           </div>
         </div>
-      </div>
+        <p style={{ fontFamily: S.sans, fontSize: "0.78rem", color: S.inkLight, margin: 0 }}>
+          Maintenance data is stored on-chain and immutable — records cannot be altered or deleted after submission.
+        </p>
+      </section>
 
       {/* ── Verified jobs summary ────────────────────────────────────────────── */}
       <div style={{ marginBottom: "1.5rem" }}>
@@ -271,6 +291,20 @@ export default function FsboListingPage() {
           </ul>
         )}
       </div>
+
+      {/* ── Full report link (10.3.3) ───────────────────────────────────────── */}
+      {reportLink && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <a
+            href={`/report/${reportLink.token}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontFamily: S.sans, fontWeight: 600, fontSize: "0.875rem", color: S.sage, textDecoration: "underline" }}
+          >
+            View Full Maintenance History
+          </a>
+        </div>
+      )}
 
       {/* ── Showing request ─────────────────────────────────────────────────── */}
       <div style={{ border: `1px solid ${S.rule}`, padding: "1.5rem" }}>
