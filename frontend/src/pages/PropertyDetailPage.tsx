@@ -29,6 +29,7 @@ import { MilestoneStack } from "@/components/MilestoneStack";
 import { ReEngagementStack } from "@/components/ReEngagementStack";
 import { MarketIntelPanel } from "@/components/MarketIntelPanel";
 import { RecurringServicesPanel } from "@/components/RecurringServicesPanel";
+import FsboPanel from "@/components/FsboPanel";
 import { usePropertyStore } from "@/store/propertyStore";
 import { useAuthStore } from "@/store/authStore";
 import toast from "react-hot-toast";
@@ -548,6 +549,18 @@ export default function PropertyDetailPage() {
               userTier={userTier}
               onAddService={() => navigate("/recurring/new")}
               onViewService={(svcId) => navigate(`/recurring/${svcId}`)}
+            />
+          </div>
+        )}
+
+        {/* 10.1 — FSBO Panel */}
+        {!loading && property && (
+          <div style={{ marginBottom: "2rem" }}>
+            <FsboPanel
+              propertyId={String(property.id)}
+              score={homefaxScore}
+              verifiedJobCount={verifiedCount}
+              hasReport={false}
             />
           </div>
         )}

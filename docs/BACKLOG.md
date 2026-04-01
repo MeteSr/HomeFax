@@ -619,10 +619,10 @@ Once an agent is selected, HomeFax stays in the transaction rather than disappea
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 10.1.1 | FSBO flag on property record | ⬜ Missing | S | `isFsbo: Bool` + `fsboListPrice: ?Nat` (cents) on `property` canister; homeowner can toggle without impacting normal HomeFax functionality |
-| 10.1.2 | FSBO mode activation flow | ⬜ Missing | M | In `PropertyDetailPage`, "Sell This Home Yourself" CTA leads to a checklist-style activation flow: set price → review HomeFax report → generate public listing page → done |
-| 10.1.3 | FSBO savings calculator | ⬜ Missing | S | Show estimated agent commission savings in real-time as homeowner sets their list price (e.g. "At $485K, you save ~$14,550 vs. a 3% buyer's agent commission") |
-| 10.1.4 | Readiness score for FSBO | ⬜ Missing | M | Based on HomeFax score, verified record completeness, and whether a public report exists — rate FSBO readiness (Not Ready / Ready / Optimally Ready); show what's missing |
+| 10.1.1 | FSBO flag on property record | ✅ Done | S | `fsboService` maintains FSBO state (isFsbo, listPriceCents, step, hasReport) in `services/fsbo.ts`; `setFsboMode` / `advanceStep` / `deactivate` |
+| 10.1.2 | FSBO mode activation flow | ✅ Done | M | `FsboPanel` component in `PropertyDetailPage`: 3-step checklist (set price → review report → go live → done); wired into PropertyDetailPage below score panel |
+| 10.1.3 | FSBO savings calculator | ✅ Done | S | `computeAgentCommissionSavings` (3% of list price); real-time display in FsboPanel as homeowner types list price |
+| 10.1.4 | Readiness score for FSBO | ✅ Done | M | `computeFsboReadiness(score, verifiedJobCount, hasReport)` → NotReady / Ready / OptimallyReady; missing-items list shown in panel |
 
 ---
 
@@ -704,7 +704,7 @@ Buildable without new canisters; leverages existing `quote`, `auth`, `report`, a
 - 9.2.1–9.2.3 Listing bid request + score auto-attach (extend `quote` canister pattern)
 - 9.3.1–9.3.3 Proposal type + submission UI + commission input
 - 9.4.1–9.4.2 Proposal comparison + net proceeds calculator
-- 10.1.1–10.1.3 FSBO flag, activation flow, savings calculator
+- 10.1.1–10.1.4 FSBO flag, activation flow, savings calculator, readiness score — ✅ Done
 - 10.3.1–10.3.3 Public listing page + HomeFax badge + report link
 - 10.5.1–10.5.3 Offer intake + comparison + net proceeds
 
