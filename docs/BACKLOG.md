@@ -22,12 +22,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 1.2.1 | Multi-file upload UI | ✅ Done | S | `DocumentsTab` handles single-file uploads; needs batch mode |
 | 1.2.2 | Claude-powered document classification | ⬜ Missing | L | POST files to voice agent server; Claude Vision classifies type (receipt/inspection/permit) |
-| 1.2.3 | Auto-populate job records from parsed docs | ✅ Done | XL | `docIngestion.ts`: `ParsedDocExtraction` → `JobDraft` (pending_review); duplicate detection vs job history + existing drafts; `updateDraft` / `confirmDraft` (calls `jobService.create`) / `discardDraft` |
-| 1.2.4 | Onboarding wizard with bulk upload step | ✅ Done | M | Add step to `OnboardingPage` after property registration |
-| 1.2.5 | Duplicate detection across ingested docs | ✅ Done | M | SHA-256 dedup already exists in `photo` canister; apply at ingestion time |
-| 1.2.6 | Progress UI for batch processing | ✅ Done | S | Show per-file status (parsing / done / failed) during ingestion |
 
 ### 1.3 Utility Intelligence Layer
 **Vision:** Connect to utility accounts and flag anomalies (water spike → possible leak, HVAC runtime increase → refrigerant loss).
@@ -73,10 +68,8 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 3.3.1 | Self-service data export | ✅ Done | M | Export all property data (jobs, photos, reports) as a ZIP / JSON from the canister |
 | 3.3.2 | Public read query on all record canisters | ⬜ Missing | M | Unauthenticated queries for property/job/photo data given owner principal |
-| 3.3.3 | Open-source canister interfaces | ✅ Done | S | Publish Candid IDL specs so third-party UIs can read HomeFax canister data |
-| 3.3.4 | "Your data, your keys" marketing page | ✅ Done | S | Landing page section explaining ICP data sovereignty |
+| 3.3.4 | "Your data, your keys" marketing page | ⬜ Missing | S | Landing page section explaining ICP data sovereignty |
 
 ### 3.4 ICP-Native Home Title Tokens
 **Vision:** Partner with title companies to tokenize property deeds on ICP.
@@ -96,8 +89,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 4.1.1 | Visibility levels on report shares | ✅ Exists | — | `report` canister has `Full / Summary / ScoreOnly` visibility + revocation |
-| 4.1.2 | Field-level disclosure toggles | ✅ Done | M | UI in `ReportPage` to choose which fields are visible per share link |
 | 4.1.3 | vetKeys permit attestation | ⬜ Missing | M | Canister derives per-buyer key via `vetkd_derive_key`, issues IBE-encrypted signed "all permits closed" claim; buyer decrypts attestation with transport key, never sees underlying job data |
 | 4.1.4 | vetKeys score threshold attestation | ⬜ Missing | M | Canister computes score, issues IBE-encrypted signed "score ≥ N" claim to requester's transport key without exposing individual job records |
 
@@ -106,8 +97,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 4.2.1 | HomeFax score certification endpoint | ✅ Done | M | Canister returns a signed score certificate with no personal data |
-| 4.2.2 | Lender-facing score verification page | ✅ Done | M | Unauthenticated URL: lender enters certification code, sees score + grade only |
 | 4.2.3 | vetKeys score certificate | ⬜ Missing | L | Canister issues IBE-encrypted signed score attestation to lender's transport key; lender decrypts and reads score, no raw job records exposed |
 
 ### 4.3 Anonymous Neighborhood Benchmarking
@@ -115,9 +104,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 4.3.1 | Zip code aggregate query | ✅ Done | L | `neighborhood.ts` service: deterministic mock stats, `getPercentileRank()` pure helper, factory closure with cache. 24 tests. |
-| 4.3.2 | Neighborhood benchmarking UI | ✅ Done | M | `NeighborhoodBenchmark.tsx` component on dashboard — percentile bar, rank label, "Better than X% of N homes", trend, "View area →" link. |
-| 4.3.3 | Neighborhood Health Index public page | ✅ Done | L | `NeighborhoodHealthPage.tsx` at `/neighborhood/:zipCode` — public, no auth. Avg/median scores, distribution chart, trend, top systems. |
 | 4.3.4 | vetKeys aggregate privacy | ⬜ Missing | L | Individual scores encrypted on-chain under per-homeowner derived keys; canister aggregates internally and publishes only zip-level statistics — no individual record exposed |
 
 ### 4.4 Buyer Verification Without Disclosure
@@ -150,7 +136,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | 5.3.1 | Local real estate data ingestion | ⬜ Missing | L | Integrate with Zillow / ATTOM / MLS API for inventory and days-on-market data |
 | 5.3.2 | Score-to-premium model | ⬜ Missing | L | Regression model: HomeFax score × zip × season → estimated price premium |
 | 5.3.3 | Market timing alert | ⬜ Missing | M | Push notification / dashboard banner: "Now is a good time to list" |
-| 5.3.4 | Score-to-value calculator UI | ✅ Done | M | Show "Your score of 91 in 78704 is associated with $18–24K buyer premium" on Dashboard |
 
 ### 5.4 Autonomous Permit Research
 **Vision:** When a contractor proposes a renovation, AI pre-checks permit requirements and drafts the application.
@@ -159,8 +144,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 |---|------|--------|------|-------|
 | 5.4.1 | Municipal permit API integration | ⬜ Missing | XL | Per-city permit data; no universal API exists — requires city-by-city or OpenPermit integration |
 | 5.4.2 | Permit requirement lookup tool | ⬜ Missing | L | Agent tool: given service type + zip, returns permit required Y/N + estimated cost |
-| 5.4.3 | Permit status tracking in job record | ✅ Done | M | Add `permitRequired: Bool`, `permitNumber: ?Text`, `permitStatus` to Job entity |
-| 5.4.4 | Permit alert in job creation flow | ✅ Done | M | During `JobCreatePage`, auto-warn if selected service type typically requires permit |
 | 5.4.5 | Permit application draft generation | ⬜ Missing | L | Agent drafts permit application text from job details; user downloads/submits |
 
 ---
@@ -172,8 +155,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 6.2.1 | HomeFax badge image generation | ✅ Done | M | SVG/PNG badge with score + grade; generated from canister data |
-| 6.2.2 | Embeddable badge widget | ✅ Done | M | `<iframe>` or JS snippet for listing agents to embed on property pages |
 | 6.2.3 | Zillow / Realtor.com API partnership | ⬜ Missing | XL | Requires partner API access; long-term business development item |
 
 ### 6.3 Buyer Q&A via vetKeys
@@ -190,8 +171,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 6.5.1 | Certification threshold logic | ✅ Done | M | Canister query: `getCertificationData(propertyId)` → verifiedJobCount, verifiedKeySystems, meetsStructural (≥3 verified + ≥2 key systems) |
-| 6.5.2 | Certified badge in HomeFax Report | ✅ Done | S | Visual badge on report + certification date |
 | 6.5.3 | Insurance / buyer agent API | ⬜ Missing | XL | Partner program for insurers/agents to programmatically verify certification; legal framework needed |
 
 ---
@@ -203,8 +182,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 7.1.1 | Data sovereignty explainer on landing page | ✅ Done | S | Section explaining ICP data ownership model |
-| 7.1.2 | Self-service canister data export | ✅ Done | M | (See 3.3.1) |
 | 7.1.3 | "Verified on ICP" explorer links | ⬜ Missing | S | Link each record to ic.rocks or dashboard.internetcomputer.org for independent verification |
 
 ### 7.2 Builder / Developer Onboarding
@@ -233,8 +210,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 7.4.1 | Zip-level score aggregation | ✅ Done | L | (See 4.3.1) |
-| 7.4.2 | Neighborhood Health Index public page | ✅ Done | L | (See 4.3.3) |
 | 7.4.3 | HOA portal | ⬜ Missing | XL | HOA admin can see aggregate scores for their community; cannot see individual homeowner data |
 | 7.4.4 | Investor / city planner data product | ⬜ Missing | XL | Paid API for block-level risk analysis; city planning / insurance underwriting use case |
 
@@ -252,8 +227,6 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 | 8.1.1 | Home Pulse digest generation (Claude) | ⬜ Missing | L | Claude agent generates digest from: property location, build year, system ages, local climate/season, recent job history |
 | 8.1.2 | Climate zone data integration | ⬜ Missing | M | Map zip code → NOAA climate zone; feed into digest and maintenance forecasts (see 1.1.5) |
 | 8.1.3 | Weekly digest email delivery | ⬜ Missing | M | Email template + send pipeline (Resend / SendGrid); one digest per active property per user |
-| 8.1.4 | In-app Pulse notification | ✅ Exists | — | Proactive alert chips in `VoiceAgent` component surface warranty/signature/quote alerts on every page load |
-| 8.1.5 | Pulse opt-out / frequency controls | ✅ Exists | — | "Weekly Home Pulse" toggle in Settings Notifications tab; persisted to localStorage; `DashboardPage` checks `homefax_pulse_enabled` before showing pulse tip |
 | 8.1.6 | Pulse content personalization over time | ⬜ Missing | M | Track which Pulse items the user acted on; Claude weights future digests toward high-signal topics |
 
 ### 8.4 Insurance Defense Mode — Florida-Specific Retention Hook
@@ -261,11 +234,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 8.4.1 | Insurance Defense export format | ✅ Exists | — | `InsuranceDefensePage.tsx` — print-ready report filtered to insurance-relevant jobs (Roofing, HVAC, Electrical, Plumbing, Foundation) with ICP verification status, blockchain disclaimer, permit numbers |
-| 8.4.2 | "Insurance Defense Mode" UI | ✅ Exists | — | `/insurance-defense` route; "Insurance Defense" button in Dashboard Quick Actions; "Print / Export PDF" → `window.print()` |
-| 8.4.3 | Key insurance-relevant fields on job records | ✅ Exists | — | `INSURANCE_SERVICE_TYPES` set + `isInsuranceRelevant()` in `job.ts`; badge shown in `JobCreatePage` when service type is insurance-relevant (Roofing, HVAC, Electrical, Plumbing, Foundation) |
 | 8.4.4 | Insurer-specific export templates | ⬜ Missing | L | Different Florida insurers have different documentation formats; template library for major carriers (Citizens, Universal, Heritage) |
-| 8.4.5 | Insurance success story prompt | ✅ Done | S | After export, prompt: "Did this help with your insurer? Tell us what you saved." — feeds testimonials + in-app social proof |
 | 8.4.6 | Premium discount estimate | ⬜ Missing | M | Based on record completeness and score, estimate potential insurance premium reduction (see 7.3.2) |
 
 ### 8.5 Annual Resale-Ready Milestone
@@ -273,22 +242,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 8.5.1 | Annual milestone trigger | ✅ Exists | — | `showMilestone` in DashboardPage — fires when `accountAgeMs >= 11 months` + at least one job logged; dismissible banner |
-| 8.5.2 | "Resale Ready" milestone screen | ✅ Exists | — | `ResaleReadyPage.tsx` at `/resale-ready` — score arc, stats grid, premium estimate, HomeFax Certified badge, share link generation, insurance defense link, "what a buyer sees" preview |
 | 8.5.3 | Year-in-review email | ⬜ Missing | M | Email summarizing the year: jobs logged, score change, warranty reminders set, estimated value added |
-| 8.5.4 | Milestone share card | ✅ Done | S | Shareable image: "My home has a HomeFax score of 81 — 43 verified records over 12 months." Organic social distribution |
-| 8.5.5 | Advocate prompt at milestone | ✅ Done | S | After milestone screen, prompt referral: "Know a homeowner who should have this?" with referral link |
-
----
-
-## 12. Test Coverage — Gaps & Failing Areas
-
-**Context:** Overall coverage is ~49% (12/21 frontend services, 12/30 pages e2e, 8/14 backend canisters). The gaps below are ordered by risk — scoring logic and canister algorithms with no tests are the highest priority.
-
----
-
-
-| 12.2.7 | `maintenance.test.ts` — missing climate/material variants | ✅ Done | M | Add tests for climate-adjusted lifespan (once 1.1.5 lands) and all 8 system types at boundary ages (exactly at threshold years) |
 
 ---
 
@@ -366,58 +320,5 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 | 13.6.2 | k6 load test suite for Express proxy | ⬜ Missing | M | k6 scripts targeting `POST /api/agent` and `POST /api/chat` on the voice agent server (port 3001). Scenarios: 1 VU ramp to 50, sustained 50 VU for 5 minutes, spike to 200 VU. Measures Anthropic API latency contribution vs. canister latency |
 | 13.6.3 | Cycles burn rate dashboard | ⬜ Missing | M | Surface `monitoring` canister metrics in `AdminDashboardPage`: cycles remaining per canister, burn rate (cycles/day), estimated runway (days until top-up needed). Alert threshold at 30-day runway |
 | 13.6.4 | Performance regression gate in CI | ⬜ Missing | L | After baseline is established (13.1.1–13.1.2): add a CI step that runs the baseline script on every PR and fails if any call regresses by >25% in cycles cost. Requires a lightweight local replica in CI |
-
----
-
----
-
-## 14. Security — Audit Findings & Hardening
-
-**Audit scope:** ~3,500 lines of Motoko across 14 canisters + ~2,000 lines of TypeScript/React + Express voice agent proxy. Audit completed 2026-03-27. Issues are ordered by severity.
-
----
-
-### 14.4 Low / Hardening
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 14.4.1 | Warranty expiry timestamp overflow | ✅ Done | S | **LOW.** `useVoiceAgent.ts` computes warranty expiry as `Date.getTime() + warrantyMonths * MS_PER_MONTH`. Extreme values (year 2100 start date + 100-year warranty) can produce a number beyond JS `Number.MAX_SAFE_INTEGER`. Fix: clamp to a reasonable max date (e.g., year 2100) before comparison. |
-| 14.4.2 | Secrets audit — confirm no keys in codebase | ✅ Done | S | Add `git-secrets` or `gitleaks` pre-commit hook to scan for API keys, private keys, and secrets patterns. Confirm `.env` is in `.gitignore` and `.env.example` contains only placeholders. Run a one-time `gitleaks detect` scan on full git history. |
-| 14.4.3 | Stable memory schema migration safety | ✅ Done | M | The `report` canister's addition of `recurringServices` to `ReportSnapshot` is a breaking stable variable change. Old snapshots deserialized after upgrade will have an empty field (safe in this case due to Motoko's default handling), but there is no documented upgrade checklist or rollback plan. Fix: document a canister upgrade runbook (stop → redeploy → verify → rollback procedure) and add a schema version field to `ReportSnapshot`. |
-| 14.4.4 | Canister `pause()` has no timeout or auto-recovery | ✅ Done | S | A paused canister stays paused indefinitely — if an admin principal is lost or compromised, the canister cannot be unpaused. Fix: add an optional `pauseDurationSeconds` parameter; auto-unpause after the duration. Alternatively, require 2-of-N admin approval to pause in production. |
-| 14.4.5 | Verify `fetchRootKey` is never called in production | ✅ Done | S | `actor.ts` correctly gates `shouldFetchRootKey: IS_LOCAL`. Add a CI lint rule or build-time assertion that fails if `fetchRootKey: true` appears in any production code path. This is a defense-in-depth check — a future developer could accidentally enable it. |
-| 14.4.6 | Anthropic API key not exposed to frontend — confirm in build | ✅ Done | S | The voice agent proxy correctly holds `ANTHROPIC_API_KEY` server-side and never sends it to the browser. Confirm this is enforced in the Vite config — no `VITE_ANTHROPIC_*` prefixed env var should exist, as Vite automatically inlines `VITE_*` vars into the bundle. Add a build step that greps `dist/` for the key pattern. |
-| 14.4.7 | Migrate `agents/iot-gateway` from deprecated `@dfinity/*` to `@icp-sdk/core` | ✅ Done | M | **LOW.** `@dfinity/{agent,candid,identity,principal}` 1.x are deprecated in favour of `@icp-sdk/core` (migration guide: https://js.icp.build/core/latest/upgrading/v5). Current installs are on 1.4.0 (patched, no CVEs). Migrate before the gateway is built out — the API surface is small (`HttpAgent`, `Actor`, `Ed25519KeyIdentity`, `IDL`) so the change should be mechanical. Do this before the IoT gateway (1.3.6) is productionised. |
-
----
-
-## 15. Free Tier Tightening — Conversion Urgency
-
-**Problem:** The free tier currently gives away the full value proposition — unlimited job logging, permanent shareable reports, full score breakdown, market intelligence, and warranty wallet. There is no natural forcing function to upgrade. A homeowner can prepare their home for sale entirely on the free tier.
-
-**Strategy:** Free users get enough to feel the value and get hooked, but hit professional-grade walls at the exact moment they need to use it seriously — when preparing to list or sell.
-
-**The upgrade moment:** *"I'm ready to list — let me share my report"* → 7-day expiry warning → upgrade to Pro for a permanent, unbranded link.
-
-
----
-
-### 15.3 Report Branding (Free Plan Watermark)
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 15.3.1 | Add `planTier` field to `ReportSnapshot` in `report` canister | ✅ Done | S | Add `planTier: Text` to the `ReportSnapshot` record type (use `Text` rather than importing the `Tier` variant from the payment canister to avoid inter-canister type coupling; valid values: `"Free"`, `"Pro"`, `"Premium"`, `"ContractorPro"`). In `generateReport()`, call `paymentCanister.getSubscription(msg.caller)`, read the tier, and store it in the snapshot. Requires `paymentCanisterId` stable var + `setPaymentCanisterId()` admin function (same pattern as 15.1.1). Update the IDL in `frontend/src/services/report.ts` to add `planTier: IDL.Text` to the `ReportSnapshot` record, and add `planTier: string` to the TypeScript interface. Old snapshots (before this field exists) will deserialize with an empty string — treat `""` as `"Free"` in the frontend. |
-| 15.3.2 | Render "Free Plan" banner on `ReportPage` for free-tier reports | ✅ Done | S | When `snapshot.planTier === "Free"`, show a banner at the top of the public report: "Generated with HomeFax Free — upgrade to remove this banner and unlock permanent sharing." Buyers see this; it signals to them that the seller hasn't committed to the platform. |
-| 15.3.3 | Remove banner from Pro+ reports | ✅ Done | S | Pro and Premium reports render with no banner, clean header, and a "Verified by HomeFax" trust badge instead. This makes the Pro report visually superior and the difference obvious. |
-
----
-
-### 15.4 Score Breakdown Gating
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 15.4.1 | Show score number on free tier, lock breakdown | ✅ Done | M | The score breakdown appears in two places: (1) `DashboardPage` — the per-property score section, and (2) `PropertyDetailPage` — the Score tab. Apply the gate in both. Free users see the large score number and grade (e.g., "74 · C+") unchanged. The four scoring pillars rendered below it (`scoreService.computeScore()` returns `verifiedJobPts`, `valuePts`, `verificationPts`, `diversityPts`) are replaced with a single `<UpgradeGate>` card (see 15.7.1): icon 🔍, title "Score Breakdown", description "See exactly what's dragging your score down — upgrade to Pro." The gate check is: `if (tier === "Free") show gate else show pillars`. Read tier from `paymentService.getSubscription()` called once in the page's `useEffect`, stored in local state. |
-| 15.4.2 | Lock improvement recommendations on free tier | ✅ Done | S | The "How to improve your score" action list (currently shown on Dashboard and PropertyDetailPage) is Pro-only. Free users see: "3 actions available — upgrade to see them." |
-| 15.4.3 | Show full breakdown in score cert for Pro+ | ✅ Done | S | `ScoreCertPage` shows full breakdown for Pro+. Free users who earn a cert (score ≥88) still get the cert number, but the detailed sub-scores are blurred with an upgrade prompt. |
 
 ---
