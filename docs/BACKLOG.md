@@ -359,8 +359,8 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 10.7.1 | "I changed my mind — find me an agent" flow | ⬜ Missing | S | One-click from FSBO dashboard to open a listing bid request (9.2); FSBO data (price history, showing count, offer history) transferred to the bid request as context for agents |
-| 10.7.2 | FSBO effort summary for agent proposals | ⬜ Missing | S | Agents bidding on a property that was previously FSBO see the seller's showing count, offer count, and days on market; this data strengthens the agent's proposal and HomeFax's positioning as the source of record |
+| 10.7.1 | "I changed my mind — find me an agent" flow | ✅ Done | S | One-click from FSBO dashboard to open a listing bid request (9.2); FSBO data (price history, showing count, offer history) transferred to the bid request as context for agents |
+| 10.7.2 | FSBO effort summary for agent proposals | ✅ Done | S | Agents bidding on a property that was previously FSBO see the seller's showing count, offer count, and days on market; this data strengthens the agent's proposal and HomeFax's positioning as the source of record |
 
 ---
 

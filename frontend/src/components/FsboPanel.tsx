@@ -21,6 +21,8 @@ import {
   type FsboStep,
 } from "@/services/fsbo";
 import { mlsService, type MlsSubmitResult } from "@/services/mlsService";
+import { listingService } from "@/services/listing";
+import { fsboOfferService } from "@/services/fsboOffer";
 import { paymentService, type PlanTier } from "@/services/payment";
 import { UpgradeGate } from "@/components/UpgradeGate";
 import type { Property } from "@/services/property";
@@ -72,10 +74,11 @@ export default function FsboPanel({ propertyId, score, verifiedJobCount, hasRepo
   const [record,      setRecord]      = useState<FsboRecord | null>(() => fsboService.getRecord(propertyId));
   const [active,      setActive]      = useState(false);
   const [listPrice,   setListPrice]   = useState("");
-  const [mlsResult,   setMlsResult]   = useState<MlsSubmitResult | null>(null);
-  const [mlsError,    setMlsError]    = useState<string | null>(null);
-  const [mlsLoading,  setMlsLoading]  = useState(false);
-  const [userTier,    setUserTier]    = useState<PlanTier>("Free");
+  const [mlsResult,      setMlsResult]      = useState<MlsSubmitResult | null>(null);
+  const [mlsError,       setMlsError]       = useState<string | null>(null);
+  const [mlsLoading,     setMlsLoading]     = useState(false);
+  const [agentRequested, setAgentRequested] = useState(false);
+  const [userTier,       setUserTier]       = useState<PlanTier>("Free");
 
   useEffect(() => {
     paymentService.getMySubscription().then((s) => setUserTier(s.tier)).catch(() => {});
@@ -117,6 +120,25 @@ export default function FsboPanel({ propertyId, score, verifiedJobCount, hasRepo
     } finally {
       setMlsLoading(false);
     }
+  }
+
+  async function handleFindAgent() {
+    if (!record) return;
+    const offers      = fsboOfferService.getByProperty(propertyId);
+    const daysOnMarket = record.activatedAt
+      ? Math.round((Date.now() - record.activatedAt) / 86_400_000)
+      : 0;
+    const price = (record.listPriceCents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 });
+    const notes = `Previously listed FSBO at $${price}. Days on market: ${daysOnMarket}. Offers received: ${offers.length}.`;
+    const now = Date.now();
+    await listingService.createBidRequest({
+      propertyId,
+      targetListDate:   now + 30 * 86_400_000,
+      desiredSalePrice: record.listPriceCents,
+      notes,
+      bidDeadline:      now + 7 * 86_400_000,
+    });
+    setAgentRequested(true);
   }
 
   if (userTier === "Free") {
@@ -317,6 +339,24 @@ export default function FsboPanel({ propertyId, score, verifiedJobCount, hasRepo
                   </a>
                 </div>
               )}
+
+              {/* 10.7.1 — Agent handoff */}
+              <div style={{ marginTop: "1.25rem", borderTop: `1px solid ${S.rule}`, paddingTop: "1rem" }}>
+                {agentRequested ? (
+                  <p style={{ fontFamily: S.mono, fontSize: "0.75rem", color: S.sage }}>
+                    ✓ Agent request sent — agents will now compete for your listing.
+                  </p>
+                ) : (
+                  <>
+                    <p style={{ fontFamily: S.sans, fontSize: "0.8rem", color: S.inkLight, marginBottom: "0.5rem" }}>
+                      Changed your mind? Let agents compete for your listing.
+                    </p>
+                    <Button onClick={handleFindAgent}>
+                      Find me an agent
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
