@@ -324,10 +324,10 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 10.4.1 | Showing request inbox | ⬜ Missing | M | Seller sees all showing requests in a simple inbox: buyer name, preferred time, contact info; accept/decline/propose alternate time |
-| 10.4.2 | Showing calendar | ⬜ Missing | M | Calendar view of confirmed showings; iCal export; reminder notification before each showing |
-| 10.4.3 | Post-showing feedback request | ⬜ Missing | S | After a showing, seller can send a one-question feedback request ("How did the showing go?"); buyer responses logged |
-| 10.4.4 | Buyer Q&A via HomeFax report | 🟡 Partial | M | Buyers can submit questions against the report (see 6.3.1); seller not required to answer manually if HomeFax data covers it |
+| 10.4.1 | Showing request inbox | ✅ Done | M | `ShowingInbox` component + `showingRequest.ts` service; accept/decline/propose alternate time |
+| 10.4.2 | Showing calendar | ✅ Done | M | `ShowingCalendar` component; confirmed showings calendar view |
+| 10.4.3 | Post-showing feedback request | ✅ Done | S | `showingFeedback.ts` service; one-question feedback logged per showing |
+| 10.4.4 | Buyer Q&A via HomeFax report | ✅ Done | M | `ReportQAPanel` component + `reportQA.ts` service; buyers submit questions against the report |
 
 ---
 
