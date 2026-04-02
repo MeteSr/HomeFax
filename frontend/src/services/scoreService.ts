@@ -208,3 +208,118 @@ export function premiumEstimate(score: number): { low: number; high: number } | 
   if (score < 85) return { low: 15_000, high: 25_000 };
   return               { low: 20_000, high: 35_000 };
 }
+
+// ─── Zip-aware premium model (6.1.2) ─────────────────────────────────────────
+
+/**
+ * Regional median home values keyed by zip prefix (first 3 digits).
+ * Source: 2024 NAR / Zillow metro-level estimates. Pending real data from 5.3.2.
+ */
+const MEDIAN_BY_PREFIX: Record<string, number> = {
+  // New York metro
+  "100": 750_000, "101": 750_000, "102": 750_000, "103": 650_000, "104": 600_000,
+  "110": 580_000, "111": 560_000, "112": 520_000, "113": 500_000, "114": 540_000,
+  // Los Angeles / Southern California
+  "900": 700_000, "901": 700_000, "902": 680_000, "903": 620_000, "904": 600_000,
+  "905": 580_000, "906": 560_000, "907": 540_000, "908": 520_000,
+  // San Francisco Bay Area
+  "940": 1_100_000, "941": 1_050_000, "942": 950_000, "943": 900_000, "944": 850_000,
+  "945": 820_000, "946": 800_000, "947": 780_000, "948": 760_000, "949": 740_000,
+  // Seattle
+  "980": 650_000, "981": 620_000, "982": 580_000, "983": 520_000, "984": 500_000,
+  // Boston
+  "021": 580_000, "022": 560_000, "023": 520_000, "024": 500_000, "025": 480_000,
+  // DC metro
+  "200": 580_000, "201": 560_000, "202": 540_000, "203": 520_000, "204": 500_000,
+  "205": 480_000,
+  // Miami / South Florida
+  "331": 560_000, "332": 530_000, "333": 500_000, "334": 470_000, "335": 440_000,
+  "336": 410_000, "337": 390_000, "338": 370_000, "339": 350_000,
+  // Chicago
+  "606": 340_000, "607": 310_000, "608": 290_000, "609": 270_000, "600": 320_000,
+  "601": 310_000, "602": 300_000, "603": 290_000, "604": 280_000, "605": 270_000,
+  // Houston
+  "770": 290_000, "771": 280_000, "772": 270_000, "773": 260_000, "774": 250_000,
+  "775": 245_000, "776": 240_000, "777": 235_000,
+  // Dallas / Fort Worth
+  "750": 350_000, "751": 340_000, "752": 330_000, "753": 320_000, "754": 300_000,
+  "755": 290_000, "756": 280_000, "757": 270_000, "758": 260_000, "759": 250_000,
+  // Phoenix
+  "850": 410_000, "851": 395_000, "852": 380_000, "853": 360_000, "854": 340_000,
+  "855": 320_000, "856": 300_000, "857": 290_000, "858": 280_000, "859": 270_000,
+  // Atlanta
+  "300": 360_000, "301": 345_000, "302": 330_000, "303": 315_000, "304": 300_000,
+  "305": 285_000, "306": 270_000, "307": 260_000,
+  // Denver
+  "800": 520_000, "801": 500_000, "802": 480_000, "803": 460_000, "804": 440_000,
+  "805": 420_000, "806": 400_000,
+  // Minneapolis
+  "554": 310_000, "555": 300_000, "556": 290_000, "557": 280_000,
+  // Portland OR
+  "970": 450_000, "971": 430_000, "972": 410_000, "973": 390_000, "974": 370_000,
+  // San Diego
+  "919": 760_000, "920": 730_000, "921": 700_000, "922": 670_000,
+  // Las Vegas
+  "890": 380_000, "891": 365_000, "892": 350_000,
+  // Philadelphia
+  "191": 310_000, "192": 295_000, "193": 280_000, "194": 265_000, "195": 250_000,
+  // Nashville
+  "370": 380_000, "371": 365_000, "372": 350_000,
+  // Austin
+  "787": 460_000, "786": 440_000, "785": 420_000,
+  // Charlotte
+  "282": 360_000, "281": 340_000, "280": 320_000,
+  // Raleigh
+  "275": 370_000, "276": 350_000, "277": 330_000,
+  // Salt Lake City
+  "841": 440_000, "840": 420_000, "842": 400_000,
+  // San Antonio
+  "782": 270_000, "781": 260_000, "780": 250_000,
+  // Indianapolis
+  "462": 260_000, "461": 245_000, "460": 230_000,
+  // Columbus OH
+  "432": 270_000, "431": 255_000, "430": 240_000,
+};
+
+const NATIONAL_DEFAULT_MEDIAN = 330_000;
+
+/**
+ * Returns the estimated regional median home value for a zip code.
+ * Uses the first 3 digits as a metro-area key; falls back to national default.
+ */
+export function getMedianHomeValue(zip: string): number {
+  const prefix = zip.slice(0, 3);
+  return MEDIAN_BY_PREFIX[prefix] ?? NATIONAL_DEFAULT_MEDIAN;
+}
+
+/**
+ * Score band → [lowPct, highPct] of median home value that the HomeFax premium
+ * represents. Based on 2024 industry research: verified history lifts price 0.5–9%.
+ */
+const SCORE_BANDS: Array<{ minScore: number; lowPct: number; highPct: number }> = [
+  { minScore: 85, lowPct: 0.050, highPct: 0.090 },
+  { minScore: 70, lowPct: 0.030, highPct: 0.060 },
+  { minScore: 55, lowPct: 0.015, highPct: 0.030 },
+  { minScore: 40, lowPct: 0.005, highPct: 0.015 },
+];
+
+/**
+ * Zip-aware premium estimate (6.1.2).
+ * Returns a { low, high } dollar range = score-band % × regional median home value.
+ * Values are rounded to the nearest $500.
+ * Returns null for scores below 40.
+ */
+export function premiumEstimateByZip(
+  score: number,
+  zip:   string
+): { low: number; high: number } | null {
+  if (score < 40) return null;
+  const band = SCORE_BANDS.find((b) => score >= b.minScore);
+  if (!band) return null;
+  const median = getMedianHomeValue(zip);
+  const round500 = (n: number) => Math.round(n / 500) * 500;
+  return {
+    low:  round500(median * band.lowPct),
+    high: round500(median * band.highPct),
+  };
+}

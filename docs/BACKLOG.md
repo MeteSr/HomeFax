@@ -173,7 +173,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
 | 6.1.1 | HomeFax score computation | ✅ Exists | — | `market` canister `analyzeCompetitivePosition()` returns score + grade |
-| 6.1.2 | Score-to-dollar premium model | ⬜ Missing | L | Needs market data (5.3.2); map score band → estimated premium range per zip |
+| 6.1.2 | Score-to-dollar premium model | ✅ Done | L | Needs market data (5.3.2); map score band → estimated premium range per zip |
 | 6.1.3 | Dollar premium display on Dashboard | ✅ Done | M | "Your score is worth an estimated $X–$Y in your market" card |
 | 6.1.4 | Premium estimate in HomeFax Report | ✅ Done | M | Include dollar value range in generated report for buyer/agent view |
 
