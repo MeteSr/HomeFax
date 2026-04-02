@@ -129,12 +129,35 @@ export function isCertified(score: number, jobs: Job[]): boolean {
  * can view score + certified status without accessing any job details.
  * NOTE: This is a frontend-only placeholder until canister cert issuance (4.2.1).
  */
+export interface ScoreBreakdown {
+  verifiedJobPts:  number;
+  valuePts:        number;
+  verificationPts: number;
+  diversityPts:    number;
+}
+
+export function computeBreakdown(jobs: Job[], properties: Property[]): ScoreBreakdown {
+  const verifiedJobPts  = Math.min(jobs.filter((j) => j.verified).length * 4, 40);
+  const totalValueDollars = jobs.reduce((sum, j) => sum + j.amount, 0) / 100;
+  const valuePts        = Math.min(Math.floor(totalValueDollars / 2500), 20);
+  let rawVerificationPts = 0;
+  for (const p of properties) {
+    if (p.verificationLevel === "Premium")      rawVerificationPts += 10;
+    else if (p.verificationLevel === "Basic")   rawVerificationPts += 5;
+  }
+  const verificationPts = Math.min(rawVerificationPts, 20);
+  const diversityPts    = Math.min(new Set(jobs.map((j) => j.serviceType)).size * 4, 20);
+  return { verifiedJobPts, valuePts, verificationPts, diversityPts };
+}
+
 export interface CertPayload {
   address:     string;
   score:       number;
   grade:       string;
   certified:   boolean;
   generatedAt: number; // ms
+  planTier?:   string;
+  breakdown?:  ScoreBreakdown;
 }
 
 export function generateCertToken(payload: CertPayload): string {

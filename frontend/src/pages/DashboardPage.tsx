@@ -14,7 +14,7 @@ import { RecurringServiceCard } from "@/components/RecurringServiceCard";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { isNewSince, hasQuoteActivity, pendingQuoteCount } from "@/services/notifications";
-import { computeScore, computeScoreWithDecay, getScoreGrade, loadHistory, recordSnapshot, scoreDelta, scoreValueDelta, premiumEstimate, isCertified, type ScoreSnapshot } from "@/services/scoreService";
+import { computeScore, computeScoreWithDecay, computeBreakdown, getScoreGrade, loadHistory, recordSnapshot, scoreDelta, scoreValueDelta, premiumEstimate, isCertified, type ScoreSnapshot } from "@/services/scoreService";
 import { getAllDecayEvents, getAtRiskWarnings, getTotalDecay, decayCategoryColor, decayCategoryBg, type DecayEvent, type AtRiskWarning } from "@/services/scoreDecayService";
 import { systemAgesService, type SystemAges } from "@/services/systemAges";
 import { certService } from "@/services/cert";
@@ -1075,6 +1075,8 @@ export default function DashboardPage() {
                             grade:       scoreGrade,
                             certified,
                             generatedAt: Date.now(),
+                            planTier:    userTier,
+                            breakdown:   computeBreakdown(jobs, [activeProperty]),
                           };
                           const { token } = await certService.issueCert(String(activeProperty.id), payload);
                           const url = `${window.location.origin}/cert/${token}`;

@@ -11,7 +11,7 @@ import { AddRoomModal } from "@/components/AddRoomModal";
 import { propertyService, Property } from "@/services/property";
 import { jobService, Job } from "@/services/job";
 import { photoService, Photo } from "@/services/photo";
-import { computeScore, computeScoreWithDecay, getScoreGrade, recordSnapshot, premiumEstimate, isCertified, loadHistory, scoreDelta, type ScoreSnapshot } from "@/services/scoreService";
+import { computeScore, computeScoreWithDecay, computeBreakdown, getScoreGrade, recordSnapshot, premiumEstimate, isCertified, loadHistory, scoreDelta, type ScoreSnapshot } from "@/services/scoreService";
 import { getAllDecayEvents, getAtRiskWarnings, getTotalDecay, type DecayEvent, type AtRiskWarning } from "@/services/scoreDecayService";
 import { systemAgesService, type SystemAges } from "@/services/systemAges";
 import { recurringService, type RecurringService, type VisitLog } from "@/services/recurringService";
@@ -511,7 +511,7 @@ export default function PropertyDetailPage() {
               onCopyCertLink={async () => {
                 if (!property) return;
                 const { certService } = await import("@/services/cert");
-                const payload = { address: property.address, score: homefaxScore, grade: scoreGrade, certified, generatedAt: Date.now() };
+                const payload = { address: property.address, score: homefaxScore, grade: scoreGrade, certified, generatedAt: Date.now(), planTier: userTier, breakdown: computeBreakdown(jobs, [property]) };
                 const { token } = await certService.issueCert(String(property.id), payload);
                 navigator.clipboard.writeText(`${window.location.origin}/cert/${token}`);
                 toast.success("Lender certificate link copied!");

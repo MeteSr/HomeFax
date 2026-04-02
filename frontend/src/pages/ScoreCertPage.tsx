@@ -161,6 +161,65 @@ export default function ScoreCertPage() {
           </div>
         </div>
 
+        {/* Score Breakdown (15.4.3) */}
+        {(() => {
+          const isPro = payload.planTier && payload.planTier !== "Free";
+          const bd    = payload.breakdown;
+          if (!bd) return null;
+
+          const pillars = [
+            { label: "Verified Jobs",  pts: bd.verifiedJobPts,  max: 40 },
+            { label: "Total Value",    pts: bd.valuePts,         max: 20 },
+            { label: "Verification",   pts: bd.verificationPts,  max: 20 },
+            { label: "Job Diversity",  pts: bd.diversityPts,     max: 20 },
+          ];
+
+          return (
+            <div style={{ padding: "1.5rem 2.5rem", borderBottom: `1px solid ${S.rule}`, background: COLORS.white }}>
+              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.875rem" }}>
+                Score Breakdown
+              </p>
+              {isPro ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+                  {pillars.map(({ label, pts, max }) => (
+                    <div key={label} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, minWidth: "7rem" }}>{label}</span>
+                      <div style={{ flex: 1, height: "4px", background: S.rule }}>
+                        <div style={{ height: "4px", width: `${Math.round((pts / max) * 100)}%`, background: S.sage }} />
+                      </div>
+                      <span style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", color: S.ink, minWidth: "2rem", textAlign: "right" }}>{pts}</span>
+                      <span style={{ fontFamily: S.mono, fontSize: "0.55rem", color: S.inkLight }}>/ {max}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ position: "relative" }}>
+                  <div style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none" }}>
+                    {pillars.map(({ label, max }) => (
+                      <div key={label} style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.625rem" }}>
+                        <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, minWidth: "7rem" }}>{label}</span>
+                        <div style={{ flex: 1, height: "4px", background: S.rule }}>
+                          <div style={{ height: "4px", width: "60%", background: S.sage }} />
+                        </div>
+                        <span style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", color: S.ink, minWidth: "2rem", textAlign: "right" }}>—</span>
+                        <span style={{ fontFamily: S.mono, fontSize: "0.55rem", color: S.inkLight }}>/ {max}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.75)", textAlign: "center", padding: "0.5rem" }}>
+                    <p style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.6rem", letterSpacing: "0.08em", color: S.ink, marginBottom: "0.375rem" }}>
+                      Upgrade to Pro to see breakdown
+                    </p>
+                    <a href="/pricing" style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.35rem 0.75rem", border: `1px solid ${COLORS.plum}`, background: COLORS.plum, color: COLORS.white, textDecoration: "none" }}>
+                      Upgrade to Pro →
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* What this means */}
         <div style={{ padding: "1.5rem 2.5rem", borderBottom: `1px solid ${S.rule}`, background: COLORS.white }}>
           <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.875rem" }}>
