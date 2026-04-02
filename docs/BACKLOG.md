@@ -167,16 +167,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 ## 6. HomeFax Report — The Resale Weapon
 
-### 6.1 Score-to-Value Calculator
-**Vision:** Show sellers exactly how much their HomeFax score is worth in dollar terms in their market.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 6.1.1 | HomeFax score computation | ✅ Exists | — | `market` canister `analyzeCompetitivePosition()` returns score + grade |
-| 6.1.2 | Score-to-dollar premium model | ✅ Done | L | Needs market data (5.3.2); map score band → estimated premium range per zip |
-| 6.1.3 | Dollar premium display on Dashboard | ✅ Done | M | "Your score is worth an estimated $X–$Y in your market" card |
-| 6.1.4 | Premium estimate in HomeFax Report | ✅ Done | M | Include dollar value range in generated report for buyer/agent view |
-
 ### 6.2 Listing Platform Integration & Badge
 **Vision:** HomeFax-verified homes display a badge on Zillow/Realtor.com.
 
@@ -266,17 +256,6 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 | 8.1.5 | Pulse opt-out / frequency controls | ✅ Exists | — | "Weekly Home Pulse" toggle in Settings Notifications tab; persisted to localStorage; `DashboardPage` checks `homefax_pulse_enabled` before showing pulse tip |
 | 8.1.6 | Pulse content personalization over time | ⬜ Missing | M | Track which Pulse items the user acted on; Claude weights future digests toward high-signal topics |
 
-### 8.3 Cancellation Flow — Make It Feel Like Data Loss
-**Vision:** The cancel flow shows exactly what's at stake: verified records, active warranties, score, ICP chain of custody. Factually accurate, not manipulative.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 8.3.1 | Cancellation intent screen | ✅ Exists | — | `SubscriptionTab` in `SettingsPage` — idle → confirm (features-lost list) → loading → done state machine |
-| 8.3.2 | Post-cancel read-only mode | ✅ Done | M | Cancelled accounts retain read access to their on-chain records; score stops updating; reports become static |
-| 8.3.3 | "Your records stay on ICP" messaging | ✅ Exists | — | Green info box in cancel confirm step: "Your ICP records are permanent even after cancellation" |
-| 8.3.4 | Pause subscription option | ✅ Exists | — | `paymentService.pause(months)`/`resume()`/`getPauseState()` in localStorage; pause banner + 1/2/3-month buttons in SettingsPage; "Pause 1 month instead" shortcut in cancel confirm step |
-| 8.3.5 | Win-back email sequence | ✅ Done | M | 7/30/90-day post-cancel emails highlighting new records that would have been created; "Your home didn't stop aging" |
-
 ### 8.4 Insurance Defense Mode — Florida-Specific Retention Hook
 **Vision:** One-tap export of all maintenance records formatted for insurance company submission. One successful insurance interaction pays for 3+ years of HomeFax.
 
@@ -302,28 +281,13 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 
 ---
 
-## 10. For Sale By Owner (FSBO) Mode — Seller Without an Agent
-
-**Strategic thesis:** Roughly 10% of US home sales are FSBO. These sellers are underserved by every major platform — Zillow makes it cumbersome, FSBO.com is dated, and no one gives them tools that actually equip them to negotiate, price, and close confidently. HomeFax's verified maintenance record is the best FSBO asset that exists: it pre-answers buyer objections, replaces an inspection contingency, and signals a serious, prepared seller. The app should be the platform that makes FSBO actually work.
-
----
-
 ## 12. Test Coverage — Gaps & Failing Areas
 
 **Context:** Overall coverage is ~49% (12/21 frontend services, 12/30 pages e2e, 8/14 backend canisters). The gaps below are ordered by risk — scoring logic and canister algorithms with no tests are the highest priority.
 
 ---
 
-### 12.2 Frontend Unit Tests — Gaps Within Existing Files
 
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 12.2.1 | `job.test.ts` — missing lifecycle methods | ✅ Done | M | Added: `create` (default fields, DIY `contractorSigned` behavior), `getByProperty` (filtering, empty result), `updateJob` (field updates, not-found), `updateJobStatus` (all four statuses), `verifyJob` (DIY→fully verified, non-DIY→partial), `linkContractor`, `getJobsPendingMySignature` (returns []), `getCertificationData` (meetsStructural threshold), `isInsuranceRelevant` + `INSURANCE_SERVICE_TYPES` |
-| 12.2.2 | `property.test.ts` — transfer flow untested | ✅ Done | M | Added: `initiateTransfer` (maps PendingTransfer, error throws), `acceptTransfer` (ok/err via unwrap), `cancelTransfer` (resolves/throws), `getPendingTransfer` (mapped object + null when empty), `getOwnershipHistory` (maps TransferRecord[], returns [] without canister ID) |
-| 12.2.3 | `quote.test.ts` — missing contractor side | ✅ Done | M | Add tests for contractor bid submission, quote expiration, urgency-based matching, and tier-enforced open-request limits (3 Free / 10 Pro+) |
-| 12.2.4 | `report.test.ts` — missing share-link edge cases | ✅ Done | S | Add tests for: expired links (past `expiresAt`), `viewCount` increment, `listShareLinks` isolation per `propertyId`, `shareUrl` format with custom base URL |
-| 12.2.5 | `contractor.test.ts` — missing review rate-limiting | ✅ Done | S | Add tests for 10-reviews-per-day-per-user limit, composite key deduplication on reviews |
-| 12.2.6 | `sensor.test.ts` — missing anomaly detection | ✅ Done | M | Add tests for bulk reading ingestion, Critical event auto-creating a pending job (cross-service), alert threshold boundary values |
 | 12.2.7 | `maintenance.test.ts` — missing climate/material variants | ⬜ Missing | M | Add tests for climate-adjusted lifespan (once 1.1.5 lands) and all 8 system types at boundary ages (exactly at threshold years) |
 
 ---
