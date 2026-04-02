@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
-import { predictMaintenance, maintenanceService, MATERIAL_SPECS, getMaterialMultiplier } from "@/services/maintenance";
+import { predictMaintenance, maintenanceService, MATERIAL_SPECS, getMaterialMultiplier, getClimateZone } from "@/services/maintenance";
 import type { Job } from "@/services/job";
 
 // ─── Fix time so age calculations are deterministic ───────────────────────────
@@ -485,5 +485,384 @@ describe("predictMaintenance — material overrides", () => {
     const baseline = predictMaintenance(2001, []).systemPredictions.map((s) => s.urgency);
     const withEmpty = predictMaintenance(2001, [], {}, undefined, {}).systemPredictions.map((s) => s.urgency);
     expect(withEmpty).toEqual(baseline);
+  });
+});
+
+// ─── 12.2.7: All 8 systems at exact boundary ages ────────────────────────────
+//
+// Urgency thresholds: Critical = pct ≥ 100, Soon = pct ≥ 75, Watch = pct ≥ 50
+// Lifespans: HVAC=18, Roofing=25, WaterHeater=12, Windows=22,
+//            Electrical=35, Plumbing=50, Flooring=25, Insulation=30
+//
+// 100% boundary: yearBuilt = CURRENT_YEAR - lifespan
+// 75% boundary: min age where floor(age/lifespan*100) >= 75  → ceil(0.75 * lifespan)
+// 50% boundary: min age where floor(age/lifespan*100) >= 50  → ceil(0.50 * lifespan)
+
+describe("predictMaintenance — exact boundary ages for all 8 systems (12.2.7)", () => {
+  // ── 100% (Critical) boundaries ───────────────────────────────────────────
+  it("HVAC age=18 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 18, []).systemPredictions
+      .find((s) => s.systemName === "HVAC")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  it("Roofing age=25 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 25, []).systemPredictions
+      .find((s) => s.systemName === "Roofing")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  it("Water Heater age=12 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 12, []).systemPredictions
+      .find((s) => s.systemName === "Water Heater")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  it("Windows age=22 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 22, []).systemPredictions
+      .find((s) => s.systemName === "Windows")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  it("Electrical age=35 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 35, []).systemPredictions
+      .find((s) => s.systemName === "Electrical")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  it("Plumbing age=50 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 50, []).systemPredictions
+      .find((s) => s.systemName === "Plumbing")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  it("Flooring age=25 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 25, []).systemPredictions
+      .find((s) => s.systemName === "Flooring")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  it("Insulation age=30 (100%) → Critical", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 30, []).systemPredictions
+      .find((s) => s.systemName === "Insulation")!;
+    expect(pred.urgency).toBe("Critical");
+    expect(pred.percentLifeUsed).toBe(100);
+  });
+
+  // ── 75% (Soon) boundaries ────────────────────────────────────────────────
+  // ceil(0.75 * lifespan): HVAC→14, Roofing→19, WH→9, Windows→17,
+  //   Electrical→27, Plumbing→38, Flooring→19, Insulation→23
+
+  it("HVAC age=14 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 14, []).systemPredictions
+      .find((s) => s.systemName === "HVAC")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  it("Roofing age=19 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 19, []).systemPredictions
+      .find((s) => s.systemName === "Roofing")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  it("Water Heater age=9 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 9, []).systemPredictions
+      .find((s) => s.systemName === "Water Heater")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  it("Windows age=17 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 17, []).systemPredictions
+      .find((s) => s.systemName === "Windows")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  it("Electrical age=27 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 27, []).systemPredictions
+      .find((s) => s.systemName === "Electrical")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  it("Plumbing age=38 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 38, []).systemPredictions
+      .find((s) => s.systemName === "Plumbing")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  it("Flooring age=19 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 19, []).systemPredictions
+      .find((s) => s.systemName === "Flooring")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  it("Insulation age=23 (≥75%) → Soon", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 23, []).systemPredictions
+      .find((s) => s.systemName === "Insulation")!;
+    expect(pred.urgency).toBe("Soon");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(75);
+  });
+
+  // ── 50% (Watch) boundaries ───────────────────────────────────────────────
+  // ceil(0.50 * lifespan): HVAC→9, Roofing→13, WH→6, Windows→11,
+  //   Electrical→18, Plumbing→25, Flooring→13, Insulation→15
+
+  it("HVAC age=9 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 9, []).systemPredictions
+      .find((s) => s.systemName === "HVAC")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+    expect(pred.percentLifeUsed).toBeLessThan(75);
+  });
+
+  it("Roofing age=13 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 13, []).systemPredictions
+      .find((s) => s.systemName === "Roofing")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+  });
+
+  it("Water Heater age=6 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 6, []).systemPredictions
+      .find((s) => s.systemName === "Water Heater")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+  });
+
+  it("Windows age=11 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 11, []).systemPredictions
+      .find((s) => s.systemName === "Windows")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+  });
+
+  it("Electrical age=18 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 18, []).systemPredictions
+      .find((s) => s.systemName === "Electrical")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+    expect(pred.percentLifeUsed).toBeLessThan(75);
+  });
+
+  it("Plumbing age=25 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 25, []).systemPredictions
+      .find((s) => s.systemName === "Plumbing")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+  });
+
+  it("Flooring age=13 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 13, []).systemPredictions
+      .find((s) => s.systemName === "Flooring")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+  });
+
+  it("Insulation age=15 (≥50%, <75%) → Watch", () => {
+    const pred = predictMaintenance(CURRENT_YEAR - 15, []).systemPredictions
+      .find((s) => s.systemName === "Insulation")!;
+    expect(pred.urgency).toBe("Watch");
+    expect(pred.percentLifeUsed).toBeGreaterThanOrEqual(50);
+  });
+});
+
+// ─── 12.2.7: getClimateZone() direct tests ───────────────────────────────────
+
+describe("getClimateZone — state → zone mapping (12.2.7)", () => {
+  it("FL → hotHumid", () => {
+    expect(getClimateZone("FL").id).toBe("hotHumid");
+  });
+
+  it("AZ → hotDry", () => {
+    expect(getClimateZone("AZ").id).toBe("hotDry");
+  });
+
+  it("MN → veryCold", () => {
+    expect(getClimateZone("MN").id).toBe("veryCold");
+  });
+
+  it("MI → cold", () => {
+    expect(getClimateZone("MI").id).toBe("cold");
+  });
+
+  it("CA → mixed", () => {
+    expect(getClimateZone("CA").id).toBe("mixed");
+  });
+
+  it("TX → mixed", () => {
+    expect(getClimateZone("TX").id).toBe("mixed");
+  });
+
+  it("case-insensitive: 'fl' → hotHumid", () => {
+    expect(getClimateZone("fl").id).toBe("hotHumid");
+  });
+
+  it("unknown state → mixed", () => {
+    expect(getClimateZone("ZZ").id).toBe("mixed");
+  });
+
+  it("returns a zone with a non-empty name and description", () => {
+    const zone = getClimateZone("FL");
+    expect(zone.name.length).toBeGreaterThan(0);
+    expect(zone.description.length).toBeGreaterThan(0);
+  });
+
+  it("mixed zone has empty lifespanMultipliers (no adjustment)", () => {
+    const zone = getClimateZone("CA");
+    expect(Object.keys(zone.lifespanMultipliers)).toHaveLength(0);
+  });
+});
+
+// ─── 12.2.7: Climate zone effects on system lifespans ────────────────────────
+//
+// Strategy: pick a yearBuilt where the system is "Good" in mixed zone,
+// then verify it degrades to Watch/Soon/Critical in harsh zones.
+
+describe("predictMaintenance — climate zone lifespan effects (12.2.7)", () => {
+  // ── hotHumid (FL): HVAC, Roofing, Water Heater, Windows, Insulation ──────
+  // HVAC: baseline 18yr. Age=12 → pct=67→Watch in mixed.
+  // hotHumid 0.85× → effectiveLifespan=round(18*0.85)=15 → pct=round(12/15*100)=80 → Soon
+  it("hotHumid (FL): HVAC degrades faster — age 12 is Soon, not Watch", () => {
+    const mixed = predictMaintenance(CURRENT_YEAR - 12, [], {}, "CA")
+      .systemPredictions.find((s) => s.systemName === "HVAC")!;
+    expect(mixed.urgency).toBe("Watch");
+
+    const hot = predictMaintenance(CURRENT_YEAR - 12, [], {}, "FL")
+      .systemPredictions.find((s) => s.systemName === "HVAC")!;
+    expect(hot.urgency).toBe("Soon");
+  });
+
+  // Roofing: baseline 25yr. Age=17 → pct=68→Watch in mixed.
+  // hotHumid 0.88× → effectiveLifespan=round(25*0.88)=22 → pct=round(17/22*100)=77 → Soon
+  it("hotHumid (FL): Roofing degrades faster — age 17 is Soon, not Watch", () => {
+    const mixed = predictMaintenance(CURRENT_YEAR - 17, [], {}, "CA")
+      .systemPredictions.find((s) => s.systemName === "Roofing")!;
+    expect(mixed.urgency).toBe("Watch");
+
+    const hot = predictMaintenance(CURRENT_YEAR - 17, [], {}, "FL")
+      .systemPredictions.find((s) => s.systemName === "Roofing")!;
+    expect(hot.urgency).toBe("Soon");
+  });
+
+  // Water Heater: baseline 12yr. Age=8 → pct=67→Watch in mixed.
+  // hotHumid 0.90× → effectiveLifespan=round(12*0.90)=11 → pct=round(8/11*100)=73 → Watch (still)
+  // Use age=9: pct=round(9/11*100)=82 → Soon
+  it("hotHumid (FL): Water Heater — age 9 is Soon", () => {
+    const hot = predictMaintenance(CURRENT_YEAR - 9, [], {}, "FL")
+      .systemPredictions.find((s) => s.systemName === "Water Heater")!;
+    expect(hot.urgency).toBe("Soon");
+  });
+
+  // Insulation: baseline 30yr. Age=20 → pct=67→Watch in mixed.
+  // hotHumid 0.85× → effectiveLifespan=round(30*0.85)=26 → pct=round(20/26*100)=77 → Soon
+  it("hotHumid (FL): Insulation degrades faster — age 20 is Soon, not Watch", () => {
+    const mixed = predictMaintenance(CURRENT_YEAR - 20, [], {}, "CA")
+      .systemPredictions.find((s) => s.systemName === "Insulation")!;
+    expect(mixed.urgency).toBe("Watch");
+
+    const hot = predictMaintenance(CURRENT_YEAR - 20, [], {}, "FL")
+      .systemPredictions.find((s) => s.systemName === "Insulation")!;
+    expect(hot.urgency).toBe("Soon");
+  });
+
+  // ── hotDry (AZ): HVAC, Roofing, Windows, Plumbing ──────────────────────
+  // HVAC: hotDry 0.90× → effectiveLifespan=round(18*0.90)=16
+  // Age=12 mixed → Watch. Age=12 hotDry: pct=round(12/16*100)=75 → Soon
+  it("hotDry (AZ): HVAC degrades faster — age 12 is Soon", () => {
+    const az = predictMaintenance(CURRENT_YEAR - 12, [], {}, "AZ")
+      .systemPredictions.find((s) => s.systemName === "HVAC")!;
+    expect(az.urgency).toBe("Soon");
+  });
+
+  // Plumbing: hotDry 0.90× → effectiveLifespan=round(50*0.90)=45
+  // Age=25 mixed → pct=50→Watch. hotDry: pct=round(25/45*100)=56 → still Watch
+  // Age=34 mixed: pct=round(34/50*100)=68→Watch. hotDry: pct=round(34/45*100)=76→Soon
+  it("hotDry (AZ): Plumbing degrades faster — age 34 is Soon, not Watch", () => {
+    const mixed = predictMaintenance(CURRENT_YEAR - 34, [], {}, "CA")
+      .systemPredictions.find((s) => s.systemName === "Plumbing")!;
+    expect(mixed.urgency).toBe("Watch");
+
+    const az = predictMaintenance(CURRENT_YEAR - 34, [], {}, "AZ")
+      .systemPredictions.find((s) => s.systemName === "Plumbing")!;
+    expect(az.urgency).toBe("Soon");
+  });
+
+  // ── veryCold (MN): most severe — Roofing, Plumbing, HVAC, Windows, Insulation ──
+  // HVAC: veryCold 0.83× → effectiveLifespan=round(18*0.83)=15
+  // Age=12 mixed → Watch. veryCold: pct=round(12/15*100)=80 → Soon
+  it("veryCold (MN): HVAC degrades faster than cold or mixed — age 12 is Soon", () => {
+    const mn = predictMaintenance(CURRENT_YEAR - 12, [], {}, "MN")
+      .systemPredictions.find((s) => s.systemName === "HVAC")!;
+    expect(mn.urgency).toBe("Soon");
+  });
+
+  // Roofing: veryCold 0.82× → effectiveLifespan=round(25*0.82)=21
+  // Age=16 mixed: pct=round(16/25*100)=64→Watch. veryCold: pct=round(16/21*100)=76→Soon
+  it("veryCold (MN): Roofing degrades faster — age 16 is Soon, not Watch", () => {
+    const mixed = predictMaintenance(CURRENT_YEAR - 16, [], {}, "CA")
+      .systemPredictions.find((s) => s.systemName === "Roofing")!;
+    expect(mixed.urgency).toBe("Watch");
+
+    const mn = predictMaintenance(CURRENT_YEAR - 16, [], {}, "MN")
+      .systemPredictions.find((s) => s.systemName === "Roofing")!;
+    expect(mn.urgency).toBe("Soon");
+  });
+
+  // Plumbing: veryCold 0.83× → effectiveLifespan=round(50*0.83)=42
+  // Age=32 mixed: pct=64→Watch. veryCold: pct=round(32/42*100)=76→Soon
+  it("veryCold (MN): Plumbing degrades faster — age 32 is Soon, not Watch", () => {
+    const mixed = predictMaintenance(CURRENT_YEAR - 32, [], {}, "CA")
+      .systemPredictions.find((s) => s.systemName === "Plumbing")!;
+    expect(mixed.urgency).toBe("Watch");
+
+    const mn = predictMaintenance(CURRENT_YEAR - 32, [], {}, "MN")
+      .systemPredictions.find((s) => s.systemName === "Plumbing")!;
+    expect(mn.urgency).toBe("Soon");
+  });
+
+  // veryCold produces harsher urgencies than cold for the same system+age
+  it("veryCold (MN) is harsher than cold (MI) for HVAC at same age", () => {
+    const age = 14;
+    const cold = predictMaintenance(CURRENT_YEAR - age, [], {}, "MI")
+      .systemPredictions.find((s) => s.systemName === "HVAC")!;
+    const veryCold = predictMaintenance(CURRENT_YEAR - age, [], {}, "MN")
+      .systemPredictions.find((s) => s.systemName === "HVAC")!;
+    // At age 14: cold 0.88× → effectiveLifespan=round(18*0.88)=16 → pct=round(14/16*100)=88 → Soon
+    // veryCold 0.83× → effectiveLifespan=round(18*0.83)=15 → pct=round(14/15*100)=93 → Soon
+    // Both Soon but veryCold has higher percentLifeUsed
+    expect(veryCold.percentLifeUsed).toBeGreaterThanOrEqual(cold.percentLifeUsed);
+  });
+
+  // ── mixed zone: no change from baseline ─────────────────────────────────
+  it("mixed zone (CA/TX) produces identical urgencies to no-state call", () => {
+    const noState = predictMaintenance(CURRENT_YEAR - 10, []).systemPredictions
+      .map((s) => ({ name: s.systemName, urgency: s.urgency, pct: s.percentLifeUsed }));
+    const mixed = predictMaintenance(CURRENT_YEAR - 10, [], {}, "CA").systemPredictions
+      .map((s) => ({ name: s.systemName, urgency: s.urgency, pct: s.percentLifeUsed }));
+    expect(mixed).toEqual(noState);
+  });
+
+  // climateZone field in the report matches the state passed in
+  it("report.climateZone reflects the state passed", () => {
+    const report = predictMaintenance(CURRENT_YEAR - 10, [], {}, "FL");
+    expect(report.climateZone.id).toBe("hotHumid");
+  });
+
+  it("report.climateZone is 'mixed' when no state given", () => {
+    const report = predictMaintenance(CURRENT_YEAR - 10, []);
+    expect(report.climateZone.id).toBe("mixed");
   });
 });

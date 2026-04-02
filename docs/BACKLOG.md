@@ -288,7 +288,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 ---
 
 
-| 12.2.7 | `maintenance.test.ts` — missing climate/material variants | ⬜ Missing | M | Add tests for climate-adjusted lifespan (once 1.1.5 lands) and all 8 system types at boundary ages (exactly at threshold years) |
+| 12.2.7 | `maintenance.test.ts` — missing climate/material variants | ✅ Done | M | Add tests for climate-adjusted lifespan (once 1.1.5 lands) and all 8 system types at boundary ages (exactly at threshold years) |
 
 ---
 
