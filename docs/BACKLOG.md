@@ -272,10 +272,10 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
 | 8.3.1 | Cancellation intent screen | ✅ Exists | — | `SubscriptionTab` in `SettingsPage` — idle → confirm (features-lost list) → loading → done state machine |
-| 8.3.2 | Post-cancel read-only mode | ⬜ Missing | M | Cancelled accounts retain read access to their on-chain records; score stops updating; reports become static |
+| 8.3.2 | Post-cancel read-only mode | ✅ Done | M | Cancelled accounts retain read access to their on-chain records; score stops updating; reports become static |
 | 8.3.3 | "Your records stay on ICP" messaging | ✅ Exists | — | Green info box in cancel confirm step: "Your ICP records are permanent even after cancellation" |
 | 8.3.4 | Pause subscription option | ✅ Exists | — | `paymentService.pause(months)`/`resume()`/`getPauseState()` in localStorage; pause banner + 1/2/3-month buttons in SettingsPage; "Pause 1 month instead" shortcut in cancel confirm step |
-| 8.3.5 | Win-back email sequence | ⬜ Missing | M | 7/30/90-day post-cancel emails highlighting new records that would have been created; "Your home didn't stop aging" |
+| 8.3.5 | Win-back email sequence | ✅ Done | M | 7/30/90-day post-cancel emails highlighting new records that would have been created; "Your home didn't stop aging" |
 
 ### 8.4 Insurance Defense Mode — Florida-Specific Retention Hook
 **Vision:** One-tap export of all maintenance records formatted for insurance company submission. One successful insurance interaction pays for 3+ years of HomeFax.

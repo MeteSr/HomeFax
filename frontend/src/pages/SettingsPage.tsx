@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
 import { authService } from "@/services/auth";
 import { PLANS, paymentService, type PlanTier } from "@/services/payment";
+import { winBackService } from "@/services/winBackService";
 import { agentProfileService, type AgentProfile } from "@/services/agentProfile";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
@@ -273,6 +274,8 @@ function SubscriptionTab({ profile }: { profile: any }) {
     setCancelStep("loading");
     try {
       await paymentService.cancel();
+      paymentService.recordCancellation();
+      winBackService.schedule(Date.now());
       setTier("Free");
       setExpiresAt(null);
       setCancelStep("done");
@@ -498,14 +501,26 @@ function SubscriptionTab({ profile }: { profile: any }) {
 
       {/* Post-cancellation confirmation */}
       {cancelStep === "done" && (
-        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <CheckCircle size={16} color={COLORS.sage} style={{ flexShrink: 0 }} />
-          <div>
-            <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "0.2rem" }}>
-              Subscription cancelled
+        <div style={{ border: `1px solid ${S.rule}`, background: COLORS.white, padding: "1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <CheckCircle size={16} color={COLORS.sage} style={{ flexShrink: 0 }} />
+            <div>
+              <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "0.2rem" }}>
+                Subscription cancelled
+              </p>
+              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
+                Your account has been downgraded to Free. All your records are intact.
+              </p>
+            </div>
+          </div>
+          {/* 8.3.2 — Read-only mode notice */}
+          <div style={{ border: `1px solid ${COLORS.sageMid}`, background: COLORS.sageLight, padding: "0.875rem 1rem" }}>
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "0.3rem" }}>
+              Read-only mode
             </p>
-            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight }}>
-              Your account has been downgraded to Free. All your records are intact.
+            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.inkLight, lineHeight: 1.5 }}>
+              Your records are read-only. Your HomeFax score won't update, and existing reports are static.
+              Reactivate Pro to resume tracking and generate new reports.
             </p>
           </div>
         </div>

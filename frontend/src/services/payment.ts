@@ -164,6 +164,18 @@ export const paymentService = {
     return this.subscribe("Free");
   },
 
+  /** Record cancellation timestamp in localStorage (8.3.2). */
+  recordCancellation(): void {
+    localStorage.setItem("homefax_cancelled_at", String(Date.now()));
+  },
+
+  /** Returns { cancelledAt } if the account was cancelled, null otherwise (8.3.2). */
+  getCancellationInfo(): { cancelledAt: number } | null {
+    const raw = localStorage.getItem("homefax_cancelled_at");
+    if (!raw) return null;
+    return { cancelledAt: Number(raw) };
+  },
+
   pause(months: 1 | 2 | 3): void {
     const resumeAt = Date.now() + months * 30 * 24 * 60 * 60 * 1000;
     localStorage.setItem("homefax_sub_paused_until", String(resumeAt));
