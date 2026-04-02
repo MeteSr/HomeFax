@@ -211,6 +211,7 @@ function createQuoteService() {
   const mockRequests: QuoteRequest[] = [...SEED_MY_REQUESTS];
   const mockMyBids: Quote[]          = [...SEED_MY_BIDS];
   const mockOpenRequests: QuoteRequest[] = [...SEED_OPEN_REQUESTS];
+  const mockQuotesByRequest = new Map<string, Quote[]>();
 
   async function getActor() {
     if (!_actor) {
@@ -222,9 +223,17 @@ function createQuoteService() {
 
   return {
   async createRequest(
-    req: Omit<QuoteRequest, "id" | "createdAt" | "status" | "homeowner">
+    req: Omit<QuoteRequest, "id" | "createdAt" | "status" | "homeowner">,
+    tier?: string
   ): Promise<QuoteRequest> {
     if (!QUOTE_CANISTER_ID) {
+      if (tier) {
+        const quota = this.getQuotaForTier(tier);
+        if (quota > 0) {
+          const openCount = mockRequests.filter((r) => r.status === "open").length;
+          if (openCount >= quota) throw new Error("QuotaExceeded");
+        }
+      }
       const r: QuoteRequest = {
         ...req,
         homeowner: "local",
@@ -266,13 +275,15 @@ function createQuoteService() {
     validUntilMs: number
   ): Promise<Quote> {
     if (!QUOTE_CANISTER_ID) {
-      // mock: return a fake pending quote
       const q: Quote = {
         id: `QUOTE_${Date.now()}`, requestId,
         contractor: "local",
         amount: amountCents, timeline: timelineDays,
         validUntil: validUntilMs, status: "pending", createdAt: Date.now(),
       };
+      const existing = mockQuotesByRequest.get(requestId) ?? [];
+      mockQuotesByRequest.set(requestId, [...existing, q]);
+      mockMyBids.push(q);
       return q;
     }
     const a = await getActor();
@@ -298,11 +309,15 @@ function createQuoteService() {
 
   async getBidCountMap(requestIds: string[]): Promise<Record<string, number>> {
     if (!QUOTE_CANISTER_ID) {
-      // Mock: infer counts from request status
       const map: Record<string, number> = {};
       for (const id of requestIds) {
-        const req = mockRequests.find((r) => r.id === id);
-        map[id] = req?.status === "accepted" ? 3 : req?.status === "quoted" ? 2 : 0;
+        const stored = mockQuotesByRequest.get(id);
+        if (stored) {
+          map[id] = stored.length;
+        } else {
+          const req = mockRequests.find((r) => r.id === id);
+          map[id] = req?.status === "accepted" ? 3 : req?.status === "quoted" ? 2 : 0;
+        }
       }
       return map;
     }
@@ -323,7 +338,7 @@ function createQuoteService() {
   },
 
   async getQuotesForRequest(requestId: string): Promise<Quote[]> {
-    if (!QUOTE_CANISTER_ID) return [];
+    if (!QUOTE_CANISTER_ID) return mockQuotesByRequest.get(requestId) ?? [];
     const a = await getActor();
     const result = await a.getQuotesForRequest(requestId);
     if ("err" in result) return [];
@@ -357,6 +372,17 @@ function createQuoteService() {
     return limits[tier] ?? 3;
   },
 
+  /** Returns true if the quote's validity window has passed. */
+  isQuoteExpired(quote: Quote): boolean {
+    return Date.now() > quote.validUntil;
+  },
+
+  /** Returns a new array sorted by urgency: emergency > high > medium > low. */
+  sortByUrgency(requests: QuoteRequest[]): QuoteRequest[] {
+    const ORDER: Record<Urgency, number> = { emergency: 0, high: 1, medium: 2, low: 3 };
+    return [...requests].sort((a, b) => ORDER[a.urgency] - ORDER[b.urgency]);
+  },
+
   reset() {
     _actor = null;
     mockRequests.length = 0;
@@ -365,6 +391,7 @@ function createQuoteService() {
     mockMyBids.push(...SEED_MY_BIDS);
     mockOpenRequests.length = 0;
     mockOpenRequests.push(...SEED_OPEN_REQUESTS);
+    mockQuotesByRequest.clear();
   },
   };
 }

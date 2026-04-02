@@ -133,6 +133,9 @@ function createSensorService() {
   let _actor: any = null;
   const devices: SensorDevice[] = [];
   let deviceCounter = 0;
+  const mockEvents: SensorEvent[] = [];
+  let eventCounter = 0;
+  let criticalHandler: ((e: SensorEvent) => void) | null = null;
 
   async function getActor() {
     if (!_actor) {
@@ -192,15 +195,92 @@ function createSensorService() {
   },
 
   async getEventsForProperty(propertyId: string, limit = 50): Promise<SensorEvent[]> {
-    if (!SENSOR_CANISTER_ID) return [];
+    if (!SENSOR_CANISTER_ID) {
+      return mockEvents.filter((e) => e.propertyId === propertyId).slice(0, limit);
+    }
     const a = await getActor();
     return (await a.getEventsForProperty(propertyId, BigInt(limit)) as any[]).map(fromEvent);
   },
 
   async getPendingAlerts(propertyId: string): Promise<SensorEvent[]> {
-    if (!SENSOR_CANISTER_ID) return [];
+    if (!SENSOR_CANISTER_ID) {
+      return mockEvents.filter((e) => e.propertyId === propertyId && e.severity === "Critical");
+    }
     const a = await getActor();
     return (await a.getPendingAlerts(propertyId) as any[]).map(fromEvent);
+  },
+
+  /** Classify severity for a sensor reading based on event type and value thresholds. */
+  classifySeverity(eventType: SensorEventType, value: number): Severity {
+    switch (eventType) {
+      case "WaterLeak":
+      case "FloodRisk":
+        return "Critical";
+      case "LeakDetected":
+        return "Warning";
+      case "LowTemperature":
+        return value <= 32 ? "Critical" : value <= 45 ? "Warning" : "Info";
+      case "HighTemperature":
+        return value >= 100 ? "Critical" : value >= 85 ? "Warning" : "Info";
+      case "HighHumidity":
+        return value >= 80 ? "Critical" : value >= 65 ? "Warning" : "Info";
+      case "HvacAlert":
+        return "Warning";
+      case "HvacFilterDue":
+        return "Info";
+      default:
+        return "Info";
+    }
+  },
+
+  /** Ingest a single sensor reading, classify severity, and persist in mock store. */
+  async ingestReading(
+    propertyId: string,
+    deviceId:   string,
+    eventType:  SensorEventType,
+    value:      number,
+    unit:       string,
+    rawPayload = ""
+  ): Promise<SensorEvent> {
+    if (!SENSOR_CANISTER_ID) {
+      const severity = this.classifySeverity(eventType, value);
+      const event: SensorEvent = {
+        id:         `EVT_${++eventCounter}`,
+        deviceId,
+        propertyId,
+        eventType,
+        value,
+        unit,
+        timestamp:  Date.now(),
+        severity,
+        jobId:      null,
+      };
+      mockEvents.push(event);
+      if (severity === "Critical" && criticalHandler) {
+        criticalHandler(event);
+      }
+      return event;
+    }
+    throw new Error("ingestReading not implemented for canister path");
+  },
+
+  /** Ingest multiple readings in one call. */
+  async ingestReadings(readings: Array<{
+    propertyId: string;
+    deviceId:   string;
+    eventType:  SensorEventType;
+    value:      number;
+    unit:       string;
+    rawPayload?: string;
+  }>): Promise<SensorEvent[]> {
+    return Promise.all(
+      readings.map((r) => this.ingestReading(r.propertyId, r.deviceId, r.eventType, r.value, r.unit, r.rawPayload))
+    );
+  },
+
+  /** Register a handler invoked whenever a Critical event is ingested (cross-service hook). */
+  onCriticalEvent(handler: (event: SensorEvent) => void): void {
+    criticalHandler = handler;
   },
 
   /** Human-readable label for an event type. */
@@ -228,6 +308,9 @@ function createSensorService() {
     _actor = null;
     devices.length = 0;
     deviceCounter = 0;
+    mockEvents.length = 0;
+    eventCounter = 0;
+    criticalHandler = null;
   },
   };
 }

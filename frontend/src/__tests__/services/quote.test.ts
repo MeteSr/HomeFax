@@ -4,7 +4,7 @@ import { quoteService } from "@/services/quote";
 // Ensure Date.now() increments on every call so IDs based on it are always distinct.
 let _now = 2_000_000_000_000;
 vi.spyOn(Date, "now").mockImplementation(() => ++_now);
-import type { QuoteRequest } from "@/services/quote";
+import type { QuoteRequest, Quote } from "@/services/quote";
 
 // ─── getQuotaForTier (pure) ───────────────────────────────────────────────────
 
@@ -230,5 +230,215 @@ describe("quoteService mock — submitQuote", () => {
     const a = await svc.submitQuote("REQ_1", 100_000, 3, Date.now() + 86400000);
     const b = await svc.submitQuote("REQ_1", 200_000, 7, Date.now() + 86400000);
     expect(a.id).not.toBe(b.id);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 12.2.3 — Contractor side: bid storage, expiration, urgency matching, quota
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── Contractor bid storage: submitQuote → getQuotesForRequest ───────────────
+
+describe("quoteService mock — contractor bid storage (12.2.3)", () => {
+  let svc: typeof quoteService;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const m = await import("@/services/quote");
+    svc = m.quoteService;
+  });
+
+  it("getQuotesForRequest returns submitted bid for that request", async () => {
+    const validUntil = Date.now() + 7 * 86_400_000;
+    await svc.submitQuote("REQ_1", 250_000, 4, validUntil);
+    const bids = await svc.getQuotesForRequest("REQ_1");
+    expect(bids).toHaveLength(1);
+    expect(bids[0].requestId).toBe("REQ_1");
+    expect(bids[0].amount).toBe(250_000);
+  });
+
+  it("getQuotesForRequest returns all bids when multiple submitted for same request", async () => {
+    const vu = Date.now() + 7 * 86_400_000;
+    await svc.submitQuote("REQ_2", 100_000, 2, vu);
+    await svc.submitQuote("REQ_2", 120_000, 3, vu);
+    await svc.submitQuote("REQ_2", 140_000, 5, vu);
+    const bids = await svc.getQuotesForRequest("REQ_2");
+    expect(bids).toHaveLength(3);
+  });
+
+  it("getQuotesForRequest returns empty array for a request with no bids", async () => {
+    const bids = await svc.getQuotesForRequest("REQ_NO_BIDS");
+    expect(bids).toEqual([]);
+  });
+
+  it("bids for different requests do not bleed across", async () => {
+    const vu = Date.now() + 7 * 86_400_000;
+    await svc.submitQuote("REQ_A", 50_000, 1, vu);
+    await svc.submitQuote("REQ_B", 60_000, 2, vu);
+    const bidsA = await svc.getQuotesForRequest("REQ_A");
+    const bidsB = await svc.getQuotesForRequest("REQ_B");
+    expect(bidsA).toHaveLength(1);
+    expect(bidsB).toHaveLength(1);
+    expect(bidsA[0].requestId).toBe("REQ_A");
+    expect(bidsB[0].requestId).toBe("REQ_B");
+  });
+
+  it("submitted bid also appears in getMyBids()", async () => {
+    const vu = Date.now() + 7 * 86_400_000;
+    const q = await svc.submitQuote("REQ_1", 300_000, 5, vu);
+    const myBids = await svc.getMyBids();
+    expect(myBids.some((b) => b.id === q.id)).toBe(true);
+  });
+
+  it("getBidCountMap reflects submitted bids", async () => {
+    const vu = Date.now() + 7 * 86_400_000;
+    await svc.submitQuote("REQ_1", 100_000, 2, vu);
+    await svc.submitQuote("REQ_1", 200_000, 3, vu);
+    const map = await svc.getBidCountMap(["REQ_1", "REQ_99"]);
+    expect(map["REQ_1"]).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ─── Quote expiration ─────────────────────────────────────────────────────────
+
+describe("quoteService.isQuoteExpired (12.2.3)", () => {
+  const makeQuote = (validUntil: number): Quote => ({
+    id: "Q1", requestId: "R1", contractor: "c",
+    amount: 100_000, timeline: 2,
+    validUntil, status: "pending",
+    createdAt: Date.now() - 86_400_000,
+  });
+
+  it("returns true when validUntil is in the past", () => {
+    expect(quoteService.isQuoteExpired(makeQuote(Date.now() - 1000))).toBe(true);
+  });
+
+  it("returns false when validUntil is in the future", () => {
+    expect(quoteService.isQuoteExpired(makeQuote(Date.now() + 86_400_000))).toBe(false);
+  });
+
+  it("a quote with validUntil one day ago is expired", () => {
+    const now = Date.now();
+    expect(quoteService.isQuoteExpired(makeQuote(now - 86_400_000))).toBe(true);
+  });
+
+  it("a quote with validUntil far in the future is not expired", () => {
+    // Use a fixed far-future absolute timestamp to avoid mock counter issues
+    expect(quoteService.isQuoteExpired(makeQuote(9_999_999_999_999))).toBe(false);
+  });
+});
+
+// ─── Urgency-based matching ───────────────────────────────────────────────────
+
+describe("quoteService.sortByUrgency (12.2.3)", () => {
+  const makeReq = (urgency: "low" | "medium" | "high" | "emergency"): QuoteRequest => ({
+    id: urgency, propertyId: "p", homeowner: "h", serviceType: "HVAC",
+    description: "d", urgency, status: "open", createdAt: 0,
+  });
+
+  it("emergency sorts before high", () => {
+    const sorted = quoteService.sortByUrgency([makeReq("high"), makeReq("emergency")]);
+    expect(sorted[0].urgency).toBe("emergency");
+  });
+
+  it("full sort order: emergency > high > medium > low", () => {
+    const shuffled = [makeReq("low"), makeReq("medium"), makeReq("high"), makeReq("emergency")];
+    const sorted = quoteService.sortByUrgency(shuffled);
+    expect(sorted.map((r) => r.urgency)).toEqual(["emergency", "high", "medium", "low"]);
+  });
+
+  it("does not mutate the input array", () => {
+    const input = [makeReq("low"), makeReq("high"), makeReq("emergency")];
+    const original = input.map((r) => r.urgency);
+    quoteService.sortByUrgency(input);
+    expect(input.map((r) => r.urgency)).toEqual(original);
+  });
+
+  it("emergency open request from seed data appears before lower-urgency ones when sorted", async () => {
+    const open = await quoteService.getOpenRequests();
+    const sorted = quoteService.sortByUrgency(open);
+    const emergIdx = sorted.findIndex((r) => r.urgency === "emergency");
+    const highIdx  = sorted.findIndex((r) => r.urgency === "high");
+    if (emergIdx !== -1 && highIdx !== -1) {
+      expect(emergIdx).toBeLessThan(highIdx);
+    }
+  });
+
+  it("two requests with same urgency preserve relative order (stable sort)", () => {
+    const a = { ...makeReq("high"), id: "A" };
+    const b = { ...makeReq("high"), id: "B" };
+    const sorted = quoteService.sortByUrgency([a, b]);
+    expect(sorted[0].id).toBe("A");
+    expect(sorted[1].id).toBe("B");
+  });
+});
+
+// ─── Tier-enforced open-request limits (12.2.3) ───────────────────────────────
+
+describe("quoteService mock — tier quota enforcement (12.2.3)", () => {
+  let svc: typeof quoteService;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const m = await import("@/services/quote");
+    svc = m.quoteService;
+    // Pre-seeded state: MY_REQ_1 (quoted), MY_REQ_2 (open), MY_REQ_3 (accepted)
+    // → 1 open request at start
+  });
+
+  it("Free tier: 3rd open request succeeds", async () => {
+    // 1 pre-seeded open + 1 more = 2 open; add 1 more → 3 → should succeed
+    await svc.createRequest({ propertyId: "p", serviceType: "HVAC",    urgency: "low", description: "d" }, "Free");
+    await expect(
+      svc.createRequest({ propertyId: "p", serviceType: "Roofing", urgency: "low", description: "d" }, "Free")
+    ).resolves.toBeDefined();
+  });
+
+  it("Free tier: 4th open request throws QuotaExceeded", async () => {
+    // 1 pre-seeded open + 2 created = 3 open; next should be blocked
+    await svc.createRequest({ propertyId: "p", serviceType: "HVAC",    urgency: "low", description: "d" }, "Free");
+    await svc.createRequest({ propertyId: "p", serviceType: "Roofing", urgency: "low", description: "d" }, "Free");
+    await expect(
+      svc.createRequest({ propertyId: "p", serviceType: "Plumbing", urgency: "low", description: "d" }, "Free")
+    ).rejects.toThrow("QuotaExceeded");
+  });
+
+  it("Pro tier: 10th open request succeeds", async () => {
+    // 1 pre-seeded + 8 created = 9; one more → 10, should succeed
+    for (let i = 0; i < 8; i++) {
+      await svc.createRequest({ propertyId: "p", serviceType: "HVAC", urgency: "low", description: `d${i}` }, "Pro");
+    }
+    await expect(
+      svc.createRequest({ propertyId: "p", serviceType: "Roofing", urgency: "low", description: "d9" }, "Pro")
+    ).resolves.toBeDefined();
+  });
+
+  it("Pro tier: 11th open request throws QuotaExceeded", async () => {
+    // 1 pre-seeded + 9 created = 10; next should be blocked
+    for (let i = 0; i < 9; i++) {
+      await svc.createRequest({ propertyId: "p", serviceType: "HVAC", urgency: "low", description: `d${i}` }, "Pro");
+    }
+    await expect(
+      svc.createRequest({ propertyId: "p", serviceType: "Plumbing", urgency: "low", description: "d10" }, "Pro")
+    ).rejects.toThrow("QuotaExceeded");
+  });
+
+  it("no tier argument → no quota check (backwards compat)", async () => {
+    // Create well past the Free quota of 3
+    for (let i = 0; i < 5; i++) {
+      await svc.createRequest({ propertyId: "p", serviceType: "HVAC", urgency: "low", description: `d${i}` });
+    }
+    await expect(
+      svc.createRequest({ propertyId: "p", serviceType: "Roofing", urgency: "low", description: "extra" })
+    ).resolves.toBeDefined();
+  });
+
+  it("closed/accepted/quoted requests do not count toward the open quota", async () => {
+    // Pre-seed has 1 quoted + 1 accepted — they must NOT count toward the Free quota of 3
+    // 1 open pre-seeded; add 2 → 3 open; should still succeed (not blocked by 2 non-open seed items)
+    await svc.createRequest({ propertyId: "p", serviceType: "HVAC",    urgency: "low", description: "d1" }, "Free");
+    await expect(
+      svc.createRequest({ propertyId: "p", serviceType: "Roofing", urgency: "low", description: "d2" }, "Free")
+    ).resolves.toBeDefined();
   });
 });
