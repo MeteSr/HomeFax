@@ -266,18 +266,6 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 | 8.1.5 | Pulse opt-out / frequency controls | ✅ Exists | — | "Weekly Home Pulse" toggle in Settings Notifications tab; persisted to localStorage; `DashboardPage` checks `homefax_pulse_enabled` before showing pulse tip |
 | 8.1.6 | Pulse content personalization over time | ⬜ Missing | M | Track which Pulse items the user acted on; Claude weights future digests toward high-signal topics |
 
-### 8.2 Score Micro-Increments & Dollar-Value Display
-**Vision:** The score moves every week for an engaged user. Every increment shows a dollar value. People don't cancel things they're actively improving.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 8.2.1 | Score event system | ✅ Exists | — | `scoreEventService.ts` derives events from jobs/properties: verified job (+4), DIY (+1), property verification (+5/+10), diversity milestone, value milestone |
-| 8.2.2 | Micro-increment scoring in `market` canister | ✅ Exists | — | Score event feed ("Score Activity") on Dashboard shows each micro-action with pts and category badge |
-| 8.2.3 | Score history / sparkline | ✅ Exists | — | `ScoreSparkline` + `ScoreHistoryChart` on Dashboard; `scoreService.ts` persists weekly snapshots to localStorage |
-| 8.2.4 | Dollar value of score change | ✅ Done | M | `scoreValueDelta(fromScore, toScore)` in `scoreService.ts`; score increase banner on Dashboard shows "Your score went from N to M. A X-point increase ≈ $Y in estimated home value." |
-| 8.2.5 | Score increase push notification | ✅ Exists | — | In-app banner on Dashboard when `scoreDelta > 0`; respects "Score Change Alerts" toggle in Settings |
-| 8.2.6 | Score stagnation alert | ✅ Exists | — | `scoreStagnant` nudge in DashboardPage when score unchanged for 4+ weeks |
-
 ### 8.3 Cancellation Flow — Make It Feel Like Data Loss
 **Vision:** The cancel flow shows exactly what's at stake: verified records, active warranties, score, ICP chain of custody. Factually accurate, not manipulative.
 
@@ -317,50 +305,6 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 ## 10. For Sale By Owner (FSBO) Mode — Seller Without an Agent
 
 **Strategic thesis:** Roughly 10% of US home sales are FSBO. These sellers are underserved by every major platform — Zillow makes it cumbersome, FSBO.com is dated, and no one gives them tools that actually equip them to negotiate, price, and close confidently. HomeFax's verified maintenance record is the best FSBO asset that exists: it pre-answers buyer objections, replaces an inspection contingency, and signals a serious, prepared seller. The app should be the platform that makes FSBO actually work.
-
----
-
-### 10.4 Buyer Communication & Showing Management
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 10.4.1 | Showing request inbox | ✅ Done | M | `ShowingInbox` component + `showingRequest.ts` service; accept/decline/propose alternate time |
-| 10.4.2 | Showing calendar | ✅ Done | M | `ShowingCalendar` component; confirmed showings calendar view |
-| 10.4.3 | Post-showing feedback request | ✅ Done | S | `showingFeedback.ts` service; one-question feedback logged per showing |
-| 10.4.4 | Buyer Q&A via HomeFax report | ✅ Done | M | `ReportQAPanel` component + `reportQA.ts` service; buyers submit questions against the report |
-
----
-
-### 10.5 Offer Management
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 10.5.1 | Offer intake form | ✅ Done | M | `FsboOfferPanel` form: buyer name, price, earnest money, contingencies, close date, escalation clause |
-| 10.5.2 | Offer comparison view | ✅ Done | M | `FsboOfferPanel` offer list: net proceeds, contingency count, escalation indicator, earnest money per offer |
-| 10.5.3 | Net proceeds calculator per offer | ✅ Done | S | `computeFsboNetProceeds` (offer − 2% closing − concessions) + `computeContingencyRisk` in `fsboOffer.ts` |
-| 10.5.4 | Counter-offer tracking | ✅ Done | M | `fsboOfferService.addCounter` + counter thread UI in `FsboOfferPanel`; status transitions Active → Countered |
-| 10.5.5 | Accepted offer milestone | ✅ Done | S | `fsboOfferService.accept` → `fsboService.setUnderContract`; Under Contract banner; actions hidden |
-
----
-
-### 10.6 Disclosure & Legal
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 10.6.1 | Seller disclosure statement generator | ✅ Done | L | `generateDisclosure(property, jobs)` in `disclosureService.ts`; pre-fills propertyInfo, materialImprovements, permits, knownDefects from HomeFax data |
-| 10.6.2 | Disclosure completeness score | ✅ Done | M | `computeDisclosureScore(property, jobs)` → 0-100; scored on verification (+25), verified jobs (+25), key systems (+25 prorated), permits (+15), improvements (+10) |
-| 10.6.3 | Legal document library | ✅ Done | L | `getTemplates(state)` in `legalDocService.ts`; universal + state-specific templates (TX, FL, CA) for PurchaseAgreement, CounterOfferForm, EarnestMoneyAgreement, SellerDisclosure |
-| 10.6.4 | Uploaded legal documents stored on-chain | ✅ Done | S | `legalDocService.logUpload/getUploads`; `DisclosurePanel` file upload UI; wired to photo canister in prod |
-| 10.6.5 | "Inspection waiver" readiness based on HomeFax score | ✅ Done | M | `inspectionWaiverReady(score, jobs)` → score ≥ 88 + ≥ 2 key systems verified; badge shown in `DisclosurePanel` |
-
----
-
-### 10.7 FSBO → Agent Handoff
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 10.7.1 | "I changed my mind — find me an agent" flow | ✅ Done | S | One-click from FSBO dashboard to open a listing bid request (9.2); FSBO data (price history, showing count, offer history) transferred to the bid request as context for agents |
-| 10.7.2 | FSBO effort summary for agent proposals | ✅ Done | S | Agents bidding on a property that was previously FSBO see the seller's showing count, offer count, and days on market; this data strengthens the agent's proposal and HomeFax's positioning as the source of record |
 
 ---
 
@@ -491,16 +435,6 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 **The upgrade moment:** *"I'm ready to list — let me share my report"* → 7-day expiry warning → upgrade to Pro for a permanent, unbranded link.
 
----
-
-### 15.2 Report Share Link Expiry
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 15.2.1 | Default share link TTL to 7 days for free tier | ✅ Done | M | In `report` canister `generateReport()`, check caller's tier. If Free, set `expiresAt = now + 7 days` regardless of what the caller passes. Pro+ retain the current behavior (caller-controlled expiry, including null = never). |
-| 15.2.2 | Warn free users before link expires in `ReportPage` | ✅ Done | S | When a report is loaded and the share link expires within 48 hours, show a banner: "This report link expires [date]. Upgrade to Pro for a permanent link." |
-| 15.2.3 | Show expiry in `GenerateReportModal` for free users | ✅ Done | S | In the success screen shown after `reportService.generateReport()` resolves (the screen that displays the shareable URL), add a conditional block below the URL: if the user is on Free, show an amber info row — "⚠ This link expires in 7 days · [Upgrade to Pro →]". If Pro+, show a green confirmation row — "✓ This link never expires". Check tier from `useAuthStore` / `paymentService.getSubscription()`. This is informational only, not a blocker — the user has already generated the report. |
-| 15.2.4 | Expired free report shows upgrade prompt, not generic error | ✅ Done | S | When `getReport()` returns a revoked/expired token, `ReportPage` currently shows a generic error. For free-tier-expired links, show: "This HomeFax report has expired. The homeowner can upgrade to Pro to share a permanent link." |
 
 ---
 
@@ -521,17 +455,5 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 | 15.4.1 | Show score number on free tier, lock breakdown | ✅ Done | M | The score breakdown appears in two places: (1) `DashboardPage` — the per-property score section, and (2) `PropertyDetailPage` — the Score tab. Apply the gate in both. Free users see the large score number and grade (e.g., "74 · C+") unchanged. The four scoring pillars rendered below it (`scoreService.computeScore()` returns `verifiedJobPts`, `valuePts`, `verificationPts`, `diversityPts`) are replaced with a single `<UpgradeGate>` card (see 15.7.1): icon 🔍, title "Score Breakdown", description "See exactly what's dragging your score down — upgrade to Pro." The gate check is: `if (tier === "Free") show gate else show pillars`. Read tier from `paymentService.getSubscription()` called once in the page's `useEffect`, stored in local state. |
 | 15.4.2 | Lock improvement recommendations on free tier | ✅ Done | S | The "How to improve your score" action list (currently shown on Dashboard and PropertyDetailPage) is Pro-only. Free users see: "3 actions available — upgrade to see them." |
 | 15.4.3 | Show full breakdown in score cert for Pro+ | ⬜ Missing | S | `ScoreCertPage` shows full breakdown for Pro+. Free users who earn a cert (score ≥88) still get the cert number, but the detailed sub-scores are blurred with an upgrade prompt. |
-
----
-
-### 15.6 Feature Locks — High-Value Pages
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 15.6.1 | Lock Recurring Services on free tier | ✅ Done | S | Free users who navigate to `/recurring/new` see an upgrade gate page instead of the create form: "Recurring service contracts are a Pro feature — track lawn care, pest control, and pool maintenance with a Pro plan." This is a strong differentiator because contract continuity is exactly what buyers want to see. |
-| 15.6.2 | Lock Market Intelligence on free tier | ✅ Done | S | `MarketIntelligencePage` shows a locked state for free users: "See how your home's maintenance investment compares to your neighbors — upgrade to Pro." The competitive positioning data is pure selling value and has no place on a free tier. |
-| 15.6.3 | Lock Warranty Wallet on free tier | ✅ Done | S | `WarrantyWalletPage` shows a locked state: "Track active warranties and get expiry alerts — upgrade to Pro." Warranty data is high perceived value (especially for HVAC, roof, appliances) and easy to gate. |
-| 15.6.4 | Lock Agent Marketplace and FSBO on free tier | ✅ Done | S | Both the listing bid request flow (Section 9) and FSBO mode (Section 10) require Pro or Premium. Free users who navigate to these flows see: "Selling your home? Upgrade to Pro to make agents compete for your listing — or go FSBO with our full toolkit." This is the highest-value gate of all. |
-| 15.6.5 | Lock Insurance Defense on free tier | ✅ Done | S | `InsuranceDefensePage` is Pro-only. Free users see a locked state: "Build your evidence file for insurance claims — upgrade to Pro." |
 
 ---
