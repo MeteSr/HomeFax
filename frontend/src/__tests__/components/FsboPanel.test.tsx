@@ -8,8 +8,9 @@
  */
 
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 
 // ─── Hoisted mock data ────────────────────────────────────────────────────────
 
@@ -61,6 +62,18 @@ vi.mock("@/services/fsbo", async (importOriginal) => {
   };
 });
 
+vi.mock("@/services/listing", () => ({
+  listingService: { createBidRequest: vi.fn().mockResolvedValue({}) },
+}));
+
+vi.mock("@/services/fsboOffer", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/fsboOffer")>();
+  return {
+    ...actual,
+    fsboOfferService: { getByProperty: vi.fn().mockReturnValue([]) },
+  };
+});
+
 vi.mock("@/services/mlsService", () => ({
   mlsService: {
     submit: vi.fn().mockResolvedValue({
@@ -76,17 +89,23 @@ import { mlsService } from "@/services/mlsService";
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-function renderPanel(overrides: Partial<React.ComponentProps<typeof FsboPanel>> = {}) {
-  return render(
-    <FsboPanel
-      propertyId="42"
-      score={72}
-      verifiedJobCount={3}
-      hasReport={true}
-      property={mockProperty}
-      {...overrides}
-    />
-  );
+async function renderPanel(overrides: Partial<React.ComponentProps<typeof FsboPanel>> = {}) {
+  let result: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(
+      <MemoryRouter>
+        <FsboPanel
+          propertyId="42"
+          score={72}
+          verifiedJobCount={3}
+          hasReport={true}
+          property={mockProperty}
+          {...overrides}
+        />
+      </MemoryRouter>
+    );
+  });
+  return result!;
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -101,13 +120,13 @@ describe("FsboPanel MLS integration — (10.3.6)", () => {
     });
   });
 
-  it("shows 'Submit to MLS' button when listing is in the done step", () => {
-    renderPanel();
+  it("shows 'Submit to MLS' button when listing is in the done step", async () => {
+    await renderPanel();
     expect(screen.getByRole("button", { name: /submit.*mls|mls.*submit/i })).toBeInTheDocument();
   });
 
   it("clicking 'Submit to MLS' calls mlsService.submit with propertyId, price, address", async () => {
-    renderPanel();
+    await renderPanel();
     fireEvent.click(screen.getByRole("button", { name: /submit.*mls|mls.*submit/i }));
     await waitFor(() =>
       expect(vi.mocked(mlsService.submit)).toHaveBeenCalledWith("42", 48_500_000, "123 Maple St")
@@ -115,7 +134,7 @@ describe("FsboPanel MLS integration — (10.3.6)", () => {
   });
 
   it("shows the MLS listing URL after successful submission", async () => {
-    renderPanel();
+    await renderPanel();
     fireEvent.click(screen.getByRole("button", { name: /submit.*mls|mls.*submit/i }));
     await waitFor(() =>
       expect(screen.getByRole("link", { name: /view.*mls.*listing|mls.*listing/i })).toBeInTheDocument()
@@ -126,7 +145,7 @@ describe("FsboPanel MLS integration — (10.3.6)", () => {
 
   it("shows an error message if submission fails", async () => {
     vi.mocked(mlsService.submit).mockRejectedValueOnce(new Error("MLS submission failed"));
-    renderPanel();
+    await renderPanel();
     fireEvent.click(screen.getByRole("button", { name: /submit.*mls|mls.*submit/i }));
     await waitFor(() =>
       expect(screen.getByText(/submission failed|could not submit|error/i)).toBeInTheDocument()
@@ -137,20 +156,24 @@ describe("FsboPanel MLS integration — (10.3.6)", () => {
     vi.mocked(mlsService.submit).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve({ listingId: "x", url: "u", status: "submitted" }), 500))
     );
-    renderPanel();
+    await renderPanel();
     fireEvent.click(screen.getByRole("button", { name: /submit.*mls|mls.*submit/i }));
     expect(screen.getByText(/submitting|loading/i)).toBeInTheDocument();
   });
 
-  it("does NOT show the MLS button when property prop is absent", () => {
-    render(
-      <FsboPanel
-        propertyId="42"
-        score={72}
-        verifiedJobCount={3}
-        hasReport={true}
-      />
-    );
+  it("does NOT show the MLS button when property prop is absent", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FsboPanel
+            propertyId="42"
+            score={72}
+            verifiedJobCount={3}
+            hasReport={true}
+          />
+        </MemoryRouter>
+      );
+    });
     expect(screen.queryByRole("button", { name: /submit.*mls|mls.*submit/i })).not.toBeInTheDocument();
   });
 });
