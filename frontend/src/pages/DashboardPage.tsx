@@ -14,7 +14,7 @@ import { RecurringServiceCard } from "@/components/RecurringServiceCard";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { isNewSince, hasQuoteActivity, pendingQuoteCount } from "@/services/notifications";
-import { computeScore, computeScoreWithDecay, getScoreGrade, loadHistory, recordSnapshot, scoreDelta, premiumEstimate, isCertified, type ScoreSnapshot } from "@/services/scoreService";
+import { computeScore, computeScoreWithDecay, getScoreGrade, loadHistory, recordSnapshot, scoreDelta, scoreValueDelta, premiumEstimate, isCertified, type ScoreSnapshot } from "@/services/scoreService";
 import { getAllDecayEvents, getAtRiskWarnings, getTotalDecay, decayCategoryColor, decayCategoryBg, type DecayEvent, type AtRiskWarning } from "@/services/scoreDecayService";
 import { systemAgesService, type SystemAges } from "@/services/systemAges";
 import { certService } from "@/services/cert";
@@ -177,6 +177,8 @@ export default function DashboardPage() {
   const homefaxScore  = activeProperty ? computeScoreWithDecay(jobs, [activeProperty], totalDecay) : 0;
   const scoreGrade    = getScoreGrade(homefaxScore);
   const delta         = scoreDelta(scoreHistory);
+  const prevScore     = homefaxScore - delta;
+  const scoreValueChange = scoreValueDelta(prevScore, homefaxScore);
 
   const hasProperty  = properties.length > 0;
   const hasVerified  = properties.some((p) => p.verificationLevel !== "Unverified" && p.verificationLevel !== "PendingReview");
@@ -720,7 +722,9 @@ export default function DashboardPage() {
                 Score Up +{delta} pts
               </span>
               <span style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.sage, opacity: 0.75 }}>
-                — Your HomeFax Score is now {homefaxScore}. Keep logging jobs to grow your record.
+                {scoreValueChange != null
+                  ? `— Your score went from ${prevScore} to ${homefaxScore}. A ${delta}-point increase ≈ $${scoreValueChange.toLocaleString()} in estimated home value.`
+                  : `— Your HomeFax Score is now ${homefaxScore}. Keep logging jobs to grow your record.`}
               </span>
             </div>
             <button

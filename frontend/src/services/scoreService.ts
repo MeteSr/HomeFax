@@ -151,6 +151,27 @@ export function parseCertToken(token: string): CertPayload | null {
 }
 
 /**
+ * Estimates the home-value dollar change corresponding to a HomeFax score increase.
+ * Returns null if the delta is zero or negative, or if toScore is below 40.
+ *
+ * Dollar-per-point rates are calibrated to the backlog example (8.2.4):
+ *   score 74 → 77 (3 pts) ≈ $4,200 → $1,400/pt in the 70–84 band.
+ * Result is rounded to the nearest $100.
+ */
+export function scoreValueDelta(fromScore: number, toScore: number): number | null {
+  if (toScore <= fromScore || toScore < 40) return null;
+
+  const avg = (fromScore + toScore) / 2;
+  let dollarPerPt: number;
+  if (avg < 55)      dollarPerPt = 333;   // ~$333/pt  ($3K–$8K band)
+  else if (avg < 70) dollarPerPt = 467;   // ~$467/pt  ($8K–$15K band)
+  else if (avg < 85) dollarPerPt = 1_400; // ~$1,400/pt ($15K–$25K band)
+  else               dollarPerPt = 1_000; // ~$1,000/pt ($20K–$35K band)
+
+  return Math.round((toScore - fromScore) * dollarPerPt / 100) * 100;
+}
+
+/**
  * Estimates the buyer-premium dollar range associated with a HomeFax score.
  * Based on industry research: verified maintenance history lifts sale price
  * 1–10% in typical US markets. Returns null below score 40 (not enough signal).
