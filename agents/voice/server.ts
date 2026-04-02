@@ -18,7 +18,7 @@ if (!allowedOrigin) {
   if (process.env.NODE_ENV === "production") {
     throw new Error("FRONTEND_ORIGIN env var must be set in production");
   }
-  console.warn("[voice-agent] FRONTEND_ORIGIN not set — defaulting to http://localhost:5173 (dev only)");
+  console.warn("[voice-agent] FRONTEND_ORIGIN not set — defaulting to http://localhost:3000 (dev only)");
 }
 const origin = allowedOrigin ?? "http://localhost:3000";
 
