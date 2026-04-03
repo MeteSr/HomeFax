@@ -121,14 +121,14 @@ vi.mock("@/store/authStore", () => ({
 import ShowingInbox    from "@/components/ShowingInbox";
 import ShowingCalendar from "@/components/ShowingCalendar";
 import ReportQAPanel   from "@/components/ReportQAPanel";
-import { showingRequestService }  from "@/services/showingRequest";
+import { showingRequestService, type ShowingRequest } from "@/services/showingRequest";
 import { showingFeedbackService } from "@/services/showingFeedback";
 import { reportQAService }        from "@/services/reportQA";
 import { generateIcal }           from "@/services/showingRequest";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function renderInbox(requests = [mockPending]) {
+function renderInbox(requests: ShowingRequest[] = [mockPending as ShowingRequest]) {
   vi.mocked(showingRequestService.getByProperty).mockReturnValue(requests as any);
   return render(
     <MemoryRouter>
@@ -137,7 +137,7 @@ function renderInbox(requests = [mockPending]) {
   );
 }
 
-function renderCalendar(requests = [mockAccepted]) {
+function renderCalendar(requests: ShowingRequest[] = [mockAccepted as ShowingRequest]) {
   vi.mocked(showingRequestService.getByProperty).mockReturnValue(requests as any);
   return render(
     <MemoryRouter>

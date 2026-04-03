@@ -787,7 +787,7 @@ function createListingService() {
         createdAt:        Date.now(),
         visibility:       "inviteOnly",
         invitedAgentIds:  [agentId],
-        propertySnapshot: null,
+        propertySnapshot: undefined,
       };
       requests.push(req);
       return { ...req };

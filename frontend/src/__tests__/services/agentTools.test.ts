@@ -49,27 +49,28 @@ const mockJob = {
   status: "completed" as const, verified: false,
   homeownerSigned: true, contractorSigned: false,
   isDiy: false, contractorName: "Apex Roofing",
-  permitNumber: null, warrantyMonths: null,
-  photos: [], homeowner: "owner", contractor: null, createdAt: 0,
+  permitNumber: undefined, warrantyMonths: undefined,
+  photos: [], homeowner: "owner", contractor: undefined, createdAt: 0,
 };
 
 const mockRequest = {
-  id: "req-1", propertyId: "prop-1", serviceType: "HVAC",
-  description: "AC replacement", urgency: "high" as const,
-  status: "open" as const, bids: [], createdAt: 0,
+  id: "req-1", propertyId: "prop-1", homeowner: "owner-principal",
+  serviceType: "HVAC", description: "AC replacement", urgency: "high" as const,
+  status: "open" as const, createdAt: 0,
 };
 
 const mockContractor = {
   id: "c-1", name: "CoolAir LLC", trustScore: 88,
   jobsCompleted: 42, isVerified: true, serviceArea: "Austin, TX",
-  specialties: ["HVAC"], rating: 4.8, reviewCount: 18,
-  bio: "", phone: "", email: "", createdAt: 0,
+  specialty: "HVAC", licenseNumber: null, rating: 4.8,
+  bio: null, phone: "", email: "", createdAt: 0,
 };
 
 const mockScheduleEntry = {
   id: "sch-1", propertyId: "prop-1", systemName: "HVAC",
   taskDescription: "Annual filter change", plannedYear: 2025,
   plannedMonth: 3, estimatedCostCents: 5000,
+  isCompleted: false, createdAt: 0,
 };
 
 beforeEach(() => vi.clearAllMocks());

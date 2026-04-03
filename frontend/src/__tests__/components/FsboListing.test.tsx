@@ -52,13 +52,13 @@ const {
   };
 
   const mockJobs = [
-    { id: "j1", verified: true,  serviceType: "Roof",  amount: 800000, date: "2024-01-01", status: "verified" as const,   contractorName: "Apex Roofing", description: "", photos: [], homeownerSigned: true,  contractorSigned: true,  isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: null, createdAt: 0, permitNumber: null, warrantyMonths: null },
-    { id: "j2", verified: true,  serviceType: "HVAC",  amount: 500000, date: "2024-03-01", status: "verified" as const,   contractorName: "CoolAir",      description: "", photos: [], homeownerSigned: true,  contractorSigned: true,  isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: null, createdAt: 0, permitNumber: null, warrantyMonths: null },
-    { id: "j3", verified: false, serviceType: "Paint", amount: 120000, date: "2024-05-01", status: "completed" as const,  contractorName: "PaintPro",     description: "", photos: [], homeownerSigned: true,  contractorSigned: false, isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: null, createdAt: 0, permitNumber: null, warrantyMonths: null },
+    { id: "j1", verified: true,  serviceType: "Roof",  amount: 800000, date: "2024-01-01", status: "verified" as const,   contractorName: "Apex Roofing", description: "", photos: [], homeownerSigned: true,  contractorSigned: true,  isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: undefined, createdAt: 0, permitNumber: undefined, warrantyMonths: undefined },
+    { id: "j2", verified: true,  serviceType: "HVAC",  amount: 500000, date: "2024-03-01", status: "verified" as const,   contractorName: "CoolAir",      description: "", photos: [], homeownerSigned: true,  contractorSigned: true,  isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: undefined, createdAt: 0, permitNumber: undefined, warrantyMonths: undefined },
+    { id: "j3", verified: false, serviceType: "Paint", amount: 120000, date: "2024-05-01", status: "completed" as const,  contractorName: "PaintPro",     description: "", photos: [], homeownerSigned: true,  contractorSigned: false, isDiy: false, propertyId: "42", homeowner: "owner-principal", contractor: undefined, createdAt: 0, permitNumber: undefined, warrantyMonths: undefined },
   ];
 
   const mockPhotos = [
-    { id: "ph1", url: "https://example.com/photo1.jpg", jobId: "j1", propertyId: "42", roomId: null, hash: "abc", uploadedAt: 0, approved: true, approvers: [], pendingApprovers: [], uploadedBy: "owner-principal" },
+    { id: "ph1", url: "https://example.com/photo1.jpg", jobId: "j1", propertyId: "42", hash: "abc", phase: "after", description: "Roof replacement", size: 102400, verified: true, createdAt: 0 },
   ];
 
   return { mockProperty, mockFsboRecord, mockJobs, mockPhotos };

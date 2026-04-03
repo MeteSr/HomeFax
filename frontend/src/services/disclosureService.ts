@@ -56,6 +56,7 @@ export function computeDisclosureScore(property: Property, jobs: Job[]): number 
 // ─── 10.6.1 ──────────────────────────────────────────────────────────────────
 
 export interface MaterialImprovement {
+  id?:                 string;
   title:               string;
   serviceType:         string;
   year:                number;
@@ -104,7 +105,7 @@ export function generateDisclosure(
       propertyType: property.propertyType,
     },
     materialImprovements: verified.map((j) => ({
-      title:               j.title ?? j.serviceType,
+      title:               j.serviceType,
       serviceType:         j.serviceType,
       year:                new Date(j.date).getFullYear(),
       verifiedByContractor: !j.isDiy && j.contractorSigned,
@@ -112,7 +113,7 @@ export function generateDisclosure(
     permits: jobs
       .filter((j) => j.permitNumber)
       .map((j) => ({
-        title:        j.title ?? j.serviceType,
+        title:        j.serviceType,
         permitNumber: j.permitNumber!,
         year:         new Date(j.date).getFullYear(),
       })),

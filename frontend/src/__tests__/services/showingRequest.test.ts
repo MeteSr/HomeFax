@@ -43,7 +43,7 @@ describe("showingRequestService — (10.3.4)", () => {
   it("getByProperty returns a copy — mutations don't affect internal state", () => {
     showingRequestService.create({ propertyId: "42", name: "A", contact: "a@x.com", preferredTime: "Morning" });
     const first = showingRequestService.getByProperty("42");
-    first.push({ id: "x", propertyId: "42", name: "injected", contact: "", preferredTime: "", createdAt: 0 });
+    first.push({ id: "x", propertyId: "42", name: "injected", contact: "", preferredTime: "", createdAt: 0, status: "Pending" as const });
     expect(showingRequestService.getByProperty("42")).toHaveLength(1);
   });
 

@@ -47,7 +47,7 @@ function makeJob(i: number, propertyId: string) {
     date: `2022-${String((i % 12) + 1).padStart(2, "0")}-15`,
     description: `Job description for record ${i}`,
     isDiy: i % 7 === 0,
-    status: i % 4 === 0 ? "verified" : "completed",
+    status: (i % 4 === 0 ? "verified" : "completed") as "verified" | "completed",
     verified: i % 4 === 0,
     homeownerSigned: true,
     contractorSigned: i % 4 === 0,

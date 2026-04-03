@@ -264,7 +264,7 @@ export default function ReportPage() {
 
         {/* 48-hour expiry warning (15.2.2) — urgent banner when link expires soon */}
         {link && link.expiresAt && (link.expiresAt - Date.now()) <= 48 * 3600_000 && (
-          <div className="no-print" style={{ border: `1.5px solid ${COLORS.rust}`, background: "#fff5f3", padding: "0.875rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+          <div className="no-print" style={{ border: `1.5px solid ${S.rust}`, background: "#fff5f3", padding: "0.875rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
             <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: S.ink }}>
               ⚠ This report link expires {new Date(link.expiresAt).toLocaleDateString()}. Upgrade to Pro for a permanent link.
             </p>

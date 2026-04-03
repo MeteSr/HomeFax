@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mock ICP dependencies (not needed by the mock path, but required so the module loads)
 vi.mock("@/services/actor", () => ({ getAgent: vi.fn().mockResolvedValue({}) }));

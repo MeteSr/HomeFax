@@ -26,8 +26,11 @@ const { mockProfile, mockReview } = vi.hoisted(() => {
     email:                "jane@example.com",
     avgDaysOnMarket:      21,
     listingsLast12Months: 8,
-    isVerified:           true,
-    createdAt:            Date.now() - 100_000,
+    isVerified:              true,
+    homeFaxTransactionCount: 5,
+    typicalCommissionBps:    250,
+    createdAt:               Date.now() - 100_000,
+    updatedAt:               Date.now() - 50_000,
   };
   const mockReview = {
     id:                "review-1",

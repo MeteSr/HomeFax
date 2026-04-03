@@ -50,6 +50,8 @@ function makeJobInputs(count: number): JobInput[] {
     date:           `2022-${String((i % 12) + 1).padStart(2, "0")}-15`,
     completedYear:  2022,
     isDiy:          false,
+    permitNumber:   undefined,
+    warrantyMonths: undefined,
     isVerified:     i % 3 === 0,
     status:         i % 3 === 0 ? "verified" : "completed",
   }));

@@ -128,6 +128,14 @@ function createFsboService() {
     getPriceHistory(propertyId: string): PriceEntry[] {
       return [...(_priceHistory.get(propertyId) ?? [])];
     },
+
+    // 10.5 — Mark a property as under contract after a FSBO offer is accepted.
+    setUnderContract(propertyId: string): void {
+      const rec = _records.get(propertyId);
+      if (rec) {
+        _records.set(propertyId, { ...rec, step: "done" });
+      }
+    },
   };
 }
 

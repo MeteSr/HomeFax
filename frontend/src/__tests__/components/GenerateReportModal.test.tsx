@@ -8,7 +8,7 @@
 
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 
 // ─── Hoisted mock data (available before vi.mock factories run) ───────────────
@@ -76,11 +76,11 @@ vi.mock("react-hot-toast", () => ({
 }));
 
 // paymentService mock is set per-test
-let mockTier = "Free";
+let mockTier: "Free" | "Pro" | "Premium" | "ContractorPro" = "Free";
 vi.mock("@/services/payment", () => ({
   paymentService: {
     getMySubscription: vi.fn().mockImplementation(() =>
-      Promise.resolve({ tier: mockTier })
+      Promise.resolve({ tier: mockTier, expiresAt: null })
     ),
   },
 }));
@@ -126,7 +126,7 @@ describe("GenerateReportModal — 15.7.3 in-app notification", () => {
     vi.clearAllMocks();
     mockTier = "Free";
     vi.mocked(paymentService.getMySubscription).mockImplementation(() =>
-      Promise.resolve({ tier: mockTier })
+      Promise.resolve({ tier: mockTier, expiresAt: null })
     );
   });
 
@@ -161,7 +161,7 @@ describe("GenerateReportModal — 15.7.3 in-app notification", () => {
 
   it("does NOT call notificationService.create for Pro users", async () => {
     mockTier = "Pro";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Pro" });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Pro", expiresAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>
@@ -172,7 +172,7 @@ describe("GenerateReportModal — 15.7.3 in-app notification", () => {
 
   it("does NOT call notificationService.create for Premium users", async () => {
     mockTier = "Premium";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Premium" });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Premium", expiresAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>

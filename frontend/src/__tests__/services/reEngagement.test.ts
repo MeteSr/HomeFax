@@ -12,8 +12,8 @@ function makeJob(overrides: Partial<Job> & { id: string }): Job {
     propertyId:     overrides.propertyId     ?? "PROP_1",
     serviceType:    overrides.serviceType    ?? "HVAC",
     contractorName: overrides.contractorName,
+    homeowner:      overrides.homeowner      ?? "owner",
     date:           overrides.date           ?? "2025-04-01",
-    title:          overrides.title          ?? "Service",
     description:    overrides.description    ?? "",
     amount:         overrides.amount         ?? 0,
     status:         overrides.status         ?? "verified",
@@ -21,6 +21,7 @@ function makeJob(overrides: Partial<Job> & { id: string }): Job {
     isDiy:          overrides.isDiy          ?? false,
     homeownerSigned: overrides.homeownerSigned ?? true,
     contractorSigned: overrides.contractorSigned ?? true,
+    photos:         overrides.photos         ?? [],
     createdAt:      overrides.createdAt      ?? NOW_MS - 1000,
   };
 }
