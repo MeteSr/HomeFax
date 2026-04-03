@@ -281,7 +281,7 @@ Establish cycles cost for every significant canister call before any optimizatio
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 13.3.1 | `market` canister — `analyzeCompetitivePosition()` under load | ⬜ Missing | M | Largest canister (535 lines). Call with properties ranging from 1 to 100 jobs; chart cycles cost vs. input size. Flag if O(n²) or worse behavior exists in scoring loops |
+| 13.3.1 | `market` canister — `analyzeCompetitivePosition()` under load | ✅ Exists | M | Pure JS O(C×N). 14 tests: correctness at 1/50/100×100 scale, N-scaling, C-scaling, 100×100 <500ms cap, 50 concurrent calls, recommendValueAddingProjects linear scaling. All green. |
 | 13.3.2 | `maintenance` canister — `predictMaintenance()` at scale | ⬜ Missing | S | Call with build years from 1950 to 2024 for all 8 system types. Verify constant-time lookup (should be table-driven, not iterative). Measure with 1, 10, and 50 concurrent calls |
 | 13.3.3 | `report` canister — snapshot size growth | ⬜ Missing | S | Generate reports with 0, 10, 50, 200 jobs and measure: snapshot serialization cycles, stable memory footprint, `getReport` deserialization time. Identify the point where large job histories create noticeable latency |
 | 13.3.4 | `monitoring` canister — metrics aggregation under load | ⬜ Missing | S | Call `getMetrics()` while simultaneously running 13.2.1–13.2.4. Verify the monitoring canister doesn't become a bottleneck when all other canisters are logging to it concurrently |
