@@ -114,9 +114,9 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 5.3.1 | Local real estate data ingestion | ⬜ Missing | L | Integrate with Zillow / ATTOM / MLS API for inventory and days-on-market data |
-| 5.3.2 | Score-to-premium model | ⬜ Missing | L | Regression model: HomeFax score × zip × season → estimated price premium |
-| 5.3.3 | Market timing alert | ⬜ Missing | M | Push notification / dashboard banner: "Now is a good time to list" |
+| 5.3.1 | Local real estate data ingestion | ✅ Done | L | Integrate with Zillow / ATTOM / MLS API for inventory and days-on-market data |
+| 5.3.2 | Score-to-premium model | ✅ Done | L | Regression model: HomeFax score × zip × season → estimated price premium |
+| 5.3.3 | Market timing alert | ✅ Done | M | Push notification / dashboard banner: "Now is a good time to list" |
 
 ### 5.4 Autonomous Permit Research
 **Vision:** When a contractor proposes a renovation, AI pre-checks permit requirements and drafts the application.
