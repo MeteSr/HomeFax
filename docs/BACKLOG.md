@@ -13,16 +13,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 | ⬜ Missing | Not yet started |
 | S / M / L / XL | Story size: Small (<1 day) / Medium (1–3 days) / Large (1 week) / Extra-large (2+ weeks) |
 
----
-
-## 1. Home Management — Differentiated Ops
-
-### 1.2 "Home Genome" Onboarding
-**Vision:** NLP-powered bulk document ingestion at signup — PDFs, photos, receipts, inspection reports all parsed and auto-categorized into the historical record.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 1.2.2 | Claude-powered document classification | ✅ Done | L | POST files to voice agent server; Claude Vision classifies type (receipt/inspection/permit) |
+--
 
 ### 1.3 Utility Intelligence Layer
 **Vision:** Connect to utility accounts and flag anomalies (water spike → possible leak, HVAC runtime increase → refrigerant loss).
@@ -214,6 +205,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 End-to-end scenarios that combine multiple calls, matching how real users interact with the app.
 
 | # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
 | 13.5.4 | "Agent competition" scenario | ⬜ Missing | M | Once Section 9 (listing bid marketplace) is built: 10 agents simultaneously submit proposals to the same listing bid request. Tests write contention on the listing canister |
 
 
