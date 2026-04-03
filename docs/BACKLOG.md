@@ -44,14 +44,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 ## 3. ICP Blockchain Layer — Untouchable Differentiation
 
-### 3.3 "Dead Man's Switch" Continuity
-**Vision:** If HomeFax ceases to exist, homeowner records remain fully accessible on ICP.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 3.3.2 | Public read query on all record canisters | ✅ Done | M | Unauthenticated queries for property/job/photo data given owner principal |
-| 3.3.4 | "Your data, your keys" marketing page | ✅ Done | S | Landing page section explaining ICP data sovereignty |
-
 ### 3.4 ICP-Native Home Title Tokens
 **Vision:** Partner with title companies to tokenize property deeds on ICP.
 
@@ -99,24 +91,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 ---
 
 ## 5. AI Agents — The Self-Writing Internet Angle
-
-### 5.2 Negotiation Agents
-**Vision:** AI negotiates contractor bids on homeowner's behalf using network-wide pricing history.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 5.2.1 | Historical pricing data aggregation | ✅ Done | M | Per-zip per-service-type p25/median/p75 benchmarks; metro multipliers for 30+ markets |
-| 5.2.2 | Negotiation agent tool | ✅ Done | L | Claude agent with pricing benchmarks; opt-in consent required; generates counter-offer rationale |
-| 5.2.3 | Negotiation UI | ✅ Done | M | "HomeFax Negotiation Analysis" opt-in toggle in `QuoteDetailPage` |
-
-### 5.3 Market Timing Intelligence
-**Vision:** AI tells you when your HomeFax score + local inventory makes listing favorable. "Listing in Q1 could yield 6–9% above comps."
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 5.3.1 | Local real estate data ingestion | ✅ Done | L | Integrate with Zillow / ATTOM / MLS API for inventory and days-on-market data |
-| 5.3.2 | Score-to-premium model | ✅ Done | L | Regression model: HomeFax score × zip × season → estimated price premium |
-| 5.3.3 | Market timing alert | ✅ Done | M | Push notification / dashboard banner: "Now is a good time to list" |
 
 ### 5.4 Autonomous Permit Research
 **Vision:** When a contractor proposes a renovation, AI pre-checks permit requirements and drafts the application.
