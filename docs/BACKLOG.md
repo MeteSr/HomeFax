@@ -174,16 +174,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 |---|------|--------|------|-------|
 | 7.1.3 | "Verified on ICP" explorer links | ⬜ Missing | S | Link each record to ic.rocks or dashboard.internetcomputer.org for independent verification |
 
-### 7.2 Builder / Developer Onboarding
-**Vision:** New construction developers create HomeFax records before first owner — home arrives with a score and full build record.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 7.2.1 | Builder account role | ✅ Done | M | New role in `auth` canister; can create properties without Internet Identity ownership check |
-| 7.2.2 | Bulk property import | ✅ Done | L | CSV/API upload of a development's unit list; creates property records in batch |
-| 7.2.3 | Subcontractor record import | ✅ Done | L | Builder uploads all subcontractor job records during construction phase |
-| 7.2.4 | Ownership transfer to first buyer | ✅ Done | M | Builder initiates transfer at closing; buyer accepts via Internet Identity |
-| 7.2.5 | Builder dashboard | ✅ Done | M | Builder views all their developments + per-unit HomeFax scores |
 
 ### 7.3 Insurance Premium Integration
 **Vision:** Partner with home insurers to offer premium discounts for high HomeFax scores.
@@ -209,16 +199,6 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 The core retention challenge for HomeFax: value delivery is irregular. Homeowners don't engage daily, so perceived value dies in quiet periods. Every item below addresses a specific churn cause identified in the retention analysis.
 
-### 8.1 Weekly AI-Powered Home Pulse
-**Vision:** A Monday-morning personalized digest that makes the AI feel like it's always watching — even when nothing has happened. Hyper-local, hyper-specific. Not generic tips.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 8.1.1 | Home Pulse digest generation (Claude) | ✅ Done | L | Claude agent generates digest from: property location, build year, system ages, local climate/season, recent job history |
-| 8.1.2 | Climate zone data integration | ✅ Done | M | Map zip code → NOAA climate zone; feed into digest and maintenance forecasts (see 1.1.5) |
-| 8.1.3 | Weekly digest email delivery | ✅ Done | M | Email template + send pipeline (Resend / SendGrid); one digest per active property per user |
-| 8.1.6 | Pulse content personalization over time | ✅ Done | M | Track which Pulse items the user acted on; Claude weights future digests toward high-signal topics |
-
 ### 8.4 Insurance Defense Mode — Florida-Specific Retention Hook
 **Vision:** One-tap export of all maintenance records formatted for insurance company submission. One successful insurance interaction pays for 3+ years of HomeFax.
 
@@ -226,19 +206,6 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 |---|------|--------|------|-------|
 | 8.4.4 | Insurer-specific export templates | ⬜ Missing | L | Different Florida insurers have different documentation formats; template library for major carriers (Citizens, Universal, Heritage) |
 | 8.4.6 | Premium discount estimate | ⬜ Missing | M | Based on record completeness and score, estimate potential insurance premium reduction (see 7.3.2) |
-
-### 8.5 Annual Resale-Ready Milestone
-**Vision:** At the 12-month mark, trigger a milestone that reframes the entire year as something meaningful and complete. Turns passive subscribers into advocates.
-
-| # | Item | Status | Size | Notes |
-|---|------|--------|------|-------|
-| 8.5.3 | Year-in-review email | ✅ Done | M | Email summarizing the year: jobs logged, score change, warranty reminders set, estimated value added |
-
----
-
-## 13. Benchmark & Load Testing
-
-**Context:** HomeFax runs on ICP where cost is cycles-per-instruction, not per-request. Load testing has two goals: (1) throughput — can canisters handle concurrent users without queuing, and (2) cycles efficiency — are any calls burning disproportionate cycles that hit runway. The `monitoring` canister already tracks cycles and ARPU/LTV/CAC; what's missing is a baseline and stress scenarios.
 
 ---
 
