@@ -1,6 +1,19 @@
+/**
+ * Layout — collapsible left sidebar + main content
+ *
+ * Desktop: fixed sidebar (56 px collapsed / 216 px expanded) + scrollable main.
+ *   Icons-only when collapsed; icon + label when expanded.
+ *   State persisted to localStorage ("hf_sidebar": "open" | "closed").
+ * Mobile (≤640 px): sidebar hidden; sticky top bar with hamburger overlay.
+ */
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, X, Bell, Wrench, ShieldAlert, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  Bell, Wrench, ShieldAlert, Clock, CheckCircle2, AlertTriangle,
+  LayoutDashboard, TrendingUp, Users, Cpu, Home as HomeIcon, PlusSquare,
+  Settings, Store, ChevronLeft, ChevronRight, LogOut, Menu, X,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
@@ -8,7 +21,7 @@ import { jobService, type Job } from "@/services/job";
 import { VoiceAgent } from "./VoiceAgent";
 import { COLORS, FONTS } from "@/theme";
 
-// ─── Activity event types ──────────────────────────────────────────────────────
+// ─── Activity event types ─────────────────────────────────────────────────────
 
 interface ActivityEvent {
   id:        string;
@@ -54,23 +67,38 @@ function deriveEvents(properties: any[], jobs: Job[]): ActivityEvent[] {
   return events.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20);
 }
 
-interface LayoutProps {
-  children: React.ReactNode;
+// ─── Sidebar dimensions ───────────────────────────────────────────────────────
+
+const W_OPEN   = 216;
+const W_CLOSED = 56;
+
+// ─── Nav link definition ──────────────────────────────────────────────────────
+
+interface NavLink {
+  to:    string;
+  label: string;
+  Icon:  React.ElementType;
 }
 
-export function Layout({ children }: LayoutProps) {
-  const { logout } = useAuth();
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  const { logout }             = useAuth();
   const { principal, profile } = useAuthStore();
-  const { properties } = usePropertyStore();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [menuOpen,    setMenuOpen]    = useState(false);
+  const { properties }         = usePropertyStore();
+  const navigate               = useNavigate();
+  const location               = useLocation();
+
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    localStorage.getItem("hf_sidebar") !== "closed"
+  );
+  const [mobileOpen,  setMobileOpen]  = useState(false);
   const [feedOpen,    setFeedOpen]    = useState(false);
   const [feedJobs,    setFeedJobs]    = useState<Job[]>([]);
   const [feedLoaded,  setFeedLoaded]  = useState(false);
-  const [lastReadAt,  setLastReadAt]  = useState<number>(() => {
-    return parseInt(localStorage.getItem("homefax_feed_read") ?? "0", 10);
-  });
+  const [lastReadAt,  setLastReadAt]  = useState<number>(() =>
+    parseInt(localStorage.getItem("homefax_feed_read") ?? "0", 10)
+  );
 
   useEffect(() => {
     if (!feedOpen || feedLoaded) return;
@@ -87,208 +115,300 @@ export function Layout({ children }: LayoutProps) {
     localStorage.setItem("homefax_feed_read", String(now));
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem("hf_sidebar", next ? "open" : "closed");
+      return next;
+    });
+  };
+
   const isContractor = profile?.role === "Contractor";
   const isRealtor    = profile?.role === "Realtor";
   const isHomeowner  = !isContractor && !isRealtor;
   const dashboardPath = isContractor ? "/contractor-dashboard" : "/dashboard";
 
-  // 16.3.2 — For single-property homeowners, /properties/:id is their home.
-  // Treat it as Dashboard-active so the nav always shows something highlighted.
   const singlePropertyId =
     isHomeowner && properties.length === 1 ? String(properties[0].id) : null;
   const singlePropertyPath = singlePropertyId ? `/properties/${singlePropertyId}` : null;
 
-  const navLinks = isContractor
+  const navLinks: NavLink[] = isContractor
     ? [
-        { to: "/contractor-dashboard", label: "Dashboard" },
-        { to: "/settings",             label: "Settings" },
+        { to: "/contractor-dashboard", label: "Dashboard", Icon: LayoutDashboard },
+        { to: "/settings",             label: "Settings",  Icon: Settings },
       ]
     : isRealtor
     ? [
-        { to: "/agent-dashboard",   label: "Dashboard" },
-        { to: "/agent/marketplace", label: "Marketplace" },
-        { to: "/settings",          label: "Settings" },
+        { to: "/agent-dashboard",   label: "Dashboard",  Icon: LayoutDashboard },
+        { to: "/agent/marketplace", label: "Marketplace", Icon: Store },
+        { to: "/settings",          label: "Settings",   Icon: Settings },
       ]
     : [
-        { to: "/dashboard",      label: "Dashboard" },
-        { to: "/market",         label: "Market" },
-        { to: "/maintenance",    label: "Maintenance" },
-        { to: "/contractors",    label: "Contractors" },
-        { to: "/sensors",        label: "Sensors" },
-        { to: "/listing/new",    label: "List Home" },
-        { to: "/properties/new", label: "Add Property" },
-        { to: "/settings",       label: "Settings" },
+        { to: "/dashboard",      label: "Dashboard",    Icon: LayoutDashboard },
+        { to: "/market",         label: "Market",       Icon: TrendingUp },
+        { to: "/maintenance",    label: "Maintenance",  Icon: Wrench },
+        { to: "/contractors",    label: "Contractors",  Icon: Users },
+        { to: "/sensors",        label: "Sensors",      Icon: Cpu },
+        { to: "/listing/new",    label: "List Home",    Icon: HomeIcon },
+        { to: "/properties/new", label: "Add Property", Icon: PlusSquare },
+        { to: "/settings",       label: "Settings",     Icon: Settings },
       ];
 
-  const linkStyle = (active: boolean): React.CSSProperties => ({
-    fontFamily: FONTS.sans,
-    fontSize: "0.875rem",
-    fontWeight: active ? 600 : 500,
-    textDecoration: "none",
-    color: active ? COLORS.sage : COLORS.plumMid,
-    padding: "0 1.125rem",
-    height: "100%",
-    display: "flex",
-    alignItems: "center",
-    transition: "color 0.15s",
-    borderBottom: active ? `2px solid ${COLORS.sage}` : "2px solid transparent",
+  const isActive = (link: NavLink) => {
+    const directMatch =
+      location.pathname === link.to || location.pathname.startsWith(link.to + "/");
+    const singlePropMatch =
+      link.to === "/dashboard" &&
+      singlePropertyPath !== null &&
+      (location.pathname === singlePropertyPath ||
+        location.pathname.startsWith(singlePropertyPath + "/"));
+    return directMatch || singlePropMatch;
+  };
+
+  const sidebarW = sidebarOpen ? W_OPEN : W_CLOSED;
+
+  // ── Shared sidebar item style helpers ────────────────────────────────────────
+
+  const itemBase = (active = false): React.CSSProperties => ({
+    display:         "flex",
+    alignItems:      "center",
+    gap:             sidebarOpen ? "0.75rem" : 0,
+    height:          "2.75rem",
+    paddingLeft:     sidebarOpen ? "1.125rem" : 0,
+    justifyContent:  sidebarOpen ? "flex-start" : "center",
+    overflow:        "hidden",
+    whiteSpace:      "nowrap",
+    color:           active ? COLORS.sage : COLORS.plumMid,
+    background:      active ? COLORS.sageLight : "transparent",
+    borderLeft:      active ? `2px solid ${COLORS.sage}` : "2px solid transparent",
+    transition:      "color 0.15s, background 0.15s",
   });
 
+  const labelStyle: React.CSSProperties = {
+    fontFamily: FONTS.sans,
+    fontSize:   "0.875rem",
+    fontWeight: 500,
+  };
+
+  // ─── Render ──────────────────────────────────────────────────────────────────
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: COLORS.white }}>
-      {/* Nav */}
-      <header
-        style={{
-          backgroundColor: COLORS.white,
-          borderBottom: `1px solid ${COLORS.rule}`,
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: COLORS.white }}>
+
+      {/* ── Left sidebar (desktop) ──────────────────────────────────────────── */}
+      <nav
+        className="hf-sidebar"
+        style={{ width: sidebarW }}
+        aria-label="Main navigation"
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "stretch",
-            height: "3.5rem",
-            maxWidth: "1280px",
-            margin: "0 auto",
-            padding: "0 1.5rem",
-          }}
-        >
-          {/* Logo */}
+        {/* Logo */}
+        <div style={{
+          height:          "3.5rem",
+          display:         "flex",
+          alignItems:      "center",
+          paddingLeft:     sidebarOpen ? "1.25rem" : 0,
+          justifyContent:  sidebarOpen ? "flex-start" : "center",
+          borderBottom:    `1px solid ${COLORS.rule}`,
+          flexShrink:      0,
+        }}>
           <Link
             to={dashboardPath}
             style={{
-              display: "flex",
-              alignItems: "center",
-              paddingRight: "1.75rem",
-              marginRight: "0.5rem",
               textDecoration: "none",
-              fontFamily: FONTS.serif,
-              fontWeight: 900,
-              fontSize: "1.1rem",
-              letterSpacing: "-0.5px",
-              color: COLORS.plum,
-              whiteSpace: "nowrap",
-              flexShrink: 0,
+              fontFamily:     FONTS.serif,
+              fontWeight:     900,
+              fontSize:       "1.1rem",
+              letterSpacing:  "-0.5px",
+              color:          COLORS.plum,
+              whiteSpace:     "nowrap",
+            }}
+          >
+            {sidebarOpen
+              ? <>Home<span style={{ color: COLORS.sage }}>Fax</span></>
+              : <>H<span style={{ color: COLORS.sage }}>F</span></>
+            }
+          </Link>
+        </div>
+
+        {/* Nav links */}
+        <div style={{ flex: 1, paddingTop: "0.375rem", overflowY: "auto", overflowX: "hidden" }}>
+          {navLinks.map((link) => {
+            const active = isActive(link);
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                title={!sidebarOpen ? link.label : undefined}
+                style={{ ...itemBase(active), textDecoration: "none" }}
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plum;
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plumMid;
+                }}
+              >
+                <link.Icon size={17} style={{ flexShrink: 0 }} />
+                {sidebarOpen && (
+                  <span style={{ ...labelStyle, fontWeight: active ? 600 : 500 }}>
+                    {link.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Bottom: activity, sign out, principal, collapse toggle */}
+        <div style={{ borderTop: `1px solid ${COLORS.rule}`, flexShrink: 0 }}>
+
+          {/* Activity bell */}
+          <button
+            onClick={openFeed}
+            title={!sidebarOpen ? "Activity" : undefined}
+            style={{ ...itemBase(), width: "100%", border: "none", cursor: "pointer" }}
+          >
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <Bell size={17} />
+              {unread > 0 && (
+                <span style={{
+                  position:      "absolute",
+                  top:           "-4px",
+                  right:         "-5px",
+                  width:         "14px",
+                  height:        "14px",
+                  background:    COLORS.sage,
+                  borderRadius:  "50%",
+                  display:       "flex",
+                  alignItems:    "center",
+                  justifyContent:"center",
+                  fontFamily:    FONTS.mono,
+                  fontSize:      "0.45rem",
+                  color:         COLORS.white,
+                  fontWeight:    700,
+                }}>
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </div>
+            {sidebarOpen && <span style={labelStyle}>Activity</span>}
+          </button>
+
+          {/* Sign out */}
+          <button
+            onClick={logout}
+            title={!sidebarOpen ? "Sign Out" : undefined}
+            style={{ ...itemBase(), width: "100%", border: "none", cursor: "pointer" }}
+          >
+            <LogOut size={17} style={{ flexShrink: 0 }} />
+            {sidebarOpen && <span style={labelStyle}>Sign Out</span>}
+          </button>
+
+          {/* Principal — expanded only */}
+          {sidebarOpen && principal && (
+            <div style={{
+              padding:        "0.25rem 1.125rem 0.375rem",
+              fontFamily:     FONTS.mono,
+              fontSize:       "0.55rem",
+              color:          COLORS.plumMid,
+              letterSpacing:  "0.04em",
+              overflow:       "hidden",
+              textOverflow:   "ellipsis",
+              whiteSpace:     "nowrap",
+            }}>
+              {principal.slice(0, 14)}…
+            </div>
+          )}
+
+          {/* Collapse / expand toggle */}
+          <button
+            onClick={toggleSidebar}
+            title={sidebarOpen ? "Collapse" : "Expand"}
+            style={{
+              ...itemBase(),
+              width:       "100%",
+              border:      "none",
+              borderTop:   `1px solid ${COLORS.rule}`,
+              cursor:      "pointer",
+            }}
+          >
+            {sidebarOpen
+              ? <ChevronLeft  size={17} style={{ flexShrink: 0 }} />
+              : <ChevronRight size={17} style={{ flexShrink: 0 }} />
+            }
+            {sidebarOpen && (
+              <span style={{
+                fontFamily:    FONTS.mono,
+                fontSize:      "0.6rem",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+              }}>
+                Collapse
+              </span>
+            )}
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Content column ──────────────────────────────────────────────────── */}
+      <div
+        className="hf-main"
+        style={{ marginLeft: sidebarW, flex: 1, minWidth: 0 }}
+      >
+        {/* Mobile-only top header */}
+        <header
+          className="hf-mobile-header"
+          style={{ borderBottom: `1px solid ${COLORS.rule}` }}
+        >
+          <Link
+            to={dashboardPath}
+            style={{
+              textDecoration: "none",
+              fontFamily:     FONTS.serif,
+              fontWeight:     900,
+              fontSize:       "1.1rem",
+              letterSpacing:  "-0.5px",
+              color:          COLORS.plum,
+              flex:           1,
             }}
           >
             Home<span style={{ color: COLORS.sage }}>Fax</span>
           </Link>
 
-          {/* Desktop nav links */}
-          <nav className="rsp-nav-desktop" style={{ flex: 1 }}>
-            {navLinks.map((link) => {
-              const directMatch = location.pathname === link.to || location.pathname.startsWith(link.to + "/");
-              const singlePropMatch =
-                link.to === "/dashboard" &&
-                singlePropertyPath !== null &&
-                (location.pathname === singlePropertyPath ||
-                  location.pathname.startsWith(singlePropertyPath + "/"));
-              const active = directMatch || singlePropMatch;
-              return (
-                <Link key={link.to} to={link.to} style={linkStyle(active)}>
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Activity feed bell */}
+          {/* Bell */}
           <button
             onClick={openFeed}
-            style={{
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "2.75rem",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
+            style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: "0.5rem" }}
             aria-label="Activity feed"
           >
-            <Bell size={18} color={feedOpen ? COLORS.sage : COLORS.plumMid} />
+            <Bell size={18} color={COLORS.plumMid} />
             {unread > 0 && (
               <span style={{
-                position: "absolute",
-                top: "0.5rem",
-                right: "0.375rem",
-                width: "0.875rem",
-                height: "0.875rem",
-                background: COLORS.sage,
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: FONTS.mono,
-                fontSize: "0.45rem",
-                color: COLORS.white,
-                fontWeight: 700,
+                position: "absolute", top: "4px", right: "4px",
+                width: "14px", height: "14px",
+                background: COLORS.sage, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: FONTS.mono, fontSize: "0.45rem", color: COLORS.white, fontWeight: 700,
               }}>
                 {unread > 9 ? "9+" : unread}
               </span>
             )}
           </button>
 
-          {/* Desktop user area */}
-          <div
-            className="rsp-nav-user"
-            style={{ paddingLeft: "1rem" }}
-          >
-            {principal && (
-              <span style={{
-                fontFamily: FONTS.mono,
-                fontSize: "0.65rem",
-                color: COLORS.plumMid,
-                letterSpacing: "0.04em",
-              }}>
-                {principal.slice(0, 8)}…
-              </span>
-            )}
-            <button
-              onClick={logout}
-              style={{
-                fontFamily: FONTS.sans,
-                fontSize: "0.8rem",
-                fontWeight: 500,
-                color: COLORS.plumMid,
-                background: "none",
-                border: `1.5px solid ${COLORS.rule}`,
-                padding: "0.35rem 1rem",
-                borderRadius: 100,
-                cursor: "pointer",
-                transition: "color 0.15s, border-color 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = COLORS.plum;
-                (e.currentTarget as HTMLButtonElement).style.borderColor = COLORS.plum;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = COLORS.plumMid;
-                (e.currentTarget as HTMLButtonElement).style.borderColor = COLORS.rule;
-              }}
-            >
-              Sign Out
-            </button>
-          </div>
-
-          {/* Hamburger — mobile */}
+          {/* Hamburger */}
           <button
-            className="rsp-hamburger"
-            onClick={() => setMenuOpen((o) => !o)}
-            style={{ marginLeft: "auto", padding: "0 0.5rem" }}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMobileOpen((o) => !o)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "0.5rem" }}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
           >
-            {menuOpen ? <X size={20} color={COLORS.plum} /> : <Menu size={20} color={COLORS.plum} />}
+            {mobileOpen
+              ? <X    size={20} color={COLORS.plum} />
+              : <Menu size={20} color={COLORS.plum} />
+            }
           </button>
-        </div>
+        </header>
 
         {/* Mobile dropdown */}
-        {menuOpen && (
+        {mobileOpen && (
           <div className="rsp-mobile-menu open">
             {navLinks.map((link) => {
               const active = location.pathname === link.to;
@@ -297,81 +417,70 @@ export function Layout({ children }: LayoutProps) {
                   key={link.to}
                   to={link.to}
                   className={`rsp-mobile-link${active ? " active" : ""}`}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => setMobileOpen(false)}
                 >
+                  <link.Icon size={15} />
                   {link.label}
                 </Link>
               );
             })}
             <div className="rsp-mobile-divider" />
             {principal && (
-              <span style={{
-                fontFamily: FONTS.mono,
-                fontSize: "0.65rem",
-                color: COLORS.plumMid,
-                padding: "0.5rem 0",
-              }}>
+              <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid, padding: "0.5rem 0" }}>
                 {principal.slice(0, 16)}…
               </span>
             )}
             <button
               className="rsp-mobile-link"
-              onClick={() => { logout(); setMenuOpen(false); }}
+              onClick={() => { logout(); setMobileOpen(false); }}
               style={{ color: COLORS.plum, borderBottom: "none" }}
             >
+              <LogOut size={15} />
               Sign Out
             </button>
           </div>
         )}
-      </header>
 
-      {/* Main content */}
-      <main>{children}</main>
+        <main>{children}</main>
+      </div>
 
       {/* Floating voice agent */}
       <VoiceAgent />
 
-      {/* Activity feed drawer */}
+      {/* ── Activity feed drawer ─────────────────────────────────────────────── */}
       {feedOpen && (
         <>
-          {/* Backdrop */}
           <div
             onClick={() => setFeedOpen(false)}
             style={{ position: "fixed", inset: 0, background: "rgba(46,37,64,0.3)", zIndex: 200 }}
           />
-          {/* Drawer */}
           <div style={{
-            position: "fixed",
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: "22rem",
-            maxWidth: "100vw",
-            background: COLORS.white,
-            borderLeft: `1px solid ${COLORS.rule}`,
-            zIndex: 201,
-            display: "flex",
-            flexDirection: "column",
-            overflowY: "auto",
+            position:       "fixed",
+            top:            0,
+            right:          0,
+            bottom:         0,
+            width:          "22rem",
+            maxWidth:       "100vw",
+            background:     COLORS.white,
+            borderLeft:     `1px solid ${COLORS.rule}`,
+            zIndex:         201,
+            display:        "flex",
+            flexDirection:  "column",
+            overflowY:      "auto",
           }}>
             {/* Header */}
             <div style={{
-              display: "flex",
-              alignItems: "center",
+              display:        "flex",
+              alignItems:     "center",
               justifyContent: "space-between",
-              padding: "1rem 1.25rem",
-              borderBottom: `1px solid ${COLORS.rule}`,
-              background: COLORS.white,
-              flexShrink: 0,
+              padding:        "1rem 1.25rem",
+              borderBottom:   `1px solid ${COLORS.rule}`,
+              background:     COLORS.white,
+              flexShrink:     0,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <Bell size={14} color={COLORS.sage} />
-                <span style={{
-                  fontFamily: FONTS.sans,
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  color: COLORS.plum,
-                }}>
+                <span style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 600, color: COLORS.plum }}>
                   Activity
                 </span>
               </div>
@@ -407,14 +516,14 @@ export function Layout({ children }: LayoutProps) {
                       key={event.id}
                       onClick={() => { setFeedOpen(false); navigate(event.href); }}
                       style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "0.875rem",
-                        padding: "0.875rem 1.25rem",
-                        borderBottom: `1px solid ${COLORS.rule}`,
-                        background: isUnread ? COLORS.sageLight : "transparent",
-                        cursor: "pointer",
-                        transition: "background 0.15s",
+                        display:        "flex",
+                        alignItems:     "flex-start",
+                        gap:            "0.875rem",
+                        padding:        "0.875rem 1.25rem",
+                        borderBottom:   `1px solid ${COLORS.rule}`,
+                        background:     isUnread ? COLORS.sageLight : "transparent",
+                        cursor:         "pointer",
+                        transition:     "background 0.15s",
                       }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = COLORS.sageLight; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = isUnread ? COLORS.sageLight : "transparent"; }}
@@ -422,8 +531,12 @@ export function Layout({ children }: LayoutProps) {
                       <div style={{ flexShrink: 0, marginTop: "0.1rem" }}>{icons[event.type]}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginBottom: "0.125rem" }}>
-                          <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 500, color: COLORS.plum, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{event.title}</p>
-                          {isUnread && <span style={{ width: "6px", height: "6px", background: COLORS.sage, borderRadius: "50%", flexShrink: 0 }} />}
+                          <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 500, color: COLORS.plum, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {event.title}
+                          </p>
+                          {isUnread && (
+                            <span style={{ width: "6px", height: "6px", background: COLORS.sage, borderRadius: "50%", flexShrink: 0 }} />
+                          )}
                         </div>
                         <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: COLORS.plumMid, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {event.detail}

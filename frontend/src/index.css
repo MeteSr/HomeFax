@@ -191,29 +191,51 @@ textarea.form-input {
 
 table { border-collapse: collapse; }
 
-/* ─── Responsive nav ─────────────────────────────────────────────────────────── */
+/* ─── Collapsible sidebar layout ─────────────────────────────────────────────── */
 
-.rsp-nav-desktop { display: flex; align-items: center; gap: 0; }
-.rsp-nav-user    { display: flex; align-items: center; gap: 1rem; }
+.hf-sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border-right: 1px solid var(--rule);
+  z-index: 50;
+  transition: width 0.2s ease;
+  overflow: hidden;
+}
 
-.rsp-hamburger {
+.hf-main {
+  min-height: 100vh;
+  transition: margin-left 0.2s ease;
+}
+
+.hf-mobile-header {
   display: none;
   align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  color: var(--ink-light);
+  gap: 0.5rem;
+  height: 3.5rem;
+  padding: 0 1rem 0 1.25rem;
+  background: var(--white);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
-.rsp-hamburger:hover { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .hf-sidebar       { display: none; }
+  .hf-main          { margin-left: 0 !important; transition: none; }
+  .hf-mobile-header { display: flex; }
+}
+
+/* ─── Responsive nav (mobile dropdown) ──────────────────────────────────────── */
 
 .rsp-mobile-menu {
   display: none;
   flex-direction: column;
   padding: 0.75rem 1.5rem 1rem;
   background: var(--white);
-  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
   gap: 0;
 }
 .rsp-mobile-menu.open { display: flex; }
@@ -240,12 +262,6 @@ table { border-collapse: collapse; }
 .rsp-mobile-link.active { color: var(--sage); }
 
 .rsp-mobile-divider { height: 1px; background-color: var(--rule); margin: 0.5rem 0; }
-
-@media (max-width: 640px) {
-  .rsp-nav-desktop { display: none; }
-  .rsp-nav-user    { display: none; }
-  .rsp-hamburger   { display: flex; }
-}
 
 /* ─── Responsive two-column grid ─────────────────────────────────────────────── */
 
