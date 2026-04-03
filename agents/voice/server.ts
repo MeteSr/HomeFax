@@ -337,6 +337,83 @@ app.post("/api/pulse", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// ── POST /api/negotiate ───────────────────────────────────────────────────────
+// 5.2.2 — Claude negotiation analysis.
+// Request:  { quote: { id, amount, timeline }, request: { serviceType, description, urgency },
+//             zip: string, benchmark: { p25, median, p75 } }
+// Response: NegotiationAnalysis
+//   { quoteId, verdict, percentile, suggestedCounterCents?, rationale, generatedAt }
+//
+// NOTE: This endpoint only returns analysis for the homeowner.
+// HomeFax never contacts contractors on the homeowner's behalf.
+app.post("/api/negotiate", async (req: Request, res: Response): Promise<void> => {
+  const { quote, request: qrequest, zip, benchmark } = req.body;
+
+  if (!quote?.id || !qrequest?.serviceType || !benchmark?.median) {
+    res.status(400).json({ error: "quote, request.serviceType, and benchmark are required" });
+    return;
+  }
+
+  const fmtK = (c: number) => `$${(c / 100).toFixed(0)}`;
+
+  const systemPrompt = `You are a real estate negotiation analyst for HomeFax.
+Analyze a contractor quote against market pricing benchmarks and return ONLY valid JSON — no markdown, no prose.
+
+JSON shape:
+{
+  "quoteId": "<quote id>",
+  "verdict": "<fair|high|low>",
+  "percentile": <0-100>,
+  "suggestedCounterCents": <integer cents — only include if verdict is high>,
+  "rationale": "<2-3 sentences explaining the verdict with specific dollar figures>",
+  "generatedAt": <ms timestamp>
+}
+
+Rules:
+- verdict "high" if amount > p75, "low" if amount < p25, "fair" otherwise
+- percentile = where this quote sits in the 0–100 distribution
+- suggestedCounterCents = only when verdict is "high"; suggest 3-7% above median
+- rationale must cite the specific p25/median/p75 figures
+- HomeFax never contacts contractors — only provide analysis for the homeowner`;
+
+  const userMsg = [
+    `Service type: ${qrequest.serviceType}`,
+    `Job description: ${qrequest.description}`,
+    `Urgency: ${qrequest.urgency}`,
+    `Zip code: ${zip}`,
+    `Quote amount: ${fmtK(quote.amount)} (${quote.amount} cents)`,
+    `Quote timeline: ${quote.timeline} days`,
+    `Market benchmark — p25: ${fmtK(benchmark.p25)}, median: ${fmtK(benchmark.median)}, p75: ${fmtK(benchmark.p75)}`,
+    `Quote ID: ${quote.id}`,
+  ].join("\n");
+
+  try {
+    const response = await anthropic.messages.create({
+      model:      "claude-sonnet-4-6",
+      max_tokens: 512,
+      system:     systemPrompt,
+      messages:   [{ role: "user", content: userMsg }],
+    });
+
+    const text = response.content
+      .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      res.status(500).json({ error: "Claude did not return valid JSON" });
+      return;
+    }
+    const result = JSON.parse(jsonMatch[0]);
+    result.generatedAt = result.generatedAt ?? Date.now();
+    res.json(result);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ error: msg });
+  }
+});
+
 // ── GET /health ───────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ ok: true, model: "claude-sonnet-4-6" });

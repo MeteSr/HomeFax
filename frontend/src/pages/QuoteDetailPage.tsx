@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
 import { quoteService, QuoteRequest, Quote } from "@/services/quote";
 import { contractorService } from "@/services/contractor";
+import { NegotiationPanel } from "@/components/NegotiationPanel";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
@@ -132,6 +133,15 @@ export default function QuoteDetailPage() {
               }>{request.urgency}</Badge>
             </div>
           </div>
+        )}
+
+        {/* Negotiation analysis panel — opt-in required */}
+        {quotes.length > 0 && request && (
+          <NegotiationPanel
+            request={request}
+            quotes={quotes}
+            zip={(request as any).zip ?? ""}
+          />
         )}
 
         {/* Post-accept success banner */}

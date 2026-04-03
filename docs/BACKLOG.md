@@ -105,9 +105,9 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 5.2.1 | Historical pricing data aggregation | 🟡 Partial | M | `market` canister has cost data; needs per-zip, per-service-type pricing history |
-| 5.2.2 | Negotiation agent tool | ⬜ Missing | L | Claude agent with access to pricing benchmarks; generates counter-offer rationale |
-| 5.2.3 | Negotiation UI | ⬜ Missing | M | "Let HomeFax negotiate" toggle in `QuoteDetailPage` |
+| 5.2.1 | Historical pricing data aggregation | ✅ Done | M | Per-zip per-service-type p25/median/p75 benchmarks; metro multipliers for 30+ markets |
+| 5.2.2 | Negotiation agent tool | ✅ Done | L | Claude agent with pricing benchmarks; opt-in consent required; generates counter-offer rationale |
+| 5.2.3 | Negotiation UI | ✅ Done | M | "HomeFax Negotiation Analysis" opt-in toggle in `QuoteDetailPage` |
 
 ### 5.3 Market Timing Intelligence
 **Vision:** AI tells you when your HomeFax score + local inventory makes listing favorable. "Listing in Q1 could yield 6–9% above comps."
