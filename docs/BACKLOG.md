@@ -22,7 +22,7 @@ Derived from the HomeFax product vision. Items are grouped by domain, tagged wit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 1.2.2 | Claude-powered document classification | ⬜ Missing | L | POST files to voice agent server; Claude Vision classifies type (receipt/inspection/permit) |
+| 1.2.2 | Claude-powered document classification | ✅ Done | L | POST files to voice agent server; Claude Vision classifies type (receipt/inspection/permit) |
 
 ### 1.3 Utility Intelligence Layer
 **Vision:** Connect to utility accounts and flag anomalies (water spike → possible leak, HVAC runtime increase → refrigerant loss).

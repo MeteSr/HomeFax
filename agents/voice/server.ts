@@ -178,6 +178,87 @@ app.post("/api/maintenance/chat", async (req: Request, res: Response): Promise<v
   }
 });
 
+// ── POST /api/classify ────────────────────────────────────────────────────────
+// 1.2.2 — Claude Vision document classification.
+// Request:  { fileName: string, mimeType: string, base64Data: string }
+// Response: ClassificationResult
+//   { documentType, confidence, suggestedServiceType?, extractedDate?,
+//     extractedAmountCents?, extractedContractor?, description, rawFileName }
+app.post("/api/classify", async (req: Request, res: Response): Promise<void> => {
+  const { fileName, mimeType, base64Data } = req.body;
+
+  if (!fileName || !mimeType || !base64Data) {
+    res.status(400).json({ error: "fileName, mimeType, and base64Data are required" });
+    return;
+  }
+
+  // Only image and PDF types are supported by Claude Vision
+  const supportedTypes = [
+    "image/jpeg", "image/png", "image/gif", "image/webp",
+    "application/pdf",
+  ];
+  if (!supportedTypes.includes(mimeType)) {
+    res.json({
+      documentType: "unknown",
+      confidence: "low",
+      description: "Unsupported file type for vision classification",
+      rawFileName: fileName,
+    });
+    return;
+  }
+
+  const mediaType = mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "application/pdf";
+
+  const systemPrompt = `You are a home document classifier for the HomeFax platform.
+Classify the document and extract metadata. Respond ONLY with valid JSON — no markdown, no prose.
+
+JSON shape:
+{
+  "documentType": "<one of: receipt|inspection_report|permit|warranty|invoice|insurance|contract|photo|unknown>",
+  "confidence": "<high|medium|low>",
+  "suggestedServiceType": "<HVAC|Roofing|Plumbing|Electrical|Painting|Flooring|Windows|Landscaping or omit if unclear>",
+  "extractedDate": "<YYYY-MM-DD or omit>",
+  "extractedAmountCents": <integer cents or omit>,
+  "extractedContractor": "<contractor or company name or omit>",
+  "description": "<one sentence describing the document>"
+}`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model:      "claude-sonnet-4-6",
+      max_tokens: 512,
+      system:     systemPrompt,
+      messages: [{
+        role: "user",
+        content: [{
+          type:   "image",
+          source: { type: "base64", media_type: mediaType, data: base64Data },
+        }, {
+          type: "text",
+          text: `File name: ${fileName}\nClassify this home document.`,
+        }],
+      }],
+    });
+
+    const text = response.content
+      .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      res.status(500).json({ error: "Claude did not return valid JSON" });
+      return;
+    }
+    const result = JSON.parse(jsonMatch[0]);
+    result.rawFileName = fileName;
+    res.json(result);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ error: msg });
+  }
+});
+
 // ── POST /api/pulse ───────────────────────────────────────────────────────────
 // 8.1.1 — Home Pulse digest generation.
 // Request:  PulseContext (propertyId, address, zipCode, yearBuilt, systemAges, …)
