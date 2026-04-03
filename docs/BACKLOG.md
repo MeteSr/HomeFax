@@ -232,7 +232,7 @@ The core retention challenge for HomeFax: value delivery is irregular. Homeowner
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 8.5.3 | Year-in-review email | ⬜ Missing | M | Email summarizing the year: jobs logged, score change, warranty reminders set, estimated value added |
+| 8.5.3 | Year-in-review email | ✅ Done | M | Email summarizing the year: jobs logged, score change, warranty reminders set, estimated value added |
 
 ---
 
