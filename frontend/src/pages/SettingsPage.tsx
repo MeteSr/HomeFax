@@ -76,8 +76,8 @@ export default function SettingsPage() {
           <div style={{ flex: 1 }}>
             {tab === "account"       && <AccountTab profile={profile} setProfile={setProfile} />}
             {tab === "subscription"  && <SubscriptionTab profile={profile} />}
-            {tab === "notifications" && <NotificationsTab />}
-            {tab === "privacy"       && <PrivacyTab />}
+            {tab === "notifications" && (profile?.role === "Contractor" ? <ContractorNotificationsTab /> : <NotificationsTab />)}
+            {tab === "privacy"       && (profile?.role === "Contractor" ? <ContractorPrivacyTab />      : <PrivacyTab />)}
           </div>
         </div>
       </div>
@@ -294,7 +294,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
 
       {/* Current plan */}
       {!isPaid ? (
-        /* Free tier — prominent upgrade callout (15.7.5) */
+        /* Free tier — prominent upgrade callout */
         <div style={{ border: `1.5px solid ${COLORS.sageMid}`, background: COLORS.sageLight, padding: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
             <div>
@@ -310,14 +310,17 @@ function SubscriptionTab({ profile }: { profile: any }) {
               onClick={() => navigate("/pricing")}
               style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.55rem 1.25rem", border: "none", background: COLORS.plum, color: COLORS.white, cursor: "pointer" }}
             >
-              Upgrade to Pro →
+              {profile?.role === "Contractor" ? "Upgrade to ContractorPro →" : "Upgrade to Pro →"}
             </button>
           </div>
           <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight, marginBottom: "0.75rem" }}>
             You're on the Free plan. Upgrade to unlock:
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.375rem 1.5rem" }}>
-            {["Score Breakdown", "Warranty Wallet", "Recurring Services", "Market Intelligence", "Insurance Defense Mode", "5-Year Maintenance Calendar"].map((f) => (
+            {(profile?.role === "Contractor"
+              ? ["Contractor profile listing", "Lead notifications", "Job completion certificates", "Trust score display", "Customer reviews", "Earnings dashboard"]
+              : ["Score Breakdown", "Warranty Wallet", "Recurring Services", "Market Intelligence", "Insurance Defense Mode", "5-Year Maintenance Calendar"]
+            ).map((f) => (
               <span key={f} style={{ fontFamily: S.mono, fontSize: "0.6rem", color: COLORS.plumMid, display: "flex", alignItems: "center", gap: "0.35rem" }}>
                 <Lock size={10} /> {f}
               </span>
@@ -350,13 +353,21 @@ function SubscriptionTab({ profile }: { profile: any }) {
         </div>
       )}
 
-      {/* Upgrade options */}
-      {PLANS.filter((p) => p.tier !== "Free" && p.tier !== tier).length > 0 && (
+      {/* Upgrade options — contractors only see ContractorPro; homeowners/realtors see Pro/Premium */}
+      {PLANS.filter((p) => {
+        if (p.tier === "Free" || p.tier === tier) return false;
+        if (profile?.role === "Contractor") return p.tier === "ContractorPro";
+        return p.tier !== "ContractorPro";
+      }).length > 0 && (
         <>
           <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>
             {isPaid ? "Switch Plan" : "Upgrade Plan"}
           </p>
-          {PLANS.filter((p) => p.tier !== "Free" && p.tier !== tier).map((plan) => (
+          {PLANS.filter((p) => {
+            if (p.tier === "Free" || p.tier === tier) return false;
+            if (profile?.role === "Contractor") return p.tier === "ContractorPro";
+            return p.tier !== "ContractorPro";
+          }).map((plan) => (
             <div key={plan.tier} style={{ border: `1px solid ${plan.tier === "Pro" ? S.rust : S.rule}`, background: COLORS.white, padding: "1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
@@ -555,6 +566,38 @@ function ToggleRow({ label, desc, value, onChange }: { label: string; desc?: str
   );
 }
 
+function ContractorNotificationsTab() {
+  const [newLead,       setNewLead]       = useState(true);
+  const [bidAccepted,   setBidAccepted]   = useState(true);
+  const [bidRejected,   setBidRejected]   = useState(true);
+  const [jobToSign,     setJobToSign]     = useState(true);
+  const [emailLead,     setEmailLead]     = useState(true);
+  const [emailBid,      setEmailBid]      = useState(false);
+  const [smsAlerts,     setSmsAlerts]     = useState(false);
+
+  function savePrefs() {
+    toast.success("Preferences saved");
+  }
+
+  return (
+    <div style={{ border: `1px solid ${S.rule}` }}>
+      <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
+        <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Notifications</p>
+      </div>
+      <ToggleRow label="New Lead in My Trades"   desc="Alert when a homeowner posts a request matching your trades" value={newLead}     onChange={setNewLead} />
+      <ToggleRow label="Bid Accepted"            desc="When a homeowner accepts one of your quotes"                 value={bidAccepted} onChange={setBidAccepted} />
+      <ToggleRow label="Bid Not Selected"        desc="When a homeowner accepts another contractor's quote"         value={bidRejected} onChange={setBidRejected} />
+      <ToggleRow label="Job Pending Signature"   desc="When a homeowner marks a job complete and needs your sign-off" value={jobToSign} onChange={setJobToSign} />
+      <ToggleRow label="Email: New Lead"         desc="Email when a matching quote request is posted"              value={emailLead}   onChange={setEmailLead} />
+      <ToggleRow label="Email: Bid Outcome"      desc="Email when a bid is accepted or closed"                     value={emailBid}    onChange={setEmailBid} />
+      <ToggleRow label="SMS Alerts"              desc="Critical alerts via text message"                           value={smsAlerts}   onChange={setSmsAlerts} />
+      <div style={{ padding: "1.25rem" }}>
+        <Button onClick={savePrefs}>Save Preferences</Button>
+      </div>
+    </div>
+  );
+}
+
 function NotificationsTab() {
   const [emailVerified, setEmailVerified] = useState(true);
   const [emailQuote, setEmailQuote] = useState(true);
@@ -586,6 +629,66 @@ function NotificationsTab() {
       <ToggleRow label="SMS Alerts"            desc="Critical alerts via text message"          value={smsAlerts}     onChange={setSmsAlerts} />
       <div style={{ padding: "1.25rem" }}>
         <Button onClick={savePrefs}>Save Preferences</Button>
+      </div>
+    </div>
+  );
+}
+
+function ContractorPrivacyTab() {
+  const [profileVisible,  setProfileVisible]  = useState(true);
+  const [showTrustScore,  setShowTrustScore]  = useState(true);
+  const [showJobCount,    setShowJobCount]    = useState(true);
+  const [analyticsShare,  setAnalyticsShare]  = useState(false);
+  const [exporting,       setExporting]       = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        note: "Bid history, credentials, and reviews are permanently stored on the Internet Computer blockchain.",
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `homefax-contractor-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export downloaded");
+    } catch {
+      toast.error("Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div style={{ border: `1px solid ${S.rule}` }}>
+      <div style={{ padding: "1rem 1.25rem", borderBottom: `1px solid ${S.rule}` }}>
+        <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight }}>Privacy</p>
+      </div>
+      <ToggleRow label="Public Profile"        desc="Appear in homeowner contractor searches and the contractor directory" value={profileVisible} onChange={setProfileVisible} />
+      <ToggleRow label="Show Trust Score"      desc="Display your trust score on your public profile"                     value={showTrustScore} onChange={setShowTrustScore} />
+      <ToggleRow label="Show Jobs Completed"   desc="Display your completed job count on your public profile"             value={showJobCount}   onChange={setShowJobCount} />
+      <ToggleRow label="Share Analytics"       desc="Help improve HomeFax with anonymous usage data"                      value={analyticsShare} onChange={setAnalyticsShare} />
+      <div style={{ padding: "1.25rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+        <Button onClick={() => toast.success("Privacy settings saved")}>Save Privacy Settings</Button>
+      </div>
+
+      {/* Data Export */}
+      <div style={{ borderTop: `1px solid ${S.rule}`, padding: "1.25rem" }}>
+        <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.5rem" }}>
+          Export Your Data
+        </p>
+        <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight, lineHeight: 1.6, marginBottom: "1rem" }}>
+          Download your contractor record as JSON. Your bids, job credentials, and reviews are
+          also permanently stored on the Internet Computer blockchain — you own them regardless
+          of your subscription status.
+        </p>
+        <Button loading={exporting} onClick={handleExport} icon={<Download size={13} />} variant="outline">
+          Download My Data (JSON)
+        </Button>
       </div>
     </div>
   );

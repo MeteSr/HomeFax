@@ -62,7 +62,7 @@ const mockRequest = {
 const mockContractor = {
   id: "c-1", name: "CoolAir LLC", trustScore: 88,
   jobsCompleted: 42, isVerified: true, serviceArea: "Austin, TX",
-  specialty: "HVAC", licenseNumber: null, rating: 4.8,
+  specialties: ["HVAC"], licenseNumber: null, rating: 4.8,
   bio: null, phone: "", email: "", createdAt: 0,
 };
 
