@@ -28,6 +28,21 @@ export interface WarrantyAlert {
   expiryDate: string; // YYYY-MM-DD
 }
 
+export interface MilestoneCoaching {
+  milestone:      number;
+  milestoneLabel: string;
+  ptsNeeded:      number;
+  action:         string;
+  isFree:         boolean;
+}
+
+export interface ScoreTrend {
+  delta:             number;
+  trend:             "up" | "down" | "flat";
+  previousScore:     number | null;
+  milestoneCoaching: MilestoneCoaching | null;
+}
+
 export interface ScoreBreakdown {
   verifiedJobPts:  number;
   valuePts:        number;
@@ -85,6 +100,7 @@ export interface AgentContext {
   pendingSignatureJobIds: string[];
   openQuoteCount:        number;
   score?:                ScoreContext;
+  scoreTrend?:           ScoreTrend;
   topRecommendations?:   RecommendationSummary[];
   maintenanceForecast?:  MaintenanceForecastContext;
 }

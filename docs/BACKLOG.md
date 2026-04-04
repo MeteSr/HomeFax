@@ -192,10 +192,10 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 16.1.1 | Inject predictive maintenance data into agent context | ⬜ Missing | M | In `buildContext()`, call `maintenanceService.predictMaintenance()` for the first (or active) property; add a `maintenancePredictions` field to `AgentContext` and render it in `prompts.ts` |
-| 16.1.2 | System lifespan section in system prompt | ⬜ Missing | S | For each system with a predicted replacement window within 5 years, include: system name, estimated remaining life, replacement cost range, and urgency; agent uses this to give data-driven answers to "is my roof due?" |
-| 16.1.3 | `get_maintenance_forecast` tool | ⬜ Missing | M | Explicit tool for when the user asks about a specific system; returns remaining life estimate, next recommended service, and cost range; calls `maintenanceService.predictMaintenance()` filtered to requested system |
-| 16.1.4 | Proactive replacement alerts in agent greeting | ⬜ Missing | S | If any system is within 12 months of predicted end-of-life, surface it as a proactive alert alongside existing warranty/signature alerts |
+| 16.1.1 | Inject predictive maintenance data into agent context | ✅ Exists | M | `buildMaintenanceForecast()` in `maintenanceForecast.ts` injected via `buildContext()` in `useVoiceAgent.ts` |
+| 16.1.2 | System lifespan section in system prompt | ✅ Exists | S | Rendered in `agents/voice/prompts.ts` — urgent systems with % life used, years remaining, cost range; stable systems listed briefly |
+| 16.1.3 | `get_maintenance_forecast` tool | ✅ Exists | M | Specific system lookup (case-insensitive) + overview mode; graceful messages for unknown systems and no properties |
+| 16.1.4 | Proactive replacement alerts in agent greeting | ✅ Exists | S | `"maintenance"` alert fires in `useVoiceAgent.ts` when `criticalSystems.length > 0` |
 
 ### 16.2 Bid Management
 
@@ -214,9 +214,9 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 16.3.1 | Inject score trend into agent context | ⬜ Missing | S | In `buildContext()`, call `loadHistory()` from `scoreService`; compute delta vs. previous snapshot; add `scoreDelta` and `scoreHistory` (last 4 snapshots) to context |
-| 16.3.2 | Score trend section in system prompt | ⬜ Missing | S | If delta is non-zero, include: "Score moved from X to Y since last week (+/- Z pts)" so agent can explain changes without being asked |
-| 16.3.3 | Score milestone coaching | ⬜ Missing | M | When user is within 5 pts of a grade boundary (e.g. 75 → B, 88 → HomeFax Certified), agent proactively identifies the single cheapest action to cross it and volunteers it unprompted |
+| 16.3.1 | Inject score trend into agent context | ✅ Exists | S | `buildScoreTrend()` in `scoreTrend.ts` calls `loadHistory()` + `scoreDelta()`; injected as `scoreTrend` in `buildContext()` |
+| 16.3.2 | Score trend section in system prompt | ✅ Exists | S | Rendered in `agents/voice/prompts.ts` — "Score moved up/down from X → Y (+/- Z pts since last week)" when delta is non-zero |
+| 16.3.3 | Score milestone coaching | ✅ Exists | M | `computeMilestoneCoaching()` detects within-5-pts of grade/Certified boundaries; picks cheapest free action first (pending job sign-off), then diversity, value, verification |
 
 ### 16.4 Post-Job Review Prompting
 

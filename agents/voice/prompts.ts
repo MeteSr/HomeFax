@@ -80,6 +80,28 @@ export function buildSystemPrompt(ctx: AgentContext): string {
           .join("\n")
       : "";
 
+  const trendSection = ctx.scoreTrend
+    ? (() => {
+        const t = ctx.scoreTrend;
+        const lines: string[] = [];
+        if (t.delta !== 0 && t.previousScore !== null) {
+          const dir    = t.delta > 0 ? "up" : "down";
+          const sign   = t.delta > 0 ? "+" : "";
+          lines.push(
+            `\nScore trend: moved ${dir} from ${t.previousScore} → ${ctx.score?.score ?? "?"} (${sign}${t.delta} pts since last week)`
+          );
+        }
+        if (t.milestoneCoaching) {
+          const c = t.milestoneCoaching;
+          lines.push(
+            `Next milestone: ${c.milestoneLabel} (${c.milestone} pts) — ${c.ptsNeeded} pt${c.ptsNeeded > 1 ? "s" : ""} away`,
+            `Suggested action: ${c.action}`
+          );
+        }
+        return lines.length > 0 ? lines.join("\n") : "";
+      })()
+    : "";
+
   const maintenanceSection = ctx.maintenanceForecast
     ? (() => {
         const f = ctx.maintenanceForecast;
@@ -155,5 +177,5 @@ Voice response rules — these are mandatory:
 - Write as you would speak: natural, conversational, clear.
 - For cost estimates, give a realistic range (e.g. "typically between eight hundred and twelve hundred dollars") and note that local rates vary.
 - If the user's property or job data is relevant to their question, reference it directly.
-${propertySection}${jobSection}${warrantySection}${pendingSection}${quotesSection}${scoreSection}${recsSection}${maintenanceSection}`;
+${propertySection}${jobSection}${warrantySection}${pendingSection}${quotesSection}${scoreSection}${trendSection}${recsSection}${maintenanceSection}`;
 }

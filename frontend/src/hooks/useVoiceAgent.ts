@@ -8,6 +8,8 @@ import { computeScore, computeBreakdown, getScoreGrade } from "../services/score
 import { getRecentScoreEvents } from "../services/scoreEventService";
 import { marketService, jobToSummary } from "../services/market";
 import { buildMaintenanceForecast } from "../services/maintenanceForecast";
+import { buildScoreTrend } from "../services/scoreTrend";
+import { loadHistory } from "../services/scoreService";
 
 // ── Minimal message types (mirrors Anthropic SDK without importing it) ─────────
 
@@ -192,6 +194,16 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
         recentEvents: events.slice(0, 5).map((e) => ({ label: e.label, pts: e.pts, category: e.category })),
         nextActions,
       },
+      scoreTrend: (() => {
+        const history  = loadHistory(properties[0] ? String(properties[0].id) : null);
+        const trend    = buildScoreTrend(score, breakdown, jobs, history);
+        return {
+          delta:             trend.delta,
+          trend:             trend.trend,
+          previousScore:     trend.previousScore,
+          milestoneCoaching: trend.milestoneCoaching,
+        };
+      })(),
       topRecommendations,
       maintenanceForecast: buildMaintenanceForecast(properties, jobs) ?? undefined,
       recentJobs: jobs.slice(0, 15).map((j) => ({
