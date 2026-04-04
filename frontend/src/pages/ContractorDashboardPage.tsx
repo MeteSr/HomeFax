@@ -271,16 +271,15 @@ export default function ContractorDashboardPage() {
     ]).finally(() => setLoading(false));
   }, []);
 
-  // Default filter to contractor's specialty once profile loads
-  useEffect(() => {
-    if (profile?.specialty && filterType === "All") {
-      setFilterType(profile.specialty);
+  // When "All" is selected, show only requests matching the contractor's specialties.
+  // A manually-chosen filter chip narrows to that specific type.
+  const filtered = (() => {
+    if (filterType !== "All") return openRequests.filter((r) => r.serviceType === filterType);
+    if (profile?.specialties?.length) {
+      return openRequests.filter((r) => profile.specialties.includes(r.serviceType));
     }
-  }, [profile]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const filtered = filterType === "All"
-    ? openRequests
-    : openRequests.filter((r) => r.serviceType === filterType);
+    return openRequests;
+  })();
 
   // Sort: emergency first, then by recency
   const urgencyRank: Record<string, number> = { emergency: 0, high: 1, medium: 2, low: 3 };
@@ -356,7 +355,7 @@ export default function ContractorDashboardPage() {
             </h1>
             {profile?.name && (
               <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: S.inkLight, marginTop: "0.375rem" }}>
-                {profile.name} · {profile.specialty}
+                {profile.name}{profile.specialties?.length ? " · " + profile.specialties.join(", ") : ""}
               </p>
             )}
           </div>

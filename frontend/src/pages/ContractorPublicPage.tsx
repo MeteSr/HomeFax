@@ -130,7 +130,7 @@ export default function ContractorPublicPage() {
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
               <div>
                 <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.15em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.375rem" }}>
-                  {contractor.specialty}
+                  {contractor.specialties.join(" · ") || "—"}
                 </p>
                 <h1 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: S.paper, marginBottom: "0.375rem" }}>
                   {contractor.name}
@@ -200,7 +200,7 @@ export default function ContractorPublicPage() {
             </p>
           </div>
           <button
-            onClick={() => navigate("/quotes/new", { state: { prefill: { serviceType: contractor.specialty, contractorName: contractor.name } } })}
+            onClick={() => navigate("/quotes/new", { state: { prefill: { serviceType: contractor.specialties[0] ?? "", contractorName: contractor.name } } })}
             style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.625rem 1.25rem", background: S.rust, color: COLORS.white, border: "none", fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", flexShrink: 0 }}
           >
             <MessageSquare size={13} /> Request Quote

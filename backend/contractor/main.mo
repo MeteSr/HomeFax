@@ -32,12 +32,20 @@ persistent actor Contractor {
     #Flooring;
     #Windows;
     #Landscaping;
+    #Gutters;
+    #GeneralHandyman;
+    #Pest;
+    #Concrete;
+    #Fencing;
+    #Insulation;
+    #Solar;
+    #Pool;
   };
 
   public type ContractorProfile = {
     id:            Principal;
     name:          Text;
-    specialty:     ServiceType;
+    specialties:   [ServiceType];
     email:         Text;
     phone:         Text;
     bio:           ?Text;
@@ -71,15 +79,15 @@ persistent actor Contractor {
   };
 
   public type RegisterArgs = {
-    name:      Text;
-    specialty: ServiceType;
-    email:     Text;
-    phone:     Text;
+    name:        Text;
+    specialties: [ServiceType];
+    email:       Text;
+    phone:       Text;
   };
 
   public type UpdateArgs = {
     name:          Text;
-    specialty:     ServiceType;
+    specialties:   [ServiceType];
     email:         Text;
     phone:         Text;
     bio:           ?Text;
@@ -226,11 +234,13 @@ persistent actor Contractor {
       return #err(#InvalidInput("email must contain @"));
     if (Text.size(args.phone) == 0)   return #err(#InvalidInput("phone cannot be empty"));
     if (Text.size(args.phone) > 30)   return #err(#InvalidInput("phone exceeds 30 characters"));
+    if (args.specialties.size() == 0) return #err(#InvalidInput("at least one trade category is required"));
+    if (args.specialties.size() > 10) return #err(#InvalidInput("cannot exceed 10 trade categories"));
 
     let profile: ContractorProfile = {
       id            = msg.caller;
       name          = args.name;
-      specialty     = args.specialty;
+      specialties   = args.specialties;
       email         = args.email;
       phone         = args.phone;
       bio           = null;
@@ -306,6 +316,8 @@ persistent actor Contractor {
       return #err(#InvalidInput("email must contain @"));
     if (Text.size(args.phone) == 0)   return #err(#InvalidInput("phone cannot be empty"));
     if (Text.size(args.phone) > 30)   return #err(#InvalidInput("phone exceeds 30 characters"));
+    if (args.specialties.size() == 0) return #err(#InvalidInput("at least one trade category is required"));
+    if (args.specialties.size() > 10) return #err(#InvalidInput("cannot exceed 10 trade categories"));
 
     switch (Map.get(contractors, Principal.compare, msg.caller)) {
       case null { #err(#NotFound) };
@@ -313,7 +325,7 @@ persistent actor Contractor {
         let updated: ContractorProfile = {
           id            = existing.id;
           name          = args.name;
-          specialty     = args.specialty;
+          specialties   = args.specialties;
           email         = args.email;
           phone         = args.phone;
           bio           = args.bio;
@@ -389,7 +401,7 @@ persistent actor Contractor {
         let updated: ContractorProfile = {
           id            = existing.id;
           name          = existing.name;
-          specialty     = existing.specialty;
+          specialties   = existing.specialties;
           email         = existing.email;
           phone         = existing.phone;
           bio           = existing.bio;
@@ -434,7 +446,7 @@ persistent actor Contractor {
         let updated: ContractorProfile = {
           id            = existing.id;
           name          = existing.name;
-          specialty     = existing.specialty;
+          specialties   = existing.specialties;
           email         = existing.email;
           phone         = existing.phone;
           bio           = existing.bio;
@@ -443,6 +455,7 @@ persistent actor Contractor {
           trustScore    = existing.trustScore;
           jobsCompleted = existing.jobsCompleted;
           isVerified    = true;
+
           createdAt     = existing.createdAt;
         };
         Map.add(contractors, Principal.compare, c, updated);
@@ -473,6 +486,15 @@ persistent actor Contractor {
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())
+  };
+
+  /// Return all contractors who serve a given trade category.
+  public query func getBySpecialty(s: ServiceType) : async [ContractorProfile] {
+    Iter.toArray(
+      Iter.filter(Map.values(contractors), func(c: ContractorProfile) : Bool {
+        Option.isSome(Array.find<ServiceType>(c.specialties, func(t) { t == s }))
+      })
+    )
   };
 
   public query func getMetrics() : async Metrics {

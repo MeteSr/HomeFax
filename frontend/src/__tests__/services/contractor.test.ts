@@ -30,7 +30,7 @@ function makeRawProfile(overrides: Record<string, unknown> = {}) {
   return {
     id:            { toText: () => "contractor-principal" },
     name:          "Alice Wrench",
-    specialty:     { HVAC: null },
+    specialties:   [{ HVAC: null }],
     email:         "alice@example.com",
     phone:         "512-555-0100",
     bio:           ["Licensed HVAC tech with 10 years experience"],
@@ -71,23 +71,33 @@ describe("contractorService", () => {
   // ── search ───────────────────────────────────────────────────────────────────
   describe("search", () => {
     it("returns all contractors when no specialty filter", async () => {
-      mockActor.getAll.mockResolvedValue([makeRawProfile(), makeRawProfile({ name: "Bob Pipes", specialty: { Plumbing: null } })]);
+      mockActor.getAll.mockResolvedValue([makeRawProfile(), makeRawProfile({ name: "Bob Pipes", specialties: [{ Plumbing: null }] })]);
       const results = await contractorService.search();
       expect(results).toHaveLength(2);
     });
 
     it("filters by specialty when specified", async () => {
       mockActor.getAll.mockResolvedValue([
-        makeRawProfile({ specialty: { HVAC: null } }),
-        makeRawProfile({ specialty: { Plumbing: null }, name: "Bob Pipes" }),
+        makeRawProfile({ specialties: [{ HVAC: null }] }),
+        makeRawProfile({ specialties: [{ Plumbing: null }], name: "Bob Pipes" }),
       ]);
       const results = await contractorService.search("HVAC");
       expect(results).toHaveLength(1);
-      expect(results[0].specialty).toBe("HVAC");
+      expect(results[0].specialties).toContain("HVAC");
+    });
+
+    it("matches contractor serving multiple trades", async () => {
+      mockActor.getAll.mockResolvedValue([
+        makeRawProfile({ specialties: [{ HVAC: null }, { Plumbing: null }], name: "Multi" }),
+      ]);
+      const hvac    = await contractorService.search("HVAC");
+      const plumbing = await contractorService.search("Plumbing");
+      expect(hvac).toHaveLength(1);
+      expect(plumbing).toHaveLength(1);
     });
 
     it("returns empty array when no contractors match specialty", async () => {
-      mockActor.getAll.mockResolvedValue([makeRawProfile({ specialty: { HVAC: null } })]);
+      mockActor.getAll.mockResolvedValue([makeRawProfile({ specialties: [{ HVAC: null }] })]);
       const results = await contractorService.search("Plumbing");
       expect(results).toEqual([]);
     });
@@ -103,7 +113,7 @@ describe("contractorService", () => {
       const [c] = await contractorService.search();
       expect(c.id).toBe("contractor-principal");
       expect(c.name).toBe("Alice Wrench");
-      expect(c.specialty).toBe("HVAC");
+      expect(c.specialties).toEqual(["HVAC"]);
       expect(c.email).toBe("alice@example.com");
       expect(c.phone).toBe("512-555-0100");
       expect(c.bio).toBe("Licensed HVAC tech with 10 years experience");
@@ -124,12 +134,14 @@ describe("contractorService", () => {
       expect(c.serviceArea).toBeNull();
     });
 
-    it("maps all eight specialty variants", async () => {
-      const specialties = ["Roofing", "HVAC", "Plumbing", "Electrical", "Painting", "Flooring", "Windows", "Landscaping"];
-      for (const s of specialties) {
-        mockActor.getAll.mockResolvedValue([makeRawProfile({ specialty: { [s]: null } })]);
+    it("maps all sixteen trade variants", async () => {
+      const trades = ["Roofing", "HVAC", "Plumbing", "Electrical", "Painting", "Flooring",
+                      "Windows", "Landscaping", "Gutters", "GeneralHandyman", "Pest",
+                      "Concrete", "Fencing", "Insulation", "Solar", "Pool"];
+      for (const s of trades) {
+        mockActor.getAll.mockResolvedValue([makeRawProfile({ specialties: [{ [s]: null }] })]);
         const [c] = await contractorService.search();
-        expect(c.specialty).toBe(s);
+        expect(c.specialties).toContain(s);
       }
     });
   });
@@ -239,22 +251,31 @@ describe("contractorService", () => {
     it("returns mapped profile on success", async () => {
       mockActor.register.mockResolvedValue({ ok: makeRawProfile({ name: "New Contractor" }) });
       const profile = await contractorService.register({
-        name: "New Contractor", specialty: "Roofing", email: "new@co.com", phone: "555-0001",
+        name: "New Contractor", specialties: ["Roofing"], email: "new@co.com", phone: "555-0001",
       });
       expect(profile.name).toBe("New Contractor");
+    });
+
+    it("sends specialties as variant array to canister", async () => {
+      mockActor.register.mockResolvedValue({ ok: makeRawProfile() });
+      await contractorService.register({
+        name: "Multi", specialties: ["HVAC", "Plumbing"], email: "m@m.com", phone: "555-0000",
+      });
+      const call = mockActor.register.mock.calls[0][0];
+      expect(call.specialties).toEqual([{ HVAC: null }, { Plumbing: null }]);
     });
 
     it("throws on error", async () => {
       mockActor.register.mockResolvedValue({ err: { AlreadyExists: null } });
       await expect(contractorService.register({
-        name: "Dup", specialty: "HVAC", email: "d@e.com", phone: "555-0002",
+        name: "Dup", specialties: ["HVAC"], email: "d@e.com", phone: "555-0002",
       })).rejects.toThrow("AlreadyExists");
     });
 
     it("throws with InvalidInput text payload", async () => {
       mockActor.register.mockResolvedValue({ err: { InvalidInput: "Name too short" } });
       await expect(contractorService.register({
-        name: "x", specialty: "HVAC", email: "x@x.com", phone: "555-0003",
+        name: "x", specialties: ["HVAC"], email: "x@x.com", phone: "555-0003",
       })).rejects.toThrow("Name too short");
     });
   });
@@ -302,16 +323,26 @@ describe("contractorService", () => {
     it("returns updated profile on success", async () => {
       mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile({ name: "Updated Name" }) });
       const profile = await contractorService.updateProfile({
-        name: "Updated Name", specialty: "Plumbing", email: "u@u.com", phone: "555-0004",
+        name: "Updated Name", specialties: ["Plumbing"], email: "u@u.com", phone: "555-0004",
         bio: "Updated bio", licenseNumber: null, serviceArea: null,
       });
       expect(profile.name).toBe("Updated Name");
     });
 
+    it("sends specialties as variant array to canister", async () => {
+      mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile() });
+      await contractorService.updateProfile({
+        name: "Test", specialties: ["Electrical", "Solar"], email: "t@t.com", phone: "555-0005",
+        bio: null, licenseNumber: null, serviceArea: null,
+      });
+      const call = mockActor.updateProfile.mock.calls[0][0];
+      expect(call.specialties).toEqual([{ Electrical: null }, { Solar: null }]);
+    });
+
     it("passes null optional fields as empty arrays to canister", async () => {
       mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile() });
       await contractorService.updateProfile({
-        name: "Test", specialty: "Electrical", email: "t@t.com", phone: "555-0005",
+        name: "Test", specialties: ["Electrical"], email: "t@t.com", phone: "555-0005",
         bio: null, licenseNumber: null, serviceArea: null,
       });
       const call = mockActor.updateProfile.mock.calls[0][0];
@@ -323,7 +354,7 @@ describe("contractorService", () => {
     it("wraps non-null optional fields in arrays for canister", async () => {
       mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile() });
       await contractorService.updateProfile({
-        name: "Test", specialty: "Electrical", email: "t@t.com", phone: "555-0005",
+        name: "Test", specialties: ["Electrical"], email: "t@t.com", phone: "555-0005",
         bio: "My bio", licenseNumber: "TX-123", serviceArea: "Austin",
       });
       const call = mockActor.updateProfile.mock.calls[0][0];

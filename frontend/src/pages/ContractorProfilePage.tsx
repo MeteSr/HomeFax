@@ -18,14 +18,35 @@ const S = {
   mono:     FONTS.mono,
 };
 
-const SPECIALTIES = [
-  "HVAC", "Roofing", "Plumbing", "Electrical",
+export const ALL_TRADES = [
+  "HVAC", "Plumbing", "Electrical", "Roofing",
   "Painting", "Flooring", "Windows", "Landscaping",
+  "Gutters", "GeneralHandyman", "Pest", "Concrete",
+  "Fencing", "Insulation", "Solar", "Pool",
 ];
+
+export const TRADE_LABELS: Record<string, string> = {
+  HVAC:            "HVAC",
+  Plumbing:        "Plumbing",
+  Electrical:      "Electrical",
+  Roofing:         "Roofing",
+  Painting:        "Painting",
+  Flooring:        "Flooring",
+  Windows:         "Windows",
+  Landscaping:     "Landscaping",
+  Gutters:         "Gutters",
+  GeneralHandyman: "General Handyman",
+  Pest:            "Pest Control",
+  Concrete:        "Concrete",
+  Fencing:         "Fencing",
+  Insulation:      "Insulation",
+  Solar:           "Solar",
+  Pool:            "Pool",
+};
 
 interface FormState {
   name:          string;
-  specialty:     string;
+  specialties:   string[];
   email:         string;
   phone:         string;
   bio:           string;
@@ -34,20 +55,26 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
-  name: "", specialty: "HVAC", email: "", phone: "",
+  name: "", specialties: [], email: "", phone: "",
   bio: "", licenseNumber: "", serviceArea: "",
 };
 
 function fromProfile(p: ContractorProfile): FormState {
   return {
     name:          p.name,
-    specialty:     p.specialty,
+    specialties:   p.specialties,
     email:         p.email,
     phone:         p.phone,
     bio:           p.bio           ?? "",
     licenseNumber: p.licenseNumber ?? "",
     serviceArea:   p.serviceArea   ?? "",
   };
+}
+
+function toggleTrade(specialties: string[], trade: string): string[] {
+  return specialties.includes(trade)
+    ? specialties.filter((s) => s !== trade)
+    : [...specialties, trade];
 }
 
 export default function ContractorProfilePage() {
@@ -76,12 +103,14 @@ export default function ContractorProfilePage() {
     if (!form.email.trim()) { toast.error("Email is required"); return; }
     if (!form.phone.trim()) { toast.error("Phone is required"); return; }
 
+    if (form.specialties.length === 0) { toast.error("Select at least one trade"); return; }
+
     setSaving(true);
     try {
       if (isEditing) {
         await contractorService.updateProfile({
           name:          form.name.trim(),
-          specialty:     form.specialty,
+          specialties:   form.specialties,
           email:         form.email.trim(),
           phone:         form.phone.trim(),
           bio:           form.bio.trim()           || null,
@@ -91,10 +120,10 @@ export default function ContractorProfilePage() {
         toast.success("Profile updated.");
       } else {
         await contractorService.register({
-          name:      form.name.trim(),
-          specialty: form.specialty,
-          email:     form.email.trim(),
-          phone:     form.phone.trim(),
+          name:        form.name.trim(),
+          specialties: form.specialties,
+          email:       form.email.trim(),
+          phone:       form.phone.trim(),
         });
         toast.success("Contractor profile created!");
       }
@@ -143,6 +172,7 @@ export default function ContractorProfilePage() {
         {(() => {
           const checks = [
             { label: "Name",         done: !!form.name.trim() },
+            { label: "Trades",       done: form.specialties.length > 0 },
             { label: "Email",        done: !!form.email.trim() },
             { label: "Phone",        done: !!form.phone.trim() },
             { label: "Bio",          done: form.bio.trim().length >= 40 },
@@ -219,16 +249,37 @@ export default function ContractorProfilePage() {
               </div>
 
               <div>
-                <label className="form-label">Primary Trade *</label>
-                <select
-                  className="form-input"
-                  value={form.specialty}
-                  onChange={(e) => update("specialty", e.target.value)}
-                >
-                  {SPECIALTIES.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+                <label className="form-label">Trades You Serve *</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem", marginTop: "0.25rem" }}>
+                  {ALL_TRADES.map((trade) => {
+                    const active = form.specialties.includes(trade);
+                    return (
+                      <button
+                        key={trade}
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, specialties: toggleTrade(f.specialties, trade) }))}
+                        style={{
+                          padding: "0.3rem 0.625rem",
+                          border: `1.5px solid ${active ? S.sage : S.rule}`,
+                          background: active ? COLORS.sageLight : COLORS.white,
+                          color: active ? S.sage : S.inkLight,
+                          fontFamily: S.mono,
+                          fontSize: "0.6rem",
+                          letterSpacing: "0.06em",
+                          cursor: "pointer",
+                          transition: "border-color 0.12s, background 0.12s, color 0.12s",
+                        }}
+                      >
+                        {active ? "✓ " : ""}{TRADE_LABELS[trade]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.specialties.length === 0 && (
+                  <p style={{ fontFamily: S.mono, fontSize: "0.6rem", color: S.rust, marginTop: "0.375rem" }}>
+                    Select at least one trade to receive matching leads.
+                  </p>
+                )}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>

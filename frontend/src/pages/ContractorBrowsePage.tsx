@@ -40,7 +40,7 @@ function ContractorCard({ contractor, onClick }: { contractor: ContractorProfile
       <div style={{ background: S.ink, padding: "1rem 1.25rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.25rem" }}>
-            {contractor.specialty}
+            {contractor.specialties.join(" · ") || "—"}
           </p>
           <h3 style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1rem", lineHeight: 1.2, color: S.paper, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {contractor.name}
@@ -104,12 +104,12 @@ export default function ContractorBrowsePage() {
 
   const filtered = useMemo(() => {
     let list = contractors;
-    if (specialty !== "All") list = list.filter((c) => c.specialty === specialty);
+    if (specialty !== "All") list = list.filter((c) => c.specialties.includes(specialty));
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter((c) =>
         c.name.toLowerCase().includes(q) ||
-        c.specialty.toLowerCase().includes(q) ||
+        c.specialties.some((s) => s.toLowerCase().includes(q)) ||
         (c.serviceArea ?? "").toLowerCase().includes(q)
       );
     }

@@ -9,11 +9,13 @@ const idlFactory = ({ IDL }: any) => {
   const ServiceType = IDL.Variant({
     Roofing: IDL.Null, HVAC: IDL.Null, Plumbing: IDL.Null, Electrical: IDL.Null,
     Painting: IDL.Null, Flooring: IDL.Null, Windows: IDL.Null, Landscaping: IDL.Null,
+    Gutters: IDL.Null, GeneralHandyman: IDL.Null, Pest: IDL.Null, Concrete: IDL.Null,
+    Fencing: IDL.Null, Insulation: IDL.Null, Solar: IDL.Null, Pool: IDL.Null,
   });
   const ContractorProfile = IDL.Record({
     id:            IDL.Principal,
     name:          IDL.Text,
-    specialty:     ServiceType,
+    specialties:   IDL.Vec(ServiceType),
     email:         IDL.Text,
     phone:         IDL.Text,
     bio:           IDL.Opt(IDL.Text),
@@ -25,14 +27,14 @@ const idlFactory = ({ IDL }: any) => {
     createdAt:     IDL.Int,
   });
   const RegisterArgs = IDL.Record({
-    name:      IDL.Text,
-    specialty: ServiceType,
-    email:     IDL.Text,
-    phone:     IDL.Text,
+    name:        IDL.Text,
+    specialties: IDL.Vec(ServiceType),
+    email:       IDL.Text,
+    phone:       IDL.Text,
   });
   const UpdateArgs = IDL.Record({
     name:          IDL.Text,
-    specialty:     ServiceType,
+    specialties:   IDL.Vec(ServiceType),
     email:         IDL.Text,
     phone:         IDL.Text,
     bio:           IDL.Opt(IDL.Text),
@@ -78,6 +80,7 @@ const idlFactory = ({ IDL }: any) => {
       ["query"]
     ),
     getAll: IDL.Func([], [IDL.Vec(ContractorProfile)], ["query"]),
+    getBySpecialty: IDL.Func([ServiceType], [IDL.Vec(ContractorProfile)], ["query"]),
     submitReview: IDL.Func(
       [IDL.Principal, IDL.Nat, IDL.Text, IDL.Text],
       [IDL.Variant({ ok: Review, err: Error })],
@@ -118,7 +121,7 @@ const idlFactory = ({ IDL }: any) => {
 export interface ContractorProfile {
   id:            string;   // principal text
   name:          string;
-  specialty:     string;
+  specialties:   string[];
   email:         string;
   phone:         string;
   bio:           string | null;
@@ -141,15 +144,15 @@ export interface JobCredential {
 }
 
 export interface RegisterContractorArgs {
-  name:      string;
-  specialty: string;
-  email:     string;
-  phone:     string;
+  name:        string;
+  specialties: string[];
+  email:       string;
+  phone:       string;
 }
 
 export interface UpdateContractorArgs {
   name:          string;
-  specialty:     string;
+  specialties:   string[];
   email:         string;
   phone:         string;
   bio:           string | null;
@@ -163,7 +166,7 @@ function fromProfile(raw: any): ContractorProfile {
   return {
     id:            raw.id.toText(),
     name:          raw.name,
-    specialty:     Object.keys(raw.specialty)[0],
+    specialties:   (raw.specialties as any[]).map((s: any) => Object.keys(s)[0]),
     email:         raw.email,
     phone:         raw.phone,
     bio:           raw.bio[0] ?? null,
@@ -201,12 +204,12 @@ function createContractorService() {
   async search(specialty?: string): Promise<ContractorProfile[]> {
     if (!CONTRACTOR_CANISTER_ID) {
       return specialty
-        ? mockContractors.filter((c) => c.specialty === specialty)
+        ? mockContractors.filter((c) => c.specialties.includes(specialty))
         : [...mockContractors];
     }
     const a = await getActor();
     const all = (await a.getAll() as any[]).map(fromProfile);
-    return specialty ? all.filter((c) => c.specialty === specialty) : all;
+    return specialty ? all.filter((c) => c.specialties.includes(specialty)) : all;
   },
 
   async getTopRated(): Promise<ContractorProfile[]> {
@@ -237,7 +240,7 @@ function createContractorService() {
         if (raw) return {
           id:            raw.principal,
           name:          raw.name,
-          specialty:     raw.specialty ?? "",
+          specialties:   Array.isArray(raw.specialties) ? raw.specialties : (raw.specialty ? [raw.specialty] : []),
           email:         raw.email ?? "",
           phone:         raw.phone ?? "",
           bio:           raw.bio ?? null,
@@ -261,10 +264,10 @@ function createContractorService() {
   async register(args: RegisterContractorArgs): Promise<ContractorProfile> {
     const a = await getActor();
     return unwrap(await a.register({
-      name:      args.name,
-      specialty: { [args.specialty]: null },
-      email:     args.email,
-      phone:     args.phone,
+      name:        args.name,
+      specialties: args.specialties.map((s) => ({ [s]: null })),
+      email:       args.email,
+      phone:       args.phone,
     }));
   },
 
@@ -272,7 +275,7 @@ function createContractorService() {
     const a = await getActor();
     return unwrap(await a.updateProfile({
       name:          args.name,
-      specialty:     { [args.specialty]: null },
+      specialties:   args.specialties.map((s) => ({ [s]: null })),
       email:         args.email,
       phone:         args.phone,
       bio:           args.bio           ? [args.bio]           : [],
@@ -312,6 +315,15 @@ function createContractorService() {
       verifiedAt:         Number(c.verifiedAt) / 1_000_000,
       homeownerPrincipal: c.homeownerPrincipal.toText(),
     }));
+  },
+
+  async getBySpecialty(specialty: string): Promise<ContractorProfile[]> {
+    if (!CONTRACTOR_CANISTER_ID) {
+      return mockContractors.filter((c) => c.specialties.includes(specialty));
+    }
+    const a = await getActor();
+    const result = await a.getBySpecialty({ [specialty]: null }) as any[];
+    return result.map(fromProfile);
   },
 
   reset() {
