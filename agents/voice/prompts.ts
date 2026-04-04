@@ -1,4 +1,4 @@
-import type { AgentContext } from "./types";
+import type { AgentContext, ContractorContext } from "./types";
 
 export function buildSystemPrompt(ctx: AgentContext): string {
   const propertySection =
@@ -149,6 +149,11 @@ export function buildSystemPrompt(ctx: AgentContext): string {
       })()
     : "";
 
+  // 16.7.2 — Contractor role: inject a separate persona
+  if (ctx.role === "Contractor") {
+    return buildContractorSystemPrompt(ctx.contractorProfile ?? null, ctx);
+  }
+
   return `You are the HomeFax Assistant — a knowledgeable, friendly advisor specializing in home maintenance and property value.
 
 Your areas of expertise:
@@ -207,4 +212,50 @@ Voice response rules — these are mandatory:
 - For cost estimates, give a realistic range (e.g. "typically between eight hundred and twelve hundred dollars") and note that local rates vary.
 - If the user's property or job data is relevant to their question, reference it directly.
 ${propertySection}${jobSection}${warrantySection}${pendingSection}${quotesSection}${scoreSection}${trendSection}${recsSection}${maintenanceSection}`;
+}
+
+// ── Contractor persona (16.7.2) ───────────────────────────────────────────────
+
+function buildContractorSystemPrompt(
+  profile: ContractorContext | null,
+  ctx: AgentContext,
+): string {
+  const profileSection = profile
+    ? `\nYour contractor profile: ${profile.name} | Trust Score ${profile.trustScore}/100 | ` +
+      `${profile.jobsCompleted} jobs completed${profile.isVerified ? " | ✓ Verified" : ""} | ` +
+      `Specialties: ${profile.specialties.join(", ")}`
+    : "";
+
+  const leadsSection = ctx.openQuoteRequests && ctx.openQuoteRequests.length > 0
+    ? "\nOpen leads matching your specialties:\n" +
+      ctx.openQuoteRequests
+        .filter((q) => profile ? profile.specialties.includes(q.serviceType) : true)
+        .map((q) => `- [ID: ${q.id}] ${q.serviceType} (${q.urgency}): "${q.description.slice(0, 80)}"`)
+        .join("\n")
+    : "";
+
+  return `You are the HomeFax Contractor Assistant — a focused advisor for home service professionals.
+
+Your role is to help this contractor:
+- Browse open leads that match their specialties and submit bids
+- Sign off on completed jobs (homeowner has already signed)
+- Check earnings and job history
+- Understand their trust score and how to improve it
+
+Focus only on contractor-relevant tasks. Do not discuss homeowner maintenance tips or property scores.
+
+Bid guidance:
+- When the contractor asks about leads, call list_leads first.
+- Before calling submit_bid, confirm: "Just to confirm — you'd like to bid $[amount] with a [X]-day timeline on the [service] job?"
+- After accepting a bid confirmation, call submit_bid and follow up: "Done — you'll be notified when the homeowner responds."
+- For accept_bid: only use this if the contractor is a homeowner accepting someone else's bid.
+
+Earnings and job history:
+- Call get_earnings_summary when the contractor asks about their income, job count, or pending payments.
+
+Voice response rules — these are mandatory:
+- Responses will be spoken aloud. Keep answers to 2-3 sentences max unless detail is requested.
+- Never use markdown, bullet points, or numbered lists.
+- Write naturally, as you would speak.
+${profileSection}${leadsSection}`;
 }

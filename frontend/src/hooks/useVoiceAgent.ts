@@ -11,6 +11,8 @@ import { buildMaintenanceForecast } from "../services/maintenanceForecast";
 import { buildScoreTrend } from "../services/scoreTrend";
 import { loadHistory } from "../services/scoreService";
 import { buildImageUserMessage, fileToBase64, type SupportedImageMimeType } from "../services/imageUtils";
+import { useAuthStore } from "../store/authStore";
+import { contractorService } from "../services/contractor";
 
 // ── Minimal message types (mirrors Anthropic SDK without importing it) ─────────
 
@@ -98,6 +100,9 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
   // ── Richer context builder ───────────────────────────────────────────────────
 
   const buildContext = async () => {
+    const { profile: authProfile } = useAuthStore.getState();
+    const role = authProfile?.role;
+
     const [propertiesResult, jobsResult, quotesResult] = await Promise.allSettled([
       propertyService.getMyProperties(),
       jobService.getAll(),
@@ -250,6 +255,21 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
       pendingSignatureJobIds,
       openQuoteCount,
       openQuoteRequests,
+      role: role ?? undefined,
+      contractorProfile: await (async () => {
+        if (role !== "Contractor") return undefined;
+        try {
+          const p = await contractorService.getMyProfile();
+          if (!p) return undefined;
+          return {
+            name:          p.name,
+            specialties:   p.specialties,
+            trustScore:    p.trustScore,
+            jobsCompleted: p.jobsCompleted,
+            isVerified:    p.isVerified,
+          };
+        } catch { return undefined; }
+      })(),
     };
   };
 

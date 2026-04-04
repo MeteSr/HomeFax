@@ -457,6 +457,59 @@ Rate-limit errors (10 reviews/day) should be communicated gracefully: "You've al
   },
 
   {
+    name: "list_leads",
+    description: `List open quote requests matching the contractor's specialties, sorted by urgency.
+
+Use this when the contractor asks "what jobs are available?", "any new leads?", or "show me open requests".
+Returns up to 5 matching requests with request IDs, service type, urgency, and description.
+After listing, offer to help submit a bid on any of the shown requests.`,
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+
+  {
+    name: "submit_bid",
+    description: `Submit a bid on an open quote request on behalf of the contractor.
+
+Use this when the contractor wants to bid on a job shown in list_leads.
+ALWAYS confirm before calling: "Just to confirm — you'd like to bid $[amount] with a [X]-day timeline?"
+After success: "Done — your bid has been submitted. I'll let you know when the homeowner responds."`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        request_id: {
+          type: "string",
+          description: "The quote request ID to bid on (from list_leads)",
+        },
+        amount_dollars: {
+          type: "number",
+          description: "Bid amount in dollars (not cents), e.g. 1500 for $1,500",
+        },
+        timeline_days: {
+          type: "number",
+          description: "Estimated days to complete the job",
+        },
+      },
+      required: ["request_id", "amount_dollars", "timeline_days"],
+    },
+  },
+
+  {
+    name: "get_earnings_summary",
+    description: `Return the contractor's earnings summary: verified job count, total earned, and jobs in progress.
+
+Use this when the contractor asks "how much have I earned?", "how many jobs have I done?", or "what's my income?"`,
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+
+  {
     name: "update_job_status",
     description: `Update the status of an existing maintenance job.
 Use this to mark a job as in-progress or completed based on what the user tells you.`,

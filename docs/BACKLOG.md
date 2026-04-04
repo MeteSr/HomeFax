@@ -250,11 +250,11 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 16.7.1 | Inject role + contractor profile into agent context | ⬜ Missing | M | In `buildContext()`, read role from `useAuthStore`; if Contractor, fetch contractor profile and inject `specialties`, `trustScore`, `jobsCompleted`, `isVerified`; pass role to `AgentContext` |
-| 16.7.2 | Role-aware system prompt branching | ⬜ Missing | S | `buildSystemPrompt()` renders a contractor-specific persona and instructions when `ctx.role === "Contractor"`: focus on leads, bids, job signing, and earnings rather than homeowner maintenance |
-| 16.7.3 | `list_leads` tool | ⬜ Missing | M | Returns open quote requests matching the contractor's `specialties[]`; agent summarises top opportunities by urgency and estimated value |
-| 16.7.4 | `submit_bid` tool | ⬜ Missing | M | Contractor describes their bid conversationally; agent collects amount and notes, confirms, calls `quoteService.submitBid()`; follows up with "I'll notify you when the homeowner responds" |
-| 16.7.5 | `get_earnings_summary` tool | ⬜ Missing | S | Returns completed job count, total earnings, and pending payment amount; reads from `jobService` filtered to contractor's principal |
+| 16.7.1 | Inject role + contractor profile into agent context | ✅ Exists | M | `buildContext()` reads role from `useAuthStore`; if Contractor, calls `contractorService.getMyProfile()` and injects `ContractorContext` into `AgentContext.contractorProfile` |
+| 16.7.2 | Role-aware system prompt branching | ✅ Exists | S | `buildSystemPrompt()` branches to `buildContractorSystemPrompt()` when `ctx.role === "Contractor"` — separate persona focused on leads, bids, earnings, and job signing |
+| 16.7.3 | `list_leads` tool | ✅ Exists | M | Calls `contractorService.getMyProfile()` for specialties, `quoteService.getOpenRequests()` for leads, filters + sorts by urgency, caps at 5 |
+| 16.7.4 | `submit_bid` tool | ✅ Exists | M | Calls `quoteService.submitQuote(requestId, amountCents, timelineDays, validUntilMs)`; converts dollars→cents; 30-day validity default |
+| 16.7.5 | `get_earnings_summary` tool | ✅ Exists | S | Filters `jobService.getAll()` by `job.contractor === profile.id`; sums verified job earnings; counts pending (completed/in-progress) separately |
 
 ---
 

@@ -28,6 +28,9 @@ export type ToolName =
   | "list_bids"
   | "accept_bid"
   | "decline_quote"
+  | "list_leads"
+  | "submit_bid"
+  | "get_earnings_summary"
   | "update_job_status"
   | "schedule_maintenance_task"
   | "get_maintenance_forecast";
@@ -393,6 +396,105 @@ export async function executeTool(
         };
       }
 
+      // ── List leads (contractor) ───────────────────────────────────────────
+      case "list_leads": {
+        const profile = await contractorService.getMyProfile();
+        if (!profile) {
+          return { success: false, error: "No contractor profile found. Register as a contractor first." };
+        }
+
+        const openRequests = await quoteService.getOpenRequests();
+        const URGENCY_ORDER: Record<string, number> = { emergency: 0, high: 1, medium: 2, low: 3 };
+
+        const matched = openRequests
+          .filter((r) => profile.specialties.includes(r.serviceType))
+          .sort((a, b) => (URGENCY_ORDER[a.urgency] ?? 9) - (URGENCY_ORDER[b.urgency] ?? 9))
+          .slice(0, 5)
+          .map((r) => ({
+            requestId:   r.id,
+            serviceType: r.serviceType,
+            description: r.description,
+            urgency:     r.urgency,
+            createdAt:   r.createdAt,
+          }));
+
+        if (matched.length === 0) {
+          return {
+            success: true,
+            data: { leads: [], summary: `No leads matching your specialties (${profile.specialties.join(", ")}) right now. Check back soon.` },
+          };
+        }
+
+        const summary =
+          `${matched.length} lead${matched.length !== 1 ? "s" : ""} matching your specialties:\n` +
+          matched.map((l, i) =>
+            `${i + 1}. [${l.requestId}] ${l.serviceType} (${l.urgency}): "${l.description.slice(0, 60)}"`
+          ).join("\n");
+
+        return { success: true, data: { leads: matched, summary } };
+      }
+
+      // ── Submit bid (contractor) ───────────────────────────────────────────
+      case "submit_bid": {
+        if (!input.request_id) return { success: false, error: "request_id is required" };
+        if (input.amount_dollars == null) return { success: false, error: "amount_dollars is required" };
+        if (input.timeline_days == null) return { success: false, error: "timeline_days is required" };
+
+        const requestId    = String(input.request_id);
+        const amountCents  = Math.round(Number(input.amount_dollars) * 100);
+        const timelineDays = Number(input.timeline_days);
+        const validUntilMs = Date.now() + 30 * 86_400_000;  // 30-day validity default
+
+        const quote = await quoteService.submitQuote(requestId, amountCents, timelineDays, validUntilMs);
+
+        return {
+          success: true,
+          data: {
+            quoteId: quote.id,
+            summary: `Bid submitted: $${Number(input.amount_dollars).toLocaleString()} in ${timelineDays} day${timelineDays !== 1 ? "s" : ""}. You'll be notified when the homeowner responds.`,
+          },
+        };
+      }
+
+      // ── Get earnings summary (contractor) ─────────────────────────────────
+      case "get_earnings_summary": {
+        const profile = await contractorService.getMyProfile();
+        if (!profile) {
+          return { success: false, error: "No contractor profile found. Register as a contractor first." };
+        }
+
+        const allJobs    = await jobService.getAll();
+        const myJobs     = allJobs.filter((j) => j.contractor === profile.id);
+        const verified   = myJobs.filter((j) => j.status === "verified");
+        const pending    = myJobs.filter((j) => j.status === "completed" || j.status === "in_progress");
+        const totalCents = verified.reduce((sum, j) => sum + j.amount, 0);
+
+        if (verified.length === 0) {
+          return {
+            success: true,
+            data: {
+              jobsCompleted:      0,
+              totalEarningsCents: 0,
+              pendingCount:       pending.length,
+              summary: `No completed verified jobs yet. ${pending.length > 0 ? `${pending.length} job${pending.length !== 1 ? "s" : ""} in progress.` : ""}`.trim(),
+            },
+          };
+        }
+
+        const totalDollars = (totalCents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 });
+
+        return {
+          success: true,
+          data: {
+            jobsCompleted:      verified.length,
+            totalEarningsCents: totalCents,
+            pendingCount:       pending.length,
+            summary: `${verified.length} verified job${verified.length !== 1 ? "s" : ""} — $${totalDollars} total earnings.` +
+              (pending.length > 0 ? ` ${pending.length} job${pending.length !== 1 ? "s" : ""} in progress.` : ""),
+          },
+        };
+      }
+
       // ── Update job status ──────────────────────────────────────────────────
       case "update_job_status": {
         const jobId = String(input.job_id);
@@ -519,6 +621,9 @@ export function toolActionLabel(name: ToolName): string {
     sign_job_verification:     "signing job verification",
     submit_contractor_review:  "submitting contractor review",
     list_bids:                 "fetching bids",
+    list_leads:                "fetching leads",
+    submit_bid:                "submitting bid",
+    get_earnings_summary:      "fetching earnings summary",
     accept_bid:                "accepting bid",
     decline_quote:             "closing quote request",
     share_report:              "generating report share link",

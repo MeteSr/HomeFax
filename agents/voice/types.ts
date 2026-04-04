@@ -93,6 +93,14 @@ export interface RecommendationSummary {
   rationale:             string;
 }
 
+export interface ContractorContext {
+  name:          string;
+  specialties:   string[];
+  trustScore:    number;
+  jobsCompleted: number;
+  isVerified:    boolean;
+}
+
 export interface QuoteRequestSummary {
   id:                   string;
   serviceType:          string;
@@ -115,6 +123,8 @@ export interface AgentContext {
   scoreTrend?:           ScoreTrend;
   topRecommendations?:   RecommendationSummary[];
   maintenanceForecast?:  MaintenanceForecastContext;
+  role?:                 "Homeowner" | "Contractor" | "Realtor";
+  contractorProfile?:    ContractorContext;
 }
 
 export interface ChatRequest {
