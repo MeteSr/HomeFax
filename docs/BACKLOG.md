@@ -231,8 +231,8 @@ End-to-end scenarios that combine multiple calls, matching how real users intera
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 16.5.1 | `share_report` tool | ⬜ Missing | M | User says "share my report with my realtor"; agent asks for visibility level (Public / Private / LinkOnly) and optional expiry; calls `reportService.createShareLink()`; returns the URL for the user to copy |
-| 16.5.2 | `revoke_report_link` tool | ⬜ Missing | S | User says "revoke the report I shared last week"; agent lists active share links and confirms before calling `reportService.revokeLink()` |
+| 16.5.1 | `share_report` tool | ✅ Exists | M | Calls `reportService.generateReport()` with property + jobs from services; returns `shareUrl(token)`; supports `Public`/`BuyerOnly` visibility and optional `expiry_days` |
+| 16.5.2 | `revoke_report_link` tool | ✅ Exists | S | Two-mode tool: `list_links_for_property` shows active links first; `token` revokes after user confirms; calls `reportService.revokeShareLink()` |
 
 ### 16.6 Receipt & Document Photo Parsing (Vision)
 

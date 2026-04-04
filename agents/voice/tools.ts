@@ -299,6 +299,64 @@ After returning Critical or Soon predictions, offer to schedule a maintenance ta
   },
 
   {
+    name: "share_report",
+    description: `Generate a HomeFax report share link for a property.
+
+Use this when the user says "share my report", "send my report to my realtor", "create a report link", etc.
+
+Before calling this tool, confirm:
+- Visibility: "Public" (anyone with the link can view) or "BuyerOnly" (intended for a specific buyer)
+- Expiry: ask "Would you like the link to expire? If so, how many days?" — omit for no expiry
+
+After returning the URL, say: "Here's your share link — copy it and send it directly to your realtor or buyer."`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        property_id: {
+          type: "string",
+          description: "The property ID to generate the report for. Uses first property if omitted.",
+        },
+        visibility: {
+          type: "string",
+          enum: ["Public", "BuyerOnly"],
+          description: "Public = anyone with the link; BuyerOnly = intended for a specific buyer",
+        },
+        expiry_days: {
+          type: "number",
+          description: "Number of days before the link expires. Omit for no expiry.",
+        },
+      },
+      required: ["visibility"],
+    },
+  },
+
+  {
+    name: "revoke_report_link",
+    description: `List or revoke an active HomeFax report share link.
+
+Two modes:
+1. LIST — call with list_links_for_property to show the user their active share links before revoking.
+2. REVOKE — call with token (after user confirms) to revoke a specific link.
+
+Always list first, then confirm with the user before revoking.
+After revoking: "Done — that link can no longer be accessed by anyone."`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        list_links_for_property: {
+          type: "string",
+          description: "Property ID to list active share links for. Use this first to show options.",
+        },
+        token: {
+          type: "string",
+          description: "The share link token to revoke. Only set this after the user confirms.",
+        },
+      },
+      required: [],
+    },
+  },
+
+  {
     name: "submit_contractor_review",
     description: `Submit a star rating and optional comment for a contractor after a job is signed.
 
