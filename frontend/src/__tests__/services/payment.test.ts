@@ -31,10 +31,10 @@ describe("PLANS", () => {
     expect(pro.quoteRequests).toBe(10);
   });
 
-  it("Premium tier is $49/year with unlimited properties", () => {
+  it("Premium tier is $49/month with unlimited properties", () => {
     const premium = PLANS.find((p) => p.tier === "Premium")!;
     expect(premium.price).toBe(49);
-    expect(premium.period).toBe("year");
+    expect(premium.period).toBe("month");
     expect(premium.propertyLimit).toBe(Infinity);
     expect(premium.photosPerJob).toBe(Infinity);
     expect(premium.quoteRequests).toBe(Infinity);
