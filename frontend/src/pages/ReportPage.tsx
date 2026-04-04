@@ -11,6 +11,7 @@ import { Shield, CheckCircle, Wrench, FileText, Printer, AlertTriangle, XCircle 
 import { reportService, ReportSnapshot, ShareLink, JobInput, disclosureFromParams } from "@/services/report";
 import { agentProfileService } from "@/services/agentProfile";
 import { premiumEstimate, getScoreGrade } from "@/services/scoreService";
+import { DocumentedValueSection } from "@/components/DocumentedValueSection";
 import { COLORS, FONTS } from "@/theme";
 
 const S = {
@@ -311,23 +312,10 @@ export default function ReportPage() {
           {!disclosure.hidePermits  && <StatBox label="Permits on Record" value={snapshot.permitCount} />}
         </div>
 
-        {/* Buyer premium estimate */}
-        {premium && (
-          <div style={{ border: `1px solid ${S.rule}`, padding: "1rem 1.5rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem", background: COLORS.white }}>
-            <div>
-              <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: S.inkLight, marginBottom: "0.25rem" }}>
-                Estimated Buyer Premium
-              </p>
-              <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: S.ink }}>
-                ${premium.low.toLocaleString()} – ${premium.high.toLocaleString()}
-              </p>
-            </div>
-            <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: S.inkLight, maxWidth: "22rem" }}>
-              HomeFax Score {reportScore} ({getScoreGrade(reportScore)}). Verified maintenance history
-              typically adds 1–10% to sale price in US markets.
-            </p>
-          </div>
-        )}
+        {/* §17.3.5 — Documented maintenance value (buyer-facing) */}
+        <div style={{ marginBottom: "1.5rem" }}>
+          <DocumentedValueSection score={reportScore} />
+        </div>
 
         {/* Selective disclosure notice */}
         {(disclosure.hideAmounts || disclosure.hideContractors || disclosure.hidePermits || disclosure.hideDescriptions) && (

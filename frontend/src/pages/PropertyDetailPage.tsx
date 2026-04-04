@@ -12,6 +12,8 @@ import { propertyService, Property } from "@/services/property";
 import { jobService, Job } from "@/services/job";
 import { photoService, Photo } from "@/services/photo";
 import { computeScore, computeScoreWithDecay, computeBreakdown, getScoreGrade, recordSnapshot, premiumEstimate, isCertified, loadHistory, scoreDelta, type ScoreSnapshot } from "@/services/scoreService";
+import { ScoreValueBanner } from "@/components/ScoreValueBanner";
+import { PropertyEstimatedValueInput, getStoredEstimatedValue } from "@/components/PropertyEstimatedValueInput";
 import { getAllDecayEvents, getAtRiskWarnings, getTotalDecay, type DecayEvent, type AtRiskWarning } from "@/services/scoreDecayService";
 import { systemAgesService, type SystemAges } from "@/services/systemAges";
 import { recurringService, type RecurringService, type VisitLog } from "@/services/recurringService";
@@ -70,6 +72,12 @@ export default function PropertyDetailPage() {
   const [recurringServices,  setRecurringServices]  = useState<RecurringService[]>([]);
   const [visitLogMap,        setVisitLogMap]        = useState<Record<string, VisitLog[]>>({});
   const [scoreHistory,       setScoreHistory]       = useState<ScoreSnapshot[]>([]);
+  const [estimatedHomeDollars, setEstimatedHomeDollars] = useState<number | null>(null);
+
+  // Load persisted estimated home value for this property
+  useEffect(() => {
+    if (id) setEstimatedHomeDollars(getStoredEstimatedValue(id));
+  }, [id]);
 
   useEffect(() => {
     paymentService.getMySubscription().then((s) => setUserTier(s.tier)).catch(() => {});
@@ -368,81 +376,20 @@ export default function PropertyDetailPage() {
           </div>
         </div>
 
-        {/* Score-to-Value Calculator (5.3.4) */}
-        {(() => {
-          const est = premiumEstimate(homefaxScore);
-          if (!est) return null;
-
-          // Score bands: thresholds, labels, and premium ranges
-          const BANDS = [
-            { min: 85, label: "85–100", grade: "CERTIFIED", low: 20_000, high: 35_000 },
-            { min: 70, label: "70–84",  grade: "GREAT",     low: 15_000, high: 25_000 },
-            { min: 55, label: "55–69",  grade: "GOOD",      low:  8_000, high: 15_000 },
-            { min: 40, label: "40–54",  grade: "FAIR",      low:  3_000, high:  8_000 },
-          ];
-          const currentBandIdx = BANDS.findIndex((b) => homefaxScore >= b.min);
-          const nextBand        = currentBandIdx > 0 ? BANDS[currentBandIdx - 1] : null;
-          const ptsToNext       = nextBand ? nextBand.min - homefaxScore : 0;
-          const zip             = property.zipCode ? ` in ${property.zipCode}` : "";
-
-          return (
-            <div style={{
-              border: `1px solid ${COLORS.sage}40`,
-              background: COLORS.sageLight,
-              padding: "1.25rem 1.5rem",
-              marginBottom: "1.5rem",
-            }}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-                {/* Left: headline */}
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.14em", textTransform: "uppercase", color: COLORS.sage, marginBottom: "0.3rem" }}>
-                    Score-to-Value{zip}
-                  </p>
-                  <p style={{ fontFamily: S.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: S.ink }}>
-                    ${est.low.toLocaleString()} – ${est.high.toLocaleString()}
-                  </p>
-                  <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: S.inkLight, marginTop: "0.3rem" }}>
-                    estimated buyer premium · score {homefaxScore} ({getScoreGrade(homefaxScore)})
-                  </p>
-                  {nextBand && (
-                    <p style={{ fontFamily: S.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: COLORS.sage, marginTop: "0.5rem" }}>
-                      +{ptsToNext} pts → {nextBand.grade} · ${nextBand.low.toLocaleString()}–${nextBand.high.toLocaleString()} range
-                    </p>
-                  )}
-                </div>
-
-                {/* Right: band ladder */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flexShrink: 0 }}>
-                  {BANDS.map((b, i) => {
-                    const active = i === currentBandIdx;
-                    return (
-                      <div key={b.label} style={{
-                        display: "flex", alignItems: "center", gap: "0.5rem",
-                        padding: "0.25rem 0.625rem",
-                        background: active ? COLORS.plum : "transparent",
-                        border: `1px solid ${active ? COLORS.plum : COLORS.rule}`,
-                        opacity: i < currentBandIdx ? 0.45 : 1,
-                      }}>
-                        <span style={{ fontFamily: S.mono, fontSize: "0.55rem", letterSpacing: "0.08em", fontWeight: active ? 700 : 400, color: active ? COLORS.white : S.inkLight, minWidth: "2.5rem" }}>
-                          {b.label}
-                        </span>
-                        <span style={{ fontFamily: S.mono, fontSize: "0.55rem", color: active ? "rgba(255,255,255,0.7)" : S.inkLight }}>
-                          ${b.low / 1000}K–${b.high / 1000}K
-                        </span>
-                        <span style={{ fontFamily: S.mono, fontSize: "0.5rem", letterSpacing: "0.1em", color: active ? COLORS.sage : S.inkLight }}>
-                          {b.grade}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <p style={{ fontFamily: S.mono, fontSize: "0.5rem", letterSpacing: "0.04em", color: S.inkLight, marginTop: "0.875rem", borderTop: `1px solid ${COLORS.rule}`, paddingTop: "0.5rem" }}>
-                Heuristic estimate based on verified maintenance records. Individual market conditions vary.
-              </p>
-            </div>
-          );
-        })()}
+        {/* §17.3.2 — Score → Dollar Value (zip-aware + home value personalization) */}
+        {!loading && homefaxScore >= 40 && property && (
+          <div style={{ marginBottom: "1.5rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <ScoreValueBanner
+              score={homefaxScore}
+              zip={property.zipCode || undefined}
+              homeValueDollars={estimatedHomeDollars ?? undefined}
+            />
+            <PropertyEstimatedValueInput
+              propertyId={String(property.id)}
+              onValueChange={setEstimatedHomeDollars}
+            />
+          </div>
+        )}
 
         {/* Improvement actions (15.4.2) */}
         {!loading && homefaxScore > 0 && (() => {

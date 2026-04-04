@@ -292,11 +292,11 @@ The features below address the core signup conversion gap: a new homeowner visit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 17.3.1 | Score-to-dollar conversion model | ⬜ Missing | L | Model maps score + property value (estimated from Zestimate API or user-entered) to resale premium; basis: NAR/NerdWallet data showing documented maintenance = 1–3% value uplift; store coefficients in `market` canister |
-| 17.3.2 | Dollar value display on score page | ⬜ Missing | M | "Your HomeFax records are worth approximately $[X] in buyer confidence" shown prominently on `ScorePage`; updates as score changes |
-| 17.3.3 | Dollar delta on job log | ⬜ Missing | S | When a job is logged and verified, show "+$[estimated delta] added to your home's documented value" in the confirmation UI |
-| 17.3.4 | Property value input / Zestimate integration | ⬜ Missing | M | Allow homeowner to enter estimated home value; optional: pull from Zillow Zestimate API if available; store on `property` canister as `estimatedValueDollars` |
-| 17.3.5 | Score value section in HomeFax Report | ⬜ Missing | S | Report includes "Documented maintenance value: $[X]" line in the summary section shown to buyers |
+| 17.3.1 | Score-to-dollar conversion model | ✅ Exists | L | `scoreToValue.ts`: `scoreToValueByHomePrice(score, homeValueDollars)` (0.5–9% bands); `getDocumentedValueEstimate` picks best available: homeValue > zip median > flat bands |
+| 17.3.2 | Dollar value display on score page | ✅ Exists | M | `ScoreValueBanner` rendered in `PropertyDetailPage`; uses zip-aware or home-value-aware estimate; `PropertyEstimatedValueInput` persists user-entered value in localStorage |
+| 17.3.3 | Dollar delta on job log | ✅ Exists | S | `JobValueDelta` component shown on `JobCreatePage` success screen; uses `estimateJobValueDelta(serviceType, score)` |
+| 17.3.4 | Property value input / Zestimate integration | ✅ Exists | M | `PropertyEstimatedValueInput` component; localStorage-backed (`hf_est_val_{propertyId}`); Zestimate API integration deferred |
+| 17.3.5 | Score value section in HomeFax Report | ✅ Exists | S | `DocumentedValueSection` replaces flat "Estimated Buyer Premium" in `ReportPage`; uses `getDocumentedValueEstimate` with zip when available |
 
 ### 17.4 Buyer-Side Product — Public Report Lookup
 

@@ -10,6 +10,8 @@ import { photoService, PhotoQuota } from "@/services/photo";
 import { paymentService, type PlanTier } from "@/services/payment";
 import { UpgradeGate } from "@/components/UpgradeGate";
 import { usePropertyStore } from "@/store/propertyStore";
+import { JobValueDelta } from "@/components/JobValueDelta";
+import { computeScore } from "@/services/scoreService";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
@@ -56,6 +58,7 @@ export default function JobCreatePage() {
   const [uploadedFiles, setUploadedFiles] = useState<{ file: File; phase: string }[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loggedServiceType, setLoggedServiceType] = useState("");
+  const [scoreAtSubmit, setScoreAtSubmit] = useState(0);
   const [form, setForm] = useState({
     propertyId:      editJob ? editJob.propertyId                                              : "",
     serviceType:     editJob ? editJob.serviceType     : prefill?.serviceType    ?? SERVICE_TYPES[0],
@@ -112,6 +115,8 @@ export default function JobCreatePage() {
           warrantyMonths: form.warrantyMonths ? parseInt(form.warrantyMonths, 10) : undefined,
         });
         setLoggedServiceType(form.serviceType);
+        // Snapshot score for job-value delta display
+        jobService.getAll().then((js) => setScoreAtSubmit(computeScore(js, []))).catch(() => {});
         setSubmitted(true);
         return; // don't navigate — show success state
       }
@@ -143,6 +148,9 @@ export default function JobCreatePage() {
           <p style={{ fontFamily: S.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: S.inkLight, marginBottom: "2rem" }}>
             Your maintenance record has been added to your HomeFax report.
           </p>
+
+          {/* §17.3.3 — Dollar value delta */}
+          <JobValueDelta serviceType={loggedServiceType} currentScore={scoreAtSubmit} />
 
           {/* Next-service suggestion */}
           <div style={{ border: `1px solid ${S.rule}`, padding: "1.25rem", background: COLORS.white, textAlign: "left", marginBottom: "1.5rem", borderRadius: RADIUS.card, boxShadow: SHADOWS.card }}>
