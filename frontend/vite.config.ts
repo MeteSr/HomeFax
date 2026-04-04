@@ -42,6 +42,23 @@ export default defineConfig(({ mode }) => {
       "process.env.LISTING_CANISTER_ID":    JSON.stringify(env.CANISTER_ID_LISTING    || env.LISTING_CANISTER_ID    || ""),
       "process.env.AGENT_CANISTER_ID":     JSON.stringify(env.CANISTER_ID_AGENT     || env.AGENT_CANISTER_ID     || ""),
     },
+    build: {
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("@dfinity/")) return "vendor-dfinity";
+            if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) return "vendor-react";
+            if (
+              id.includes("node_modules/react-router") ||
+              id.includes("node_modules/zustand") ||
+              id.includes("node_modules/react-hot-toast") ||
+              id.includes("node_modules/lucide-react")
+            ) return "vendor-ui";
+          },
+        },
+      },
+    },
     optimizeDeps: {
       esbuildOptions: {
         define: {

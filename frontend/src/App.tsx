@@ -1,72 +1,63 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuthStore } from "@/store/authStore";
 
-import LandingPage from "@/pages/LandingPage";
-import LoginPage from "@/pages/LoginPage";
-import RegisterPage from "@/pages/RegisterPage";
-import DashboardPage from "@/pages/DashboardPage";
-import PropertyDetailPage from "@/pages/PropertyDetailPage";
-import PropertyRegisterPage from "@/pages/PropertyRegisterPage";
-import JobCreatePage from "@/pages/JobCreatePage";
-import QuoteRequestPage from "@/pages/QuoteRequestPage";
-import QuoteDetailPage from "@/pages/QuoteDetailPage";
-import SettingsPage from "@/pages/SettingsPage";
-import PricingPage from "@/pages/PricingPage";
-import ContractorDashboardPage from "@/pages/ContractorDashboardPage";
-import ContractorProfilePage from "@/pages/ContractorProfilePage";
-import ContractorPublicPage from "@/pages/ContractorPublicPage";
-import ContractorBrowsePage from "@/pages/ContractorBrowsePage";
-import MarketIntelligencePage from "@/pages/MarketIntelligencePage";
-import ReportPage from "@/pages/ReportPage";
-import BadgePage from "@/pages/BadgePage";
-import ScoreCertPage from "@/pages/ScoreCertPage";
-import PredictiveMaintenancePage from "@/pages/PredictiveMaintenancePage";
-import PropertyVerifyPage from "@/pages/PropertyVerifyPage";
-import AdminDashboardPage from "@/pages/AdminDashboardPage";
-import OnboardingPage from "@/pages/OnboardingPage";
-import AgentDashboardPage from "@/pages/AgentDashboardPage";
-import SystemAgesPage from "@/pages/SystemAgesPage";
-import SensorPage from "@/pages/SensorPage";
-import WarrantyWalletPage from "@/pages/WarrantyWalletPage";
-import InsuranceDefensePage from "@/pages/InsuranceDefensePage";
-import ResaleReadyPage from "@/pages/ResaleReadyPage";
-import RecurringServiceCreatePage from "@/pages/RecurringServiceCreatePage";
-import RecurringServiceDetailPage from "@/pages/RecurringServiceDetailPage";
-import NeighborhoodHealthPage from "@/pages/NeighborhoodHealthPage";
-import ListingNewPage       from "@/pages/ListingNewPage";
-import ListingDetailPage    from "@/pages/ListingDetailPage";
-import AgentMarketplacePage  from "@/pages/AgentMarketplacePage";
-import AgentProfileEditPage  from "@/pages/AgentProfileEditPage";
-import AgentPublicPage       from "@/pages/AgentPublicPage";
-import AgentBrowsePage       from "@/pages/AgentBrowsePage";
-import FsboListingPage       from "@/pages/FsboListingPage";
+// Critical path — kept static (first paint)
+import LandingPage  from "@/pages/LandingPage";
+import LoginPage    from "@/pages/LoginPage";
+import PricingPage  from "@/pages/PricingPage";
+
+// All other pages lazy-loaded (split into separate chunks)
+const RegisterPage               = React.lazy(() => import("@/pages/RegisterPage"));
+const DashboardPage              = React.lazy(() => import("@/pages/DashboardPage"));
+const PropertyDetailPage         = React.lazy(() => import("@/pages/PropertyDetailPage"));
+const PropertyRegisterPage       = React.lazy(() => import("@/pages/PropertyRegisterPage"));
+const PropertyVerifyPage         = React.lazy(() => import("@/pages/PropertyVerifyPage"));
+const SystemAgesPage             = React.lazy(() => import("@/pages/SystemAgesPage"));
+const JobCreatePage              = React.lazy(() => import("@/pages/JobCreatePage"));
+const QuoteRequestPage           = React.lazy(() => import("@/pages/QuoteRequestPage"));
+const QuoteDetailPage            = React.lazy(() => import("@/pages/QuoteDetailPage"));
+const SettingsPage               = React.lazy(() => import("@/pages/SettingsPage"));
+const ContractorDashboardPage    = React.lazy(() => import("@/pages/ContractorDashboardPage"));
+const ContractorProfilePage      = React.lazy(() => import("@/pages/ContractorProfilePage"));
+const ContractorPublicPage       = React.lazy(() => import("@/pages/ContractorPublicPage"));
+const ContractorBrowsePage       = React.lazy(() => import("@/pages/ContractorBrowsePage"));
+const MarketIntelligencePage     = React.lazy(() => import("@/pages/MarketIntelligencePage"));
+const ReportPage                 = React.lazy(() => import("@/pages/ReportPage"));
+const BadgePage                  = React.lazy(() => import("@/pages/BadgePage"));
+const ScoreCertPage              = React.lazy(() => import("@/pages/ScoreCertPage"));
+const PredictiveMaintenancePage  = React.lazy(() => import("@/pages/PredictiveMaintenancePage"));
+const AdminDashboardPage         = React.lazy(() => import("@/pages/AdminDashboardPage"));
+const OnboardingPage             = React.lazy(() => import("@/pages/OnboardingPage"));
+const AgentDashboardPage         = React.lazy(() => import("@/pages/AgentDashboardPage"));
+const SensorPage                 = React.lazy(() => import("@/pages/SensorPage"));
+const WarrantyWalletPage         = React.lazy(() => import("@/pages/WarrantyWalletPage"));
+const InsuranceDefensePage       = React.lazy(() => import("@/pages/InsuranceDefensePage"));
+const ResaleReadyPage            = React.lazy(() => import("@/pages/ResaleReadyPage"));
+const RecurringServiceCreatePage = React.lazy(() => import("@/pages/RecurringServiceCreatePage"));
+const RecurringServiceDetailPage = React.lazy(() => import("@/pages/RecurringServiceDetailPage"));
+const NeighborhoodHealthPage     = React.lazy(() => import("@/pages/NeighborhoodHealthPage"));
+const ListingNewPage             = React.lazy(() => import("@/pages/ListingNewPage"));
+const ListingDetailPage          = React.lazy(() => import("@/pages/ListingDetailPage"));
+const AgentMarketplacePage       = React.lazy(() => import("@/pages/AgentMarketplacePage"));
+const AgentProfileEditPage       = React.lazy(() => import("@/pages/AgentProfileEditPage"));
+const AgentPublicPage            = React.lazy(() => import("@/pages/AgentPublicPage"));
+const AgentBrowsePage            = React.lazy(() => import("@/pages/AgentBrowsePage"));
+const FsboListingPage            = React.lazy(() => import("@/pages/FsboListingPage"));
+
+const PageLoader = () => (
+  <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#F4F1EB" }}>
+    <div className="spinner-lg" />
+  </div>
+);
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
 
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#f9fafb",
-        }}
-      >
-        <div className="spinner-lg" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (isLoading) return <PageLoader />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -76,273 +67,56 @@ export default function App() {
       <Toaster
         position="top-right"
         toastOptions={{
-          style: {
-            borderRadius: 0,
-            fontSize: "0.875rem",
-            fontWeight: 500,
-          },
+          style: { borderRadius: 0, fontSize: "0.875rem", fontWeight: 500 },
         }}
       />
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/for-sale/:propertyId" element={<FsboListingPage />} />
-        <Route
-          path="/register"
-          element={
-            <ProtectedRoute>
-              <RegisterPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/contractor-dashboard"
-          element={
-            <ProtectedRoute>
-              <ContractorDashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/contractors"
-          element={
-            <ProtectedRoute>
-              <ContractorBrowsePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/contractor/:id"
-          element={
-            <ProtectedRoute>
-              <ContractorPublicPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/contractor/profile"
-          element={
-            <ProtectedRoute>
-              <ContractorProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/properties/new"
-          element={
-            <ProtectedRoute>
-              <PropertyRegisterPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/properties/:id"
-          element={
-            <ProtectedRoute>
-              <PropertyDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/properties/:id/verify"
-          element={
-            <ProtectedRoute>
-              <PropertyVerifyPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/properties/:id/systems"
-          element={
-            <ProtectedRoute>
-              <SystemAgesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/jobs/new"
-          element={
-            <ProtectedRoute>
-              <JobCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotes/new"
-          element={
-            <ProtectedRoute>
-              <QuoteRequestPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/quotes/:id"
-          element={
-            <ProtectedRoute>
-              <QuoteDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/market"
-          element={
-            <ProtectedRoute>
-              <MarketIntelligencePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/maintenance"
-          element={
-            <ProtectedRoute>
-              <PredictiveMaintenancePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminDashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute>
-              <OnboardingPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agent-dashboard"
-          element={
-            <ProtectedRoute>
-              <AgentDashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/sensors"
-          element={
-            <ProtectedRoute>
-              <SensorPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/warranties"
-          element={
-            <ProtectedRoute>
-              <WarrantyWalletPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/insurance-defense"
-          element={
-            <ProtectedRoute>
-              <InsuranceDefensePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/resale-ready"
-          element={
-            <ProtectedRoute>
-              <ResaleReadyPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/recurring/new"
-          element={
-            <ProtectedRoute>
-              <RecurringServiceCreatePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/recurring/:id"
-          element={
-            <ProtectedRoute>
-              <RecurringServiceDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/listing/new"
-          element={
-            <ProtectedRoute>
-              <ListingNewPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/listing/:id"
-          element={
-            <ProtectedRoute>
-              <ListingDetailPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agent/marketplace"
-          element={
-            <ProtectedRoute>
-              <AgentMarketplacePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agent/profile"
-          element={
-            <ProtectedRoute>
-              <AgentProfileEditPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agent/:id"
-          element={
-            <ProtectedRoute>
-              <AgentPublicPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agents"
-          element={
-            <ProtectedRoute>
-              <AgentBrowsePage />
-            </ProtectedRoute>
-          }
-        />
-        {/* Public — no auth required */}
-        <Route path="/report/:token"          element={<ReportPage />} />
-        <Route path="/badge/:token"           element={<BadgePage />} />
-        <Route path="/cert/:token"            element={<ScoreCertPage />} />
-        <Route path="/neighborhood/:zipCode"  element={<NeighborhoodHealthPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/"            element={<LandingPage />} />
+          <Route path="/login"       element={<LoginPage />} />
+          <Route path="/pricing"     element={<PricingPage />} />
+          <Route path="/for-sale/:propertyId" element={<FsboListingPage />} />
+
+          <Route path="/register"     element={<ProtectedRoute><RegisterPage /></ProtectedRoute>} />
+          <Route path="/dashboard"    element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/contractor-dashboard" element={<ProtectedRoute><ContractorDashboardPage /></ProtectedRoute>} />
+          <Route path="/contractors"  element={<ProtectedRoute><ContractorBrowsePage /></ProtectedRoute>} />
+          <Route path="/contractor/:id" element={<ProtectedRoute><ContractorPublicPage /></ProtectedRoute>} />
+          <Route path="/contractor/profile" element={<ProtectedRoute><ContractorProfilePage /></ProtectedRoute>} />
+          <Route path="/properties/new" element={<ProtectedRoute><PropertyRegisterPage /></ProtectedRoute>} />
+          <Route path="/properties/:id" element={<ProtectedRoute><PropertyDetailPage /></ProtectedRoute>} />
+          <Route path="/properties/:id/verify" element={<ProtectedRoute><PropertyVerifyPage /></ProtectedRoute>} />
+          <Route path="/properties/:id/systems" element={<ProtectedRoute><SystemAgesPage /></ProtectedRoute>} />
+          <Route path="/jobs/new"     element={<ProtectedRoute><JobCreatePage /></ProtectedRoute>} />
+          <Route path="/quotes/new"   element={<ProtectedRoute><QuoteRequestPage /></ProtectedRoute>} />
+          <Route path="/quotes/:id"   element={<ProtectedRoute><QuoteDetailPage /></ProtectedRoute>} />
+          <Route path="/settings"     element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/market"       element={<ProtectedRoute><MarketIntelligencePage /></ProtectedRoute>} />
+          <Route path="/maintenance"  element={<ProtectedRoute><PredictiveMaintenancePage /></ProtectedRoute>} />
+          <Route path="/admin"        element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>} />
+          <Route path="/onboarding"   element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+          <Route path="/agent-dashboard" element={<ProtectedRoute><AgentDashboardPage /></ProtectedRoute>} />
+          <Route path="/sensors"      element={<ProtectedRoute><SensorPage /></ProtectedRoute>} />
+          <Route path="/warranties"   element={<ProtectedRoute><WarrantyWalletPage /></ProtectedRoute>} />
+          <Route path="/insurance-defense" element={<ProtectedRoute><InsuranceDefensePage /></ProtectedRoute>} />
+          <Route path="/resale-ready" element={<ProtectedRoute><ResaleReadyPage /></ProtectedRoute>} />
+          <Route path="/recurring/new" element={<ProtectedRoute><RecurringServiceCreatePage /></ProtectedRoute>} />
+          <Route path="/recurring/:id" element={<ProtectedRoute><RecurringServiceDetailPage /></ProtectedRoute>} />
+          <Route path="/listing/new"  element={<ProtectedRoute><ListingNewPage /></ProtectedRoute>} />
+          <Route path="/listing/:id"  element={<ProtectedRoute><ListingDetailPage /></ProtectedRoute>} />
+          <Route path="/agent/marketplace" element={<ProtectedRoute><AgentMarketplacePage /></ProtectedRoute>} />
+          <Route path="/agent/profile" element={<ProtectedRoute><AgentProfileEditPage /></ProtectedRoute>} />
+          <Route path="/agent/:id"    element={<ProtectedRoute><AgentPublicPage /></ProtectedRoute>} />
+          <Route path="/agents"       element={<ProtectedRoute><AgentBrowsePage /></ProtectedRoute>} />
+
+          {/* Public — no auth required */}
+          <Route path="/report/:token"         element={<ReportPage />} />
+          <Route path="/badge/:token"          element={<BadgePage />} />
+          <Route path="/cert/:token"           element={<ScoreCertPage />} />
+          <Route path="/neighborhood/:zipCode" element={<NeighborhoodHealthPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </AuthProvider>
   );
 }
