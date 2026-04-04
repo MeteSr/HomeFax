@@ -80,6 +80,43 @@ export function buildSystemPrompt(ctx: AgentContext): string {
           .join("\n")
       : "";
 
+  const maintenanceSection = ctx.maintenanceForecast
+    ? (() => {
+        const f = ctx.maintenanceForecast;
+        const urgent = f.predictions.filter(
+          (p) => p.urgency === "Critical" || p.urgency === "Soon"
+        );
+        const lines = [
+          `\nMaintenance forecast for ${f.propertyAddress} (climate: ${f.climateZone}):`,
+        ];
+        if (urgent.length === 0) {
+          lines.push("  All systems are within expected lifespan — no urgent replacements.");
+        } else {
+          lines.push(`  ${urgent.length} system(s) need attention (total budget $${f.totalBudgetLow.toLocaleString()}–$${f.totalBudgetHigh.toLocaleString()}):`);
+          for (const p of urgent) {
+            const remaining = p.yearsRemaining <= 0
+              ? "past lifespan"
+              : `${p.yearsRemaining} yr${p.yearsRemaining !== 1 ? "s" : ""} remaining`;
+            lines.push(
+              `  - ${p.systemName} [${p.urgency}] ${p.percentLifeUsed}% life used, ${remaining}, ` +
+              `replacement $${p.replacementCostLow.toLocaleString()}–$${p.replacementCostHigh.toLocaleString()}`
+            );
+          }
+        }
+        // Include all Good/Watch systems briefly so agent can answer specific questions
+        const stable = f.predictions.filter(
+          (p) => p.urgency === "Watch" || p.urgency === "Good"
+        );
+        if (stable.length > 0) {
+          lines.push(
+            "  Stable: " +
+              stable.map((p) => `${p.systemName} (${p.urgency}, ${p.yearsRemaining} yrs left)`).join(", ")
+          );
+        }
+        return lines.join("\n");
+      })()
+    : "";
+
   return `You are the HomeFax Assistant — a knowledgeable, friendly advisor specializing in home maintenance and property value.
 
 Your areas of expertise:
@@ -118,5 +155,5 @@ Voice response rules — these are mandatory:
 - Write as you would speak: natural, conversational, clear.
 - For cost estimates, give a realistic range (e.g. "typically between eight hundred and twelve hundred dollars") and note that local rates vary.
 - If the user's property or job data is relevant to their question, reference it directly.
-${propertySection}${jobSection}${warrantySection}${pendingSection}${quotesSection}${scoreSection}${recsSection}`;
+${propertySection}${jobSection}${warrantySection}${pendingSection}${quotesSection}${scoreSection}${recsSection}${maintenanceSection}`;
 }

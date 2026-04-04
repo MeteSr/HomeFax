@@ -273,6 +273,32 @@ Always confirm the system name, year, and property before calling this tool.`,
   },
 
   {
+    name: "get_maintenance_forecast",
+    description: `Look up maintenance predictions for a specific home system, or get the most urgent systems needing attention.
+
+Use this when the user asks about:
+- A specific system: "when does my HVAC need replacing?", "how old is my roof?", "is my water heater due soon?"
+- An overview: "what systems need attention?", "what should I budget for maintenance?"
+
+This is computed from the property's year built, job history, and local climate zone — give data-driven answers, not generic estimates.
+
+Call with system_name for a focused response. Omit system_name to return the top urgent items.
+
+After returning Critical or Soon predictions, offer to schedule a maintenance task or open a quote request.`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        system_name: {
+          type: "string",
+          enum: ["HVAC", "Roofing", "Water Heater", "Windows", "Electrical", "Plumbing", "Flooring", "Insulation", "Solar Panels"],
+          description: "The specific home system to query. Omit to get all urgent systems.",
+        },
+      },
+      required: [],
+    },
+  },
+
+  {
     name: "update_job_status",
     description: `Update the status of an existing maintenance job.
 Use this to mark a job as in-progress or completed based on what the user tells you.`,

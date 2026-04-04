@@ -7,6 +7,7 @@ import { useAgentHistory, type AgentAction } from "./useAgentHistory";
 import { computeScore, computeBreakdown, getScoreGrade } from "../services/scoreService";
 import { getRecentScoreEvents } from "../services/scoreEventService";
 import { marketService, jobToSummary } from "../services/market";
+import { buildMaintenanceForecast } from "../services/maintenanceForecast";
 
 // ── Minimal message types (mirrors Anthropic SDK without importing it) ─────────
 
@@ -30,7 +31,7 @@ export type VoiceAgentState =
   | "error";
 
 export interface ProactiveAlert {
-  type:         "warranty" | "signature" | "quote";
+  type:         "warranty" | "signature" | "quote" | "maintenance";
   message:      string;
   actionLabel?: string;
   href?:        string;
@@ -192,6 +193,7 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
         nextActions,
       },
       topRecommendations,
+      maintenanceForecast: buildMaintenanceForecast(properties, jobs) ?? undefined,
       recentJobs: jobs.slice(0, 15).map((j) => ({
         id:             j.id,
         serviceType:    j.serviceType,
@@ -239,6 +241,16 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
           message:     `${ctx.openQuoteCount} open quote request${ctx.openQuoteCount !== 1 ? "s" : ""}`,
           actionLabel: "View quotes",
           href:        "/dashboard",
+        });
+      }
+
+      if (ctx.maintenanceForecast && ctx.maintenanceForecast.criticalSystems.length > 0) {
+        const names = ctx.maintenanceForecast.criticalSystems.slice(0, 2).join(" & ");
+        newAlerts.push({
+          type:        "maintenance",
+          message:     `${names} past expected lifespan — budget $${ctx.maintenanceForecast.totalBudgetLow.toLocaleString()}–$${ctx.maintenanceForecast.totalBudgetHigh.toLocaleString()}`,
+          actionLabel: "View forecast",
+          href:        "/maintenance",
         });
       }
 

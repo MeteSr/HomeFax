@@ -11,6 +11,8 @@ import { jobService } from "./job";
 import { quoteService } from "./quote";
 import { contractorService } from "./contractor";
 import { maintenanceService } from "./maintenance";
+import { propertyService } from "./property";
+import { buildMaintenanceForecast } from "./maintenanceForecast";
 
 export type ToolName =
   | "classify_home_issue"
@@ -20,7 +22,8 @@ export type ToolName =
   | "search_contractors"
   | "sign_job_verification"
   | "update_job_status"
-  | "schedule_maintenance_task";
+  | "schedule_maintenance_task"
+  | "get_maintenance_forecast";
 
 export interface ToolCallResult {
   success: boolean;
@@ -223,6 +226,75 @@ export async function executeTool(
         };
       }
 
+      // ── Get maintenance forecast ───────────────────────────────────────────
+      case "get_maintenance_forecast": {
+        const [props, jobs] = await Promise.all([
+          propertyService.getMyProperties(),
+          jobService.getAll(),
+        ]);
+        const forecast = buildMaintenanceForecast(props, jobs);
+
+        if (!forecast) {
+          return {
+            success: true,
+            data: { summary: "No properties registered yet. Add a property first to get maintenance predictions." },
+          };
+        }
+
+        const systemName = input.system_name ? String(input.system_name) : null;
+
+        if (systemName) {
+          const pred = forecast.predictions.find(
+            (p) => p.systemName.toLowerCase() === systemName.toLowerCase()
+          );
+          if (!pred) {
+            const available = forecast.predictions.map((p) => p.systemName).join(", ");
+            return {
+              success: true,
+              data: { summary: `No prediction found for "${systemName}". Available systems: ${available}.` },
+            };
+          }
+          return {
+            success: true,
+            data: {
+              systemName:         pred.systemName,
+              urgency:            pred.urgency,
+              yearsRemaining:     pred.yearsRemaining,
+              percentLifeUsed:    pred.percentLifeUsed,
+              replacementCostLow: pred.replacementCostLow,
+              replacementCostHigh:pred.replacementCostHigh,
+              recommendation:     pred.recommendation,
+              summary:            pred.recommendation,
+            },
+          };
+        }
+
+        // No specific system — return most urgent items
+        const urgent = forecast.predictions
+          .filter((p) => p.urgency === "Critical" || p.urgency === "Soon")
+          .slice(0, 3);
+
+        if (urgent.length === 0) {
+          return {
+            success: true,
+            data: { summary: "All home systems are in good shape — no urgent replacements needed in the near term." },
+          };
+        }
+
+        const summary = urgent
+          .map((p) =>
+            `${p.systemName} (${p.urgency}): ` +
+            `${p.yearsRemaining <= 0 ? "past lifespan" : `${p.yearsRemaining} yr${p.yearsRemaining !== 1 ? "s" : ""} remaining`}` +
+            `, replacement $${p.replacementCostLow.toLocaleString()}–$${p.replacementCostHigh.toLocaleString()}`
+          )
+          .join("; ");
+
+        return {
+          success: true,
+          data: { urgentCount: forecast.urgentCount, systems: urgent, summary },
+        };
+      }
+
       default:
         return { success: false, error: `Unknown tool: ${name}` };
     }
@@ -237,14 +309,15 @@ export async function executeTool(
 /** Returns a short, user-facing label for what the agent is doing. */
 export function toolActionLabel(name: ToolName): string {
   const labels: Record<ToolName, string> = {
-    classify_home_issue:      "analyzing issue",
-    create_maintenance_job:   "logging maintenance job",
-    create_quote_request:     "opening quote request",
-    draft_work_order:         "drafting work order",
-    search_contractors:       "searching contractors",
-    sign_job_verification:    "signing job verification",
-    update_job_status:        "updating job status",
-    schedule_maintenance_task:"scheduling maintenance task",
+    classify_home_issue:       "analyzing issue",
+    create_maintenance_job:    "logging maintenance job",
+    create_quote_request:      "opening quote request",
+    draft_work_order:          "drafting work order",
+    search_contractors:        "searching contractors",
+    sign_job_verification:     "signing job verification",
+    update_job_status:         "updating job status",
+    schedule_maintenance_task: "scheduling maintenance task",
+    get_maintenance_forecast:  "checking maintenance forecast",
   };
   return labels[name] ?? name;
 }

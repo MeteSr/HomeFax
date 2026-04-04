@@ -50,6 +50,26 @@ export interface ScoreContext {
   nextActions:  string[];
 }
 
+export interface SystemForecast {
+  systemName:          string;
+  urgency:             "Critical" | "Soon" | "Watch" | "Good";
+  yearsRemaining:      number;
+  percentLifeUsed:     number;
+  replacementCostLow:  number;
+  replacementCostHigh: number;
+  recommendation:      string;
+}
+
+export interface MaintenanceForecastContext {
+  propertyAddress:  string;
+  predictions:      SystemForecast[];
+  urgentCount:      number;
+  criticalSystems:  string[];
+  totalBudgetLow:   number;
+  totalBudgetHigh:  number;
+  climateZone:      string;
+}
+
 export interface RecommendationSummary {
   name:                  string;
   estimatedCostDollars:  number;
@@ -66,6 +86,7 @@ export interface AgentContext {
   openQuoteCount:        number;
   score?:                ScoreContext;
   topRecommendations?:   RecommendationSummary[];
+  maintenanceForecast?:  MaintenanceForecastContext;
 }
 
 export interface ChatRequest {
