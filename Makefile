@@ -1,16 +1,19 @@
-.PHONY: help start stop deploy test clean status upgrade frontend init-data dev
+.PHONY: help start stop deploy deploy-one test clean status upgrade frontend init-data dev
+
+NETWORK ?= local
 
 help:
 	@echo "HomeFax — Available commands:"
-	@echo "  make start      Start local dfx replica"
-	@echo "  make stop       Stop dfx replica"
-	@echo "  make deploy     Deploy all canisters locally"
-	@echo "  make test       Run backend tests"
-	@echo "  make frontend   Start frontend dev server"
-	@echo "  make status     Show canister status"
-	@echo "  make upgrade    Upgrade all canisters"
-	@echo "  make dev        Start replica, deploy canisters, and run frontend"
-	@echo "  make clean      Clean local dfx state"
+	@echo "  make start               Start local dfx replica"
+	@echo "  make stop                Stop dfx replica"
+	@echo "  make deploy              Deploy all canisters in parallel (local)"
+	@echo "  make deploy-one CANISTER=<name>  Deploy a single canister"
+	@echo "  make test                Run backend tests"
+	@echo "  make frontend            Start frontend dev server"
+	@echo "  make status              Show canister status"
+	@echo "  make upgrade             Upgrade all canisters"
+	@echo "  make dev                 Start replica, deploy canisters, and run frontend"
+	@echo "  make clean               Clean local dfx state"
 
 dev:
 	dfx start --clean --background && bash scripts/deploy.sh && cd frontend && npm run dev
@@ -22,7 +25,11 @@ stop:
 	dfx stop
 
 deploy:
-	bash scripts/deploy.sh
+	bash scripts/deploy.sh $(NETWORK)
+
+deploy-one:
+	@test -n "$(CANISTER)" || (echo "Usage: make deploy-one CANISTER=<canister_name>  e.g. make deploy-one CANISTER=payment" && exit 1)
+	dfx deploy $(CANISTER) --network $(NETWORK)
 
 test:
 	bash scripts/test-backend.sh

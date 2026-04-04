@@ -28,18 +28,54 @@ if [ "$NETWORK" = "local" ]; then
   fi
 fi
 
-echo "▶ Deploying canisters..."
-for canister in auth property job contractor quote payment photo report maintenance market sensor monitoring; do
-  echo "  Deploying $canister..."
-  dfx deploy $canister --network $NETWORK
+# ── Parallel canister deployment ────────────────────────────────────────────────
+# All 11 canisters are independent at deploy time — inter-canister wiring
+# happens below via setPaymentCanisterId etc. after all deploys complete.
+
+CANISTERS=(auth property job contractor quote payment photo report maintenance market sensor monitoring)
+LOG_DIR=$(mktemp -d /tmp/dfx-deploy-XXXXXX)
+PIDS=()
+
+echo "▶ Deploying ${#CANISTERS[@]} canisters in parallel..."
+for canister in "${CANISTERS[@]}"; do
+  dfx deploy "$canister" --network "$NETWORK" >"$LOG_DIR/$canister.log" 2>&1 &
+  PIDS+=($!)
 done
+
+# Wait for all and collect failures
+FAILED=()
+for i in "${!CANISTERS[@]}"; do
+  canister="${CANISTERS[$i]}"
+  pid="${PIDS[$i]}"
+  if wait "$pid"; then
+    echo "  ✓ $canister"
+  else
+    echo "  ✗ $canister (failed)"
+    FAILED+=("$canister")
+  fi
+done
+
+# Print logs for any failed canisters
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo ""
+  echo "❌ Deploy failed for: ${FAILED[*]}"
+  for canister in "${FAILED[@]}"; do
+    echo ""
+    echo "── $canister log ──────────────────────────"
+    cat "$LOG_DIR/$canister.log"
+  done
+  rm -rf "$LOG_DIR"
+  exit 1
+fi
+
+rm -rf "$LOG_DIR"
 
 echo ""
 echo "============================================"
 echo "  Deployed Canister IDs"
 echo "============================================"
-for canister in auth property job contractor quote payment photo report maintenance market sensor monitoring; do
-  ID=$(dfx canister id $canister --network $NETWORK 2>/dev/null || echo "not deployed")
+for canister in "${CANISTERS[@]}"; do
+  ID=$(dfx canister id "$canister" --network "$NETWORK" 2>/dev/null || echo "not deployed")
   echo "  $canister: $ID"
 done
 
@@ -48,24 +84,24 @@ echo "============================================"
 echo "  Wiring Inter-Canister IDs"
 echo "============================================"
 
-JOB_ID=$(dfx canister id job --network $NETWORK 2>/dev/null || echo "")
-PAYMENT_ID=$(dfx canister id payment --network $NETWORK 2>/dev/null || echo "")
-CONTRACTOR_ID=$(dfx canister id contractor --network $NETWORK 2>/dev/null || echo "")
-PROPERTY_ID=$(dfx canister id property --network $NETWORK 2>/dev/null || echo "")
+JOB_ID=$(dfx canister id job --network "$NETWORK" 2>/dev/null || echo "")
+PAYMENT_ID=$(dfx canister id payment --network "$NETWORK" 2>/dev/null || echo "")
+CONTRACTOR_ID=$(dfx canister id contractor --network "$NETWORK" 2>/dev/null || echo "")
+PROPERTY_ID=$(dfx canister id property --network "$NETWORK" 2>/dev/null || echo "")
 
 if [ -n "$JOB_ID" ] && [ -n "$PAYMENT_ID" ]; then
   echo "  Wiring payment -> job (tier cap enforcement)..."
-  dfx canister call job setPaymentCanisterId "(\"$PAYMENT_ID\")" --network $NETWORK
+  dfx canister call job setPaymentCanisterId "(\"$PAYMENT_ID\")" --network "$NETWORK"
 fi
 
 if [ -n "$JOB_ID" ] && [ -n "$CONTRACTOR_ID" ]; then
   echo "  Wiring contractor -> job..."
-  dfx canister call job setContractorCanisterId "(\"$CONTRACTOR_ID\")" --network $NETWORK
+  dfx canister call job setContractorCanisterId "(\"$CONTRACTOR_ID\")" --network "$NETWORK"
 fi
 
 if [ -n "$JOB_ID" ] && [ -n "$PROPERTY_ID" ]; then
   echo "  Wiring property -> job..."
-  dfx canister call job setPropertyCanisterId "(\"$PROPERTY_ID\")" --network $NETWORK
+  dfx canister call job setPropertyCanisterId "(\"$PROPERTY_ID\")" --network "$NETWORK"
 fi
 
 echo ""
