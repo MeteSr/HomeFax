@@ -357,10 +357,10 @@ The features below address the core signup conversion gap: a new homeowner visit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 14.1.1 | Audit all canisters for cross-calls to `price` | ⬜ Missing | S | Grep all `.mo` files for `price` canister principal references; update any `actor(priceId)` calls to use `payment` canister's `getPricing`/`getAllPricing` queries instead |
-| 14.1.2 | Audit all canisters for cross-calls to `room` | ⬜ Missing | S | Grep all `.mo` files for `room` canister principal references; update any actor calls to target `property` canister's room methods |
-| 14.1.3 | Remove `backend/price/` and `backend/room/` directories | ⬜ Missing | S | After confirming no remaining references, `git rm` the old canister directories to prevent confusion |
-| 14.1.4 | Update CLAUDE.md canister map | ⬜ Missing | S | Remove `price` and `room` rows; update `payment` row to note merged pricing queries; update `property` row to note merged room/fixture CRUD |
+| 14.1.1 | Audit all canisters for cross-calls to `price` | ✅ Exists | S | Grepped all `.mo` files — no `actor(priceCanisterId)` calls found; pricing already served by `payment` canister |
+| 14.1.2 | Audit all canisters for cross-calls to `room` | ✅ Exists | S | Grepped all `.mo` files — no `actor(roomCanisterId)` calls found; room/fixture CRUD already in `property` canister |
+| 14.1.3 | Remove `backend/price/` and `backend/room/` directories | ✅ Exists | S | `git rm`'d both directories; also removed `price` from `scripts/test-backend.sh` CANISTERS array |
+| 14.1.4 | Update CLAUDE.md canister map | ✅ Exists | S | Removed `price` row; updated `payment` to note merged pricing queries; updated `property` to note merged room/fixture CRUD; added `listing`, `agent`, `recurring` rows that were missing |
 
 ---
 

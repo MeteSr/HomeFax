@@ -26,7 +26,6 @@ ALL_CANISTERS=(
   job
   contractor
   quote
-  price
   payment
   photo
   report

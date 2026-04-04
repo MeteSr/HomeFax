@@ -63,23 +63,25 @@ docs/             ARCHITECTURE.md, API.md, DEPLOYMENT.md, SECURITY.md
 
 ### ICP Canister Map
 
-All 13 canisters use `persistent actor` + stable variable preupgrade/postupgrade for state across upgrades. HashMap for in-memory lookups, stable arrays for persistence. Each exports a `metrics()` query and `pause()`/`unpause()` admin capability.
+All 13 active canisters use `persistent actor` + stable variable preupgrade/postupgrade for state across upgrades. HashMap for in-memory lookups, stable arrays for persistence. Each exports a `metrics()` query and `pause()`/`unpause()` admin capability.
 
 | Canister | Responsibility |
 |---|---|
 | **auth** | User profiles, roles (Homeowner / Contractor / Realtor) |
-| **property** | Registration, ownership verification (Unverified → PendingReview → Basic → Premium), 7-day conflict window |
+| **property** | Registration, ownership verification (Unverified → PendingReview → Basic → Premium), 7-day conflict window; also owns room/fixture CRUD (merged from old `room` canister) |
 | **job** | Maintenance records, dual-signature verification (homeowner + contractor, or DIY homeowner-only) |
 | **contractor** | Profiles, trust scores, rate-limited reviews (10/day/user, composite key deduplication) |
 | **quote** | Quote requests & contractor bids, tier-enforced open-request limits |
-| **payment** | Subscription tier management & expiry |
+| **payment** | Subscription tier management & expiry; also owns pricing table queries — `getPricing(tier)` / `getAllPricing()` (merged from old `price` canister) |
 | **photo** | SHA-256 deduplication, tier-based quotas, multi-approval for sensitive records |
-| **price** | Static pricing table (read-only, no state) |
 | **report** | Immutable report snapshots, share links with visibility levels & revocation |
 | **market** | ROI-ranked project recommendations (2024 Remodeling Magazine data) |
 | **maintenance** | Predictive scheduling, system lifespan estimates, seasonal task generation |
 | **sensor** | IoT device registry, auto-creates pending jobs for Critical events |
 | **monitoring** | Cycles usage, cost metrics, profitability (ARPU/LTV/CAC), alerting |
+| **listing** | FSBO listing lifecycle, sealed-bid offers, agent matching |
+| **agent** | Realtor profiles, reviews, HomeFax transaction count |
+| **recurring** | Recurring service contracts (HVAC, pest, landscaping) and visit logs |
 
 ### Tier System (enforced server-side in multiple canisters)
 
