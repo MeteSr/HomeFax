@@ -458,6 +458,7 @@ export default function LandingPage() {
             <li><a onClick={(e) => { e.preventDefault(); scrollTo("hfl-features"); }}>Service Network</a></li>
             <li><a onClick={(e) => { e.preventDefault(); scrollTo("hfl-report"); }}>HomeFax Report</a></li>
             <li><a onClick={(e) => { e.preventDefault(); scrollTo("hfl-sell"); }}>Sell Smarter</a></li>
+            <li><a onClick={(e) => { e.preventDefault(); navigate("/pricing"); }}>Buy</a></li>
           </ul>
           <button className="hfl-nav-pill" onClick={() => navigate("/login")}>🏡 Start Free</button>
           <button className="hfl-hamburger" aria-label="Menu">

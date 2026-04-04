@@ -28,8 +28,8 @@ interface FormData {
 const PROPERTY_TYPES: PropertyType[] = ["SingleFamily", "Condo", "Townhouse", "MultiFamily"];
 const TIERS: { value: SubscriptionTier; label: string; price: string; desc: string }[] = [
   { value: "Free",    label: "Free",    price: "$0",     desc: "1 property, 5 photos/job" },
-  { value: "Pro",     label: "Pro",     price: "$9/mo",  desc: "5 properties, 20 photos/job" },
-  { value: "Premium", label: "Premium", price: "$49/yr", desc: "Unlimited everything" },
+  { value: "Pro",     label: "Pro",     price: "$10/mo", desc: "5 properties, 20 photos/job" },
+  { value: "Premium", label: "Premium", price: "$49/mo", desc: "Unlimited everything" },
 ];
 
 export default function PropertyRegisterPage() {

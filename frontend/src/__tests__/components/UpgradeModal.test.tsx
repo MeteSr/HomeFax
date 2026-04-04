@@ -102,8 +102,8 @@ describe("UpgradeModal", () => {
   it("shows Pro plan card with price", () => {
     renderModal();
     expect(screen.getByRole("button", { name: /select pro/i })).toBeInTheDocument();
-    // "$9" with per-month suffix rendered by the plan card
-    expect(screen.getAllByText(/\$9/).length).toBeGreaterThan(0);
+    // "$10" with per-month suffix rendered by the plan card
+    expect(screen.getAllByText(/\$10/).length).toBeGreaterThan(0);
   });
 
   it("shows Premium plan card with price", () => {
