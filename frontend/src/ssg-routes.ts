@@ -9,6 +9,8 @@
 export const SSG_ROUTES: string[] = [
   "/",
   "/pricing",
+  "/privacy",
+  "/support",
   "/check",
   "/instant-forecast",
   "/home-systems",

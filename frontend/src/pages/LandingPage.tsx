@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
 /* ─── Styles ──────────────────────────────────────────────────────────────── */
@@ -905,8 +905,8 @@ export default function LandingPage() {
             <a onClick={(e) => { e.preventDefault(); scrollTo("hfl-sell"); }}>Sell Smarter</a>
             <a onClick={(e) => { e.preventDefault(); scrollTo("hfl-data"); }}>Your Data</a>
             <a onClick={() => navigate("/pricing")}>Pricing</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
+            <Link to="/privacy" style={{ color: "rgba(253,252,250,0.5)", textDecoration: "none", fontSize: "13px", transition: "color .2s" }}>Privacy</Link>
+            <Link to="/support" style={{ color: "rgba(253,252,250,0.5)", textDecoration: "none", fontSize: "13px", transition: "color .2s" }}>Support</Link>
           </div>
           <p>© 2026 HomeGentic Inc.</p>
         </footer>
