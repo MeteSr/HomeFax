@@ -2,6 +2,17 @@ import { HttpAgent } from "@dfinity/agent";
 
 export type JobStatus = "pending" | "awaiting_contractor" | "verified";
 
+export interface CreateJobInput {
+  propertyId:     string;
+  serviceType:    string;
+  description:    string;
+  amountCents:    number;
+  completedDate:  string;  // YYYY-MM-DD
+  isDiy:          boolean;
+  contractorName: string | null;
+  permitNumber:   string | null;
+}
+
 export interface Job {
   id:           string;
   propertyId:   string;
@@ -41,4 +52,31 @@ const MOCK_JOBS: Job[] = [
 export async function getJobs(propertyId: string, _agent?: HttpAgent): Promise<Job[]> {
   // TODO: replace with real canister call
   return MOCK_JOBS.filter((j) => j.propertyId === propertyId);
+}
+
+export async function createJob(input: CreateJobInput, _agent?: HttpAgent): Promise<Job> {
+  // TODO: replace with real canister call
+  const newJob: Job = {
+    id:             `job_${Date.now()}`,
+    propertyId:     input.propertyId,
+    serviceType:    input.serviceType,
+    description:    input.description,
+    amountCents:    input.amountCents,
+    completedDate:  input.completedDate,
+    status:         input.isDiy ? "verified" : "awaiting_contractor",
+    isDiy:          input.isDiy,
+    contractorName: input.contractorName ?? undefined,
+  };
+  MOCK_JOBS.push(newJob);
+  return newJob;
+}
+
+export async function uploadJobPhoto(
+  jobId: string,
+  base64: string,
+  _agent?: HttpAgent,
+): Promise<void> {
+  // TODO: replace with real photo canister call
+  // Canister: photo.addPhoto(jobId, { data: base64, mimeType: "image/jpeg" })
+  console.log(`[uploadJobPhoto] job=${jobId} size=${base64.length} chars`);
 }

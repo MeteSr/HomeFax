@@ -1,15 +1,17 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { Property } from "../services/propertyService";
-import ChatScreen          from "../screens/ChatScreen";
-import PropertyListScreen  from "../screens/PropertyListScreen";
+import ChatScreen           from "../screens/ChatScreen";
+import PropertyListScreen   from "../screens/PropertyListScreen";
 import PropertyDetailScreen from "../screens/PropertyDetailScreen";
+import LogJobScreen         from "../screens/LogJobScreen";
 import { colors, fonts } from "../theme";
 
 export type ChatStackParamList = {
   Chat:           undefined;
   PropertyList:   undefined;
   PropertyDetail: { property: Property };
+  LogJob:         { propertyId: string; propertyAddress: string };
 };
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -40,6 +42,11 @@ export default function ChatStack() {
         options={({ route }) => ({
           title: route.params.property.address.split(",")[0].toUpperCase(),
         })}
+      />
+      <Stack.Screen
+        name="LogJob"
+        component={LogJobScreen}
+        options={{ title: "LOG JOB" }}
       />
     </Stack.Navigator>
   );

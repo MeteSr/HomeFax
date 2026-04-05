@@ -340,7 +340,7 @@ Extend `agents/voice/tools.ts` so the mobile chat interface can drive the full t
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 15.8.1 | Log a job (homeowner) | ⬜ Missing | L | Create job record from mobile; upload photos via `expo-image-picker` → `photo` canister |
+| 15.8.1 | Log a job (homeowner) | ✅ Exists | L | `LogJobScreen.tsx` — service-type chips, description, amount ($→cents), date, DIY toggle, optional contractor/permit/photo; `jobFormService.ts` pure helpers (24 tests); `useFocusEffect` re-fetch on PropertyDetail; `expo-image-picker` base64 upload stub |
 | 15.8.2 | Request a quote (homeowner) | ⬜ Missing | M | Submit quote request form; mirrors `QuoteRequestPage` |
 | 15.8.3 | Submit a bid (contractor) | ⬜ Missing | M | Contractor submits bid amount and notes on a lead from the lead feed |
 | 15.8.4 | Sign a job (both roles) | ⬜ Missing | M | Homeowner and contractor sign job completion from mobile; requires II delegation with appropriate permissions |

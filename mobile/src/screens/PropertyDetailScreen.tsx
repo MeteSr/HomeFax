@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   Linking,
   StyleSheet,
 } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { ChatStackParamList } from "../navigation/ChatStack";
 import { getJobs, Job } from "../services/jobService";
 import { colors, fonts, spacing, borderWidth } from "../theme";
+
+type Nav = NativeStackNavigationProp<ChatStackParamList, "PropertyDetail">;
 
 type Props = NativeStackScreenProps<ChatStackParamList, "PropertyDetail">;
 
@@ -32,14 +35,19 @@ function JobRow({ job }: { job: Job }) {
 
 export default function PropertyDetailScreen({ route }: Props) {
   const { property } = route.params;
+  const navigation   = useNavigation<Nav>();
   const [jobs, setJobs]     = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getJobs(property.id)
-      .then(setJobs)
-      .finally(() => setLoading(false));
-  }, [property.id]);
+  // Re-fetch on every focus so list refreshes after returning from LogJobScreen
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      getJobs(property.id)
+        .then(setJobs)
+        .finally(() => setLoading(false));
+    }, [property.id])
+  );
 
   function openUpgrade() {
     Linking.openURL("https://homefax.app/pricing");
@@ -69,6 +77,16 @@ export default function PropertyDetailScreen({ route }: Props) {
       {/* Job history (15.4.3) */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionLabel}>JOB HISTORY</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("LogJob", {
+            propertyId:      property.id,
+            propertyAddress: property.address,
+          })}
+          accessibilityRole="button"
+          accessibilityLabel="Log a job"
+        >
+          <Text style={styles.logJobBtn}>+ LOG JOB</Text>
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -114,11 +132,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   sectionHeader: {
-    padding: spacing.md,
+    flexDirection:     "row",
+    justifyContent:    "space-between",
+    alignItems:        "center",
+    padding:           spacing.md,
     borderBottomWidth: borderWidth,
     borderBottomColor: colors.rule,
   },
   sectionLabel: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 2, color: colors.inkLight },
+  logJobBtn:    { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 1, color: colors.rust },
   jobRow: {
     flexDirection: "row",
     alignItems: "center",
