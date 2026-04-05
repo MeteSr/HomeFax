@@ -49,6 +49,7 @@ const FsboListingPage            = React.lazy(() => import("@/pages/FsboListingP
 const HomeSystemsEstimatorPage   = React.lazy(() => import("@/pages/HomeSystemsEstimatorPage"));
 const CheckAddressPage           = React.lazy(() => import("@/pages/CheckAddressPage"));
 const PriceLookupPage            = React.lazy(() => import("@/pages/PriceLookupPage"));
+const InstantForecastPage        = React.lazy(() => import("@/pages/InstantForecastPage"));
 
 const PageLoader = () => (
   <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#F4F1EB" }}>
@@ -116,6 +117,7 @@ export default function App() {
           <Route path="/home-systems"          element={<HomeSystemsEstimatorPage />} />
           <Route path="/check"                 element={<CheckAddressPage />} />
           <Route path="/prices"                element={<PriceLookupPage />} />
+          <Route path="/instant-forecast"     element={<InstantForecastPage />} />
           <Route path="/report/:token"         element={<ReportPage />} />
           <Route path="/badge/:token"          element={<BadgePage />} />
           <Route path="/cert/:token"           element={<ScoreCertPage />} />

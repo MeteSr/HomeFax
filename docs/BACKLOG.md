@@ -280,11 +280,11 @@ The features below address the core signup conversion gap: a new homeowner visit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 17.2.1 | Public address → forecast endpoint | ⬜ Missing | M | Unauthenticated API: accepts address, returns `MaintenanceForecastContext` derived from year built + property type (sourced from public records or user input); no canister write, stateless |
-| 17.2.2 | Pre-auth forecast landing page | ⬜ Missing | M | `/instant-forecast` page: address autocomplete + year-built input → renders forecast summary (critical systems, estimated 10-year budget); no login wall |
-| 17.2.3 | "Save your forecast" conversion CTA | ⬜ Missing | S | After forecast renders, prompt "Create a free account to track this property and log maintenance" — one click preserves the forecast into the user's registered property |
-| 17.2.4 | Public records year-built lookup | ⬜ Missing | L | Integrate ATTOM Data or a county assessor API to auto-fill year built from address; reduces user friction to zero inputs |
-| 17.2.5 | Forecast → account migration | ⬜ Missing | S | After sign-up, pre-populate `propertyService.register()` with the address and year built from the pre-auth session; forecast is immediately available in the dashboard |
+| 17.2.1 | Public address → forecast endpoint | 🟡 Partial | M | `GET /api/lookup-year-built` relay stub added to `agents/voice/server.ts` (returns null); full `GET /api/instant-forecast` endpoint (stateless, no canister write) not yet wired |
+| 17.2.2 | Pre-auth forecast landing page | ✅ Exists | M | `/instant-forecast` page: address + year-built entry form → system forecast table with urgency + cost estimates; inline per-row "Last replaced: [year]" override inputs correct upgraded-system predictions; `computeTenYearBudget`, `parseForecastParams`, `buildForecastUrl` in `instantForecast.ts`; `estimateSystems()` updated with per-system override support |
+| 17.2.3 | "Save your forecast" conversion CTA | ✅ Exists | S | "Save your forecast" link on results page → `/properties/new?address=...&yearBuilt=...` |
+| 17.2.4 | Public records year-built lookup | ✅ Exists | L | `lookupYearBuilt(address)` in `instantForecast.ts`; relay stub `GET /api/lookup-year-built` in voice server (returns null); auto-fill on address blur; ATTOM Data integration deferred |
+| 17.2.5 | Forecast → account migration | ⬜ Missing | S | Pre-populate `propertyService.register()` from URL params (`address`, `yearBuilt`, `state`); system overrides pass as `systemAges` so the first dashboard view is accurate |
 
 ### 17.3 Score → Dollar Value Translation
 
@@ -342,8 +342,8 @@ The features below address the core signup conversion gap: a new homeowner visit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 17.7.1 | Public estimator page | ✅ Exists | M | `/home-systems?yearBuilt=1998&type=single-family` — renders a system age table with urgency indicators; no login; `estimateSystems()` in `systemAgeEstimator.ts` wraps `predictMaintenance()` |
-| 17.7.2 | Shareable estimator URL | ✅ Exists | S | `buildEstimatorUrl()` encodes inputs into URL params; read-only input + copy button on results page |
+| 17.7.1 | Public estimator page | ✅ Exists | M | `/home-systems?yearBuilt=1998&type=single-family` — renders a system age table with urgency indicators; no login; `estimateSystems(yearBuilt, state?, overrides?)` in `systemAgeEstimator.ts` supports per-system override years (e.g. `?hvac=2000`) to correct predictions for upgraded systems |
+| 17.7.2 | Shareable estimator URL | ✅ Exists | S | `buildEstimatorUrl()` encodes inputs + per-system override params into URL; `parseEstimatorParams()` reads them back |
 | 17.7.3 | "Track this property" CTA | ✅ Exists | S | CTA on results page links to `/properties/new?yearBuilt=…&type=…`; converts estimation curiosity into registration intent |
 | 17.7.4 | Estimator embeddable widget | ⬜ Missing | M | JavaScript embed snippet (`<script src="https://homefax.app/widget.js">`) for real estate blogs, HOA sites, and home inspector websites; renders estimator inline; CTA links back to HomeFax |
 | 17.7.5 | Estimator → forecast migration | ✅ Exists | S | CTA href carries `yearBuilt` + `type` params; `PropertyRegisterPage` can read them to pre-populate fields |

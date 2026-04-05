@@ -580,6 +580,21 @@ const PRICE_SEED: Record<string, { low: number; median: number; high: number; sa
   "Other":       { low: 10000,   median: 40000,   high: 200000,  sampleSize: 15 },
 };
 
+// ── GET /api/lookup-year-built (§17.2.4) ─────────────────────────────────────
+// Relay stub — ATTOM Data integration deferred. Always returns yearBuilt: null.
+
+app.get("/api/lookup-year-built", (req: Request, res: Response): void => {
+  const address = (req.query.address as string ?? "").trim();
+  if (!address) {
+    res.status(400).json({ error: "address is required" });
+    return;
+  }
+  // TODO: integrate ATTOM Data public records lookup
+  res.json({ address, yearBuilt: null });
+});
+
+// ── GET /api/price-benchmark (§17.1.2) ───────────────────────────────────────
+
 app.get("/api/price-benchmark", (req: Request, res: Response): void => {
   const service = (req.query.service as string ?? "").trim();
   const zip     = (req.query.zip as string ?? "").trim();
