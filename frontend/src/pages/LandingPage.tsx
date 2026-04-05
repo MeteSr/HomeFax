@@ -348,6 +348,41 @@ const CSS = `
     .hfl-data h2 { font-size: 34px; }
   }
 
+  /* FREE TOOLS */
+  .hfl-tools {
+    padding: 80px 56px; background: var(--sage-light);
+  }
+  .hfl-tools-header { text-align: center; margin-bottom: 48px; }
+  .hfl-tools-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--sage-mid); color: var(--plum); padding: 5px 16px;
+    border-radius: 100px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    margin-bottom: 16px;
+  }
+  .hfl-tools h2 { font-family: 'Fraunces', serif; font-size: clamp(28px, 4vw, 42px); font-weight: 900; color: var(--plum); line-height: 1.1; }
+  .hfl-tools-sub { font-size: 16px; color: var(--plum-mid); margin-top: 12px; line-height: 1.7; }
+  .hfl-tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .hfl-tool-card {
+    background: white; border-radius: 20px; padding: 28px 24px;
+    display: flex; flex-direction: column; gap: 12px;
+    border: 1.5px solid var(--sage-mid); cursor: pointer;
+    transition: transform .2s, box-shadow .2s;
+    text-decoration: none; color: inherit;
+  }
+  .hfl-tool-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(46,37,64,0.1); }
+  .hfl-tool-icon { font-size: 28px; }
+  .hfl-tool-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--sage); margin-bottom: 2px;
+  }
+  .hfl-tool-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--plum); line-height: 1.2; }
+  .hfl-tool-desc { font-size: 13px; color: var(--plum-mid); line-height: 1.65; flex: 1; }
+  .hfl-tool-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 700; color: var(--plum);
+    margin-top: 4px;
+  }
+
   /* FOOTER */
   .hfl-footer {
     background: var(--plum); color: rgba(253,252,250,0.65); padding: 36px 56px;
@@ -408,6 +443,9 @@ const CSS = `
     .hfl-cta-sub { font-size: 15px; }
     .hfl-personas { grid-template-columns: 1fr; max-width: 100%; }
 
+    .hfl-tools { padding: 56px 24px; }
+    .hfl-tools-grid { grid-template-columns: 1fr 1fr; }
+
     .hfl-footer { flex-direction: column; gap: 20px; text-align: center; padding: 28px 24px; }
     .hfl-footer-links { flex-wrap: wrap; justify-content: center; }
   }
@@ -440,6 +478,7 @@ const CSS = `
     .hfl-cta h2 { font-size: 28px; }
     .hfl-report { margin: 0 16px 48px; padding: 32px 20px; }
     .hfl h2 { font-size: 28px; }
+    .hfl-tools-grid { grid-template-columns: 1fr; }
   }
 
   @media (min-width: 901px) and (max-width: 1100px) {
@@ -523,7 +562,8 @@ export default function LandingPage() {
             <li><a onClick={(e) => { e.preventDefault(); scrollTo("hfl-features"); }}>Service Network</a></li>
             <li><a onClick={(e) => { e.preventDefault(); scrollTo("hfl-report"); }}>HomeGentic Report</a></li>
             <li><a onClick={(e) => { e.preventDefault(); scrollTo("hfl-sell"); }}>Sell Smarter</a></li>
-            <li><a onClick={(e) => { e.preventDefault(); navigate("/pricing"); }}>Buy</a></li>
+            <li><a onClick={(e) => { e.preventDefault(); scrollTo("hfl-tools"); }}>Free Tools</a></li>
+            <li><a onClick={(e) => { e.preventDefault(); navigate("/pricing"); }}>Pricing</a></li>
           </ul>
           <button className="hfl-nav-pill" onClick={() => navigate("/login")}>🏡 Start Free</button>
           <button className="hfl-hamburger" aria-label="Menu">
@@ -858,6 +898,61 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── Free Tools ──────────────────────────────────────────────────── */}
+        <section id="hfl-tools" className="hfl-tools">
+          <div className="hfl-tools-header">
+            <div className="hfl-tools-eyebrow">✦ No account needed</div>
+            <h2>Free tools for buyers &amp; homeowners</h2>
+            <p className="hfl-tools-sub">Try these before you sign up — no login, no credit card.</p>
+          </div>
+          <div className="hfl-tools-grid">
+            {[
+              {
+                icon: "🔍",
+                label: "Buyer tool",
+                title: "HomeGentic Report Lookup",
+                desc: "Enter any address to see if the owner has a verified HomeGentic maintenance report ready to share.",
+                cta: "Check an address →",
+                href: "/check",
+              },
+              {
+                icon: "📅",
+                label: "Planning tool",
+                title: "Instant System Forecast",
+                desc: "Enter your home's year built and get a 10-year cost forecast for HVAC, roof, plumbing, electrical, and more.",
+                cta: "Get my forecast →",
+                href: "/instant-forecast",
+              },
+              {
+                icon: "💰",
+                label: "Pricing tool",
+                title: "Contractor Price Lookup",
+                desc: "See what homeowners in your area actually pay for roofing, HVAC, plumbing, flooring, and other common jobs.",
+                cta: "Look up prices →",
+                href: "/prices",
+              },
+              {
+                icon: "⚙️",
+                label: "Estimator",
+                title: "Home Systems Estimator",
+                desc: "Get lifespan estimates and replacement cost ranges for every major system in your home based on install year.",
+                cta: "Estimate my systems →",
+                href: "/home-systems",
+              },
+            ].map((tool) => (
+              <a key={tool.href} href={tool.href} className="hfl-tool-card">
+                <div className="hfl-tool-icon">{tool.icon}</div>
+                <div>
+                  <div className="hfl-tool-label">{tool.label}</div>
+                  <div className="hfl-tool-title">{tool.title}</div>
+                </div>
+                <p className="hfl-tool-desc">{tool.desc}</p>
+                <span className="hfl-tool-cta">{tool.cta}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+
         {/* ── FAQ (SEO.7 — static, crawlable) ─────────────────────────────── */}
         <section data-faq style={{ background: "var(--white)", padding: "80px 56px", maxWidth: "860px", margin: "0 auto" }}>
           <h2 style={{ fontFamily: "'Fraunces', serif", fontWeight: 900, fontSize: "2rem", color: "var(--plum)", marginBottom: "2.5rem", textAlign: "center" }}>
@@ -905,6 +1000,7 @@ export default function LandingPage() {
             <a onClick={(e) => { e.preventDefault(); scrollTo("hfl-sell"); }}>Sell Smarter</a>
             <a onClick={(e) => { e.preventDefault(); scrollTo("hfl-data"); }}>Your Data</a>
             <a onClick={() => navigate("/pricing")}>Pricing</a>
+            <a onClick={(e) => { e.preventDefault(); scrollTo("hfl-tools"); }}>Free Tools</a>
             <Link to="/privacy" style={{ color: "rgba(253,252,250,0.5)", textDecoration: "none", fontSize: "13px", transition: "color .2s" }}>Privacy</Link>
             <Link to="/support" style={{ color: "rgba(253,252,250,0.5)", textDecoration: "none", fontSize: "13px", transition: "color .2s" }}>Support</Link>
           </div>
