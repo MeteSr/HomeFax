@@ -8,6 +8,7 @@ import LogJobScreen          from "../screens/LogJobScreen";
 import QuoteRequestScreen    from "../screens/QuoteRequestScreen";
 import MyQuotesScreen        from "../screens/MyQuotesScreen";
 import SignJobScreen         from "../screens/SignJobScreen";
+import PhotoUploadScreen    from "../screens/PhotoUploadScreen";
 import type { SignableJob, SignRole } from "../services/signJobService";
 import { colors, fonts } from "../theme";
 
@@ -19,6 +20,7 @@ export type ChatStackParamList = {
   QuoteRequest:   { propertyId: string; propertyAddress: string };
   MyQuotes:       { propertyId: string; propertyAddress: string };
   SignJob:        { job: SignableJob; currentRole: SignRole };
+  PhotoUpload:    { jobId: string; jobServiceType: string };
 };
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -69,6 +71,11 @@ export default function ChatStack() {
         name="SignJob"
         component={SignJobScreen}
         options={{ title: "SIGN JOB" }}
+      />
+      <Stack.Screen
+        name="PhotoUpload"
+        component={PhotoUploadScreen}
+        options={{ title: "ADD PHOTO", headerStyle: { backgroundColor: colors.ink }, headerTintColor: colors.paper }}
       />
     </Stack.Navigator>
   );

@@ -18,7 +18,7 @@ type Nav = NativeStackNavigationProp<ChatStackParamList, "PropertyDetail">;
 
 type Props = NativeStackScreenProps<ChatStackParamList, "PropertyDetail">;
 
-function JobRow({ job }: { job: Job }) {
+function JobRow({ job, onCameraPress }: { job: Job; onCameraPress: () => void }) {
   const amount = (job.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
   const isVerified = job.status === "verified";
   return (
@@ -28,6 +28,14 @@ function JobRow({ job }: { job: Job }) {
         <Text style={styles.jobDesc} numberOfLines={1}>{job.description}</Text>
         <Text style={styles.jobMeta}>{job.completedDate} · {amount}{job.isDiy ? " · DIY" : ""}</Text>
       </View>
+      <TouchableOpacity
+        onPress={onCameraPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Add photo to ${job.serviceType} job`}
+        style={styles.cameraBtn}
+      >
+        <Text style={styles.cameraBtnText}>⊕</Text>
+      </TouchableOpacity>
       <View style={[styles.statusDot, { backgroundColor: isVerified ? colors.sage : colors.inkLight }]} />
     </View>
   );
@@ -95,7 +103,14 @@ export default function PropertyDetailScreen({ route }: Props) {
         <FlatList
           data={jobs}
           keyExtractor={(j) => j.id}
-          renderItem={({ item }) => <JobRow job={item} />}
+          renderItem={({ item }) => (
+              <JobRow
+                job={item}
+                onCameraPress={() => navigation.navigate("PhotoUpload", {
+                  jobId:          item.id,
+                  jobServiceType: item.serviceType,
+                })}
+              />}
           contentContainerStyle={{ paddingBottom: 0 }}
           ListEmptyComponent={
             <Text style={styles.empty}>No jobs logged yet.</Text>
@@ -177,6 +192,8 @@ const styles = StyleSheet.create({
   jobService: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.ink },
   jobDesc:    { fontFamily: fonts.sans, fontSize: 13, color: colors.inkLight, marginTop: 2 },
   jobMeta:    { fontFamily: fonts.mono, fontSize: 10, color: colors.inkLight, marginTop: 4, letterSpacing: 0.5 },
-  statusDot:  { width: 8, height: 8, marginLeft: spacing.md },
+  cameraBtn:     { padding: spacing.sm, marginLeft: spacing.sm },
+  cameraBtnText: { fontFamily: fonts.mono, fontSize: 16, color: colors.inkLight },
+  statusDot:     { width: 8, height: 8, marginLeft: spacing.sm },
   empty:      { fontFamily: fonts.sans, fontSize: 14, color: colors.inkLight, textAlign: "center", marginTop: spacing.xl },
 });
