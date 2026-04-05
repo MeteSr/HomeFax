@@ -44,26 +44,17 @@ if [ "$NETWORK" = "local" ]; then
   echo "  ✓ Wallet ready"
 fi
 
-# ── Parallel canister deployment ────────────────────────────────────────────────
-# All 11 canisters are independent at deploy time — inter-canister wiring
-# happens below via setPaymentCanisterId etc. after all deploys complete.
+# ── Sequential canister deployment ──────────────────────────────────────────────
+# Parallel deploys race on canister_ids.json (each process read→add→write);
+# the last writer wins and all other IDs are lost. Sequential is the safe default.
 
 CANISTERS=(auth property job contractor quote payment photo report maintenance market sensor monitoring)
 LOG_DIR=$(mktemp -d /tmp/dfx-deploy-XXXXXX)
-PIDS=()
 
-echo "▶ Deploying ${#CANISTERS[@]} canisters in parallel..."
-for canister in "${CANISTERS[@]}"; do
-  dfx deploy "$canister" --network "$NETWORK" >"$LOG_DIR/$canister.log" 2>&1 &
-  PIDS+=($!)
-done
-
-# Wait for all and collect failures
+echo "▶ Deploying ${#CANISTERS[@]} canisters..."
 FAILED=()
-for i in "${!CANISTERS[@]}"; do
-  canister="${CANISTERS[$i]}"
-  pid="${PIDS[$i]}"
-  if wait "$pid"; then
+for canister in "${CANISTERS[@]}"; do
+  if dfx deploy "$canister" --network "$NETWORK" >"$LOG_DIR/$canister.log" 2>&1; then
     echo "  ✓ $canister"
   else
     echo "  ✗ $canister (failed)"
@@ -71,7 +62,6 @@ for i in "${!CANISTERS[@]}"; do
   fi
 done
 
-# Print logs for any failed canisters
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo ""
   echo "❌ Deploy failed for: ${FAILED[*]}"
