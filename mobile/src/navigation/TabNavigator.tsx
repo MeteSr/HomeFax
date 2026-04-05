@@ -2,19 +2,31 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text } from "react-native";
 import { colors, fonts } from "../theme";
-import ChatStack      from "./ChatStack";
-import PhotosScreen   from "../screens/PhotosScreen";
-import ReportScreen   from "../screens/ReportScreen";
-import SettingsScreen from "../screens/SettingsScreen";
+import { useAuthContext } from "../auth/AuthContext";
+import ChatStack        from "./ChatStack";
+import ContractorStack  from "./ContractorStack";
+import PhotosScreen     from "../screens/PhotosScreen";
+import ReportScreen     from "../screens/ReportScreen";
+import SettingsScreen   from "../screens/SettingsScreen";
+import LeadFeedScreen   from "../screens/LeadFeedScreen";
+import EarningsScreen   from "../screens/EarningsScreen";
 
-export type TabParamList = {
+export type HomeownerTabParamList = {
   Chat:     undefined;
   Photos:   undefined;
   Report:   undefined;
   Settings: undefined;
 };
 
-const Tab = createBottomTabNavigator<TabParamList>();
+export type ContractorTabParamList = {
+  Chat:     undefined;
+  Leads:    undefined;
+  Earnings: undefined;
+  Settings: undefined;
+};
+
+const HomeownerTab  = createBottomTabNavigator<HomeownerTabParamList>();
+const ContractorTab = createBottomTabNavigator<ContractorTabParamList>();
 
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   return (
@@ -32,60 +44,82 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   );
 }
 
-export default function TabNavigator() {
+const TAB_BAR_STYLE = {
+  backgroundColor: colors.paper,
+  borderTopWidth: 1,
+  borderTopColor: colors.rule,
+  height: 60,
+  paddingBottom: 8,
+} as const;
+
+const SCREEN_OPTIONS = {
+  headerShown:           false,
+  tabBarStyle:           TAB_BAR_STYLE,
+  tabBarActiveTintColor:   colors.rust,
+  tabBarInactiveTintColor: colors.inkLight,
+  tabBarLabelStyle: {
+    fontFamily: fonts.mono,
+    fontSize:   10,
+    letterSpacing: 1,
+  },
+} as const;
+
+function HomeownerTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: colors.paper,
-          borderTopWidth: 1,
-          borderTopColor: colors.rule,
-          height: 60,
-          paddingBottom: 8,
-        },
-        tabBarActiveTintColor:   colors.rust,
-        tabBarInactiveTintColor: colors.inkLight,
-        tabBarLabelStyle: {
-          fontFamily: fonts.mono,
-          fontSize: 10,
-          letterSpacing: 1,
-        },
-      }}
-    >
-      <Tab.Screen
+    <HomeownerTab.Navigator screenOptions={SCREEN_OPTIONS}>
+      <HomeownerTab.Screen
         name="Chat"
         component={ChatStack}
-        options={{
-          tabBarLabel: "CHAT",
-          headerShown: false,
-          tabBarIcon: ({ focused }) => <TabIcon label="◎" focused={focused} />,
-        }}
+        options={{ tabBarLabel: "CHAT", tabBarIcon: ({ focused }) => <TabIcon label="◎" focused={focused} /> }}
       />
-      <Tab.Screen
+      <HomeownerTab.Screen
         name="Photos"
         component={PhotosScreen}
-        options={{
-          tabBarLabel: "PHOTOS",
-          tabBarIcon: ({ focused }) => <TabIcon label="⬜" focused={focused} />,
-        }}
+        options={{ tabBarLabel: "PHOTOS", tabBarIcon: ({ focused }) => <TabIcon label="⬜" focused={focused} /> }}
       />
-      <Tab.Screen
+      <HomeownerTab.Screen
         name="Report"
         component={ReportScreen}
-        options={{
-          tabBarLabel: "REPORT",
-          tabBarIcon: ({ focused }) => <TabIcon label="▤" focused={focused} />,
-        }}
+        options={{ tabBarLabel: "REPORT", tabBarIcon: ({ focused }) => <TabIcon label="▤" focused={focused} /> }}
       />
-      <Tab.Screen
+      <HomeownerTab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{
-          tabBarLabel: "SETTINGS",
-          tabBarIcon: ({ focused }) => <TabIcon label="≡" focused={focused} />,
-        }}
+        options={{ tabBarLabel: "SETTINGS", tabBarIcon: ({ focused }) => <TabIcon label="≡" focused={focused} /> }}
       />
-    </Tab.Navigator>
+    </HomeownerTab.Navigator>
   );
+}
+
+function ContractorTabs() {
+  return (
+    <ContractorTab.Navigator screenOptions={SCREEN_OPTIONS}>
+      <ContractorTab.Screen
+        name="Chat"
+        component={ContractorStack}
+        options={{ tabBarLabel: "CHAT", tabBarIcon: ({ focused }) => <TabIcon label="◎" focused={focused} /> }}
+      />
+      <ContractorTab.Screen
+        name="Leads"
+        component={LeadFeedScreen}
+        options={{ tabBarLabel: "LEADS", tabBarIcon: ({ focused }) => <TabIcon label="◈" focused={focused} /> }}
+      />
+      <ContractorTab.Screen
+        name="Earnings"
+        component={EarningsScreen}
+        options={{ tabBarLabel: "EARNINGS", tabBarIcon: ({ focused }) => <TabIcon label="$" focused={focused} /> }}
+      />
+      <ContractorTab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ tabBarLabel: "SETTINGS", tabBarIcon: ({ focused }) => <TabIcon label="≡" focused={focused} /> }}
+      />
+    </ContractorTab.Navigator>
+  );
+}
+
+export default function TabNavigator() {
+  const { authState } = useAuthContext();
+  const role = authState.status === "authenticated" ? authState.profile?.role : undefined;
+  return role === "Contractor" ? <ContractorTabs /> : <HomeownerTabs />;
 }

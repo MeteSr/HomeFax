@@ -294,7 +294,7 @@ The primary interface is a chat window backed by the existing voice agent (`agen
 | 15.4.1 | Property list screen | ✅ Exists | S | `PropertyListScreen.tsx` — score badge, built year, tap → PropertyDetail |
 | 15.4.2 | HomeFax Score screen | ✅ Exists | S | Score hero in `PropertyDetailScreen.tsx` — large score number, letter grade, address |
 | 15.4.3 | Job history screen | ✅ Exists | S | Job list in `PropertyDetailScreen.tsx` — service type, description, date, amount, DIY flag, verified dot |
-| 15.4.4 | Report WebView | ⬜ Missing | S | Open HomeFax report in embedded `WebView` (or `expo-web-browser`) rather than rebuilding the full report component natively |
+| 15.4.4 | Report WebView | ✅ Exists | S | `ReportScreen.tsx` — token/URL input + `expo-web-browser` opens the full web report; no native rebuild needed |
 | 15.4.5 | Push: score change notification | ⬜ Missing | M | Notify homeowner when HomeFax Score changes by ≥5 points; requires 15.3 relay |
 | 15.4.6 | Push: new job pending signature | ⬜ Missing | M | Notify homeowner when a contractor marks a job complete and awaits their signature |
 | 15.4.7 | Upgrade CTA (browser deep-link) | ✅ Exists | S | Upgrade banner in `PropertyDetailScreen.tsx` calls `Linking.openURL("https://homefax.app/pricing")` |
@@ -303,12 +303,12 @@ The primary interface is a chat window backed by the existing voice agent (`agen
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 15.5.1 | Lead feed screen | ⬜ Missing | M | Open quote requests filtered to contractor's `specialties[]`; mirrors `ContractorDashboardPage` lead list |
-| 15.5.2 | Job pending signature screen | ⬜ Missing | S | List of jobs awaiting homeowner or contractor signature; read-only in V1 |
-| 15.5.3 | Earnings summary screen | ⬜ Missing | S | Read-only view of completed jobs count and value; mirrors contractor dashboard earnings widget |
+| 15.5.1 | Lead feed screen | ✅ Exists | M | `LeadFeedScreen.tsx` — urgency-sorted cards with colour bar; `filterLeadsBySpecialties` + `ContractorStack` stack navigator |
+| 15.5.2 | Job pending signature screen | 🟡 Partial | S | `getPendingSignatureJobs` mock in `contractorService.ts`; dedicated screen deferred |
+| 15.5.3 | Earnings summary screen | ✅ Exists | S | `EarningsScreen.tsx` — total earned, verified jobs, pending count via `getEarningsSummary` |
 | 15.5.4 | Push: new lead in my trades | ⬜ Missing | M | Notify contractor when a new quote request matches any of their `specialties`; requires 15.3 relay |
 | 15.5.5 | Push: bid accepted / not selected | ⬜ Missing | M | Notify contractor of bid outcome when homeowner selects or declines |
-| 15.5.6 | Upgrade CTA (browser deep-link) | ⬜ Missing | S | ContractorPro upgrade CTA calls `Linking.openURL("https://homefax.app/pricing")` |
+| 15.5.6 | Upgrade CTA (browser deep-link) | ✅ Exists | S | Upgrade banner in `EarningsScreen.tsx` calls `Linking.openURL("https://homefax.app/pricing")` |
 
 ### 15.6 App Store & Play Store Submission
 
