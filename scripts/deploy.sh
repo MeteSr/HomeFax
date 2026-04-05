@@ -28,6 +28,17 @@ if [ "$NETWORK" = "local" ]; then
   fi
 fi
 
+# ── Ensure wallet is initialized before parallel deploy ─────────────────────────
+# Without this, 12 simultaneous `dfx deploy` processes race to create the wallet
+# on a clean replica start. The losers exit 0 without deploying anything.
+if [ "$NETWORK" = "local" ]; then
+  if ! dfx identity get-wallet --network local >/dev/null 2>&1; then
+    echo "▶ Initializing local wallet..."
+    dfx wallet --network local create
+    echo "  ✓ Wallet ready"
+  fi
+fi
+
 # ── Parallel canister deployment ────────────────────────────────────────────────
 # All 11 canisters are independent at deploy time — inter-canister wiring
 # happens below via setPaymentCanisterId etc. after all deploys complete.
