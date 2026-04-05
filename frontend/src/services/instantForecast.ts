@@ -8,6 +8,7 @@
  */
 
 import { type SystemEstimate, SYSTEM_URL_KEYS } from "./systemAgeEstimator";
+import { type SystemAges, type SystemName, TRACKED_SYSTEMS } from "./systemAges";
 
 export interface ForecastInput {
   address:          string;
@@ -77,6 +78,40 @@ export function buildForecastUrl(input: ForecastInput): string {
     }
   }
   return `/instant-forecast?${p.toString()}`;
+}
+
+/**
+ * Parse the URL produced by the "Save your forecast" CTA and return the data
+ * needed to pre-populate PropertyRegisterPage and seed systemAgesService.
+ *
+ * Returns null when the URL is missing required fields (address, yearBuilt).
+ */
+export function forecastParamsToRegistration(params: URLSearchParams): {
+  address:    string;
+  yearBuilt:  string;
+  state:      string;
+  systemAges: SystemAges;
+} | null {
+  const input = parseForecastParams(params);
+  if (!input) return null;
+
+  const systemAges: SystemAges = {};
+  for (const [systemName, year] of Object.entries(input.systemOverrides ?? {})) {
+    if (
+      year !== undefined &&
+      !isNaN(year) &&
+      (TRACKED_SYSTEMS as readonly string[]).includes(systemName)
+    ) {
+      systemAges[systemName as SystemName] = year;
+    }
+  }
+
+  return {
+    address:   input.address,
+    yearBuilt: String(input.yearBuilt),
+    state:     input.state ?? "",
+    systemAges,
+  };
 }
 
 /** Relay stub: look up year built from address via backend proxy.

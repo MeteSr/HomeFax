@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
@@ -7,6 +7,8 @@ import { propertyService, PropertyType, SubscriptionTier } from "@/services/prop
 import { usePropertyStore } from "@/store/propertyStore";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { triggerPermitImport, createJobsFromPermits, type ImportedPermit, type PermitImportResult } from "@/services/permitImport";
+import { forecastParamsToRegistration } from "@/services/instantForecast";
+import { systemAgesService, type SystemAges } from "@/services/systemAges";
 import PermitCoverageIndicator from "@/components/PermitCoverageIndicator";
 import PermitImportReviewPanel from "@/components/PermitImportReviewPanel";
 import toast from "react-hot-toast";
@@ -37,15 +39,30 @@ const TIERS: { value: SubscriptionTier; label: string; price: string; desc: stri
 
 export default function PropertyRegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { addProperty } = usePropertyStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [permitResult, setPermitResult] = useState<PermitImportResult | null>(null);
   const [registeredPropertyId, setRegisteredPropertyId] = useState<string | null>(null);
+  const [pendingSystemAges, setPendingSystemAges] = useState<SystemAges>({});
   const [form, setForm] = useState<FormData>({
     address: "", city: "", state: "", zipCode: "",
     propertyType: "SingleFamily", yearBuilt: "", squareFeet: "", tier: "Free",
   });
+
+  // §17.2.5 — pre-populate from instant-forecast "Save your forecast" URL
+  useEffect(() => {
+    const migration = forecastParamsToRegistration(searchParams);
+    if (!migration) return;
+    setForm((f) => ({
+      ...f,
+      address:   migration.address,
+      yearBuilt: migration.yearBuilt,
+      state:     migration.state,
+    }));
+    setPendingSystemAges(migration.systemAges);
+  }, []);
 
   const update = (key: keyof FormData, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -61,6 +78,11 @@ export default function PropertyRegisterPage() {
       });
       addProperty(property);
       toast.success("Property registered!");
+
+      // §17.2.5 — seed system ages from forecast migration params
+      if (Object.keys(pendingSystemAges).length > 0) {
+        systemAgesService.set(property.id, pendingSystemAges);
+      }
 
       // §17.5.3 — trigger permit import in background; show review step if found
       const result = await triggerPermitImport(property).catch(() => null);
