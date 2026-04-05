@@ -96,9 +96,24 @@ export default function PropertyDetailScreen({ route }: Props) {
           data={jobs}
           keyExtractor={(j) => j.id}
           renderItem={({ item }) => <JobRow job={item} />}
-          contentContainerStyle={{ paddingBottom: spacing.lg }}
+          contentContainerStyle={{ paddingBottom: 0 }}
           ListEmptyComponent={
             <Text style={styles.empty}>No jobs logged yet.</Text>
+          }
+          ListFooterComponent={
+            /* Quote requests entry point (15.8.2) */
+            <TouchableOpacity
+              style={styles.quotesRow}
+              onPress={() => navigation.navigate("MyQuotes", {
+                propertyId:      property.id,
+                propertyAddress: property.address,
+              })}
+              accessibilityRole="button"
+              accessibilityLabel="View quote requests"
+            >
+              <Text style={styles.sectionLabel}>QUOTE REQUESTS</Text>
+              <Text style={styles.quotesArrow}>REQUEST QUOTE  ›</Text>
+            </TouchableOpacity>
           }
         />
       )}
@@ -141,6 +156,17 @@ const styles = StyleSheet.create({
   },
   sectionLabel: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 2, color: colors.inkLight },
   logJobBtn:    { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 1, color: colors.rust },
+  quotesRow: {
+    flexDirection:     "row",
+    justifyContent:    "space-between",
+    alignItems:        "center",
+    padding:           spacing.md,
+    borderTopWidth:    borderWidth,
+    borderBottomWidth: borderWidth,
+    borderColor:       colors.rule,
+    marginTop:         spacing.sm,
+  },
+  quotesArrow: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 1, color: colors.rust },
   jobRow: {
     flexDirection: "row",
     alignItems: "center",

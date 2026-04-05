@@ -1,10 +1,12 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { Property } from "../services/propertyService";
-import ChatScreen           from "../screens/ChatScreen";
-import PropertyListScreen   from "../screens/PropertyListScreen";
-import PropertyDetailScreen from "../screens/PropertyDetailScreen";
-import LogJobScreen         from "../screens/LogJobScreen";
+import ChatScreen            from "../screens/ChatScreen";
+import PropertyListScreen    from "../screens/PropertyListScreen";
+import PropertyDetailScreen  from "../screens/PropertyDetailScreen";
+import LogJobScreen          from "../screens/LogJobScreen";
+import QuoteRequestScreen    from "../screens/QuoteRequestScreen";
+import MyQuotesScreen        from "../screens/MyQuotesScreen";
 import { colors, fonts } from "../theme";
 
 export type ChatStackParamList = {
@@ -12,6 +14,8 @@ export type ChatStackParamList = {
   PropertyList:   undefined;
   PropertyDetail: { property: Property };
   LogJob:         { propertyId: string; propertyAddress: string };
+  QuoteRequest:   { propertyId: string; propertyAddress: string };
+  MyQuotes:       { propertyId: string; propertyAddress: string };
 };
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -47,6 +51,16 @@ export default function ChatStack() {
         name="LogJob"
         component={LogJobScreen}
         options={{ title: "LOG JOB" }}
+      />
+      <Stack.Screen
+        name="QuoteRequest"
+        component={QuoteRequestScreen}
+        options={{ title: "REQUEST QUOTES" }}
+      />
+      <Stack.Screen
+        name="MyQuotes"
+        component={MyQuotesScreen}
+        options={{ title: "QUOTE REQUESTS" }}
       />
     </Stack.Navigator>
   );
