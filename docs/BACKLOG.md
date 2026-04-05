@@ -304,7 +304,7 @@ The primary interface is a chat window backed by the existing voice agent (`agen
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
 | 15.5.1 | Lead feed screen | ✅ Exists | M | `LeadFeedScreen.tsx` — urgency-sorted cards with colour bar; `filterLeadsBySpecialties` + `ContractorStack` stack navigator |
-| 15.5.2 | Job pending signature screen | 🟡 Partial | S | `getPendingSignatureJobs` mock in `contractorService.ts`; dedicated screen deferred |
+| 15.5.2 | Job pending signature screen | ✅ Exists | S | `PendingSignaturesScreen.tsx` — rust/grey colour indicator, `formatPendingStatus` + `sortPendingJobs`; accessible via PENDING tap on EarningsScreen (`EarningsStack`) |
 | 15.5.3 | Earnings summary screen | ✅ Exists | S | `EarningsScreen.tsx` — total earned, verified jobs, pending count via `getEarningsSummary` |
 | 15.5.4 | Push: new lead in my trades | ⬜ Missing | M | Notify contractor when a new quote request matches any of their `specialties`; requires 15.3 relay |
 | 15.5.5 | Push: bid accepted / not selected | ⬜ Missing | M | Notify contractor of bid outcome when homeowner selects or declines |

@@ -7,8 +7,13 @@ import {
   Linking,
   StyleSheet,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { EarningsStackParamList } from "../navigation/EarningsStack";
 import { getEarningsSummary, formatEarnings, EarningsSummary } from "../services/contractorService";
 import { colors, fonts, spacing, borderWidth } from "../theme";
+
+type Nav = NativeStackNavigationProp<EarningsStackParamList, "Earnings">;
 
 function StatBlock({ label, value }: { label: string; value: string }) {
   return (
@@ -20,6 +25,7 @@ function StatBlock({ label, value }: { label: string; value: string }) {
 }
 
 export default function EarningsScreen() {
+  const navigation = useNavigation<Nav>();
   const [summary, setSummary] = useState<EarningsSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +52,13 @@ export default function EarningsScreen() {
         <View style={styles.dividerV} />
         <StatBlock label="VERIFIED JOBS"   value={String(summary.verifiedJobCount)} />
         <View style={styles.dividerV} />
-        <StatBlock label="PENDING"         value={String(summary.pendingJobCount)} />
+        <TouchableOpacity
+          onPress={() => navigation.navigate("PendingSignatures")}
+          accessibilityRole="button"
+          accessibilityLabel="View pending signatures"
+        >
+          <StatBlock label="PENDING" value={String(summary.pendingJobCount)} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.dividerH} />

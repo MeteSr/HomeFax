@@ -5,11 +5,11 @@ import { colors, fonts } from "../theme";
 import { useAuthContext } from "../auth/AuthContext";
 import ChatStack        from "./ChatStack";
 import ContractorStack  from "./ContractorStack";
+import EarningsStack    from "./EarningsStack";
 import PhotosScreen     from "../screens/PhotosScreen";
 import ReportScreen     from "../screens/ReportScreen";
 import SettingsScreen   from "../screens/SettingsScreen";
 import LeadFeedScreen   from "../screens/LeadFeedScreen";
-import EarningsScreen   from "../screens/EarningsScreen";
 
 export type HomeownerTabParamList = {
   Chat:     undefined;
@@ -106,7 +106,7 @@ function ContractorTabs() {
       />
       <ContractorTab.Screen
         name="Earnings"
-        component={EarningsScreen}
+        component={EarningsStack}
         options={{ tabBarLabel: "EARNINGS", tabBarIcon: ({ focused }) => <TabIcon label="$" focused={focused} /> }}
       />
       <ContractorTab.Screen

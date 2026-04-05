@@ -28,6 +28,19 @@ export interface EarningsSummary {
 const URGENCY_ORDER: Record<Urgency, number> = { Emergency: 0, High: 1, Medium: 2, Low: 3 };
 
 /** Pure — testable with no async/native deps */
+export function formatPendingStatus(awaitingRole: "homeowner" | "contractor"): string {
+  return awaitingRole === "contractor" ? "Your signature needed" : "Awaiting homeowner";
+}
+
+/** Pure — contractor-action jobs float to the top, then stable by completedDate */
+export function sortPendingJobs(jobs: PendingSignatureJob[]): PendingSignatureJob[] {
+  return [...jobs].sort((a, b) => {
+    if (a.awaitingRole === b.awaitingRole) return 0;
+    return a.awaitingRole === "contractor" ? -1 : 1;
+  });
+}
+
+/** Pure — testable with no async/native deps */
 export function filterLeadsBySpecialties(leads: Lead[], specialties: string[]): Lead[] {
   const filtered = specialties.length === 0
     ? [...leads]
