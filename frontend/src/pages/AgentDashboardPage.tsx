@@ -17,6 +17,8 @@ import { propertyService } from "@/services/property";
 import { reportService, ShareLink } from "@/services/report";
 import toast from "react-hot-toast";
 import { COLORS, FONTS } from "@/theme";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { ResponsiveGrid } from "@/components/ResponsiveGrid";
 
 const S = {
   ink:      COLORS.plum,
@@ -39,6 +41,7 @@ export default function AgentDashboardPage() {
   const [rows, setRows]     = useState<LinkRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const { isMobile } = useBreakpoint();
 
   useEffect(() => {
     if (profile && profile.role !== "Realtor") {
@@ -116,7 +119,7 @@ export default function AgentDashboardPage() {
 
         {/* Summary stats */}
         {!loading && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", borderTop: `1px solid ${S.rule}`, borderLeft: `1px solid ${S.rule}`, marginBottom: "2rem" }}>
+          <ResponsiveGrid cols={{ mobile: 1, tablet: 3, desktop: 3 }} style={{ borderTop: `1px solid ${S.rule}`, borderLeft: `1px solid ${S.rule}`, marginBottom: "2rem" }} gap="0">
             {[
               { label: "Total Links",   value: String(rows.length) },
               { label: "Active Links",  value: String(activeCount) },
@@ -127,7 +130,7 @@ export default function AgentDashboardPage() {
                 <div style={{ fontFamily: S.serif, fontWeight: 700, fontSize: "1.75rem", lineHeight: 1 }}>{s.value}</div>
               </div>
             ))}
-          </div>
+          </ResponsiveGrid>
         )}
 
         {/* Table */}
@@ -143,9 +146,11 @@ export default function AgentDashboardPage() {
           </div>
         ) : (
           <div style={{ border: `1px solid ${S.rule}` }}>
+            <div style={{ overflowX: isMobile ? "auto" : "visible" }}>
             {/* Header row */}
             <div style={{
               display: "grid", gridTemplateColumns: "2fr 1fr 1fr auto auto auto",
+              minWidth: isMobile ? "560px" : undefined,
               gap: "0.75rem", padding: "0.75rem 1rem",
               borderBottom: `1px solid ${S.rule}`, background: S.paper,
             }}>
@@ -166,6 +171,7 @@ export default function AgentDashboardPage() {
                   key={row.token}
                   style={{
                     display: "grid", gridTemplateColumns: "2fr 1fr 1fr auto auto auto",
+                    minWidth: isMobile ? "560px" : undefined,
                     gap: "0.75rem", padding: "0.875rem 1rem", alignItems: "center",
                     borderBottom: i < rows.length - 1 ? `1px solid ${S.rule}` : "none",
                     background: row.isActive ? COLORS.white : COLORS.white,
@@ -222,6 +228,7 @@ export default function AgentDashboardPage() {
                 </div>
               );
             })}
+            </div> {/* /scroll wrapper */}
           </div>
         )}
       </div>

@@ -19,6 +19,7 @@ import {
 } from "@/services/listing";
 import toast from "react-hot-toast";
 import { COLORS, FONTS } from "@/theme";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 const S = {
   ink:      COLORS.plum,
@@ -116,6 +117,7 @@ export default function AgentMarketplacePage() {
   const [form,         setForm]         = useState<ProposalForm>(emptyForm);
   const [cmaComps,     setCmaComps]     = useState<CMAComp[]>([]);
   const [myCounters,   setMyCounters]   = useState<CounterProposal[]>([]);
+  const { isMobile } = useBreakpoint();
 
   useEffect(() => {
     listingService.getOpenBidRequests()
@@ -446,7 +448,8 @@ export default function AgentMarketplacePage() {
                   </div>
                   {cmaComps.map((comp, idx) => (
                     <div key={idx} style={{ border: `1px solid ${S.rule}`, padding: "0.75rem", marginBottom: "0.5rem" }}>
-                      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto", gap: "0.5rem", alignItems: "end" }}>
+                      <div style={{ overflowX: isMobile ? "auto" : "visible" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr auto", gap: "0.5rem", alignItems: "end", minWidth: isMobile ? "560px" : undefined }}>
                         <input
                           type="text"
                           placeholder="Comp address"
@@ -497,6 +500,7 @@ export default function AgentMarketplacePage() {
                           <Trash2 size={13} />
                         </button>
                       </div>
+                      </div> {/* /scroll wrapper */}
                     </div>
                   ))}
                   {cmaComps.length === 0 && (
