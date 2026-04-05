@@ -364,3 +364,27 @@ Extend `agents/voice/tools.ts` so the mobile chat interface can drive the full t
 | AI.6 | Remove provider-specific strings | ✅ Exists | S | Replace `"Claude did not return valid JSON"` and equivalents with provider-agnostic wording. Update `GET /health` to return `AI_MODEL` from env instead of the hardcoded string |
 
 ---
+
+## EPIC: Mobile App Store Setup
+
+**Goal:** Get the HomeGentic mobile app into TestFlight (iOS) and Google Play internal track (Android) so it can be tested on real devices before public launch.
+
+**Situation:** The codebase is submission-ready — all screens are built, EAS build config is correct, privacy manifest and data-safety declaration are done, and the App Store listing copy is written. What remains is entirely account setup, credential wiring, and store asset production. None of this requires code changes.
+
+**Dependency order:** MS.1 (Apple account) and MS.2 (Google account) must be completed before any build or submission steps. MS.3–MS.5 can run in parallel once accounts are ready. MS.6 is the final gate before public release.
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| MS.1 | Apple Developer account + app record | ⬜ Missing | S | Enroll at developer.apple.com ($99/yr). Create app record in App Store Connect: bundle ID `app.homegentic.mobile`, primary language, category (Productivity). Note the numeric ASC App ID. |
+| MS.2 | Google Play Developer account + app | ⬜ Missing | S | Enroll at play.google.com/console ($25 one-time). Create new app: package `app.homegentic.mobile`, default language, app or game → app, free or paid. |
+| MS.3 | Fill EAS credentials in `eas.json` | ⬜ Missing | S | Replace `APPLE_ID`, `ASC_APP_ID`, `APPLE_TEAM_ID` placeholders with real values. Run `eas login` and `eas project:init` to link the Expo project. |
+| MS.4 | Google service account key | ⬜ Missing | S | In Play Console → Setup → API access, link a Google Cloud project, create a service account with Release Manager role, download the JSON key, save as `mobile/google-service-account.json` (git-ignored). |
+| MS.5 | iOS provisioning + push certificate | ⬜ Missing | M | Let EAS manage signing (`eas credentials`) — it creates the distribution certificate and provisioning profile automatically. Separately, create an APNs Auth Key (`.p8`) in Apple Developer portal; add `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY` to the notifications relay env. |
+| MS.6 | Store screenshots | ⬜ Missing | M | iOS requires 6.5" iPhone + 12.9" iPad screenshots (min 3 each). Android requires phone screenshots (min 2). Run the app in Expo Go or a simulator, capture key screens: property list, score, job history, report, contractor lead feed. |
+| MS.7 | Privacy policy + support pages | ⬜ Missing | S | Both stores require live URLs at submission. Publish a privacy policy at `homegentic.app/privacy` and a support page at `homegentic.app/support`. A simple static page is sufficient for initial review. |
+| MS.8 | TestFlight internal build | ⬜ Missing | M | Once MS.1 + MS.3 + MS.5 are done: `eas build --platform ios --profile production` then `eas submit --platform ios`. Distribute to internal testers (up to 100) via TestFlight without App Store review. |
+| MS.9 | Google Play internal track build | ⬜ Missing | M | Once MS.2 + MS.4 are done: `eas build --platform android --profile production` then `eas submit --platform android`. Share internal track link with testers — no Play Store review required at this stage. |
+| MS.10 | App Store public release | ⬜ Missing | L | Requires MS.6 + MS.7 complete. Submit for App Store review from App Store Connect. Typical review time 1–3 days. Address any reviewer feedback on the browser-redirect subscription flow (reviewer notes already written in `store/listing.md`). |
+| MS.11 | Google Play production release | ⬜ Missing | L | Promote from internal track → production in Play Console. Requires MS.6 + MS.7. Play Store review is typically faster than Apple's (hours to 1 day). |
+
+---
