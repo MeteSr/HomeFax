@@ -15,7 +15,7 @@ export interface PushPayload {
 }
 
 export interface NotificationEvent {
-  type:      "new_lead" | "job_signed" | "score_change" | "bid_accepted" | "job_pending_sig";
+  type:      "new_lead" | "job_signed" | "score_change" | "bid_accepted" | "bid_declined" | "job_pending_sig";
   principal: string;
   payload:   PushPayload;
 }

@@ -5,10 +5,12 @@
  * dispatches push notifications via the dispatcher.
  *
  * Event types:
- *   • new_lead        — new quote request matching a contractor's specialties
+ *   • new_lead        — new quote request matching a contractor's specialties (15.5.4)
  *   • job_signed      — homeowner signed a job, contractor can pick up payment
  *   • score_change    — homeowner's HomeGentic Score changed by ≥5 points (15.4.5)
  *   • job_pending_sig — contractor marked a job complete; homeowner must sign (15.4.6)
+ *   • bid_accepted    — homeowner accepted contractor's bid (15.5.5)
+ *   • bid_declined    — homeowner chose another contractor (15.5.5)
  *
  * Real canister calls are wired in once the mobile HTTP agent is tested end-to-end.
  * Until then, stubs return [] so the poller runs safely in dev without a replica.
@@ -23,7 +25,8 @@ const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS) || 30_000;
 // ── Canister stubs ────────────────────────────────────────────────────────────
 // TODO: replace with real `@dfinity/agent` calls to the quote/job canisters.
 
-const defaultFetchNewLeadEvents: EventFetcher = async () => {
+// 15.5.4 — contractor: new quote request matching their specialties
+export const fetchNewLeadInTradesEvents: EventFetcher = async () => {
   // query canister: quote.getUnnotifiedRequests()
   // returns { requestId, serviceType, zipCode, contractorPrincipal }[]
   return [];
@@ -32,6 +35,13 @@ const defaultFetchNewLeadEvents: EventFetcher = async () => {
 const defaultFetchJobSignedEvents: EventFetcher = async () => {
   // query canister: job.getRecentlySignedJobs(since: lastPollAt)
   // returns { jobId, contractorPrincipal, serviceType }[]
+  return [];
+};
+
+// 15.5.5 — contractor: bid accepted or not selected by homeowner
+export const fetchBidOutcomeEvents: EventFetcher = async () => {
+  // query canister: quote.getBidOutcomesSince(lastPollAt)
+  // returns { quoteId, contractorPrincipal, jobId, outcome: "accepted" | "declined" }[]
   return [];
 };
 
@@ -53,10 +63,11 @@ export const fetchJobPendingSignatureEvents: EventFetcher = async () => {
 
 export async function pollOnce(
   fetchers: EventFetcher[] = [
-    defaultFetchNewLeadEvents,
+    fetchNewLeadInTradesEvents,
     defaultFetchJobSignedEvents,
     fetchScoreChangeEvents,
     fetchJobPendingSignatureEvents,
+    fetchBidOutcomeEvents,
   ]
 ): Promise<void> {
   const results = await Promise.all(fetchers.map((f) => f()));
