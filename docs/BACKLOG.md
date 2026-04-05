@@ -194,7 +194,7 @@ The features below address the core signup conversion gap: a new homeowner visit
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 17.2.1 | Public address → forecast endpoint | 🟡 Partial | M | `GET /api/lookup-year-built` relay stub added to `agents/voice/server.ts` (returns null); full `GET /api/instant-forecast` endpoint (stateless, no canister write) not yet wired |
+| 17.2.1 | Public address → forecast endpoint | ✅ Exists | M | `GET /api/instant-forecast` in voice relay — `forecast.ts` inlines SYSTEMS table, climate zone multipliers, `urgencyFor`, `estimateSystems`, `computeTenYearBudget`, `parseForecastQueryParams`; accepts `address`, `yearBuilt`, `state?`, + per-system override params; returns systems array sorted by urgency + `tenYearBudget`; 34 unit tests |
 | 17.2.2 | Pre-auth forecast landing page | ✅ Exists | M | `/instant-forecast` page: address + year-built entry form → system forecast table with urgency + cost estimates; inline per-row "Last replaced: [year]" override inputs correct upgraded-system predictions; `computeTenYearBudget`, `parseForecastParams`, `buildForecastUrl` in `instantForecast.ts`; `estimateSystems()` updated with per-system override support |
 | 17.2.3 | "Save your forecast" conversion CTA | ✅ Exists | S | "Save your forecast" link on results page → `/properties/new?address=...&yearBuilt=...` |
 | 17.2.4 | Public records year-built lookup | ✅ Exists | L | `lookupYearBuilt(address)` in `instantForecast.ts`; relay stub `GET /api/lookup-year-built` in voice server (returns null); auto-fill on address blur; ATTOM Data integration deferred |

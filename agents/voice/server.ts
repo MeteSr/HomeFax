@@ -6,6 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "./prompts";
 import { buildMaintenanceSystemPrompt } from "../maintenance/prompts";
 import { HOMEFAX_TOOLS } from "./tools";
+import { parseForecastQueryParams, estimateSystems, computeTenYearBudget } from "./forecast";
 import type { ChatRequest } from "./types";
 import type { MaintenanceContext } from "../maintenance/prompts";
 
@@ -579,6 +580,34 @@ const PRICE_SEED: Record<string, { low: number; median: number; high: number; sa
   "Foundation":  { low: 400000,  median: 900000,  high: 2500000, sampleSize: 11 },
   "Other":       { low: 10000,   median: 40000,   high: 200000,  sampleSize: 15 },
 };
+
+// ── GET /api/instant-forecast (§17.2.1) ──────────────────────────────────────
+// Public, stateless endpoint — no canister write, no auth required.
+// Accepts: address, yearBuilt, state?, + per-system override params
+//   (hvac=YYYY, roofing=YYYY, water_heater=YYYY, plumbing=YYYY, electrical=YYYY,
+//    windows=YYYY, flooring=YYYY, insulation=YYYY, solar_panels=YYYY)
+// Returns: full system-by-system forecast + 10-year replacement budget.
+app.get("/api/instant-forecast", (req: Request, res: Response): void => {
+  const result = parseForecastQueryParams(req.query as Record<string, string | undefined>);
+
+  if ("error" in result) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+
+  const { address, yearBuilt, state, overrides } = result.input;
+  const systems      = estimateSystems(yearBuilt, state, overrides);
+  const tenYearBudget = computeTenYearBudget(systems);
+
+  res.json({
+    address,
+    yearBuilt,
+    state:          state ?? null,
+    systems,
+    tenYearBudget,
+    generatedAt:    Date.now(),
+  });
+});
 
 // ── GET /api/lookup-year-built (§17.2.4) ─────────────────────────────────────
 // Relay stub — ATTOM Data integration deferred. Always returns yearBuilt: null.
