@@ -20,7 +20,8 @@
           {
             "CFBundleURLSchemes": ["homefax"]
           }
-        ]
+        ],
+        "NSFaceIDUsageDescription": "HomeFax uses Face ID to unlock your session when you re-open the app."
       },
       "entitlements": {
         "aps-environment": "production"
@@ -55,7 +56,8 @@
           "color": "#C94C2E",
           "sounds": []
         }
-      ]
+      ],
+      "expo-local-authentication"
     ]
   }
 }

@@ -6,6 +6,7 @@ import { DelegationChain, DelegationIdentity } from "@dfinity/identity";
 import { HttpAgent } from "@dfinity/agent";
 import { buildIIAuthUrl, parseAuthCallback, isDelegationExpired, REDIRECT_URI } from "./authUtils";
 import { saveAuth, loadAuth, clearAuth, StoredAuth } from "./authStorage";
+import { authenticateWithBiometrics } from "./biometricService";
 import { getProfile, UserProfile } from "../services/authService";
 
 export type AuthState =
@@ -60,6 +61,17 @@ export function useAuth() {
         setAuthState({ status: "idle" });
         return;
       }
+
+      // 15.2.3 — Biometric gate: prompt Face ID / fingerprint before restoring session.
+      // If the device doesn't support biometrics, the check is skipped transparently.
+      const biometric = await authenticateWithBiometrics();
+      if (!biometric.success) {
+        // Cancelled or failed — drop back to login without clearing the stored delegation
+        // so the user can try again on next app open without re-doing full II auth.
+        setAuthState({ status: "idle" });
+        return;
+      }
+
       const sessionIdentity = getOrCreateSessionIdentity();
       const identity = buildIdentityFromStored(sessionIdentity, stored);
       const agent = buildAgent(identity);
