@@ -347,3 +347,20 @@ Extend `agents/voice/tools.ts` so the mobile chat interface can drive the full t
 | 15.8.5 | Camera-first photo upload | ✅ Exists | L | `PhotoUploadScreen.tsx` — opens camera on mount, gallery fallback, full-screen preview with retake; `photoUploadService.ts` validates MIME type (JPEG/PNG), 10 MB cap, formats file size (11 tests); ⊕ camera button on every PropertyDetail job row |
 
 ---
+
+## EPIC: AI Provider Abstraction
+
+**Goal:** Decouple all AI inference calls from the Anthropic SDK so that any compatible provider (OpenAI, Gemini, local LLM, etc.) can be swapped in by changing configuration, not code.
+
+**Motivation:** `agents/voice/server.ts` imports and calls `@anthropic-ai/sdk` directly in every route handler. Anthropic-specific types (`ToolUseBlock`, `TextBlock`), streaming event shapes (`content_block_delta`), tool schema format, and hardcoded model strings (`claude-sonnet-4-6`) are scattered across the file. There is no seam between the Express routes and the AI provider.
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| AI.1 | Define `AIProvider` interface | ⬜ Missing | S | New `agents/voice/provider.ts`: `stream()`, `complete()`, `completeWithTools()` methods with normalized types for tool definitions, tool call results, and streaming chunks — no SDK types exposed |
+| AI.2 | Implement `AnthropicProvider` | ⬜ Missing | M | Class wrapping `@anthropic-ai/sdk`: translates normalized tool schema → Anthropic wire format, maps `content_block_delta`/`text_delta` events → normalized chunks, extracts `ToolUseBlock`/`TextBlock` from responses. No Anthropic types leak outside this class |
+| AI.3 | Wire provider into `server.ts` via DI | ⬜ Missing | M | Replace all direct `anthropic.messages.*` calls in route handlers with `AIProvider` interface calls. Instantiate the concrete provider once at startup, selected by `AI_PROVIDER` env var |
+| AI.4 | Extract model name to config | ⬜ Missing | S | Remove the five hardcoded `"claude-sonnet-4-6"` strings. Add `AI_MODEL` to `.env.example`; provider reads it at startup. Route handlers never reference a model name |
+| AI.5 | Normalize tool schema in `tools.ts` | ⬜ Missing | S | Rewrite `HOMEFAX_TOOLS` using the normalized tool definition type from AI.1. Each provider implementation converts to its own wire format — route handlers and tool definitions remain provider-agnostic |
+| AI.6 | Remove provider-specific strings | ⬜ Missing | S | Replace `"Claude did not return valid JSON"` and equivalents with provider-agnostic wording. Update `GET /health` to return `AI_MODEL` from env instead of the hardcoded string |
+
+---
