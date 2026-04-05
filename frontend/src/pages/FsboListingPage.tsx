@@ -18,6 +18,7 @@ import { computeScore } from "@/services/scoreService";
 import { showingRequestService } from "@/services/showingRequest";
 import { notificationService } from "@/services/notifications";
 import { COLORS, FONTS } from "@/theme";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
 
 const S = {
   ink:      COLORS.plum,
@@ -44,11 +45,12 @@ function humanType(type: string): string {
 
 // ─── Showing-request form ─────────────────────────────────────────────────────
 
-function ShowingRequestForm({ propertyId }: { propertyId: string }) {
+export function ShowingRequestForm({ propertyId }: { propertyId: string }) {
   const [name,    setName]    = useState("");
   const [contact, setContact] = useState("");
   const [time,    setTime]    = useState("");
   const [sent,    setSent]    = useState(false);
+  const { isMobile } = useBreakpoint();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -140,7 +142,7 @@ function ShowingRequestForm({ propertyId }: { propertyId: string }) {
           fontWeight:  600,
           fontSize:    "0.875rem",
           cursor:      "pointer",
-          alignSelf:   "flex-start",
+          alignSelf:   isMobile ? "stretch" : "flex-start",
         }}
       >
         Request a Showing
@@ -153,6 +155,7 @@ function ShowingRequestForm({ propertyId }: { propertyId: string }) {
 
 export default function FsboListingPage() {
   const { propertyId } = useParams<{ propertyId: string }>();
+  const { isMobile } = useBreakpoint();
 
   const [loading,    setLoading]    = useState(true);
   const [property,   setProperty]   = useState<Property | null>(null);
@@ -236,7 +239,7 @@ export default function FsboListingPage() {
   const firstPhoto   = photos[0] ?? null;
 
   return (
-    <div style={{ maxWidth: "860px", margin: "0 auto", padding: "2rem 1rem", fontFamily: S.sans }}>
+    <div style={{ maxWidth: "860px", margin: "0 auto", padding: isMobile ? "1rem" : "2rem 1rem", fontFamily: S.sans }}>
 
       {/* ── Photo ─────────────────────────────────────────────────────────── */}
       <div style={{ marginBottom: "1.5rem", background: COLORS.rule, minHeight: "260px", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
