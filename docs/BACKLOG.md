@@ -295,8 +295,8 @@ The primary interface is a chat window backed by the existing voice agent (`agen
 | 15.4.2 | HomeGentic Score screen | ✅ Exists | S | Score hero in `PropertyDetailScreen.tsx` — large score number, letter grade, address |
 | 15.4.3 | Job history screen | ✅ Exists | S | Job list in `PropertyDetailScreen.tsx` — service type, description, date, amount, DIY flag, verified dot |
 | 15.4.4 | Report WebView | ✅ Exists | S | `ReportScreen.tsx` — token/URL input + `expo-web-browser` opens the full web report; no native rebuild needed |
-| 15.4.5 | Push: score change notification | ⬜ Missing | M | Notify homeowner when HomeGentic Score changes by ≥5 points; requires 15.3 relay |
-| 15.4.6 | Push: new job pending signature | ⬜ Missing | M | Notify homeowner when a contractor marks a job complete and awaits their signature |
+| 15.4.5 | Push: score change notification | ✅ Exists | M | Notify homeowner when HomeGentic Score changes by ≥5 points; requires 15.3 relay |
+| 15.4.6 | Push: new job pending signature | ✅ Exists | M | Notify homeowner when a contractor marks a job complete and awaits their signature |
 | 15.4.7 | Upgrade CTA (browser deep-link) | ✅ Exists | S | Upgrade banner in `PropertyDetailScreen.tsx` calls `Linking.openURL("https://homegentic.app/pricing")` |
 
 ### 15.5 Contractor V1 Features (Read-Only)
