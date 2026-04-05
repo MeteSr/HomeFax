@@ -1,0 +1,4 @@
+# ICP assets canister — SPA deep-link fallback.
+# All unmatched paths serve index.html so client-side routing works.
+# Pre-rendered static routes are served directly from their HTML files.
+/*  /index.html  200
