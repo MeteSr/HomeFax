@@ -271,8 +271,8 @@ The primary interface is a chat window backed by the existing voice agent (`agen
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 15.2.1 | II WebView auth flow | ⬜ Missing | L | Open `https://identity.ic0.app` in `expo-web-browser` (SafariViewController/CCT); intercept `homefax://auth?delegation=...` deep link; parse and store delegation in `expo-secure-store` |
-| 15.2.2 | Delegation storage + session restore | ⬜ Missing | M | On app launch, read stored delegation from `expo-secure-store`; reconstruct `DelegationIdentity` for `HttpAgent`; re-auth if expired |
+| 15.2.1 | II WebView auth flow | ✅ Exists | L | `useAuth.ts`: opens II in `expo-web-browser` via `openAuthSessionAsync`, listens for `homefax://auth` deep link, parses delegation from callback URL; `buildIIAuthUrl` / `parseAuthCallback` / `isDelegationExpired` in `authUtils.ts` (15 unit tests) |
+| 15.2.2 | Delegation storage + session restore | ✅ Exists | M | `authStorage.ts`: `saveAuth` / `loadAuth` / `clearAuth` via `expo-secure-store`; `useAuth` restores session on mount and re-auths if delegation is expired |
 | 15.2.3 | Biometric unlock (optional, V1.1) | ⬜ Missing | M | Gate app re-open on Face ID / fingerprint via `expo-local-authentication`; still requires II for first login and after delegation expiry |
 | 15.2.4 | Role detection on login | ⬜ Missing | S | After auth, call `authService.getProfile()` to determine Homeowner vs. Contractor; route to appropriate tab set |
 
