@@ -9,5 +9,29 @@ Object.defineProperty(window, "location", {
   writable: true,
 });
 
+// Default matchMedia stub — jsdom doesn't implement matchMedia.
+// Individual test files may override this with configurable: true stubs
+// that simulate specific viewport widths.
+if (typeof window.matchMedia !== "function") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
+
+// Default requestAnimationFrame stub — react-helmet-async defers DOM writes
+// via RAF; this makes those writes synchronous in tests.
+if (typeof (globalThis as any).requestAnimationFrame !== "function") {
+  (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => { cb(0); return 0; };
+  (globalThis as any).cancelAnimationFrame = () => {};
+}
+
 // Cleanup React Testing Library mounts after each test.
 afterEach(() => cleanup());

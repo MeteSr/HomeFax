@@ -72,7 +72,7 @@ export default defineConfig(({ mode }) => {
       pool: "threads",
       minThreads: 2,
       maxThreads: 8,
-      setupFiles: ["./src/__tests__/setup.ts"],
+      setupFiles: ["./src/__tests__/setup.ts", "./src/__tests__/helmet-mock-setup.ts"],
       include: ["src/__tests__/**/*.test.{ts,tsx}"],
       alias: {
         "@": path.resolve(__dirname, "./src"),
