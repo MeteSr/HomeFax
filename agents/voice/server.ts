@@ -14,6 +14,15 @@ import type { MaintenanceContext } from "../maintenance/prompts";
 const app = express();
 const port = Number(process.env.VOICE_AGENT_PORT) || 3001;
 
+// 14.4.6 — fail-secure: ANTHROPIC_API_KEY must never be a VITE_ var or hardcoded literal.
+// It is read server-side only, here and in anthropicProvider.ts.
+if (!process.env.ANTHROPIC_API_KEY) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("ANTHROPIC_API_KEY env var must be set in production");
+  }
+  console.warn("[voice-agent] ANTHROPIC_API_KEY not set — Claude API calls will fail");
+}
+
 // 14.3.3 — fail-secure: require FRONTEND_ORIGIN in production
 const allowedOrigin = process.env.FRONTEND_ORIGIN;
 if (!allowedOrigin) {
