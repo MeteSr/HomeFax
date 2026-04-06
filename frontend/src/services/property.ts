@@ -3,7 +3,7 @@ import { getAgent } from "./actor";
 
 const PROPERTY_CANISTER_ID = (process.env as any).PROPERTY_CANISTER_ID || "";
 
-const idlFactory = ({ IDL }: any) => {
+export const idlFactory = ({ IDL }: any) => {
   const PropertyType = IDL.Variant({
     SingleFamily: IDL.Null,
     Condo: IDL.Null,

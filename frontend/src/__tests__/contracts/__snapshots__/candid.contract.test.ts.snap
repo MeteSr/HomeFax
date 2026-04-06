@@ -1,0 +1,381 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`auth IDL factory > full signature snapshot 1`] = `
+{
+  "getMetrics": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "record {realtors:nat; isPaused:bool; builders:nat; contractors:nat; homeowners:nat; totalUsers:nat}",
+    ],
+  },
+  "getProfile": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
+    ],
+  },
+  "getUserStats": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "record {total:nat; realtors:nat; newToday:nat; builders:nat; activeThisWeek:nat; contractors:nat; newThisWeek:nat; homeowners:nat}",
+    ],
+  },
+  "hasRole": {
+    "args": [
+      "variant {Builder; Homeowner; Realtor; Contractor}",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "bool",
+    ],
+  },
+  "recordLogin": {
+    "args": [],
+    "mode": [],
+    "rets": [],
+  },
+  "register": {
+    "args": [
+      "record {role:variant {Builder; Homeowner; Realtor; Contractor}; email:text; phone:text}",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
+    ],
+  },
+  "updateProfile": {
+    "args": [
+      "record {email:text; phone:text}",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
+    ],
+  },
+}
+`;
+
+exports[`job IDL factory > full signature snapshot 1`] = `
+{
+  "createJob": {
+    "args": [
+      "text",
+      "text",
+      "variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}",
+      "text",
+      "opt text",
+      "nat",
+      "int",
+      "opt text",
+      "opt nat",
+      "bool",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:text; completedDate:int; status:variant {InProgress; Verified; Completed; Pending}; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; verified:bool; contractorSigned:bool; permitNumber:opt text; createdAt:int; description:text; propertyId:text; homeownerSigned:bool; warrantyMonths:opt nat; isDiy:bool; homeowner:principal; amount:nat; contractorName:opt text; contractor:opt principal}; err:variant {InvalidInput:text; NotFound; AlreadyVerified; Unauthorized}}",
+    ],
+  },
+  "getCertificationData": {
+    "args": [
+      "text",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "record {verifiedKeySystems:vec text; meetsStructural:bool; verifiedJobCount:nat}",
+    ],
+  },
+  "getJob": {
+    "args": [
+      "text",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "variant {ok:record {id:text; completedDate:int; status:variant {InProgress; Verified; Completed; Pending}; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; verified:bool; contractorSigned:bool; permitNumber:opt text; createdAt:int; description:text; propertyId:text; homeownerSigned:bool; warrantyMonths:opt nat; isDiy:bool; homeowner:principal; amount:nat; contractorName:opt text; contractor:opt principal}; err:variant {InvalidInput:text; NotFound; AlreadyVerified; Unauthorized}}",
+    ],
+  },
+  "getJobsForProperty": {
+    "args": [
+      "text",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "variant {ok:vec record {id:text; completedDate:int; status:variant {InProgress; Verified; Completed; Pending}; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; verified:bool; contractorSigned:bool; permitNumber:opt text; createdAt:int; description:text; propertyId:text; homeownerSigned:bool; warrantyMonths:opt nat; isDiy:bool; homeowner:principal; amount:nat; contractorName:opt text; contractor:opt principal}; err:variant {InvalidInput:text; NotFound; AlreadyVerified; Unauthorized}}",
+    ],
+  },
+  "getJobsPendingMySignature": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {id:text; completedDate:int; status:variant {InProgress; Verified; Completed; Pending}; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; verified:bool; contractorSigned:bool; permitNumber:opt text; createdAt:int; description:text; propertyId:text; homeownerSigned:bool; warrantyMonths:opt nat; isDiy:bool; homeowner:principal; amount:nat; contractorName:opt text; contractor:opt principal}",
+    ],
+  },
+  "getMetrics": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "record {completedJobs:nat; diyJobs:nat; isPaused:bool; verifiedJobs:nat; totalJobs:nat; pendingJobs:nat}",
+    ],
+  },
+  "linkContractor": {
+    "args": [
+      "text",
+      "principal",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:text; completedDate:int; status:variant {InProgress; Verified; Completed; Pending}; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; verified:bool; contractorSigned:bool; permitNumber:opt text; createdAt:int; description:text; propertyId:text; homeownerSigned:bool; warrantyMonths:opt nat; isDiy:bool; homeowner:principal; amount:nat; contractorName:opt text; contractor:opt principal}; err:variant {InvalidInput:text; NotFound; AlreadyVerified; Unauthorized}}",
+    ],
+  },
+  "updateJobStatus": {
+    "args": [
+      "text",
+      "variant {InProgress; Verified; Completed; Pending}",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:text; completedDate:int; status:variant {InProgress; Verified; Completed; Pending}; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; verified:bool; contractorSigned:bool; permitNumber:opt text; createdAt:int; description:text; propertyId:text; homeownerSigned:bool; warrantyMonths:opt nat; isDiy:bool; homeowner:principal; amount:nat; contractorName:opt text; contractor:opt principal}; err:variant {InvalidInput:text; NotFound; AlreadyVerified; Unauthorized}}",
+    ],
+  },
+  "verifyJob": {
+    "args": [
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:text; completedDate:int; status:variant {InProgress; Verified; Completed; Pending}; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; verified:bool; contractorSigned:bool; permitNumber:opt text; createdAt:int; description:text; propertyId:text; homeownerSigned:bool; warrantyMonths:opt nat; isDiy:bool; homeowner:principal; amount:nat; contractorName:opt text; contractor:opt principal}; err:variant {InvalidInput:text; NotFound; AlreadyVerified; Unauthorized}}",
+    ],
+  },
+}
+`;
+
+exports[`payment IDL factory > full signature snapshot 1`] = `
+{
+  "getAllPricing": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {periodDays:nat; tier:variant {Pro; Premium; Free; ContractorPro}; quoteRequestsPerMonth:nat; propertyLimit:nat; priceUSD:nat; photosPerJob:nat}",
+    ],
+  },
+  "getMySubscription": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}}; err:variant {PaymentFailed:text; NotFound; NotAuthorized}}",
+    ],
+  },
+  "getPricing": {
+    "args": [
+      "variant {Pro; Premium; Free; ContractorPro}",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "record {periodDays:nat; tier:variant {Pro; Premium; Free; ContractorPro}; quoteRequestsPerMonth:nat; propertyLimit:nat; priceUSD:nat; photosPerJob:nat}",
+    ],
+  },
+  "getSubscriptionStats": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "record {pro:nat; total:nat; premium:nat; contractorPro:nat; free:nat; estimatedMrrUsd:nat; activePaid:nat}",
+    ],
+  },
+  "subscribe": {
+    "args": [
+      "variant {Pro; Premium; Free; ContractorPro}",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}}; err:variant {PaymentFailed:text; NotFound; NotAuthorized}}",
+    ],
+  },
+}
+`;
+
+exports[`property IDL factory > full signature snapshot 1`] = `
+{
+  "acceptTransfer": {
+    "args": [
+      "nat",
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+  "cancelTransfer": {
+    "args": [
+      "nat",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+  "getMyProperties": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}",
+    ],
+  },
+  "getOwnershipHistory": {
+    "args": [
+      "nat",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {to:principal; from:principal; propertyId:nat; timestamp:int; txHash:text}",
+    ],
+  },
+  "getPendingTransfer": {
+    "args": [
+      "nat",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "opt record {to:principal; from:principal; propertyId:nat; initiatedAt:int}",
+    ],
+  },
+  "getPendingVerifications": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}",
+    ],
+  },
+  "getProperty": {
+    "args": [
+      "nat",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+  "getPropertyLimitForTier": {
+    "args": [
+      "variant {Pro; Premium; Free; ContractorPro}",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "nat",
+    ],
+  },
+  "getVerificationLevel": {
+    "args": [
+      "nat",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "opt text",
+    ],
+  },
+  "initiateTransfer": {
+    "args": [
+      "nat",
+      "principal",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {to:principal; from:principal; propertyId:nat; initiatedAt:int}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+  "isAdminPrincipal": {
+    "args": [
+      "principal",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "bool",
+    ],
+  },
+  "registerProperty": {
+    "args": [
+      "record {propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; city:text; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; zipCode:text; state:text; address:text; yearBuilt:nat}",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+  "setTier": {
+    "args": [
+      "principal",
+      "variant {Pro; Premium; Free; ContractorPro}",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+  "submitVerification": {
+    "args": [
+      "nat",
+      "text",
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+  "verifyProperty": {
+    "args": [
+      "nat",
+      "variant {Premium; Basic; PendingReview; Unverified}",
+      "opt text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+    ],
+  },
+}
+`;

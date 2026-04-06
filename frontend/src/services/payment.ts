@@ -5,7 +5,7 @@ const PAYMENT_CANISTER_ID = (process.env as any).PAYMENT_CANISTER_ID || "";
 
 // ─── IDL ──────────────────────────────────────────────────────────────────────
 
-const idlFactory = ({ IDL }: any) => {
+export const idlFactory = ({ IDL }: any) => {
   const Tier = IDL.Variant({
     Free: IDL.Null, Pro: IDL.Null, Premium: IDL.Null, ContractorPro: IDL.Null,
   });
@@ -28,6 +28,15 @@ const idlFactory = ({ IDL }: any) => {
     photosPerJob:          IDL.Nat,
     quoteRequestsPerMonth: IDL.Nat,
   });
+  const SubscriptionStats = IDL.Record({
+    total:           IDL.Nat,
+    free:            IDL.Nat,
+    pro:             IDL.Nat,
+    premium:         IDL.Nat,
+    contractorPro:   IDL.Nat,
+    activePaid:      IDL.Nat,
+    estimatedMrrUsd: IDL.Nat,
+  });
   return IDL.Service({
     subscribe: IDL.Func(
       [Tier],
@@ -47,6 +56,11 @@ const idlFactory = ({ IDL }: any) => {
     getAllPricing: IDL.Func(
       [],
       [IDL.Vec(PricingInfo)],
+      ["query"]
+    ),
+    getSubscriptionStats: IDL.Func(
+      [],
+      [SubscriptionStats],
       ["query"]
     ),
   });
