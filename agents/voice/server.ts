@@ -8,11 +8,22 @@ import { HOMEGENTIC_TOOLS } from "./tools";
 import { resolveModel, PROVIDER_JSON_ERROR } from "./provider";
 import { createAnthropicProvider } from "./anthropicProvider";
 import { parseForecastQueryParams, estimateSystems, computeTenYearBudget } from "./forecast";
+import { createEmailProvider } from "./resendEmailProvider";
+import { EmailRateLimitError } from "./emailProvider";
 import type { ChatRequest } from "./types";
 import type { MaintenanceContext } from "../maintenance/prompts";
 
 const app = express();
 const port = Number(process.env.VOICE_AGENT_PORT) || 3001;
+
+// Email provider — fail-secure: warn in dev, throw in production if key is absent.
+if (!process.env.RESEND_API_KEY) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("RESEND_API_KEY env var must be set in production");
+  }
+  console.warn("[voice-agent] RESEND_API_KEY not set — email sending will fail");
+}
+const emailProvider = createEmailProvider();
 
 // 14.4.6 — fail-secure: ANTHROPIC_API_KEY must never be a VITE_ var or hardcoded literal.
 // It is read server-side only, here and in anthropicProvider.ts.
@@ -610,6 +621,38 @@ app.get("/api/price-benchmark", (req: Request, res: Response): void => {
     sampleSize:   seed.sampleSize,
     lastUpdated,
   });
+});
+
+// ── POST /api/email/send ──────────────────────────────────────────────────────
+// Internal endpoint for sending transactional email via Resend.
+// Rate-limited to 100/day and 3,000/month (free tier cap).
+// Request:  { to, subject, html, text?, replyTo?, from? }
+// Response: { id } | { error, retryAfter? }
+app.post("/api/email/send", async (req: Request, res: Response): Promise<void> => {
+  const { to, subject, html, text, replyTo, from } = req.body;
+
+  if (!to || !subject || !html) {
+    res.status(400).json({ error: "to, subject, and html are required" });
+    return;
+  }
+
+  try {
+    const result = await emailProvider.send({ to, subject, html, text, replyTo, from });
+    res.json({ id: result.id });
+  } catch (err) {
+    if (err instanceof EmailRateLimitError) {
+      res.status(429).json({ error: err.message });
+      return;
+    }
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── GET /api/email/usage ──────────────────────────────────────────────────────
+// Returns current rate-limit counters. Useful for monitoring dashboards.
+app.get("/api/email/usage", (_req: Request, res: Response): void => {
+  res.json(emailProvider.usage());
 });
 
 // ── GET /health ───────────────────────────────────────────────────────────────
