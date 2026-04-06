@@ -17,6 +17,16 @@ persistent actor Payment {
 
   public type Error = { #NotFound; #NotAuthorized; #PaymentFailed: Text };
 
+  public type SubscriptionStats = {
+    total: Nat;       // number of principals with an explicit subscription record
+    free: Nat;
+    pro: Nat;
+    premium: Nat;
+    contractorPro: Nat;
+    activePaid: Nat;           // paid tiers whose expiresAt > now
+    estimatedMrrUsd: Nat;      // pro*10 + premium*49 + contractorPro*49
+  };
+
   // Merged from price canister
   public type PricingInfo = {
     tier:                  Tier;
@@ -83,6 +93,36 @@ persistent actor Payment {
       { tier = #Premium;       priceUSD = 49; periodDays = 30;  propertyLimit = 0; photosPerJob = 0;  quoteRequestsPerMonth = 0  },
       { tier = #ContractorPro; priceUSD = 29; periodDays = 30;  propertyLimit = 0; photosPerJob = 50; quoteRequestsPerMonth = 0  },
     ]
+  };
+
+  /// Aggregate subscription stats for the admin dashboard.
+  public query func getSubscriptionStats() : async SubscriptionStats {
+    let now = Time.now();
+    var free         = 0;
+    var pro          = 0;
+    var premium      = 0;
+    var contractorPro = 0;
+    var activePaid   = 0;
+
+    for (sub in Map.values(subscriptions)) {
+      let isActive = sub.expiresAt == 0 or sub.expiresAt > now;
+      switch (sub.tier) {
+        case (#Free)          { free          += 1 };
+        case (#Pro)           { pro           += 1; if (isActive) { activePaid += 1 } };
+        case (#Premium)       { premium       += 1; if (isActive) { activePaid += 1 } };
+        case (#ContractorPro) { contractorPro += 1; if (isActive) { activePaid += 1 } };
+      };
+    };
+
+    {
+      total           = Map.size(subscriptions);
+      free;
+      pro;
+      premium;
+      contractorPro;
+      activePaid;
+      estimatedMrrUsd = pro * 10 + premium * 49 + contractorPro * 49;
+    }
   };
 
   /// Inter-canister helper: look up the tier for an explicit Principal.

@@ -56,6 +56,17 @@ persistent actor Auth {
     isPaused: Bool;
   };
 
+  public type UserStats = {
+    total: Nat;
+    newToday: Nat;
+    newThisWeek: Nat;
+    activeThisWeek: Nat;   // users with lastLoggedIn in the last 7 days
+    homeowners: Nat;
+    contractors: Nat;
+    realtors: Nat;
+    builders: Nat;
+  };
+
   public type Error = {
     #NotFound;
     #AlreadyExists;
@@ -244,6 +255,40 @@ persistent actor Auth {
   };
 
   // ─── Metrics ─────────────────────────────────────────────────────────────────
+
+  /// Time-based user stats — new signups and engagement for the admin dashboard.
+  public query func getUserStats() : async UserStats {
+    let now     = Time.now();
+    let dayNs   : Int = 24 * 60 * 60 * 1_000_000_000;
+    let weekNs  : Int = 7 * dayNs;
+
+    var total         = 0;
+    var newToday      = 0;
+    var newThisWeek   = 0;
+    var activeThisWeek = 0;
+    var homeowners    = 0;
+    var contractors   = 0;
+    var realtors      = 0;
+    var builders      = 0;
+
+    for (profile in Map.values(users)) {
+      total += 1;
+      if (now - profile.createdAt <= dayNs)  { newToday += 1 };
+      if (now - profile.createdAt <= weekNs) { newThisWeek += 1 };
+      switch (profile.lastLoggedIn) {
+        case (?t) { if (now - t <= weekNs) { activeThisWeek += 1 } };
+        case null {};
+      };
+      switch (profile.role) {
+        case (#Homeowner)  { homeowners  += 1 };
+        case (#Contractor) { contractors += 1 };
+        case (#Realtor)    { realtors    += 1 };
+        case (#Builder)    { builders    += 1 };
+      };
+    };
+
+    { total; newToday; newThisWeek; activeThisWeek; homeowners; contractors; realtors; builders }
+  };
 
   /// Return platform-level metrics (public read)
   public query func getMetrics() : async Metrics {
