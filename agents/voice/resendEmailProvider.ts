@@ -112,7 +112,7 @@ export class RateLimitedEmailProvider implements EmailProvider {
     }
     if (this.monthlyCount >= MONTHLY_LIMIT) {
       throw new EmailRateLimitError(
-        `Monthly email limit reached (${MONTHLY_LIMIT}/month). Resets ${this.currentMonth}-01 UTC.`
+        `Monthly email limit reached (3,000/month). Resets ${this.currentMonth}-01 UTC.`
       );
     }
 
