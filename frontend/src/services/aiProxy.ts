@@ -80,12 +80,16 @@ export const idlFactory = ({ IDL }: any) => {
 
 // ─── Actor ────────────────────────────────────────────────────────────────────
 
-function createActor() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _actor: any | null = null;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getActor(): Promise<any | null> {
   if (!AI_PROXY_CANISTER_ID) return null;
-  return Actor.createActor(idlFactory, {
-    agent:     getAgent(),
-    canisterId: AI_PROXY_CANISTER_ID,
-  }) as any;
+  if (_actor) return _actor;
+  const ag = await getAgent();
+  _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: AI_PROXY_CANISTER_ID });
+  return _actor;
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -94,7 +98,7 @@ export const aiProxyService = {
 
   /** Returns price benchmark JSON or null on error/missing canister. */
   async getPriceBenchmark(service: string, zip: string): Promise<string | null> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return null;
     try {
       const result = await actor.getPriceBenchmark(service, zip);
@@ -112,7 +116,7 @@ export const aiProxyService = {
     state?: string,
     overridesJson = "{}",
   ): Promise<string | null> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return null;
     try {
       const result = await actor.instantForecast(
@@ -135,7 +139,7 @@ export const aiProxyService = {
     state:   string,
     zip:     string,
   ): Promise<string | null> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return null;
     try {
       const result = await actor.importPermits(address, city, state, zip);
@@ -150,7 +154,7 @@ export const aiProxyService = {
     to: string, subject: string, html: string,
     text?: string, replyTo?: string, from?: string,
   ): Promise<{ id?: string; error?: string }> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return { error: "ai_proxy canister not configured" };
     try {
       const result = await actor.sendEmail(
@@ -176,7 +180,7 @@ export const aiProxyService = {
     amount?: number;
     verifyUrl: string;
   }): Promise<{ sent?: boolean; error?: string }> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return { error: "ai_proxy canister not configured" };
     try {
       const result = await actor.sendInviteEmail(
@@ -195,7 +199,7 @@ export const aiProxyService = {
   },
 
   async checkReport(address: string): Promise<{ found: boolean; address: string }> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return { found: false, address };
     try {
       const raw: string = await actor.checkReport(address);
@@ -206,7 +210,7 @@ export const aiProxyService = {
   },
 
   async lookupYearBuilt(address: string): Promise<{ address: string; yearBuilt: number | null }> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return { address, yearBuilt: null };
     try {
       const raw: string = await actor.lookupYearBuilt(address);
@@ -217,7 +221,7 @@ export const aiProxyService = {
   },
 
   async requestReport(address: string, buyerEmail: string): Promise<{ queued: boolean }> {
-    const actor = createActor();
+    const actor = await getActor();
     if (!actor) return { queued: false };
     try {
       await actor.requestReport(address, buyerEmail);

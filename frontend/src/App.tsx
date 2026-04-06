@@ -1,8 +1,9 @@
 import React, { Suspense } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuthStore } from "@/store/authStore";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Critical path — kept static (first paint)
 import LandingPage           from "@/pages/LandingPage";
@@ -60,6 +61,19 @@ const PageLoader = () => (
   </div>
 );
 
+/**
+ * Resets the per-route ErrorBoundary whenever the URL changes so a user
+ * navigating away from a broken page gets a fresh render on the next route.
+ */
+function RouteErrorBoundary({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return (
+    <ErrorBoundary key={location.pathname}>
+      {children}
+    </ErrorBoundary>
+  );
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
 
@@ -70,15 +84,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: { borderRadius: 0, fontSize: "0.875rem", fontWeight: 500 },
-        }}
-      />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+    <ErrorBoundary global>
+      <AuthProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: { borderRadius: 0, fontSize: "0.875rem", fontWeight: 500 },
+          }}
+        />
+        <Suspense fallback={<PageLoader />}>
+          <RouteErrorBoundary>
+            <Routes>
           <Route path="/"            element={<LandingPage />} />
           <Route path="/login"       element={<LoginPage />} />
           <Route path="/pricing"     element={<PricingPage />} />
@@ -128,9 +144,11 @@ export default function App() {
           <Route path="/badge/:token"          element={<BadgePage />} />
           <Route path="/cert/:token"           element={<ScoreCertPage />} />
           <Route path="/neighborhood/:zipCode" element={<NeighborhoodHealthPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    </AuthProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </RouteErrorBoundary>
+        </Suspense>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
