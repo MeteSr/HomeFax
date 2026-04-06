@@ -25,6 +25,17 @@ if (!process.env.ANTHROPIC_API_KEY) {
   console.warn("[voice-agent] ANTHROPIC_API_KEY not set — Claude API calls will fail");
 }
 
+// §49 — fail-secure: require VOICE_AGENT_API_KEY in production.
+// All /api/ routes check the x-api-key header against this secret.
+// In dev, if unset, a warning is printed and requests are allowed through.
+const VOICE_API_KEY = process.env.VOICE_AGENT_API_KEY ?? "";
+if (!VOICE_API_KEY) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("VOICE_AGENT_API_KEY env var must be set in production");
+  }
+  console.warn("[voice-agent] VOICE_AGENT_API_KEY not set — API endpoints are unprotected (dev only)");
+}
+
 // 14.3.3 — fail-secure: require FRONTEND_ORIGIN in production
 const allowedOrigin = process.env.FRONTEND_ORIGIN;
 if (!allowedOrigin) {
@@ -47,6 +58,18 @@ const apiLimiter = rateLimit({
   message: { error: "Too many requests — please wait before retrying." },
 });
 app.use("/api/", apiLimiter);
+
+// §49 — API key auth middleware for all /api/ routes.
+// Skipped in dev when VOICE_AGENT_API_KEY is not set.
+app.use("/api/", (req: Request, res: Response, next: express.NextFunction): void => {
+  if (!VOICE_API_KEY) { next(); return; }
+  const provided = req.headers["x-api-key"];
+  if (provided !== VOICE_API_KEY) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
+});
 
 const provider = createAnthropicProvider();
 const MODEL    = resolveModel();

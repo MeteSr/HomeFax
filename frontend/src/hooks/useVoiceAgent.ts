@@ -62,7 +62,8 @@ export interface UseVoiceAgentReturn {
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
-const PROXY_URL    = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http://localhost:3001";
+const PROXY_URL     = (import.meta as any).env?.VITE_VOICE_AGENT_URL  ?? "http://localhost:3001";
+const VOICE_API_KEY = (import.meta as any).env?.VITE_VOICE_AGENT_API_KEY ?? "";
 const MAX_TURNS    = 5;
 const MS_PER_MONTH  = 30.44 * 24 * 60 * 60 * 1000;
 const NINETY_DAYS   = 90 * 24 * 60 * 60 * 1000;
@@ -340,7 +341,10 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
       for (let turn = 0; turn < MAX_TURNS; turn++) {
         const res = await fetch(`${PROXY_URL}/api/agent`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(VOICE_API_KEY ? { "x-api-key": VOICE_API_KEY } : {}),
+          },
           body: JSON.stringify({ messages, context }),
         });
 
