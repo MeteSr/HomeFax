@@ -28,6 +28,12 @@ vi.mock("@/services/job", () => ({
   },
 }));
 
+vi.mock("@/services/aiProxy", () => ({
+  aiProxyService: {
+    sendInviteEmail: vi.fn().mockResolvedValue({ sent: true }),
+  },
+}));
+
 // Stub navigator.clipboard
 const writeTextMock = vi.fn().mockResolvedValue(undefined);
 Object.defineProperty(navigator, "clipboard", {
@@ -35,11 +41,8 @@ Object.defineProperty(navigator, "clipboard", {
   configurable: true,
 });
 
-// Stub fetch for email send
-const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-(global as any).fetch = fetchMock;
-
 import { jobService } from "@/services/job";
+import { aiProxyService } from "@/services/aiProxy";
 
 const MOCK_JOB: Job = {
   id:               "job-1",
@@ -183,7 +186,7 @@ describe("InviteContractorModal — copy link", () => {
 describe("InviteContractorModal — email send", () => {
   beforeEach(() => {
     (jobService.createInviteToken as any).mockResolvedValue("INV_email1");
-    fetchMock.mockResolvedValue({ ok: true });
+    vi.mocked(aiProxyService.sendInviteEmail).mockResolvedValue({ sent: true });
   });
 
   it("Send button is disabled until a valid email is entered", async () => {
@@ -202,7 +205,7 @@ describe("InviteContractorModal — email send", () => {
     expect(screen.getByRole("button", { name: /send/i })).not.toBeDisabled();
   });
 
-  it("calls fetch with the email and verifyUrl", async () => {
+  it("calls aiProxyService.sendInviteEmail with the email and verifyUrl", async () => {
     renderModal();
     await waitFor(() => screen.getByPlaceholderText(/contractor@example\.com/i));
     fireEvent.change(screen.getByPlaceholderText(/contractor@example\.com/i), {
@@ -211,12 +214,10 @@ describe("InviteContractorModal — email send", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /send/i }));
     });
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const [url, opts] = fetchMock.mock.calls[0];
-    expect(url).toContain("/api/invite/send-email");
-    const body = JSON.parse(opts.body);
-    expect(body.to).toBe("hvac@example.com");
-    expect(body.verifyUrl).toContain("/verify/INV_email1");
+    await waitFor(() => expect(aiProxyService.sendInviteEmail).toHaveBeenCalled());
+    const [params] = vi.mocked(aiProxyService.sendInviteEmail).mock.calls[0];
+    expect(params.to).toBe("hvac@example.com");
+    expect(params.verifyUrl).toContain("/verify/INV_email1");
   });
 
   it("shows 'Sent' after email is sent", async () => {
