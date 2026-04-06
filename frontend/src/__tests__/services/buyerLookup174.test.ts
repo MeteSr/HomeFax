@@ -3,7 +3,7 @@
  *
  * Tests:
  *   - normalizeAddress     → trim, lowercase, collapse whitespace
- *   - lookupReport         → relay fetch → BuyerLookupResult
+ *   - lookupReport         → ai_proxy canister → BuyerLookupResult
  *   - submitReportRequest  → buyer leaves a request when no report found
  */
 
@@ -14,6 +14,15 @@ import {
   submitReportRequest,
   type BuyerLookupResult,
 } from "@/services/buyerLookup";
+
+vi.mock("@/services/aiProxy", () => ({
+  aiProxyService: {
+    checkReport:   vi.fn(),
+    requestReport: vi.fn(),
+  },
+}));
+
+import { aiProxyService } from "@/services/aiProxy";
 
 // ── normalizeAddress ──────────────────────────────────────────────────────────
 
@@ -45,16 +54,13 @@ describe("lookupReport", () => {
   beforeEach(() => vi.restoreAllMocks());
 
   it("returns found:true with token and verificationLevel when report exists", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok:   true,
-      json: async () => ({
-        found:             true,
-        token:             "tok-abc123",
-        address:           "123 Main St, Daytona Beach, FL 32114",
-        verificationLevel: "Basic",
-        propertyType:      "SingleFamily",
-        yearBuilt:         1998,
-      }),
+    vi.mocked(aiProxyService.checkReport).mockResolvedValueOnce({
+      found:             true,
+      token:             "tok-abc123",
+      address:           "123 Main St, Daytona Beach, FL 32114",
+      verificationLevel: "Basic",
+      propertyType:      "SingleFamily",
+      yearBuilt:         1998,
     } as any);
 
     const result = await lookupReport("123 Main St, Daytona Beach FL");
@@ -64,9 +70,8 @@ describe("lookupReport", () => {
   });
 
   it("returns found:false when no report on file", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok:   true,
-      json: async () => ({ found: false, address: "99 Unknown Rd" }),
+    vi.mocked(aiProxyService.checkReport).mockResolvedValueOnce({
+      found: false, address: "99 Unknown Rd",
     } as any);
 
     const result = await lookupReport("99 Unknown Rd");
@@ -74,29 +79,13 @@ describe("lookupReport", () => {
     expect(result.token).toBeUndefined();
   });
 
-  it("sends normalized address to the relay", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => ({ found: false, address: "" }),
+  it("passes normalized address to aiProxyService.checkReport", async () => {
+    vi.mocked(aiProxyService.checkReport).mockResolvedValueOnce({
+      found: false, address: "",
     } as any);
 
     await lookupReport("  123 MAIN ST  ");
-    const url: string = (global.fetch as any).mock.calls[0][0];
-    expect(url).toContain("123+main+st");
-  });
-
-  it("calls /api/check endpoint on the relay", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => ({ found: false, address: "" }),
-    } as any);
-
-    await lookupReport("456 Oak Ave");
-    const url: string = (global.fetch as any).mock.calls[0][0];
-    expect(url).toContain("/api/check");
-  });
-
-  it("throws when relay returns non-OK response", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 503 } as any);
-    await expect(lookupReport("123 Main St")).rejects.toThrow();
+    expect(aiProxyService.checkReport).toHaveBeenCalledWith("123 main st");
   });
 });
 
@@ -105,29 +94,21 @@ describe("lookupReport", () => {
 describe("submitReportRequest", () => {
   beforeEach(() => vi.restoreAllMocks());
 
-  it("calls the relay with address and buyer email", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => ({ queued: true }),
-    } as any);
+  it("calls aiProxyService.requestReport with address and buyer email", async () => {
+    vi.mocked(aiProxyService.requestReport).mockResolvedValueOnce({ queued: true });
 
     await submitReportRequest("123 Main St", "buyer@example.com");
-    const [url, opts] = (global.fetch as any).mock.calls[0];
-    expect(url).toContain("/api/report-request");
-    const body = JSON.parse(opts.body);
-    expect(body.address).toBe("123 Main St");
-    expect(body.buyerEmail).toBe("buyer@example.com");
+    expect(aiProxyService.requestReport).toHaveBeenCalledWith("123 Main St", "buyer@example.com");
   });
 
   it("returns true on success", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => ({ queued: true }),
-    } as any);
+    vi.mocked(aiProxyService.requestReport).mockResolvedValueOnce({ queued: true });
     const result = await submitReportRequest("123 Main St", "buyer@example.com");
     expect(result).toBe(true);
   });
 
-  it("returns false when relay errors", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 500 } as any);
+  it("returns false when canister returns queued:false", async () => {
+    vi.mocked(aiProxyService.requestReport).mockResolvedValueOnce({ queued: false });
     const result = await submitReportRequest("123 Main St", "buyer@example.com");
     expect(result).toBe(false);
   });

@@ -48,7 +48,7 @@ fi
 # Parallel deploys race on canister_ids.json (each process read→add→write);
 # the last writer wins and all other IDs are lost. Sequential is the safe default.
 
-CANISTERS=(auth property job contractor quote payment photo report maintenance market sensor monitoring listing agent recurring)
+CANISTERS=(auth property job contractor quote payment photo report maintenance market sensor monitoring listing agent recurring ai_proxy)
 LOG_DIR=$(mktemp -d /tmp/dfx-deploy-XXXXXX)
 
 echo "▶ Deploying ${#CANISTERS[@]} canisters..."
@@ -149,6 +149,41 @@ fi
 if [ -n "$SENSOR_ID" ] && [ -n "$JOB_ID" ]; then
   echo "  job: trusting sensor canister ($SENSOR_ID)..."
   dfx canister call job addTrustedCanister "(principal \"$SENSOR_ID\")" --network "$NETWORK"
+fi
+
+# ── AI Proxy canister — wire API keys from environment ────────────────────────
+
+AI_PROXY_ID=$(dfx canister id ai_proxy --network "$NETWORK" 2>/dev/null || echo "")
+
+if [ -n "$AI_PROXY_ID" ]; then
+  echo ""
+  echo "============================================"
+  echo "  Wiring AI Proxy Canister"
+  echo "============================================"
+
+  # Bootstrap admin — use the deploying identity
+  DEPLOYER=$(dfx identity get-principal)
+  echo "  ai_proxy: adding deployer ($DEPLOYER) as admin..."
+  dfx canister call ai_proxy addAdmin "(principal \"$DEPLOYER\")" --network "$NETWORK"
+
+  if [ -n "${RESEND_API_KEY:-}" ]; then
+    echo "  ai_proxy: setting Resend API key..."
+    dfx canister call ai_proxy setResendApiKey "(\"$RESEND_API_KEY\")" --network "$NETWORK"
+  else
+    echo "  ⚠️  RESEND_API_KEY not set — email sending will be disabled"
+  fi
+
+  if [ -n "${OPEN_PERMIT_API_KEY:-}" ]; then
+    echo "  ai_proxy: setting OpenPermit API key..."
+    dfx canister call ai_proxy setOpenPermitApiKey "(\"$OPEN_PERMIT_API_KEY\")" --network "$NETWORK"
+  else
+    echo "  ⚠️  OPEN_PERMIT_API_KEY not set — OpenPermit lookups will be disabled (Volusia ArcGIS still works)"
+  fi
+
+  if [ -n "${RESEND_FROM_ADDRESS:-}" ]; then
+    echo "  ai_proxy: setting Resend from address..."
+    dfx canister call ai_proxy setResendFromAddress "(\"$RESEND_FROM_ADDRESS\")" --network "$NETWORK"
+  fi
 fi
 
 echo ""

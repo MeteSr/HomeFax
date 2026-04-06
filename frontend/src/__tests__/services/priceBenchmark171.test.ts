@@ -2,7 +2,7 @@
  * §17.1 — Pre-quote price benchmarking by zip code
  *
  * Tests:
- *   17.1.1 — getPriceBenchmark: relay fetch → PriceBenchmarkResult
+ *   17.1.1 — getPriceBenchmark: ai_proxy canister → PriceBenchmarkResult
  *   17.1.2 — hasSufficientSamples: hide widget when sampleSize < 5
  *   17.1.3 — formatBenchmarkRange: "$X–$Y" display string
  *   17.1.4 — buildPriceLookupUrl: shareable /prices?... link
@@ -16,6 +16,14 @@ import {
   buildPriceLookupUrl,
   type PriceBenchmarkResult,
 } from "@/services/priceBenchmark";
+
+vi.mock("@/services/aiProxy", () => ({
+  aiProxyService: {
+    getPriceBenchmark: vi.fn(),
+  },
+}));
+
+import { aiProxyService } from "@/services/aiProxy";
 
 const MOCK_RESULT: PriceBenchmarkResult = {
   serviceType: "Roofing",
@@ -33,10 +41,9 @@ describe("getPriceBenchmark", () => {
   beforeEach(() => vi.restoreAllMocks());
 
   it("returns a PriceBenchmarkResult on success", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok:   true,
-      json: async () => MOCK_RESULT,
-    } as any);
+    vi.mocked(aiProxyService.getPriceBenchmark).mockResolvedValueOnce(
+      JSON.stringify(MOCK_RESULT)
+    );
 
     const result = await getPriceBenchmark("Roofing", "32114");
     expect(result).not.toBeNull();
@@ -48,26 +55,23 @@ describe("getPriceBenchmark", () => {
     expect(result!.sampleSize).toBe(23);
   });
 
-  it("calls the relay at /api/price-benchmark with service and zip query params", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => MOCK_RESULT,
-    } as any);
+  it("calls aiProxyService.getPriceBenchmark with serviceType and zipCode", async () => {
+    vi.mocked(aiProxyService.getPriceBenchmark).mockResolvedValueOnce(
+      JSON.stringify(MOCK_RESULT)
+    );
 
     await getPriceBenchmark("Roofing", "32114");
-    const url: string = (global.fetch as any).mock.calls[0][0];
-    expect(url).toContain("/api/price-benchmark");
-    expect(url).toContain("service=Roofing");
-    expect(url).toContain("zip=32114");
+    expect(aiProxyService.getPriceBenchmark).toHaveBeenCalledWith("Roofing", "32114");
   });
 
-  it("returns null when relay returns non-OK response", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 404 } as any);
+  it("returns null when canister returns null", async () => {
+    vi.mocked(aiProxyService.getPriceBenchmark).mockResolvedValueOnce(null);
     const result = await getPriceBenchmark("Roofing", "00000");
     expect(result).toBeNull();
   });
 
-  it("returns null when fetch throws", async () => {
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error("network error"));
+  it("returns null when canister throws", async () => {
+    vi.mocked(aiProxyService.getPriceBenchmark).mockRejectedValueOnce(new Error("canister error"));
     const result = await getPriceBenchmark("Roofing", "32114");
     expect(result).toBeNull();
   });

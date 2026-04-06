@@ -2,10 +2,9 @@
  * §17.2 — Zero-Effort Onboarding: Instant Forecast
  *
  * Tests:
- *   17.2.1 — InstantForecastResult shape and relay fetch
  *   17.2.2 — computeTenYearBudget: sum replacement costs for systems due ≤10 yrs
  *   17.2.2 — per-system override: estimateSystems with overrides corrects install year
- *   17.2.4 — lookupYearBuilt: relay stub, returns null gracefully
+ *   17.2.4 — lookupYearBuilt: ai_proxy canister stub, returns null gracefully
  *   URL helpers: parseForecastParams, buildForecastUrl (round-trip + override params)
  */
 
@@ -17,6 +16,14 @@ import {
   lookupYearBuilt,
   type InstantForecastResult,
 } from "@/services/instantForecast";
+
+vi.mock("@/services/aiProxy", () => ({
+  aiProxyService: {
+    lookupYearBuilt: vi.fn(),
+  },
+}));
+
+import { aiProxyService } from "@/services/aiProxy";
 import {
   estimateSystems,
   parseEstimatorParams,
@@ -241,33 +248,31 @@ describe("buildForecastUrl", () => {
 describe("lookupYearBuilt", () => {
   beforeEach(() => vi.restoreAllMocks());
 
-  it("calls the relay at /api/lookup-year-built with the address", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => ({ yearBuilt: null }),
-    } as any);
+  it("calls aiProxyService.lookupYearBuilt with the address", async () => {
+    vi.mocked(aiProxyService.lookupYearBuilt).mockResolvedValueOnce({
+      address: "123 Main St", yearBuilt: null,
+    });
 
     await lookupYearBuilt("123 Main St");
-    const url: string = (global.fetch as any).mock.calls[0][0];
-    expect(url).toContain("/api/lookup-year-built");
-    expect(url).toContain("address=");
+    expect(aiProxyService.lookupYearBuilt).toHaveBeenCalledWith("123 Main St");
   });
 
-  it("returns null when relay returns yearBuilt: null (stub response)", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => ({ yearBuilt: null }),
-    } as any);
+  it("returns null when canister returns yearBuilt: null (stub response)", async () => {
+    vi.mocked(aiProxyService.lookupYearBuilt).mockResolvedValueOnce({
+      address: "123 Main St", yearBuilt: null,
+    });
     expect(await lookupYearBuilt("123 Main St")).toBeNull();
   });
 
-  it("returns null on network error (does not throw)", async () => {
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error("network error"));
+  it("returns null on canister error (does not throw)", async () => {
+    vi.mocked(aiProxyService.lookupYearBuilt).mockRejectedValueOnce(new Error("canister error"));
     expect(await lookupYearBuilt("123 Main St")).toBeNull();
   });
 
-  it("returns the year when relay has data", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true, json: async () => ({ yearBuilt: 1988 }),
-    } as any);
+  it("returns the year when canister has data", async () => {
+    vi.mocked(aiProxyService.lookupYearBuilt).mockResolvedValueOnce({
+      address: "456 Oak Ave", yearBuilt: 1988,
+    });
     expect(await lookupYearBuilt("456 Oak Ave")).toBe(1988);
   });
 });

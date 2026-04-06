@@ -1,5 +1,9 @@
 {
   "canisters": {
+    "ai_proxy": {
+      "main": "backend/ai_proxy/main.mo",
+      "type": "motoko"
+    },
     "auth": {
       "main": "backend/auth/main.mo",
       "type": "motoko"

@@ -2,13 +2,10 @@
  * §17.4 — Buyer Report Lookup
  *
  * Lets buyers search for a HomeGentic report by property address without login.
- * Calls the voice-agent relay which queries the report canister for public links.
+ * Calls the ai_proxy canister which queries the report canister for public links.
  */
 
-const RELAY_URL =
-  typeof window !== "undefined"
-    ? ((window as any).__VITE_AGENT_URL ?? "http://localhost:3001")
-    : "http://localhost:3001";
+import { aiProxyService } from "./aiProxy";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -36,11 +33,8 @@ export function normalizeAddress(raw: string): string {
 
 export async function lookupReport(address: string): Promise<BuyerLookupResult> {
   const normalized = normalizeAddress(address);
-  const encoded    = encodeURIComponent(normalized).replace(/%20/g, "+");
-  const res        = await fetch(`${RELAY_URL}/api/check?address=${encoded}`);
-
-  if (!res.ok) throw new Error(`Lookup failed: ${res.status}`);
-  return res.json();
+  const result     = await aiProxyService.checkReport(normalized);
+  return result as BuyerLookupResult;
 }
 
 // ── submitReportRequest ───────────────────────────────────────────────────────
@@ -49,14 +43,6 @@ export async function submitReportRequest(
   address:    string,
   buyerEmail: string,
 ): Promise<boolean> {
-  try {
-    const res = await fetch(`${RELAY_URL}/api/report-request`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ address, buyerEmail }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+  const result = await aiProxyService.requestReport(address, buyerEmail);
+  return result.queued;
 }

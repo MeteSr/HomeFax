@@ -145,12 +145,61 @@ export function isPermitDataAvailable(city: string, state: string): boolean {
   return SUPPORTED_CITIES.has(key);
 }
 
-// ── Relay import ──────────────────────────────────────────────────────────────
+// ── Canister import ───────────────────────────────────────────────────────────
 
-const RELAY_URL =
-  typeof window !== "undefined"
-    ? ((window as any).__VITE_AGENT_URL ?? "http://localhost:3001")
-    : "http://localhost:3001";
+// Map canister response source → permit records
+function mapCanisterResponse(
+  source: string,
+  data: any,
+  propertyId: string,
+): OpenPermitRecord[] {
+  if (source === "arcgis") {
+    const AMANDA_MAP: Record<string, string> = {
+      elec: "Electrical Permit", mech: "Mechanical Permit",
+      plmb: "Plumbing Permit",   roof: "Roofing Permit",
+      wind: "Window Permit",     wtrh: "Water Heater Permit",
+      solr: "Solar Permit",      insul: "Insulation Permit",
+      floor: "Flooring Permit",
+    };
+    const mapStatus = (s: string): OpenPermitRecord["status"] => {
+      const l = s.toLowerCase();
+      if (/final|certificate|closed|complet/.test(l)) return "Finaled";
+      if (/expir/.test(l))  return "Expired";
+      if (/void|cancel|withdraw/.test(l)) return "Cancelled";
+      return "Open";
+    };
+    return (data.features ?? []).map((f: any) => {
+      const a = f.attributes ?? {};
+      return {
+        permitNumber: a.FOLDERNAME ?? "",
+        permitType:   AMANDA_MAP[(a.FOLDERTYPE ?? "").toLowerCase()] ?? "Building Permit",
+        description:  a.FOLDERDESCRIPTION ?? "",
+        issuedDate:   a.INDATE ? new Date(a.INDATE).toISOString().slice(0, 10) : "",
+        status:       mapStatus(a.STATUSDESC ?? ""),
+      } as OpenPermitRecord;
+    });
+  }
+  if (source === "openpermit") {
+    const mapStatus = (raw: string): OpenPermitRecord["status"] => {
+      const s = raw.toLowerCase();
+      if (s.includes("final") || s.includes("closed") || s.includes("complete")) return "Finaled";
+      if (s.includes("expir"))  return "Expired";
+      if (s.includes("cancel") || s.includes("void")) return "Cancelled";
+      return "Open";
+    };
+    return ((data.results ?? []) as any[]).map((p) => ({
+      permitNumber:        p.permit_number ?? p.id ?? "",
+      permitType:          p.permit_type ?? p.type ?? "Building Permit",
+      description:         p.description ?? p.work_description ?? "",
+      issuedDate:          (p.issued_date ?? p.issue_date ?? "").slice(0, 10),
+      status:              mapStatus(p.status ?? ""),
+      estimatedValueCents: p.estimated_value ? Math.round(p.estimated_value * 100) : undefined,
+      contractorLicense:   p.contractor_license,
+      contractorName:      p.contractor_name,
+    }) as OpenPermitRecord);
+  }
+  return [];
+}
 
 export async function importPermitsForProperty(
   propertyId: string,
@@ -163,18 +212,21 @@ export async function importPermitsForProperty(
     return { citySupported: false, imported: 0, permits: [] };
   }
 
-  const res = await fetch(`${RELAY_URL}/api/permits/import`, {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ propertyId, address, city, state, zip }),
-  });
+  const { aiProxyService } = await import("./aiProxy");
+  const json = await aiProxyService.importPermits(address, city, state, zip);
+  if (!json) return { citySupported: true, imported: 0, permits: [] };
 
-  if (!res.ok) {
-    throw new Error(`Permit relay error: ${res.status}`);
+  const response = JSON.parse(json) as { source: string; data: any };
+  if (response.source === "unsupported") {
+    return { citySupported: false, imported: 0, permits: [] };
   }
 
-  const { permits: raw }: { permits: OpenPermitRecord[] } = await res.json();
+  // data is a raw JSON string from the canister
+  const rawData = typeof response.data === "string"
+    ? JSON.parse(response.data)
+    : response.data;
 
+  const raw = mapCanisterResponse(response.source, rawData, propertyId);
   const permits: ImportedPermit[] = raw.map((permit) => ({
     permit,
     serviceType: mapPermitTypeToServiceType(permit.permitType),

@@ -41,6 +41,7 @@ export default defineConfig(({ mode }) => {
       "process.env.SENSOR_CANISTER_ID":     JSON.stringify(env.CANISTER_ID_SENSOR     || env.SENSOR_CANISTER_ID     || ""),
       "process.env.LISTING_CANISTER_ID":    JSON.stringify(env.CANISTER_ID_LISTING    || env.LISTING_CANISTER_ID    || ""),
       "process.env.AGENT_CANISTER_ID":     JSON.stringify(env.CANISTER_ID_AGENT     || env.AGENT_CANISTER_ID     || ""),
+      "process.env.AI_PROXY_CANISTER_ID":  JSON.stringify(env.CANISTER_ID_AI_PROXY  || env.AI_PROXY_CANISTER_ID  || ""),
     },
     build: {
       sourcemap: false,

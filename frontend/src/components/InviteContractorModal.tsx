@@ -65,18 +65,14 @@ export function InviteContractorModal({ job, propertyAddress, onClose }: Props) 
     if (!verifyUrl || !email.includes("@")) return;
     setSending(true);
     try {
-      const VOICE_URL = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http://localhost:3001";
-      await fetch(`${VOICE_URL}/api/invite/send-email`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to:              email,
-          contractorName:  job.contractorName,
-          propertyAddress,
-          serviceType:     job.serviceType,
-          amount:          job.amount,
-          verifyUrl,
-        }),
+      const { aiProxyService } = await import("@/services/aiProxy");
+      await aiProxyService.sendInviteEmail({
+        to:              email,
+        contractorName:  job.contractorName || undefined,
+        propertyAddress,
+        serviceType:     job.serviceType,
+        amount:          job.amount,
+        verifyUrl,
       });
       setSent(true);
     } catch {

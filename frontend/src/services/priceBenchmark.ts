@@ -1,16 +1,12 @@
 /**
  * §17.1 — Pre-quote price benchmarking by zip code
  *
- * 17.1.1 — Seed data aggregated from closed HomeGentic bids + Homewyse/RSMeans baseline.
- *           Real-time data served by the relay at GET /api/price-benchmark.
+ * 17.1.1 — Seed data served by the ai_proxy Motoko canister (pure function, no HTTP).
  * 17.1.2 — getPriceBenchmark → used by the get_price_benchmark agent tool.
  * 17.1.5 — hasSufficientSamples: hide widget when sampleSize < 5.
  */
 
-const RELAY_BASE =
-  typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_VOICE_AGENT_URL
-    ? (import.meta as any).env.VITE_VOICE_AGENT_URL
-    : "http://localhost:3001";
+import { aiProxyService } from "./aiProxy";
 
 export interface PriceBenchmarkResult {
   serviceType:  string;
@@ -27,18 +23,16 @@ export interface PriceBenchmarkResult {
   lastUpdated:  string;
 }
 
-/** Fetch benchmark data from the relay. Returns null on any error or missing data. */
+/** Fetch benchmark data from the ai_proxy canister. Returns null on any error. */
 export async function getPriceBenchmark(
   serviceType: string,
   zipCode: string
 ): Promise<PriceBenchmarkResult | null> {
   if (!serviceType || !zipCode) return null;
-
   try {
-    const params = new URLSearchParams({ service: serviceType, zip: zipCode });
-    const res = await fetch(`${RELAY_BASE}/api/price-benchmark?${params}`);
-    if (!res.ok) return null;
-    return await res.json() as PriceBenchmarkResult;
+    const json = await aiProxyService.getPriceBenchmark(serviceType, zipCode);
+    if (!json) return null;
+    return JSON.parse(json) as PriceBenchmarkResult;
   } catch {
     return null;
   }

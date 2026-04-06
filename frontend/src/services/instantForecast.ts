@@ -114,14 +114,11 @@ export function forecastParamsToRegistration(params: URLSearchParams): {
   };
 }
 
-/** Relay stub: look up year built from address via backend proxy.
- *  Returns null on any error or when data is unavailable (ATTOM deferred). */
+/** Canister stub: look up year built from address (ATTOM Data deferred). */
 export async function lookupYearBuilt(address: string): Promise<number | null> {
   try {
-    const p = new URLSearchParams({ address });
-    const res = await fetch(`/api/lookup-year-built?${p.toString()}`);
-    if (!res.ok) return null;
-    const data = await res.json();
+    const { aiProxyService } = await import("./aiProxy");
+    const data = await aiProxyService.lookupYearBuilt(address);
     return typeof data.yearBuilt === "number" ? data.yearBuilt : null;
   } catch {
     return null;
