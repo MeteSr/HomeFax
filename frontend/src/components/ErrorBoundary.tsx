@@ -12,6 +12,7 @@
 
 import React from "react";
 import { COLORS, FONTS, RADIUS } from "@/theme";
+import { reportFrontendError } from "@/services/errorReporting";
 
 interface Props {
   children: React.ReactNode;
@@ -48,8 +49,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     this.setState({ errorInfo });
-    // In production this is where you'd send to Sentry / monitoring canister.
     console.error("[ErrorBoundary]", error, errorInfo.componentStack);
+    reportFrontendError(error, errorInfo.componentStack ?? null);
   }
 
   handleReset = () => {

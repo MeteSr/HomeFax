@@ -424,6 +424,27 @@ Rules:
   }
 });
 
+// ── POST /api/errors ─────────────────────────────────────────────────────────
+// Frontend ErrorBoundary reports caught render errors here (production only).
+// The structured logging middleware above records them as JSON lines — no extra
+// storage needed. Endpoint always returns 204 so the fire-and-forget client
+// doesn't need to parse a response body.
+app.post("/api/errors", (req: Request, res: Response): void => {
+  // Body is already captured by the logging middleware on "finish".
+  // Log it immediately at warn level so it stands out from regular request logs.
+  const { message, componentStack, url, ts } = req.body ?? {};
+  process.stdout.write(JSON.stringify({
+    level:          "warn",
+    event:          "frontend_error",
+    message:        typeof message === "string"        ? message.slice(0, 500)  : "(no message)",
+    componentStack: typeof componentStack === "string" ? componentStack.slice(0, 2000) : null,
+    url:            typeof url === "string"            ? url.slice(0, 500)      : null,
+    ts:             typeof ts === "string"             ? ts                     : new Date().toISOString(),
+    principal:      (req.headers["x-icp-principal"] as string | undefined) ?? "anon",
+  }) + "\n");
+  res.sendStatus(204);
+});
+
 // ── NOTE: The following endpoints moved to the ai_proxy Motoko canister ───────
 // Removed: /api/permits/import, /api/check, /api/report-request,
 //          /api/price-benchmark, /api/instant-forecast, /api/lookup-year-built,
