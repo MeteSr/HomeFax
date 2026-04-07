@@ -1,4 +1,4 @@
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const RECURRING_CANISTER_ID = (process.env as any).RECURRING_CANISTER_ID || "";

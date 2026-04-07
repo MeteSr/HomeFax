@@ -9,7 +9,7 @@
  * The 6 non-deterministic Claude AI endpoints remain in the Node.js relay.
  */
 
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const AI_PROXY_CANISTER_ID = (process.env as any).AI_PROXY_CANISTER_ID || "";

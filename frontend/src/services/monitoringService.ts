@@ -7,7 +7,7 @@
  * Falls back to mock data when MONITORING_CANISTER_ID is not set.
  */
 
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const MONITORING_CANISTER_ID = (import.meta as any).env?.VITE_MONITORING_CANISTER_ID ?? "";

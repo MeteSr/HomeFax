@@ -1,4 +1,4 @@
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const PHOTO_CANISTER_ID = (process.env as any).PHOTO_CANISTER_ID || "";

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("@/services/actor", () => ({
   getAgent: vi.fn().mockResolvedValue({}),
 }));
-vi.mock("@dfinity/agent", () => ({
+vi.mock("@icp-sdk/core/agent", () => ({
   Actor: { createActor: vi.fn(() => ({})) },
 }));
 

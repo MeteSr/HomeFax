@@ -1,4 +1,4 @@
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const JOB_CANISTER_ID = (process.env as any).JOB_CANISTER_ID || "";
@@ -361,7 +361,7 @@ function createJobService() {
       return mockJobs[idx];
     }
     const a = await getActor();
-    const { Principal: P } = await import("@dfinity/principal");
+    const { Principal: P } = await import("@icp-sdk/core/principal");
     const result = await a.linkContractor(jobId, P.fromText(contractorPrincipal));
     return unwrapJob(result);
   },

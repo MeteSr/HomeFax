@@ -8,7 +8,7 @@
  * and use @dfinity/vetkeys for score authentication.
  */
 
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { Job } from "./job";
 import type { Property } from "./property";
 import { getAgent } from "./actor";

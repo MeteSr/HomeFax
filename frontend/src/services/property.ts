@@ -1,4 +1,4 @@
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const PROPERTY_CANISTER_ID = (process.env as any).PROPERTY_CANISTER_ID || "";
@@ -253,7 +253,7 @@ export const propertyService = {
 
   async isAdmin(principal: string): Promise<boolean> {
     const a = await getActor();
-    const { Principal: P } = await import("@dfinity/principal");
+    const { Principal: P } = await import("@icp-sdk/core/principal");
     return a.isAdminPrincipal(P.fromText(principal));
   },
 
@@ -265,7 +265,7 @@ export const propertyService = {
 
   async setTier(userPrincipal: string, tier: SubscriptionTier): Promise<void> {
     const a = await getActor();
-    const { Principal: P } = await import("@dfinity/principal");
+    const { Principal: P } = await import("@icp-sdk/core/principal");
     const result = await a.setTier(P.fromText(userPrincipal), { [tier]: null });
     if ("err" in result) {
       const key = Object.keys(result.err)[0];
@@ -274,7 +274,7 @@ export const propertyService = {
   },
 
   async initiateTransfer(propertyId: bigint, toPrincipal: string): Promise<PendingTransfer> {
-    const { Principal: P } = await import("@dfinity/principal");
+    const { Principal: P } = await import("@icp-sdk/core/principal");
     const a = await getActor();
     const result = await a.initiateTransfer(propertyId, P.fromText(toPrincipal));
     if ("ok" in result) {

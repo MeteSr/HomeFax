@@ -1,6 +1,6 @@
-import { AuthClient } from "@dfinity/auth-client";
-import { HttpAgent } from "@dfinity/agent";
-import { Ed25519KeyIdentity } from "@dfinity/identity";
+import { AuthClient } from "@icp-sdk/auth/client";
+import { HttpAgent } from "@icp-sdk/core/agent";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 
 const DFX_NETWORK = (process.env as any).DFX_NETWORK || "local";
 const IS_LOCAL = DFX_NETWORK !== "ic";

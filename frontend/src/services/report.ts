@@ -4,7 +4,7 @@
  * REPORT_CANISTER_ID is not set (local dev without dfx).
  */
 
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 import { Job } from "./job";
 import type { Property } from "./property";

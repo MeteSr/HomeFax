@@ -1,7 +1,7 @@
 /**
  * Candid contract tests
  *
- * Each test calls a frontend IDL factory with the real @dfinity/candid IDL
+ * Each test calls a frontend IDL factory with the real @icp-sdk/core/candid IDL
  * object and snapshots the resulting service definition.  If a canister type
  * changes and the frontend IDL factory is not updated to match, the snapshot
  * diff makes the drift immediately visible in CI.
@@ -24,7 +24,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { IDL } from "@dfinity/candid";
+import { IDL } from "@icp-sdk/core/candid";
 import { idlFactory as authIdlFactory }     from "../../services/auth";
 import { idlFactory as paymentIdlFactory }  from "../../services/payment";
 import { idlFactory as jobIdlFactory }      from "../../services/job";

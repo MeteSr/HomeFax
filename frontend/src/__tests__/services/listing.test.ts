@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Mock ICP dependencies (not needed by the mock path, but required so the module loads)
 vi.mock("@/services/actor", () => ({ getAgent: vi.fn().mockResolvedValue({}) }));
-vi.mock("@dfinity/agent", () => ({ Actor: { createActor: vi.fn(() => ({})) } }));
+vi.mock("@icp-sdk/core/agent", () => ({ Actor: { createActor: vi.fn(() => ({})) } }));
 
 // Ensure Date.now() increments on every call so IDs are always distinct.
 let _now = 3_000_000_000_000;
