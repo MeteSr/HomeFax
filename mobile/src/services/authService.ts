@@ -1,4 +1,4 @@
-import { Actor, HttpAgent } from "@dfinity/agent";
+import { Actor, HttpAgent } from "@icp-sdk/core/agent";
 import { fromProfile, UserProfile } from "./authTypes";
 
 export type { UserRole, UserProfile } from "./authTypes";

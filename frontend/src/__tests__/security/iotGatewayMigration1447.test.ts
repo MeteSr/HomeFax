@@ -20,20 +20,20 @@ function read(rel: string): string {
 describe("14.4.7: iot-gateway @dfinity/* version migration", () => {
   const pkg = JSON.parse(read("agents/iot-gateway/package.json")) as Record<string, any>;
 
-  it("@dfinity/agent is at ^3.x, not 1.x", () => {
-    expect(pkg.dependencies["@dfinity/agent"]).toMatch(/^\^3\./);
+  it("@icp-sdk/core/agent is at ^3.x, not 1.x", () => {
+    expect(pkg.dependencies["@icp-sdk/core/agent"]).toMatch(/^\^3\./);
   });
 
-  it("@dfinity/candid is at ^3.x", () => {
-    expect(pkg.dependencies["@dfinity/candid"]).toMatch(/^\^3\./);
+  it("@icp-sdk/core/candid is at ^3.x", () => {
+    expect(pkg.dependencies["@icp-sdk/core/candid"]).toMatch(/^\^3\./);
   });
 
-  it("@dfinity/identity is at ^3.x", () => {
-    expect(pkg.dependencies["@dfinity/identity"]).toMatch(/^\^3\./);
+  it("@icp-sdk/core/identity is at ^3.x", () => {
+    expect(pkg.dependencies["@icp-sdk/core/identity"]).toMatch(/^\^3\./);
   });
 
-  it("@dfinity/principal is at ^3.x", () => {
-    expect(pkg.dependencies["@dfinity/principal"]).toMatch(/^\^3\./);
+  it("@icp-sdk/core/principal is at ^3.x", () => {
+    expect(pkg.dependencies["@icp-sdk/core/principal"]).toMatch(/^\^3\./);
   });
 });
 

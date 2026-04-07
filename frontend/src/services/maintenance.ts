@@ -4,7 +4,7 @@
  * Schedule CRUD is wired to the maintenance canister when MAINTENANCE_CANISTER_ID is set.
  */
 
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 import type { Job } from "./job";
 

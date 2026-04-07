@@ -1,4 +1,4 @@
-/** Shared types and pure data transformation — no @dfinity/agent dependency. */
+/** Shared types and pure data transformation — no @icp-sdk/core/agent dependency. */
 
 export type UserRole = "Homeowner" | "Contractor" | "Realtor";
 

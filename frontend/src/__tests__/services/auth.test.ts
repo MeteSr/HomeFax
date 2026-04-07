@@ -1,13 +1,13 @@
 /**
  * Tests for auth.ts.
  *
- * The service has no mock-store fallback, so we mock @dfinity/agent and
+ * The service has no mock-store fallback, so we mock @icp-sdk/core/agent and
  * @/services/actor to supply a fake canister actor with controllable responses.
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-// ─── Mock @dfinity/agent and actor helper ─────────────────────────────────────
+// ─── Mock @icp-sdk/core/agent and actor helper ─────────────────────────────────────
 
 const mockActor: Record<string, ReturnType<typeof vi.fn>> = {
   register:      vi.fn(),
@@ -17,7 +17,7 @@ const mockActor: Record<string, ReturnType<typeof vi.fn>> = {
   hasRole:       vi.fn(),
 };
 
-vi.mock("@dfinity/agent", () => ({
+vi.mock("@icp-sdk/core/agent", () => ({
   Actor: {
     createActor: vi.fn(() => mockActor),
   },

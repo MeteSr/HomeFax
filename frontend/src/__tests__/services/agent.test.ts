@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 vi.mock("@/services/actor", () => ({ getAgent: vi.fn().mockResolvedValue({}) }));
-vi.mock("@dfinity/agent", () => ({ Actor: { createActor: vi.fn(() => ({})) } }));
+vi.mock("@icp-sdk/core/agent", () => ({ Actor: { createActor: vi.fn(() => ({})) } }));
 
 import { agentService, computeAverageRating } from "@/services/agent";
 

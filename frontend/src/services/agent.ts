@@ -5,7 +5,7 @@
  * AGENT_CANISTER_ID is not set (local dev / tests).
  */
 
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const AGENT_CANISTER_ID = (process.env as any).AGENT_CANISTER_ID || "";
@@ -241,7 +241,7 @@ function createAgentService() {
       if (!AGENT_CANISTER_ID) {
         return _profiles.find((p) => p.id === id) ?? null;
       }
-      const { Principal } = await import("@dfinity/principal");
+      const { Principal } = await import("@icp-sdk/core/principal");
       const actor = await getActor();
       const result = await actor.getProfile(Principal.fromText(id));
       if (result.length === 0) return null;
@@ -301,7 +301,7 @@ function createAgentService() {
         _reviews.push(review);
         return { ...review };
       }
-      const { Principal } = await import("@dfinity/principal");
+      const { Principal } = await import("@icp-sdk/core/principal");
       const actor = await getActor();
       const result = await actor.addReview({
         agentId:       Principal.fromText(input.agentId),
@@ -317,7 +317,7 @@ function createAgentService() {
       if (!AGENT_CANISTER_ID) {
         return _reviews.filter((r) => r.agentId === agentId);
       }
-      const { Principal } = await import("@dfinity/principal");
+      const { Principal } = await import("@icp-sdk/core/principal");
       const actor = await getActor();
       const raw = await actor.getReviews(Principal.fromText(agentId));
       return raw.map(fromRawReview);

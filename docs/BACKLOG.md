@@ -284,6 +284,27 @@ The primary interface is a chat window backed by the existing voice agent (`agen
 
 ---
 
+## EPIC: Build & Compilation Health
+
+Pre-existing TypeScript compilation failures that must be resolved before CI can cover these components.
+
+### Voice Agent (`agents/voice/`)
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| DEV.1 | Fix voice agent `tsconfig.json` rootDir | ✅ Exists | S | Widened `rootDir` to `".."` and updated `include` to cover `../maintenance/*.ts`. |
+| DEV.2 | Add missing type devDependencies to voice agent | ✅ Exists | S | `npm install` in `agents/voice/` resolved all missing modules; removed deprecated `@types/express-rate-limit` stub (express-rate-limit bundles its own types). |
+| DEV.3 | Fix implicit `any` params in `agents/voice/server.ts` | ✅ Exists | S | Resolved automatically once `@types/express` was installed — TypeScript infers `req`/`res`/`next` types from the express callback context. |
+
+### Mobile (`mobile/`)
+
+| # | Item | Status | Size | Notes |
+|---|------|--------|------|-------|
+| DEV.4 | Run `npm install` for mobile and commit lockfile | ✅ Exists | S | `npm install --legacy-peer-deps` in `mobile/` (peer conflict between react-test-renderer versions). `expo/tsconfig.base` now resolves. |
+| DEV.5 | Fix syntax error in `mobile/src/screens/PropertyDetailScreen.tsx:113` | ✅ Exists | S | Missing `)` closing the `renderItem` arrow function's parenthesized expression: `/>}` → `/>)}`. |
+
+---
+
 ## EPIC: ICP Mainnet Production Readiness
 
 Items identified during ICP production-readiness audit (2026-04-06). Grouped by severity. All blockers must be resolved before any `--network ic` deploy.

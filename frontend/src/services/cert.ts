@@ -24,7 +24,7 @@ const certIdlFactory = ({ IDL }: any) =>
 
 async function getActor() {
   const { getAgent } = await import("@/services/actor");
-  const { Actor }    = await import("@dfinity/agent");
+  const { Actor }    = await import("@icp-sdk/core/agent");
   const agent        = await getAgent();
   return Actor.createActor(certIdlFactory, { agent, canisterId: REPORT_CANISTER_ID! });
 }

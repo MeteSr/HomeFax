@@ -16,11 +16,11 @@ vi.mock("@/services/actor", () => ({
   getAgent: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock("@dfinity/agent", () => ({
+vi.mock("@icp-sdk/core/agent", () => ({
   Actor: { createActor: vi.fn(() => mockActor) },
 }));
 
-vi.mock("@dfinity/principal", () => ({
+vi.mock("@icp-sdk/core/principal", () => ({
   Principal: { fromText: vi.fn((t: string) => ({ toText: () => t })) },
 }));
 

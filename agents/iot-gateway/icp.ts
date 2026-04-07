@@ -1,7 +1,7 @@
 /**
  * ICP client for the HomeGentic IoT Gateway.
  *
- * Uses @dfinity/agent (3.x) with an Ed25519 service identity to call the Sensor
+ * Uses @icp-sdk/core/agent (3.x) with an Ed25519 service identity to call the Sensor
  * canister's recordEvent() update method. The identity private key is loaded
  * from the GATEWAY_IDENTITY_SEED environment variable (32-byte hex string).
  *
@@ -9,9 +9,9 @@
  * key from the local replica automatically.
  */
 
-import { HttpAgent, Actor, ActorSubclass } from "@dfinity/agent";
-import { Ed25519KeyIdentity } from "@dfinity/identity";
-import { IDL } from "@dfinity/candid";
+import { HttpAgent, Actor, ActorSubclass } from "@icp-sdk/core/agent";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
+import { IDL } from "@icp-sdk/core/candid";
 import type { SensorEventType, SensorReading } from "./types";
 
 // ── IDL for the sensor canister ──────────────────────────────────────────────

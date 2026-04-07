@@ -23,7 +23,7 @@ import { describe, it, expect } from "vitest";
 
 // ── Minimal IDL stub ──────────────────────────────────────────────────────────
 //
-// We don't need the real @dfinity/agent IDL builder. We just need to capture
+// We don't need the real @icp-sdk/core/agent IDL builder. We just need to capture
 // the IDL.Service({ methodName: IDL.Func([...args], [...rets], [...anns]) })
 // call and record each method's shape.
 

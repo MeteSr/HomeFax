@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState, useRef } from "react";
-import { Principal } from "@dfinity/principal";
+import { Principal } from "@icp-sdk/core/principal";
 import {
   TransportSecretKey,
   DerivedPublicKey,
@@ -77,10 +77,9 @@ export function useNeighborhoodScore(
         await submitScore(jobs, yearBuilt, zipCode);
 
         // ── Step 2: Generate ephemeral transport key pair ─────────────────────
-        // Per vetKeys skill: generate a fresh pair per session, never reuse.
-        const seed = crypto.getRandomValues(new Uint8Array(32));
-        const tsk  = TransportSecretKey.fromSeed(seed);
-        const tpk  = tsk.publicKey();
+        // TransportSecretKey.random() generates a cryptographically fresh pair.
+        const tsk = TransportSecretKey.random();
+        const tpk = tsk.publicKeyBytes();
 
         // ── Steps 3 + 4: Fetch encrypted score + public key in parallel ───────
         const [envelope, pubKeyBytes] = await Promise.all([

@@ -22,7 +22,7 @@ vi.mock("@/services/actor", () => ({
   getAgent: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock("@dfinity/agent", () => ({
+vi.mock("@icp-sdk/core/agent", () => ({
   Actor: { createActor: vi.fn(() => mockActor) },
 }));
 
@@ -245,8 +245,8 @@ describe("propertyService", () => {
   describe("isAdmin", () => {
     it("returns true when canister confirms admin", async () => {
       mockActor.isAdminPrincipal.mockResolvedValue(true);
-      // isAdmin calls @dfinity/principal — mock it
-      vi.doMock("@dfinity/principal", () => ({
+      // isAdmin calls @icp-sdk/core/principal — mock it
+      vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("mock-principal-obj") },
       }));
       const result = await propertyService.isAdmin("some-principal");
@@ -277,7 +277,7 @@ describe("propertyService", () => {
   describe("setTier", () => {
     it("resolves without error on success", async () => {
       mockActor.setTier.mockResolvedValue({ ok: null });
-      vi.doMock("@dfinity/principal", () => ({
+      vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("mock-p") },
       }));
       await expect(propertyService.setTier("some-principal", "Pro")).resolves.toBeUndefined();
@@ -285,7 +285,7 @@ describe("propertyService", () => {
 
     it("throws on error", async () => {
       mockActor.setTier.mockResolvedValue({ err: { NotAuthorized: null } });
-      vi.doMock("@dfinity/principal", () => ({
+      vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("mock-p") },
       }));
       await expect(propertyService.setTier("some-principal", "Pro")).rejects.toThrow("NotAuthorized");

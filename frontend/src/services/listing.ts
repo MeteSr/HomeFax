@@ -1,4 +1,4 @@
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const LISTING_CANISTER_ID = (process.env as any).LISTING_CANISTER_ID || "";

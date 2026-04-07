@@ -1,4 +1,4 @@
-import { HttpAgent } from "@dfinity/agent";
+import { HttpAgent } from "@icp-sdk/core/agent";
 import type { Urgency } from "./quoteFormService";
 
 export type QuoteRequestStatus = "open" | "quoted" | "accepted" | "closed";

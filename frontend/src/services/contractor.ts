@@ -1,4 +1,4 @@
-import { Actor } from "@dfinity/agent";
+import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
 const CONTRACTOR_CANISTER_ID = (process.env as any).CONTRACTOR_CANISTER_ID || "";
@@ -255,7 +255,7 @@ function createContractorService() {
       return null;
     }
     const a = await getActor();
-    const { Principal: P } = await import("@dfinity/principal");
+    const { Principal: P } = await import("@icp-sdk/core/principal");
     const result = await a.getContractor(P.fromText(principalText));
     if ("err" in result) return null;
     return fromProfile(result.ok);
@@ -290,7 +290,7 @@ function createContractorService() {
       return;
     }
     const a = await getActor();
-    const { Principal: P } = await import("@dfinity/principal");
+    const { Principal: P } = await import("@icp-sdk/core/principal");
     const result = await a.submitReview(P.fromText(contractorPrincipalText), BigInt(rating), comment, jobId);
     if ("err" in result) {
       const key = Object.keys(result.err)[0];
@@ -305,7 +305,7 @@ function createContractorService() {
       return [];
     }
     const a = await getActor();
-    const { Principal: P } = await import("@dfinity/principal");
+    const { Principal: P } = await import("@icp-sdk/core/principal");
     const raw = await a.getCredentials(P.fromText(contractorPrincipalText)) as any[];
     return raw.map((c: any) => ({
       id:                 Number(c.id),
