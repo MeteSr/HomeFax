@@ -35,7 +35,16 @@ if (typeof (globalThis as any).requestAnimationFrame !== "function") {
 
 // Flush all pending async state updates (useEffect promise chains) before
 // cleanup so React doesn't warn "state update should be wrapped in act(...)".
+//
+// A bare `await act(async () => {})` only drains one microtask layer.
+// Components with chained .then() calls (e.g. getContractor → getCredentials)
+// enqueue a second microtask after the first resolves — those land outside
+// act if we don't yield to the macrotask queue first.
+// `setTimeout(r, 0)` is a macrotask; it only fires after the microtask
+// queue is fully drained, so act() sees all pending state updates.
 afterEach(async () => {
-  await act(async () => {});
+  await act(async () => {
+    await new Promise<void>((r) => setTimeout(r, 0));
+  });
   cleanup();
 });
