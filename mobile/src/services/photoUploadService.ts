@@ -1,5 +1,5 @@
 import { uploadJobPhoto } from "./jobService";
-import { HttpAgent } from "@dfinity/agent";
+import { HttpAgent } from "@icp-sdk/core/agent";
 
 const MAX_BYTES     = 10 * 1024 * 1024;  // 10 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png"] as const;

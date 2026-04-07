@@ -1,7 +1,7 @@
 /**
  * HomeGentic Admin Metrics Dashboard
  *
- * Queries three canisters directly via @dfinity/agent (anonymous identity,
+ * Queries three canisters directly via @icp-sdk/core/agent (anonymous identity,
  * public query methods only — no auth required):
  *   - auth       → getUserStats()
  *   - payment    → getSubscriptionStats()
@@ -21,7 +21,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { HttpAgent, Actor } from "@dfinity/agent";
+import { HttpAgent, Actor } from "@icp-sdk/core/agent";
 import { RefreshCw, AlertTriangle, Users, DollarSign, TrendingUp, Server, Cpu } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ interface SubscriptionStats {
   estimatedMrrUsd: bigint;
 }
 
-/** Float fields come back as JS number (not bigint) from @dfinity/candid Float64. */
+/** Float fields come back as JS number (not bigint) from @icp-sdk/core/candid Float64. */
 interface CostMetrics {
   totalCyclesBurned: bigint;
   totalUsdCost: number;

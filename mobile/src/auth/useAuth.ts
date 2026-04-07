@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import { Ed25519KeyIdentity } from "@dfinity/identity";
-import { DelegationChain, DelegationIdentity } from "@dfinity/identity";
-import { HttpAgent } from "@dfinity/agent";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
+import { DelegationChain, DelegationIdentity } from "@icp-sdk/core/identity";
+import { HttpAgent } from "@icp-sdk/core/agent";
 import { buildIIAuthUrl, parseAuthCallback, isDelegationExpired, REDIRECT_URI } from "./authUtils";
 import { saveAuth, loadAuth, clearAuth, StoredAuth } from "./authStorage";
 import { authenticateWithBiometrics } from "./biometricService";
