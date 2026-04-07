@@ -77,7 +77,7 @@ Derived from the HomeGentic product vision. Items are grouped by domain, tagged 
 
 | # | Item | Status | Size | Notes |
 |---|------|--------|------|-------|
-| 4.3.4 | vetKeys aggregate privacy | ⬜ Missing | L | Individual scores encrypted on-chain under per-homeowner derived keys; canister aggregates internally and publishes only zip-level statistics — no individual record exposed |
+| 4.3.4 | vetKeys aggregate privacy | ✅ Exists | L | `submitScore` stores composite score per principal; `getZipStats` exposes only zip-level mean/median/sampleSize; `getMyScoreEncrypted` gates individual score access via `vetkd_derive_key` (test_key_1; switch to key_1 for mainnet). `useNeighborhoodScore` hook handles full flow. |
 
 ### 4.4 Buyer Verification Without Disclosure
 **Vision:** Buyer proves pre-approval to seller without revealing loan amount or lender.
