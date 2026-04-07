@@ -90,8 +90,6 @@ export default defineConfig(({ mode }) => {
       environment: "jsdom",
       globals: true,
       pool: "threads",
-      minThreads: 2,
-      maxThreads: 8,
       setupFiles: ["./src/__tests__/setup.ts", "./src/__tests__/helmet-mock-setup.ts"],
       include: ["src/__tests__/**/*.test.{ts,tsx}"],
       alias: {

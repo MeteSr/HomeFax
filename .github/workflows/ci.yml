@@ -51,7 +51,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
-      - run: npm install
+      - run: npm ci
 
       - name: Type check
         run: cd frontend && npx tsc --noEmit

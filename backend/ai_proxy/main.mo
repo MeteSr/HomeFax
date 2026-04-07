@@ -176,35 +176,35 @@ persistent actor AiProxy {
 
   // Climate zone multipliers (numerator/1000 to avoid floats)
   // Value meaning: effectiveLifespan = floor(base * mult / 1000)
-  type ClimateEntry = { system: Text; multNumerator: Nat }; // denominator is 1000
+  type ClimateEntry = { sys: Text; multNumerator: Nat }; // denominator is 1000
 
   private let CLIMATE_ZONES : [(Text, [ClimateEntry])] = [
     ("hotHumid", [
-      { system = "HVAC";         multNumerator = 850 },
-      { system = "Roofing";      multNumerator = 880 },
-      { system = "Water Heater"; multNumerator = 900 },
-      { system = "Windows";      multNumerator = 900 },
-      { system = "Insulation";   multNumerator = 850 },
+      { sys ="HVAC";         multNumerator = 850 },
+      { sys ="Roofing";      multNumerator = 880 },
+      { sys ="Water Heater"; multNumerator = 900 },
+      { sys ="Windows";      multNumerator = 900 },
+      { sys ="Insulation";   multNumerator = 850 },
     ]),
     ("hotDry", [
-      { system = "HVAC";         multNumerator = 900 },
-      { system = "Roofing";      multNumerator = 920 },
-      { system = "Windows";      multNumerator = 900 },
-      { system = "Plumbing";     multNumerator = 900 },
+      { sys ="HVAC";         multNumerator = 900 },
+      { sys ="Roofing";      multNumerator = 920 },
+      { sys ="Windows";      multNumerator = 900 },
+      { sys ="Plumbing";     multNumerator = 900 },
     ]),
     ("cold", [
-      { system = "Roofing";      multNumerator = 880 },
-      { system = "Plumbing";     multNumerator = 880 },
-      { system = "HVAC";         multNumerator = 880 },
-      { system = "Windows";      multNumerator = 880 },
-      { system = "Insulation";   multNumerator = 900 },
+      { sys ="Roofing";      multNumerator = 880 },
+      { sys ="Plumbing";     multNumerator = 880 },
+      { sys ="HVAC";         multNumerator = 880 },
+      { sys ="Windows";      multNumerator = 880 },
+      { sys ="Insulation";   multNumerator = 900 },
     ]),
     ("veryCold", [
-      { system = "Roofing";      multNumerator = 820 },
-      { system = "Plumbing";     multNumerator = 830 },
-      { system = "HVAC";         multNumerator = 830 },
-      { system = "Windows";      multNumerator = 830 },
-      { system = "Insulation";   multNumerator = 850 },
+      { sys ="Roofing";      multNumerator = 820 },
+      { sys ="Plumbing";     multNumerator = 830 },
+      { sys ="HVAC";         multNumerator = 830 },
+      { sys ="Windows";      multNumerator = 830 },
+      { sys ="Insulation";   multNumerator = 850 },
     ]),
   ];
 
@@ -242,7 +242,7 @@ persistent actor AiProxy {
     switch (Array.find<(Text, [ClimateEntry])>(CLIMATE_ZONES, func(z) { z.0 == zone })) {
       case null { 1000 };
       case (?(_, entries)) {
-        switch (Array.find<ClimateEntry>(entries, func(e) { e.system == systemName })) {
+        switch (Array.find<ClimateEntry>(entries, func(e) { e.sys == systemName })) {
           case null      { 1000 };
           case (?entry)  { entry.multNumerator };
         }
