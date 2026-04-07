@@ -3,10 +3,158 @@
  *
  * Calls the market canister's query functions with data the frontend
  * already holds — no extra round-trips to job/property canisters.
+ *
+ * Neighbourhood score methods (4.3.4) call the market canister directly
+ * and use @dfinity/vetkeys for score authentication.
  */
 
+import { Actor } from "@dfinity/agent";
 import { Job } from "./job";
 import type { Property } from "./property";
+import { getAgent } from "./actor";
+
+const MARKET_CANISTER_ID = (process.env as any).MARKET_CANISTER_ID || "";
+
+// ─── Neighbourhood Score IDL ──────────────────────────────────────────────────
+
+const neighbourhoodIdlFactory = ({ IDL }: any) => {
+  const JobSummary = IDL.Record({
+    serviceType:   IDL.Text,
+    completedYear: IDL.Nat,
+    amountCents:   IDL.Nat,
+    isDiy:         IDL.Bool,
+    isVerified:    IDL.Bool,
+  });
+  const StoredScore = IDL.Record({
+    score:     IDL.Nat,
+    zipCode:   IDL.Text,
+    updatedAt: IDL.Int,
+  });
+  const ZipStats = IDL.Record({
+    zipCode:    IDL.Text,
+    mean:       IDL.Nat,
+    median:     IDL.Nat,
+    sampleSize: IDL.Nat,
+    grade:      IDL.Text,
+  });
+  const ScoreEnvelope = IDL.Record({
+    encryptedKey: IDL.Vec(IDL.Nat8),
+    score:        IDL.Nat,
+    zipCode:      IDL.Text,
+    updatedAt:    IDL.Int,
+  });
+  const Error = IDL.Variant({
+    NotFound:     IDL.Null,
+    Unauthorized: IDL.Null,
+    InvalidInput: IDL.Text,
+  });
+  const Result_StoredScore   = IDL.Variant({ ok: StoredScore,   err: Error });
+  const Result_ZipStats      = IDL.Variant({ ok: ZipStats,      err: Error });
+  const Result_ScoreEnvelope = IDL.Variant({ ok: ScoreEnvelope, err: Error });
+  return IDL.Service({
+    submitScore:              IDL.Func([IDL.Vec(JobSummary), IDL.Nat, IDL.Text], [Result_StoredScore],   []),
+    getZipStats:              IDL.Func([IDL.Text],                               [Result_ZipStats],      ["query"]),
+    getNeighborhoodPublicKey: IDL.Func([],                                       [IDL.Vec(IDL.Nat8)],   []),
+    getMyScoreEncrypted:      IDL.Func([IDL.Vec(IDL.Nat8)],                      [Result_ScoreEnvelope],[]),
+  });
+};
+
+let _neighbourhoodActor: any = null;
+async function getNeighbourhoodActor() {
+  if (!_neighbourhoodActor) {
+    const agent = await getAgent();
+    _neighbourhoodActor = Actor.createActor(neighbourhoodIdlFactory, {
+      agent,
+      canisterId: MARKET_CANISTER_ID,
+    });
+  }
+  return _neighbourhoodActor;
+}
+
+// ─── Neighbourhood Score Types ────────────────────────────────────────────────
+
+export interface StoredScore {
+  score:     number;
+  zipCode:   string;
+  updatedAt: bigint;
+}
+
+export interface ZipStats {
+  zipCode:    string;
+  mean:       number;
+  median:     number;
+  sampleSize: number;
+  grade:      string;
+}
+
+export interface ScoreEnvelope {
+  encryptedKey: Uint8Array;
+  score:        number;
+  zipCode:      string;
+  updatedAt:    bigint;
+}
+
+// ─── Neighbourhood Score Canister Calls ──────────────────────────────────────
+
+/** Submit job data; canister computes and stores the composite score. */
+export async function submitScore(
+  jobs:      JobSummary[],
+  yearBuilt: number,
+  zipCode:   string,
+): Promise<StoredScore> {
+  if (!MARKET_CANISTER_ID) {
+    return { score: 0, zipCode, updatedAt: BigInt(0) };
+  }
+  const actor = await getNeighbourhoodActor();
+  const result = await actor.submitScore(jobs, BigInt(yearBuilt), zipCode);
+  if ("err" in result) throw new Error(JSON.stringify(result.err));
+  return {
+    score:     Number(result.ok.score),
+    zipCode:   result.ok.zipCode,
+    updatedAt: result.ok.updatedAt,
+  };
+}
+
+/** Public zip-level aggregate — no individual data. */
+export async function getZipStats(zipCode: string): Promise<ZipStats | null> {
+  if (!MARKET_CANISTER_ID) return null;
+  const actor = await getNeighbourhoodActor();
+  const result = await actor.getZipStats(zipCode);
+  if ("err" in result) return null;
+  return {
+    zipCode:    result.ok.zipCode,
+    mean:       Number(result.ok.mean),
+    median:     Number(result.ok.median),
+    sampleSize: Number(result.ok.sampleSize),
+    grade:      result.ok.grade,
+  };
+}
+
+/** Returns the canister's vetKeys public key for the neighbourhood score context. */
+export async function getNeighborhoodPublicKey(): Promise<Uint8Array> {
+  if (!MARKET_CANISTER_ID) return new Uint8Array();
+  const actor = await getNeighbourhoodActor();
+  const bytes = await actor.getNeighborhoodPublicKey();
+  return new Uint8Array(bytes);
+}
+
+/** Returns the caller's score encrypted to the given transport public key. */
+export async function getMyScoreEncrypted(
+  transportPublicKey: Uint8Array,
+): Promise<ScoreEnvelope> {
+  if (!MARKET_CANISTER_ID) {
+    return { encryptedKey: new Uint8Array(), score: 0, zipCode: "", updatedAt: BigInt(0) };
+  }
+  const actor = await getNeighbourhoodActor();
+  const result = await actor.getMyScoreEncrypted(Array.from(transportPublicKey));
+  if ("err" in result) throw new Error(JSON.stringify(result.err));
+  return {
+    encryptedKey: new Uint8Array(result.ok.encryptedKey),
+    score:        Number(result.ok.score),
+    zipCode:      result.ok.zipCode,
+    updatedAt:    result.ok.updatedAt,
+  };
+}
 
 // ─── Input types (mirror the canister) ────────────────────────────────────────
 

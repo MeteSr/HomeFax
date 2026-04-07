@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@dfinity/agent": "^3.4.3",
+    "@dfinity/vetkeys": "0.4.0",
     "@dfinity/auth-client": "^3.4.3",
     "@dfinity/candid": "^3.4.3",
     "@dfinity/identity": "^3.4.3",

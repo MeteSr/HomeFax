@@ -13,6 +13,7 @@
  */
 
 import Array    "mo:core/Array";
+import Blob     "mo:core/Blob";
 import Map      "mo:core/Map";
 import Int      "mo:core/Int";
 import Iter     "mo:core/Iter";
@@ -100,6 +101,36 @@ persistent actor MarketIntelligence {
     recordedAt:        Time.Time;
   };
 
+  // ─── Neighbourhood Score Types (4.3.4) ───────────────────────────────────────
+
+  /// Individual score record stored per homeowner. Never returned by a public query;
+  /// only accessible through getMyScoreEncrypted (vetKeys-gated).
+  public type StoredScore = {
+    score:     Nat;          // composite 0-100
+    zipCode:   Text;
+    updatedAt: Time.Time;
+  };
+
+  /// Zip-level aggregate — the only publicly queryable form of score data.
+  public type ZipStats = {
+    zipCode:    Text;
+    mean:       Nat;
+    median:     Nat;
+    sampleSize: Nat;
+    grade:      Text;
+  };
+
+  /// Returned by getMyScoreEncrypted.
+  /// encryptedKey is the caller's vetKey encrypted to their transport public key.
+  /// score + zipCode are the authenticated plaintext payload for this MVP;
+  /// a future upgrade can store IBE ciphertext instead.
+  public type ScoreEnvelope = {
+    encryptedKey: Blob;
+    score:        Nat;
+    zipCode:      Text;
+    updatedAt:    Time.Time;
+  };
+
   public type Error = {
     #NotFound;
     #Unauthorized;
@@ -108,8 +139,44 @@ persistent actor MarketIntelligence {
 
   public type Metrics = {
     marketSnapshotCount: Nat;
+    scoreCount:          Nat;
     isPaused:            Bool;
   };
+
+  // ─── vetKeys Management Canister Interface ────────────────────────────────────
+  // Direct management canister calls per ICP vetKeys skill guidance.
+
+  type VetKdCurve = { #bls12_381_g2 };
+  type VetKdKeyId = { curve : VetKdCurve; name : Text };
+  type VetKdPublicKeyRequest = {
+    canister_id        : ?Principal;
+    context            : Blob;
+    key_id             : VetKdKeyId;
+  };
+  type VetKdPublicKeyResponse = { public_key : Blob };
+  type VetKdDeriveKeyRequest = {
+    input                : Blob;
+    context              : Blob;
+    transport_public_key : Blob;
+    key_id               : VetKdKeyId;
+  };
+  type VetKdDeriveKeyResponse = { encrypted_key : Blob };
+
+  let managementCanister : actor {
+    vetkd_public_key : VetKdPublicKeyRequest -> async VetKdPublicKeyResponse;
+    vetkd_derive_key : VetKdDeriveKeyRequest -> async VetKdDeriveKeyResponse;
+  } = actor "aaaaa-aa";
+
+  // Domain separator — "hg-score-v1" as UTF-8 bytes.
+  // Must match the context value used on the frontend with @dfinity/vetkeys.
+  let SCORE_CONTEXT : Blob = Blob.fromArray([
+    0x68, 0x67, 0x2D, 0x73, 0x63, 0x6F, 0x72, 0x65, 0x2D, 0x76, 0x31
+  ]);
+
+  // Use "test_key_1" locally and on testnet (~10B cycles per derive call).
+  // Switch to "key_1" for mainnet production (~26B cycles per derive call).
+  let VETKD_KEY_NAME   : Text = "test_key_1";
+  let VETKD_KEY_CYCLES : Nat  = 10_000_000_000;
 
   // ─── Stable State ─────────────────────────────────────────────────────────────
 
@@ -121,7 +188,14 @@ persistent actor MarketIntelligence {
 
   // ─── Stable State ────────────────────────────────────────────────────────────
 
-  private var snapshots = Map.empty<Text, MarketSnapshot>();
+  private var snapshots  = Map.empty<Text, MarketSnapshot>();
+
+  // Neighbourhood score store (4.3.4).
+  // All let/var declarations in a persistent actor are automatically stable —
+  // no upgrade hooks needed per stable-memory skill guidance.
+  private let scoreStore = Map.empty<Principal, StoredScore>();
+  // zip → [principals] index for O(1) zip lookup during aggregation.
+  private let zipIndex   = Map.empty<Text, [Principal]>();
 
   // ─── Upgrade Hook ────────────────────────────────────────────────────────────
 
@@ -535,6 +609,128 @@ persistent actor MarketIntelligence {
     }
   };
 
+  // ─── Neighbourhood Score (4.3.4) ─────────────────────────────────────────────
+
+  /// Homeowner submits their property's job summary; canister computes and stores
+  /// the composite score. Individual scores are never exposed via public query —
+  /// only zip-level aggregates are public. Use getMyScoreEncrypted to read back
+  /// your own score, authenticated via vetKeys.
+  public shared(msg) func submitScore(
+    jobs:      [JobSummary],
+    yearBuilt: Nat,
+    zipCode:   Text,
+  ) : async Result.Result<StoredScore, Error> {
+    switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
+    if (Principal.isAnonymous(msg.caller)) return #err(#Unauthorized);
+    if (Text.size(zipCode) == 0 or Text.size(zipCode) > 20)
+      return #err(#InvalidInput("zipCode must be 1-20 characters"));
+
+    let caller = msg.caller;
+
+    // If homeowner previously had a different zip, remove from old zip index.
+    switch (Map.get(scoreStore, Principal.compare, caller)) {
+      case (?old) {
+        if (old.zipCode != zipCode) {
+          let oldList = Option.get(Map.get(zipIndex, Text.compare, old.zipCode), []);
+          let trimmed = Array.filter<Principal>(oldList, func(p) { p != caller });
+          Map.add(zipIndex, Text.compare, old.zipCode, trimmed);
+        };
+      };
+      case null {};
+    };
+
+    let score = compositeScore(
+      maintenanceScore(jobs),
+      modernizationScore(jobs, yearBuilt),
+      verificationDepth(jobs),
+    );
+
+    let stored : StoredScore = { score; zipCode; updatedAt = Time.now() };
+    Map.add(scoreStore, Principal.compare, caller, stored);
+
+    // Add caller to zip index if not already present.
+    let current = Option.get(Map.get(zipIndex, Text.compare, zipCode), []);
+    if (not Option.isSome(Array.find<Principal>(current, func(p) { p == caller }))) {
+      Map.add(zipIndex, Text.compare, zipCode, Array.concat(current, [caller]));
+    };
+
+    #ok(stored)
+  };
+
+  /// Public zip-level aggregate statistics.
+  /// Never exposes individual scores or principals — only mean, median, and sample size.
+  public query func getZipStats(zipCode: Text) : async Result.Result<ZipStats, Error> {
+    let principals = Option.get(Map.get(zipIndex, Text.compare, zipCode), []);
+    if (principals.size() == 0) return #err(#NotFound);
+
+    var scores : [Nat] = [];
+    for (p in principals.vals()) {
+      switch (Map.get(scoreStore, Principal.compare, p)) {
+        case (?s) { scores := Array.concat(scores, [s.score]) };
+        case null {};
+      };
+    };
+    if (scores.size() == 0) return #err(#NotFound);
+
+    var total : Nat = 0;
+    for (s in scores.vals()) { total += s };
+    let mean = total / scores.size();
+
+    let sorted = Array.sort<Nat>(scores, Nat.compare);
+    let n = sorted.size();
+    let median = if (n % 2 == 1) {
+      sorted[n / 2]
+    } else {
+      (sorted[(n / 2) - 1] + sorted[n / 2]) / 2
+    };
+
+    #ok({ zipCode; mean; median; sampleSize = scores.size(); grade = scoreGrade(median) })
+  };
+
+  /// Returns the canister's vetKeys public key for the neighbourhood score context.
+  /// The frontend uses this to verify decrypted vetKeys via DerivedPublicKey.deserialize.
+  /// vetkd_public_key requires no cycles.
+  public func getNeighborhoodPublicKey() : async Blob {
+    let response = await managementCanister.vetkd_public_key({
+      canister_id = null;
+      context     = SCORE_CONTEXT;
+      key_id      = { curve = #bls12_381_g2; name = VETKD_KEY_NAME };
+    });
+    response.public_key
+  };
+
+  /// Returns the caller's stored score encrypted to their transport public key
+  /// via vetKeys key derivation. The encryptedKey allows the frontend to prove
+  /// the canister issued this response for this specific principal.
+  ///
+  /// Caller must have previously called submitScore. Costs VETKD_KEY_CYCLES cycles.
+  public shared(msg) func getMyScoreEncrypted(
+    transportPublicKey: Blob,
+  ) : async Result.Result<ScoreEnvelope, Error> {
+    // Capture caller before await — required per vetKeys skill guidance.
+    let caller = msg.caller;
+    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+
+    let stored = switch (Map.get(scoreStore, Principal.compare, caller)) {
+      case null    { return #err(#NotFound) };
+      case (?s)    { s };
+    };
+
+    let response = await (with cycles = VETKD_KEY_CYCLES) managementCanister.vetkd_derive_key({
+      input                = Principal.toBlob(caller);
+      context              = SCORE_CONTEXT;
+      transport_public_key = transportPublicKey;
+      key_id               = { curve = #bls12_381_g2; name = VETKD_KEY_NAME };
+    });
+
+    #ok({
+      encryptedKey = response.encrypted_key;
+      score        = stored.score;
+      zipCode      = stored.zipCode;
+      updatedAt    = stored.updatedAt;
+    })
+  };
+
   // ─── Admin Functions ──────────────────────────────────────────────────────────
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
@@ -571,6 +767,7 @@ persistent actor MarketIntelligence {
   public query func getMetrics() : async Metrics {
     {
       marketSnapshotCount = Map.size(snapshots);
+      scoreCount          = Map.size(scoreStore);
       isPaused;
     }
   };
