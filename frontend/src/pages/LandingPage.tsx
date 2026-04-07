@@ -590,7 +590,7 @@ export default function LandingPage() {
 
         {/* ── Nav ─────────────────────────────────────────────────────────── */}
         <nav className="hfl-nav">
-          <a href="/" className="hfl-logo">HomeGen<span>tic</span></a>
+          <a href="/" className="hfl-logo">Home<span>Gentic</span></a>
           <ul className={menuOpen ? "hfl-menu-open" : undefined}>
             <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); scrollTo("hfl-features"); }}>For Homeowners</a></li>
             <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); scrollTo("hfl-features"); }}>Service Network</a></li>
