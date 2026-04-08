@@ -39,7 +39,7 @@ vi.mock("react-router-dom", async (importOriginal) => {
 
 // Store mocks are set per-test via module-level mutable refs
 let mockProperties: { id: string; address: string }[] = [];
-let mockProfile: { role: string; name?: string } = { role: "Homeowner", name: "Test User" };
+let mockProfile: { role: string; email?: string } = { role: "Homeowner", email: "test@example.com" };
 
 vi.mock("@/store/authStore", () => ({
   useAuthStore: () => ({ principal: "test-principal", profile: mockProfile }),
@@ -65,7 +65,7 @@ function renderNav(path: string) {
 
 function openUserMenu(path = "/dashboard") {
   renderNav(path);
-  fireEvent.click(screen.getByRole("button", { name: /test user/i }));
+  fireEvent.click(screen.getByRole("button", { name: /test@example\.com/i }));
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -153,16 +153,15 @@ describe("Layout nav — Dashboard active state (16.3.2)", () => {
 
 describe("Layout user menu", () => {
   beforeEach(() => {
-    mockProfile = { role: "Homeowner", name: "Test User" };
+    mockProfile = { role: "Homeowner", email: "test@example.com" };
     mockProperties = [];
     mockLogout.mockClear();
     mockNavigate.mockClear();
   });
 
-  it("renders an avatar button with user initials", () => {
+  it("renders an avatar button labelled by the user's email", () => {
     renderNav("/dashboard");
-    // "TU" initials from "Test User", or button labelled by displayName
-    expect(screen.getByRole("button", { name: /test user/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /test@example\.com/i })).toBeInTheDocument();
   });
 
   it("menu is hidden before the avatar is clicked", () => {
@@ -179,10 +178,9 @@ describe("Layout user menu", () => {
     expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
   });
 
-  it("shows the user's display name in the menu header", () => {
+  it("shows the user's email in the menu header", () => {
     openUserMenu();
-    // The name appears in the popover header (non-button text)
-    const allByText = screen.getAllByText(/test user/i);
+    const allByText = screen.getAllByText(/test@example\.com/i);
     expect(allByText.length).toBeGreaterThan(0);
   });
 
@@ -190,7 +188,6 @@ describe("Layout user menu", () => {
     openUserMenu();
     fireEvent.click(screen.getByRole("button", { name: /settings/i }));
     expect(mockNavigate).toHaveBeenCalledWith("/settings");
-    // Menu should be gone
     expect(screen.queryByRole("button", { name: /settings/i })).not.toBeInTheDocument();
   });
 
@@ -213,10 +210,10 @@ describe("Layout user menu", () => {
     expect(screen.queryByRole("button", { name: /sign out/i })).not.toBeInTheDocument();
   });
 
-  it("falls back to 'User' display name when profile has no name", () => {
-    mockProfile = { role: "Homeowner" }; // no name field
+  it("falls back when profile has no email (uses principal prefix)", () => {
+    mockProfile = { role: "Homeowner" }; // no email
     renderNav("/dashboard");
-    // Sidebar is open by default so the span text "User" is the accessible name
-    expect(screen.getByRole("button", { name: /^user$/i })).toBeInTheDocument();
+    // principal is "test-principal", so displayName = "test-pri…"
+    expect(screen.getByRole("button", { name: /test-pri/i })).toBeInTheDocument();
   });
 });

@@ -140,8 +140,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const displayName = profile?.name ?? "User";
-  const initials    = displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+  const displayName = profile?.email ?? (principal ? principal.slice(0, 8) + "…" : "User");
+  const initials    = (profile?.email ?? "U")[0].toUpperCase();
 
   const isContractor = profile?.role === "Contractor";
   const isRealtor    = profile?.role === "Realtor";
