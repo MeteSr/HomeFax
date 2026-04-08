@@ -6,7 +6,7 @@ const DFX_NETWORK = (process.env as any).DFX_NETWORK || "local";
 const IS_LOCAL = DFX_NETWORK !== "ic";
 export const II_URL = IS_LOCAL
   ? "http://rdmx6-jaaaa-aaaaa-aaadq-cai.localhost:4943/"
-  : "https://identity.ic0.app";
+  : "https://id.ai";
 
 let _authClient: AuthClient | null = null;
 let _agent: HttpAgent | null = null;
