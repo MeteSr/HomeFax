@@ -196,9 +196,29 @@ dfx canister call $CANISTER createJob "(
 )" || echo "  ↳ Expected InvalidInput (future date) — ✓"
 
 # ─── Invite token flow ────────────────────────────────────────────────────────
+# Create a FRESH unsigned contractor job for the invite token flow.
+# $JOB_ID is already fully signed by step [13] — createInviteToken rejects signed jobs.
 echo ""
-echo "── [18] createInviteToken — homeowner creates token for contractor job ───"
-INVITE_OUT=$(dfx canister call $CANISTER createInviteToken "(\"$JOB_ID\", \"123 Main St, Austin TX 78701\")")
+echo "── [18-setup] Create fresh unsigned contractor job for invite token flow ──"
+INVITE_JOB_OUT=$(dfx canister call $CANISTER createJob '(
+  "PROP_1",
+  "Electrical panel upgrade",
+  variant { Electrical },
+  "Replace 100A panel with 200A service.",
+  opt "Invite Flow Electric",
+  75000,
+  1700000000000000000,
+  null,
+  null,
+  false
+)')
+echo "$INVITE_JOB_OUT"
+INVITE_JOB_ID=$(echo "$INVITE_JOB_OUT" | grep -oP '"JOB_[0-9]+"' | head -1 | tr -d '"')
+echo "  → Fresh job ID: $INVITE_JOB_ID"
+
+echo ""
+echo "── [18] createInviteToken — homeowner creates token for unsigned contractor job ───"
+INVITE_OUT=$(dfx canister call $CANISTER createInviteToken "(\"$INVITE_JOB_ID\", \"123 Main St, Austin TX 78701\")")
 echo "$INVITE_OUT"
 INVITE_TOKEN=$(echo "$INVITE_OUT" | grep -oP '"[a-zA-Z0-9_-]{16,}"' | head -1 | tr -d '"')
 echo "  → Invite token: $INVITE_TOKEN"
@@ -207,7 +227,7 @@ echo ""
 echo "── [19] getJobByInviteToken — contractor reads invite ───────────────────"
 GET_INVITE=$(dfx canister call $CANISTER getJobByInviteToken "(\"$INVITE_TOKEN\")" --identity contractor-test)
 echo "$GET_INVITE"
-if echo "$GET_INVITE" | grep -q "$JOB_ID"; then
+if echo "$GET_INVITE" | grep -q "$INVITE_JOB_ID"; then
   echo "  ✓ Invite token returns correct job"
 else
   echo "  ↳ Job data shown above"

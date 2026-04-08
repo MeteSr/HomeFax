@@ -73,7 +73,7 @@ QUOTE_OUT=$(dfx canister call $CANISTER submitQuote "(
   $VALID_UNTIL
 )" --identity quote-contractor-test)
 echo "$QUOTE_OUT"
-QUOTE_ID=$(echo "$QUOTE_OUT" | grep -oP '"Q_[^"]+"' | head -1 | tr -d '"')
+QUOTE_ID=$(echo "$QUOTE_OUT" | grep -oP '"QUOTE_[^"]+"' | head -1 | tr -d '"')
 echo "  → Quote ID: $QUOTE_ID"
 
 echo ""
