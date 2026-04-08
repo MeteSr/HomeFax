@@ -27,6 +27,14 @@ vi.mock("@/services/payment", async (importOriginal) => {
   };
 });
 
+vi.mock("@/services/icpLedger", () => ({
+  icpLedgerService: {
+    approve:  vi.fn().mockResolvedValue(undefined),
+    getBalance: vi.fn().mockResolvedValue(BigInt(500_000_000)),
+    reset:    vi.fn(),
+  },
+}));
+
 vi.mock("@/services/property", () => ({
   propertyService: {
     getAll: vi.fn().mockResolvedValue([]),
@@ -143,6 +151,30 @@ describe("UpgradeModal", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("shows error message when subscribe rejects", async () => {
+    (paymentService.subscribe as any).mockRejectedValueOnce(
+      new Error("Insufficient ICP balance")
+    );
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/Insufficient ICP balance/i)).toBeInTheDocument()
+    );
+  });
+
+  it("disables the unselected plan button while one plan is loading", async () => {
+    let resolveSubscribe!: () => void;
+    (paymentService.subscribe as any).mockImplementationOnce(
+      () => new Promise<void>((res) => { resolveSubscribe = res; })
+    );
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    // While Pro is loading, Premium button should be disabled
+    const premiumBtn = screen.getByRole("button", { name: /select premium/i });
+    expect(premiumBtn).toBeDisabled();
+    resolveSubscribe();
   });
 
   it("calls onClose when the dismiss button is clicked", () => {

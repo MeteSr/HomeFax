@@ -5,13 +5,34 @@ echo "=== Payment Canister Tests ==="
 echo "▶ Get current subscription (expect Free default)..."
 dfx canister call payment getMySubscription
 
-echo "▶ Subscribe to Pro tier..."
-dfx canister call payment subscribe '(variant { Pro })'
+MY_PRINCIPAL=$(dfx identity get-principal)
 
-echo "▶ Get updated subscription..."
+echo "▶ Grant Pro subscription (bypasses ICP payment — local dev only)..."
+dfx canister call payment grantSubscription "(principal \"$MY_PRINCIPAL\", variant { Pro })"
+
+echo "▶ Get updated subscription (expect Pro)..."
 dfx canister call payment getMySubscription
 
+echo "▶ getTierForPrincipal — expect Pro..."
+dfx canister call payment getTierForPrincipal "(principal \"$MY_PRINCIPAL\")"
+
+echo "▶ Grant Premium subscription..."
+dfx canister call payment grantSubscription "(principal \"$MY_PRINCIPAL\", variant { Premium })"
+
+echo "▶ Get updated subscription (expect Premium)..."
+dfx canister call payment getMySubscription
+
+echo "▶ Downgrade to Free via grantSubscription..."
+dfx canister call payment grantSubscription "(principal \"$MY_PRINCIPAL\", variant { Free })"
+dfx canister call payment getMySubscription
+
+echo "▶ getPriceQuote Free (expect 0)..."
+dfx canister call payment getPriceQuote '(variant { Free })'
+
 echo "✅ Payment tests passed!"
+echo ""
+echo "NOTE: subscribe() requires a live ICP ledger + XRC canister."
+echo "      Use grantSubscription() for local testing."
 
 # ─── §47 Trusted Canister (inter-canister whitelist) ─────────────────────────
 # payment receives calls from: job (getTierForPrincipal)

@@ -15,22 +15,37 @@ export interface UpgradeModalProps {
   onClose: () => void;
 }
 
+type PaymentStep = "quoting" | "approving" | "confirming";
+
+const STEP_LABEL: Record<PaymentStep, string> = {
+  quoting:    "Fetching ICP price…",
+  approving:  "Approve in Internet Identity…",
+  confirming: "Confirming…",
+};
+
 const SHOWN_TIERS: PlanTier[] = ["Pro", "Premium"];
 
 export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
-  const [loading, setLoading] = useState<PlanTier | null>(null);
+  const [loadingTier, setLoadingTier] = useState<PlanTier | null>(null);
+  const [step, setStep]               = useState<PaymentStep | null>(null);
+  const [error, setError]             = useState<string | null>(null);
 
   if (!open) return null;
 
   const plans = PLANS.filter((p) => SHOWN_TIERS.includes(p.tier));
 
   async function handleSelect(tier: PlanTier) {
-    setLoading(tier);
+    setLoadingTier(tier);
+    setStep(null);
+    setError(null);
     try {
-      await paymentService.subscribe(tier);
+      await paymentService.subscribe(tier, (s) => setStep(s));
       onClose();
+    } catch (err: any) {
+      setError(err.message ?? "Payment failed. Please try again.");
     } finally {
-      setLoading(null);
+      setLoadingTier(null);
+      setStep(null);
     }
   }
 
@@ -128,7 +143,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
 
               <button
                 onClick={() => handleSelect(plan.tier)}
-                disabled={loading === plan.tier}
+                disabled={loadingTier !== null}
                 aria-label={`Select ${plan.tier}`}
                 style={{
                   marginTop:   "auto",
@@ -139,15 +154,34 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
                   fontFamily:  FONTS.sans,
                   fontWeight:  600,
                   fontSize:    "0.875rem",
-                  cursor:      loading ? "wait" : "pointer",
+                  cursor:      loadingTier ? "wait" : "pointer",
                   width:       "100%",
+                  opacity:     loadingTier && loadingTier !== plan.tier ? 0.5 : 1,
                 }}
               >
-                {loading === plan.tier ? "Processing…" : `Select ${plan.tier}`}
+                {loadingTier === plan.tier && step
+                  ? STEP_LABEL[step]
+                  : `Select ${plan.tier}`}
               </button>
             </div>
           ))}
         </div>
+
+        {/* Payment error */}
+        {error && (
+          <p style={{
+            marginTop:  "1rem",
+            padding:    "0.625rem 0.875rem",
+            background: "#FEF2F2",
+            border:     `1px solid ${COLORS.rust}`,
+            fontFamily: FONTS.sans,
+            fontSize:   "0.8rem",
+            color:      COLORS.rust,
+            lineHeight: 1.5,
+          }}>
+            {error}
+          </p>
+        )}
 
         {/* Dismiss link */}
         <div style={{ textAlign: "center", marginTop: "1.25rem" }}>

@@ -88,6 +88,26 @@ describe("paymentService.getPlan", () => {
   });
 });
 
+// ─── subscribe (mock path — no PAYMENT_CANISTER_ID) ──────────────────────────
+
+describe("paymentService.subscribe (mock)", () => {
+  it("resolves without error when no canister is deployed (Free)", async () => {
+    await expect(paymentService.subscribe("Free")).resolves.toBeUndefined();
+  });
+
+  it("resolves without error when no canister is deployed (Pro)", async () => {
+    await expect(paymentService.subscribe("Pro")).resolves.toBeUndefined();
+  });
+
+  it("calls onStep callback for paid tiers in mock mode (no-op since canister absent)", async () => {
+    // PAYMENT_CANISTER_ID is empty in test env — subscribe returns early before onStep
+    const onStep = vi.fn();
+    await paymentService.subscribe("Pro", onStep);
+    // No canister → early return, onStep never called
+    expect(onStep).not.toHaveBeenCalled();
+  });
+});
+
 // ─── getMySubscription (mock path) ───────────────────────────────────────────
 
 describe("paymentService.getMySubscription (mock)", () => {

@@ -43,6 +43,16 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: Subscription, err: Error })],
       []
     ),
+    getPriceQuote: IDL.Func(
+      [Tier],
+      [IDL.Variant({ ok: IDL.Nat, err: Error })],
+      []
+    ),
+    grantSubscription: IDL.Func(
+      [IDL.Principal, Tier],
+      [IDL.Variant({ ok: Subscription, err: Error })],
+      []
+    ),
     getMySubscription: IDL.Func(
       [],
       [IDL.Variant({ ok: Subscription, err: Error })],
@@ -163,13 +173,43 @@ async function getActor() {
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export const paymentService = {
-  async subscribe(tier: PlanTier): Promise<void> {
+  /**
+   * Subscribe to a paid tier.
+   * For paid tiers: fetches a price quote from the canister, calls icrc2_approve
+   * on the ICP ledger (triggers II popup), then calls subscribe on the payment
+   * canister which pulls the payment via icrc2_transfer_from.
+   * onStep is called with the current step label for UI feedback.
+   */
+  async subscribe(
+    tier: PlanTier,
+    onStep?: (step: "quoting" | "approving" | "confirming") => void,
+  ): Promise<void> {
     if (!PAYMENT_CANISTER_ID) return;
     const a = await getActor();
+
+    if (tier !== "Free") {
+      // Step 1: get ICP price quote with 5% buffer
+      onStep?.("quoting");
+      const quoteResult = await a.getPriceQuote({ [tier]: null });
+      if ("err" in quoteResult) {
+        throw new Error(Object.keys(quoteResult.err)[0]);
+      }
+      const amountE8s: bigint = BigInt(quoteResult.ok.toString());
+
+      // Step 2: approve the payment canister to spend that amount
+      onStep?.("approving");
+      const { icpLedgerService } = await import("./icpLedger");
+      await icpLedgerService.approve(PAYMENT_CANISTER_ID, amountE8s);
+
+      // Step 3: call subscribe — canister pulls payment at current rate
+      onStep?.("confirming");
+    }
+
     const result = await a.subscribe({ [tier]: null });
     if ("err" in result) {
       const key = Object.keys(result.err)[0];
-      throw new Error(key);
+      const detail = (result.err as any)[key];
+      throw new Error(typeof detail === "string" ? detail : key);
     }
   },
 
@@ -187,9 +227,12 @@ export const paymentService = {
     };
   },
 
-  /** Activate a subscription tier on-chain. Returns dashboard URL (no payment redirect for ICP-native). */
-  async initiate(tier: PlanTier): Promise<{ url: string }> {
-    await this.subscribe(tier);
+  /** Activate a subscription tier on-chain. Returns dashboard URL. */
+  async initiate(
+    tier: PlanTier,
+    onStep?: (step: "quoting" | "approving" | "confirming") => void,
+  ): Promise<{ url: string }> {
+    await this.subscribe(tier, onStep);
     return { url: "/dashboard" };
   },
 
