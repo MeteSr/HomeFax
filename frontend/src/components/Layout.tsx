@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { jobService, type Job } from "@/services/job";
+import { paymentService } from "@/services/payment";
 import { VoiceAgent } from "./VoiceAgent";
 import UpgradeModal from "./UpgradeModal";
 import { COLORS, FONTS } from "@/theme";
@@ -103,6 +104,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
   const [userMenuOpen,  setUserMenuOpen]  = useState(false);
   const [upgradeOpen,   setUpgradeOpen]   = useState(false);
+  const [userTier,      setUserTier]      = useState<string>("Free");
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu on outside click
@@ -116,6 +118,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [userMenuOpen]);
+
+  useEffect(() => {
+    paymentService.getMySubscription().then((s) => setUserTier(s.tier)).catch(() => {});
+  }, [principal]);
 
   useEffect(() => {
     if (!feedOpen || feedLoaded) return;
@@ -155,23 +161,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navLinks: NavLink[] = isContractor
     ? [
         { to: "/contractor-dashboard", label: "Dashboard", Icon: LayoutDashboard },
-        { to: "/settings",             label: "Settings",  Icon: Settings },
       ]
     : isRealtor
     ? [
         { to: "/agent-dashboard",   label: "Dashboard",  Icon: LayoutDashboard },
         { to: "/agent/marketplace", label: "Marketplace", Icon: Store },
-        { to: "/settings",          label: "Settings",   Icon: Settings },
       ]
     : [
         { to: "/dashboard",      label: "Dashboard",    Icon: LayoutDashboard },
         { to: "/market",         label: "Market",       Icon: TrendingUp },
         { to: "/maintenance",    label: "Maintenance",  Icon: Wrench },
-        { to: "/contractors",    label: "Contractors",  Icon: Users },
+        ...(userTier !== "Free" ? [{ to: "/contractors", label: "Contractors", Icon: Users }] : []),
         { to: "/sensors",        label: "Sensors",      Icon: Cpu },
         { to: "/listing/new",    label: "List Home",    Icon: HomeIcon },
         { to: "/properties/new", label: "Add Property", Icon: PlusSquare },
-        { to: "/settings",       label: "Settings",     Icon: Settings },
       ];
 
   const isActive = (link: NavLink) => {
