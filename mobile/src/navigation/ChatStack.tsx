@@ -9,6 +9,7 @@ import QuoteRequestScreen    from "../screens/QuoteRequestScreen";
 import MyQuotesScreen        from "../screens/MyQuotesScreen";
 import SignJobScreen         from "../screens/SignJobScreen";
 import PhotoUploadScreen    from "../screens/PhotoUploadScreen";
+import BillUploadScreen     from "../screens/BillUploadScreen";
 import type { SignableJob, SignRole } from "../services/signJobService";
 import { colors, fonts } from "../theme";
 
@@ -21,6 +22,7 @@ export type ChatStackParamList = {
   MyQuotes:       { propertyId: string; propertyAddress: string };
   SignJob:        { job: SignableJob; currentRole: SignRole };
   PhotoUpload:    { jobId: string; jobServiceType: string };
+  BillUpload:     { propertyId: string; propertyAddress: string };
 };
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
@@ -76,6 +78,11 @@ export default function ChatStack() {
         name="PhotoUpload"
         component={PhotoUploadScreen}
         options={{ title: "ADD PHOTO", headerStyle: { backgroundColor: colors.ink }, headerTintColor: colors.paper }}
+      />
+      <Stack.Screen
+        name="BillUpload"
+        component={BillUploadScreen}
+        options={{ title: "UTILITY BILL" }}
       />
     </Stack.Navigator>
   );

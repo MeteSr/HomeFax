@@ -116,19 +116,35 @@ export default function PropertyDetailScreen({ route }: Props) {
             <Text style={styles.empty}>No jobs logged yet.</Text>
           }
           ListFooterComponent={
-            /* Quote requests entry point (15.8.2) */
-            <TouchableOpacity
-              style={styles.quotesRow}
-              onPress={() => navigation.navigate("MyQuotes", {
-                propertyId:      property.id,
-                propertyAddress: property.address,
-              })}
-              accessibilityRole="button"
-              accessibilityLabel="View quote requests"
-            >
-              <Text style={styles.sectionLabel}>QUOTE REQUESTS</Text>
-              <Text style={styles.quotesArrow}>REQUEST QUOTE  ›</Text>
-            </TouchableOpacity>
+            <>
+              {/* Quote requests entry point (15.8.2) */}
+              <TouchableOpacity
+                style={styles.quotesRow}
+                onPress={() => navigation.navigate("MyQuotes", {
+                  propertyId:      property.id,
+                  propertyAddress: property.address,
+                })}
+                accessibilityRole="button"
+                accessibilityLabel="View quote requests"
+              >
+                <Text style={styles.sectionLabel}>QUOTE REQUESTS</Text>
+                <Text style={styles.quotesArrow}>REQUEST QUOTE  ›</Text>
+              </TouchableOpacity>
+
+              {/* Utility bills entry point (Epic #49) */}
+              <TouchableOpacity
+                style={styles.quotesRow}
+                onPress={() => navigation.navigate("BillUpload", {
+                  propertyId:      property.id,
+                  propertyAddress: property.address,
+                })}
+                accessibilityRole="button"
+                accessibilityLabel="Upload utility bill"
+              >
+                <Text style={styles.sectionLabel}>UTILITY BILLS</Text>
+                <Text style={styles.quotesArrow}>UPLOAD BILL  ›</Text>
+              </TouchableOpacity>
+            </>
           }
         />
       )}

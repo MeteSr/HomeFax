@@ -52,7 +52,7 @@ No traditional database. No centralized server. No single point of failure.
 
 ## Canister Map
 
-All 15 canisters use `persistent actor` + stable variable
+All 16 canisters use `persistent actor` + stable variable
 `preupgrade` / `postupgrade` for zero-data-loss upgrades. Each exports
 `metrics()`, `pause()`, and `unpause()` for operational control.
 
@@ -107,6 +107,11 @@ All 15 canisters use `persistent actor` + stable variable
 ├──────────────────┼─────────────────────────────────────────────────────────┤
 │ recurring        │ Recurring service contracts (HVAC, pest, landscaping)  │
 │                  │ Visit logs per contract                                 │
+├──────────────────┼─────────────────────────────────────────────────────────┤
+│ bills            │ Utility bill records per property (Electric, Gas, Water,│
+│                  │ Internet, Telecom). 3-month rolling anomaly detection    │
+│                  │ flags bills > 20% above baseline. Anomaly events surface│
+│                  │ in the Activity feed bell drawer.                        │
 └──────────────────┴─────────────────────────────────────────────────────────┘
 ```
 
@@ -276,10 +281,10 @@ Google Fonts loaded once in `frontend/index.html`.
 
 ```
 backend/
-  auth/           contractor/     job/          listing/
-  maintenance/    market/         monitoring/   payment/
-  photo/          property/       quote/        recurring/
-  report/         sensor/         agent/
+  auth/           bills/          contractor/   job/
+  listing/        maintenance/    market/       monitoring/
+  payment/        photo/          property/     quote/
+  recurring/      report/         sensor/       agent/
   — each has main.mo + test.sh
 
 frontend/
@@ -309,7 +314,7 @@ docs/             — ARCHITECTURE.md, API.md, DEPLOYMENT.md, SECURITY.md, BACKL
 ## Local Development
 
 ```bash
-make dev          # replica + all 15 canisters + frontend in one command
+make dev          # replica + all 16 canisters + frontend in one command
 make frontend     # Vite dev server only (:5173)
 cd agents/voice && npm run dev   # voice proxy (:3001)
 

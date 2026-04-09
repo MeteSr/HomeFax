@@ -11,7 +11,7 @@ HomeGentic gives homeowners an immutable, tamper-proof record of every repair, u
 | Layer | Technology |
 |---|---|
 | Blockchain | Internet Computer Protocol (ICP) |
-| Backend | Motoko canisters (15 total) |
+| Backend | Motoko canisters (16 total) |
 | Auth | ICP Internet Identity |
 | Frontend | React + TypeScript + Vite |
 | AI Agent | Node.js + Claude API (Anthropic) — voice assistant proxy |
@@ -39,6 +39,7 @@ HomeGentic gives homeowners an immutable, tamper-proof record of every repair, u
 | `listing` | FSBO listing lifecycle, sealed-bid offers, agent matching |
 | `agent` | Realtor profiles, reviews, HomeGentic transaction count |
 | `recurring` | Recurring service contracts (HVAC, pest, landscaping) and visit logs |
+| `bills` | Utility bill storage per property; 3-month rolling anomaly detection (>20% spike flagged); feeds the Activity feed bell drawer |
 
 ---
 
