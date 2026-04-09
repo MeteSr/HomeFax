@@ -54,9 +54,10 @@ export const idlFactory = ({ IDL }: any) => {
   });
 
   const Error = IDL.Variant({
-    NotFound:     IDL.Null,
-    Unauthorized: IDL.Null,
-    InvalidInput: IDL.Text,
+    NotFound:         IDL.Null,
+    Unauthorized:     IDL.Null,
+    InvalidInput:     IDL.Text,
+    TierLimitReached: IDL.Text,
   });
 
   return IDL.Service({
@@ -128,10 +129,26 @@ export interface BillExtraction {
   rawFileName?: string;
 }
 
+// ─── Error types ─────────────────────────────────────────────────────────────
+
+/** Thrown when a Free tier user hits the monthly upload limit. */
+export class TierLimitReachedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TierLimitReachedError";
+  }
+}
+
 // ─── In-memory mock (local dev without deployed canister) ─────────────────────
 
+const FREE_TIER_MONTHLY_LIMIT = 1;
 let _mockBills: BillRecord[] = [];
 let _mockNextId = 1;
+
+function countUploadsThisMonth(): number {
+  const oneMonthAgo = Date.now() - 30.44 * 24 * 60 * 60 * 1000;
+  return _mockBills.filter((b) => b.uploadedAt >= oneMonthAgo).length;
+}
 
 function mockRecord(args: AddBillArgs): BillRecord {
   const existing = _mockBills.filter(
@@ -181,7 +198,9 @@ async function getBillsActor() {
 
 function fromVariant<T>(v: any): T {
   if ("ok" in v) return v.ok as T;
-  throw new Error(JSON.stringify(v.err));
+  const err = v.err;
+  if (err && "TierLimitReached" in err) throw new TierLimitReachedError(err.TierLimitReached);
+  throw new Error(JSON.stringify(err));
 }
 
 function toRecord(raw: any): BillRecord {
@@ -208,6 +227,11 @@ export const billService = {
   /** Store a confirmed bill record in the canister. */
   async addBill(args: AddBillArgs): Promise<BillRecord> {
     if (!BILLS_CANISTER_ID && !process.env.VITEST) {
+      if (countUploadsThisMonth() >= FREE_TIER_MONTHLY_LIMIT) {
+        throw new TierLimitReachedError(
+          "Free plan allows 1 bill upload per month. Upgrade to Pro ($10/mo) for unlimited uploads."
+        );
+      }
       return mockRecord(args);
     }
     const actor = await getBillsActor();

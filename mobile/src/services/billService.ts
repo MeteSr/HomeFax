@@ -50,10 +50,25 @@ export interface AddBillArgs {
   usageUnit?:  string;
 }
 
+// ─── Error types ─────────────────────────────────────────────────────────────
+
+export class TierLimitReachedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TierLimitReachedError";
+  }
+}
+
 // ─── In-memory mock (dev without canister) ───────────────────────────────────
 
+const FREE_TIER_MONTHLY_LIMIT = 1;
 let _mockBills: BillRecord[] = [];
 let _mockNextId = 1;
+
+function countUploadsThisMonth(): number {
+  const oneMonthAgo = Date.now() - 30.44 * 24 * 60 * 60 * 1000;
+  return _mockBills.filter((b) => b.uploadedAt >= oneMonthAgo).length;
+}
 
 function mockAdd(args: AddBillArgs): BillRecord {
   const existing = _mockBills.filter(
@@ -114,6 +129,11 @@ export async function extractBill(
 export async function addBill(args: AddBillArgs): Promise<BillRecord> {
   // In production this would call the bills canister directly via @dfinity/agent.
   // For mobile we proxy through the same mock path used by other services.
+  if (countUploadsThisMonth() >= FREE_TIER_MONTHLY_LIMIT) {
+    throw new TierLimitReachedError(
+      "Free plan allows 1 bill upload per month. Upgrade to Pro ($10/mo) for unlimited uploads."
+    );
+  }
   return mockAdd(args);
 }
 

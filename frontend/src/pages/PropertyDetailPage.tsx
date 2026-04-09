@@ -24,7 +24,7 @@ import { marketService, jobToSummary, type PropertyProfile, type ProjectRecommen
 import { getWeeklyPulse } from "@/services/pulseService";
 import { roomService, Room as RoomRecord, type UpdateRoomArgs, type AddFixtureArgs, type Fixture } from "@/services/room";
 import { paymentService, type PlanTier } from "@/services/payment";
-import { billService, extractBill, type BillRecord, type BillExtraction, type BillType } from "@/services/billService";
+import { billService, extractBill, TierLimitReachedError, type BillRecord, type BillExtraction, type BillType } from "@/services/billService";
 import { UpgradeGate } from "@/components/UpgradeGate";
 import { ScorePanel } from "@/components/ScorePanel";
 import { ScoreActivityFeed } from "@/components/ScoreActivityFeed";
@@ -2266,8 +2266,12 @@ function BillsTab({ propertyId }: { propertyId: string }) {
       if (saved.anomalyFlag) {
         toast(`Anomaly detected: ${saved.anomalyReason}`, { icon: "⚠️", duration: 6000 });
       }
-    } catch {
-      toast.error("Failed to save bill.");
+    } catch (err) {
+      if (err instanceof TierLimitReachedError) {
+        toast.error(err.message, { duration: 8000, icon: "🔒" });
+      } else {
+        toast.error("Failed to save bill.");
+      }
     }
   }
 

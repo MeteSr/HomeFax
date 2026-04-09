@@ -26,6 +26,7 @@ import type { ChatStackParamList } from "../navigation/ChatStack";
 import {
   extractBill,
   addBill,
+  TierLimitReachedError,
   type BillExtraction,
   type BillType,
   type AddBillArgs,
@@ -154,8 +155,19 @@ export default function BillUploadScreen({ route, navigation }: Props) {
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
       }
-    } catch {
-      Alert.alert("Error", "Failed to save bill. Please try again.");
+    } catch (err) {
+      if (err instanceof TierLimitReachedError) {
+        Alert.alert(
+          "🔒 Upgrade Required",
+          err.message,
+          [
+            { text: "Upgrade", onPress: () => Linking.openURL("https://homegentic.app/pricing") },
+            { text: "Cancel", style: "cancel", onPress: () => navigation.goBack() },
+          ]
+        );
+      } else {
+        Alert.alert("Error", "Failed to save bill. Please try again.");
+      }
       setStep("confirm");
     }
   }

@@ -4,12 +4,19 @@
  * Stores utility bill records per property, enabling anomaly detection and
  * property-aware expense intelligence (Epic #49).
  *
- * Each bill record captures provider, billing period, amount, and usage
- * so the platform can compute rolling baselines and flag anomalies.
+ * Tier-based upload limits (enforced server-side via payment canister):
+ *   Free         — 1 upload per calendar month
+ *   Pro          — unlimited
+ *   Premium      — unlimited
+ *   ContractorPro — unlimited
+ *
+ * When payCanisterId is set (post-deploy wiring), the tier is resolved live
+ * via getTierForPrincipal(). Falls back to the local tierGrants admin map
+ * for dev environments where the payment canister is not wired.
  *
  * Anomaly detection:
- *   - Rolling 3-month average per (propertyId, billType)
- *   - getBillsForProperty returns all records — frontend or future job computes alerts
+ *   - Rolling 3-month average per (propertyId, billType, homeowner)
+ *   - Bills > 20% above baseline are flagged with a natural-language reason
  *
  * Access control: callers may only read/write their own bills.
  */
@@ -38,6 +45,13 @@ persistent actor Bills {
     #Internet;
     #Telecom;
     #Other;
+  };
+
+  public type SubscriptionTier = {
+    #Free;
+    #Pro;
+    #Premium;
+    #ContractorPro;
   };
 
   public type BillRecord = {
@@ -71,6 +85,7 @@ persistent actor Bills {
     #NotFound;
     #Unauthorized;
     #InvalidInput : Text;
+    #TierLimitReached : Text;
   };
 
   public type Metrics = {
@@ -80,19 +95,26 @@ persistent actor Bills {
 
   // ─── Stable State ────────────────────────────────────────────────────────────
 
-  private var billCounter      : Nat                   = 0;
-  private var isPaused         : Bool                  = false;
-  private var adminListEntries : [Principal]           = [];
-  private var adminInitialized : Bool                  = false;
-  private var billEntries      : [(Text, BillRecord)]  = [];
+  private var billCounter      : Nat                        = 0;
+  private var isPaused         : Bool                       = false;
+  private var adminListEntries : [Principal]                = [];
+  private var adminInitialized : Bool                       = false;
+  private var billEntries      : [(Text, BillRecord)]       = [];
+  /// Payment canister ID — set post-deploy via setPaymentCanisterId().
+  private var payCanisterId    : Text                       = "";
+  /// Fallback tier grants for dev / pre-wiring environments.
+  private var tierGrantEntries : [(Text, SubscriptionTier)] = [];
 
-  private var bills = Map.empty<Text, BillRecord>();
+  private var bills      = Map.empty<Text, BillRecord>();
+  private var tierGrants = Map.empty<Text, SubscriptionTier>();
 
   // ─── Upgrade Hook ────────────────────────────────────────────────────────────
 
   system func postupgrade() {
-    for ((k, v) in billEntries.vals()) { Map.add(bills, Text.compare, k, v) };
+    for ((k, v) in billEntries.vals())      { Map.add(bills,      Text.compare, k, v) };
     billEntries := [];
+    for ((k, v) in tierGrantEntries.vals()) { Map.add(tierGrants, Text.compare, k, v) };
+    tierGrantEntries := [];
   };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
@@ -111,6 +133,39 @@ persistent actor Bills {
     "BILL_" # Nat.toText(billCounter)
   };
 
+  /// Return the tier from the local grant map (dev fallback).
+  private func tierFor(p: Principal) : SubscriptionTier {
+    switch (Map.get(tierGrants, Text.compare, Principal.toText(p))) {
+      case (?t) t;
+      case null #Free;
+    }
+  };
+
+  /// Monthly upload limit for a tier. 0 = unlimited.
+  private func monthlyUploadLimit(tier: SubscriptionTier) : Nat {
+    switch tier {
+      case (#Free)          { 1 };
+      case (#Pro)           { 0 };
+      case (#Premium)       { 0 };
+      case (#ContractorPro) { 0 };
+    }
+  };
+
+  /// Count bills uploaded by this principal in the same calendar month as `nowNs`.
+  /// Month boundary is approximate: 1 month ≈ 30.44 days in nanoseconds.
+  private let ONE_MONTH_NS : Int = 2_629_800_000_000_000; // ~30.44 days
+
+  private func countUploadsThisMonth(caller: Principal, nowNs: Int) : Nat {
+    var count : Nat = 0;
+    for ((_, b) in Map.entries(bills)) {
+      if (Principal.equal(b.homeowner, caller)
+          and nowNs - b.uploadedAt <= ONE_MONTH_NS) {
+        count += 1;
+      }
+    };
+    count
+  };
+
   /// Compute 3-month rolling average amountCents for a (propertyId, billType, homeowner).
   /// Returns null if fewer than 2 prior bills exist (insufficient baseline).
   private func rollingAverage(
@@ -118,12 +173,11 @@ persistent actor Bills {
     billType: BillType,
     homeowner: Principal,
     excludeId: Text,
-    periodEndRef: Text,   // ISO date of the bill being evaluated
+    periodEndRef: Text,
   ) : ?Float {
     var sum  : Float = 0.0;
     var count: Nat   = 0;
 
-    // Rough 90-day window: compare first 7 chars (YYYY-MM) of periodEnd
     let refYear  = if (Text.size(periodEndRef) >= 4) Text.subText(periodEndRef, 0, 4) else "0000";
     let refMonth = if (Text.size(periodEndRef) >= 7) Text.subText(periodEndRef, 5, 7) else "00";
 
@@ -133,7 +187,6 @@ persistent actor Bills {
           and Principal.equal(b.homeowner, homeowner)
           and billTypeEq(b.billType, billType))
       {
-        // Only include bills within the trailing 3 months
         let bYear  = if (Text.size(b.periodEnd) >= 4) Text.subText(b.periodEnd, 0, 4) else "0000";
         let bMonth = if (Text.size(b.periodEnd) >= 7) Text.subText(b.periodEnd, 5, 7) else "00";
         if (withinThreeMonths(bYear, bMonth, refYear, refMonth)) {
@@ -166,7 +219,6 @@ persistent actor Bills {
     let mi1 = textToNat(m1);
     let total2 = yi2 * 12 + mi2;
     let total1 = yi1 * 12 + mi1;
-    // bill must be before ref and within 3 months back
     total2 < total1 and total1 - total2 <= 3
   };
 
@@ -183,8 +235,14 @@ persistent actor Bills {
 
   // ─── Core: Bill Operations ────────────────────────────────────────────────────
 
-  /// Add a bill record for a property. Runs anomaly detection against the 3-month
-  /// rolling average for that (property, billType) and sets anomalyFlag if > 20%.
+  /// Add a bill record for a property.
+  ///
+  /// Tier check (server-side, non-bypassable):
+  ///   Free tier callers may upload at most 1 bill per calendar month.
+  ///   Exceeding the limit returns #TierLimitReached with an upgrade prompt.
+  ///
+  /// Anomaly detection runs after the tier check against the 3-month rolling
+  /// average for (propertyId, billType) and sets anomalyFlag if > 20%.
   public shared(msg) func addBill(args: AddBillArgs) : async Result.Result<BillRecord, Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
 
@@ -195,10 +253,29 @@ persistent actor Bills {
     if (Text.size(args.periodStart) == 0)   return #err(#InvalidInput("periodStart cannot be empty"));
     if (Text.size(args.periodEnd)   == 0)   return #err(#InvalidInput("periodEnd cannot be empty"));
 
-    let id  = nextBillId();
-    let now = Time.now();
+    // ── Tier enforcement ──────────────────────────────────────────────────────
+    let callerTier : SubscriptionTier = if (payCanisterId != "") {
+      let payActor = actor(payCanisterId) : actor {
+        getTierForPrincipal : (Principal) -> async { #Free; #Pro; #Premium; #ContractorPro };
+      };
+      await payActor.getTierForPrincipal(msg.caller)
+    } else {
+      tierFor(msg.caller)
+    };
 
-    // Anomaly detection: compare against 3-month rolling average
+    let limit = monthlyUploadLimit(callerTier);
+    let now   = Time.now();
+
+    if (limit > 0 and countUploadsThisMonth(msg.caller, now) >= limit) {
+      return #err(#TierLimitReached(
+        "Free plan allows " # Nat.toText(limit) # " bill upload per month. " #
+        "Upgrade to Pro ($10/mo) for unlimited bill uploads."
+      ));
+    };
+
+    // ── Anomaly detection ─────────────────────────────────────────────────────
+    let id = nextBillId();
+
     let (anomalyFlag, anomalyReason) = switch (rollingAverage(
       args.propertyId, args.billType, msg.caller, id, args.periodEnd
     )) {
@@ -245,7 +322,7 @@ persistent actor Bills {
     #ok(result)
   };
 
-  /// Delete a specific bill record. Caller must be the owner.
+  /// Delete a specific bill record. Caller must be the owner or an admin.
   public shared(msg) func deleteBill(id: Text) : async Result.Result<(), Error> {
     switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
     switch (Map.get(bills, Text.compare, id)) {
@@ -261,6 +338,19 @@ persistent actor Bills {
   };
 
   // ─── Admin ────────────────────────────────────────────────────────────────────
+
+  public shared(msg) func setPaymentCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    payCanisterId := id;
+    #ok(())
+  };
+
+  /// Grant a tier override for a principal (dev / support use).
+  public shared(msg) func grantTier(p: Principal, tier: SubscriptionTier) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    Map.add(tierGrants, Text.compare, Principal.toText(p), tier);
+    #ok(())
+  };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);

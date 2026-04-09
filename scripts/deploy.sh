@@ -220,6 +220,12 @@ if [ -n "$QUOTE_ID" ] && [ -n "$PAYMENT_ID" ]; then
   dfx canister call quote setPaymentCanisterId "(principal \"$PAYMENT_ID\")" --network "$NETWORK"
 fi
 
+BILLS_ID=$(dfx canister id bills --network "$NETWORK" 2>/dev/null || echo "")
+if [ -n "$BILLS_ID" ] && [ -n "$PAYMENT_ID" ]; then
+  echo "  Wiring payment -> bills (Free tier monthly upload limit)..."
+  dfx canister call bills setPaymentCanisterId "(\"$PAYMENT_ID\")" --network "$NETWORK"
+fi
+
 if [ -n "$JOB_ID" ] && [ -n "$CONTRACTOR_ID" ]; then
   echo "  Wiring contractor -> job..."
   dfx canister call job setContractorCanisterId "(\"$CONTRACTOR_ID\")" --network "$NETWORK"
