@@ -75,6 +75,8 @@ vi.mock("@/services/listing", () => {
       price - Math.round(price * commBps / 10_000) - Math.round(price * closingBps / 10_000),
     formatCommission: (bps: number) => (bps / 100).toFixed(2) + "%",
     isDeadlinePassed: (ms: number) => ms <= Date.now(),
+    initMilestones: () => [],
+    MILESTONE_STEPS: [] as { key: string; label: string }[],
   };
 });
 
@@ -124,13 +126,46 @@ vi.mock("@/store/authStore", () => ({
   }),
 }));
 
-vi.mock("@/store/propertyStore", () => ({
-  usePropertyStore: () => ({
-    properties: [
-      { id: "prop-1", address: "123 Main St", status: "Active", verificationLevel: "Basic", createdAt: Date.now() },
-    ],
-  }),
+vi.mock("@/store/propertyStore", () => {
+  // Define properties OUTSIDE the hook function so the reference is stable across renders.
+  // A new array on every call would trigger useEffect([properties]) in ListingNewPage
+  // on every render, causing an infinite loop that hangs act() in afterEach.
+  const properties = [
+    { id: "prop-1", address: "123 Main St", status: "Active", verificationLevel: "Basic", createdAt: 1_700_000_000_000 },
+  ];
+  return {
+    usePropertyStore: () => ({ properties }),
+  };
+});
+
+vi.mock("@/store/jobStore", () => ({
+  useJobStore: () => ({ jobs: [] }),
 }));
+
+vi.mock("@/services/auth", () => ({
+  authService: { getProfile: vi.fn().mockResolvedValue(null) },
+}));
+
+vi.mock("@/services/job", () => ({
+  jobService: { getAll: vi.fn().mockResolvedValue([]), getByProperty: vi.fn().mockResolvedValue([]) },
+}));
+
+vi.mock("@/services/scoreService", () => ({
+  computeScore:    vi.fn().mockReturnValue(null),
+  premiumEstimate: vi.fn().mockReturnValue(null),
+}));
+
+vi.mock("react-hot-toast", () => ({
+  default: { success: vi.fn(), error: vi.fn() },
+}));
+
+// Mock Layout to avoid pulling in its full dependency tree (AuthContext, VoiceAgent, etc.)
+vi.mock("@/components/Layout", async (importOriginal) => {
+  const React = await import("react");
+  return {
+    Layout: (props: any) => React.createElement("div", { "data-testid": "layout" }, props.children),
+  };
+});
 
 // ─── Page imports ──────────────────────────────────────────────────────────────
 
@@ -159,26 +194,31 @@ describe("ListingNewPage", () => {
     vi.mocked(listingService.createBidRequest).mockResolvedValue(mockBidRequest);
   });
 
-  it("renders the page heading", () => {
+  it("renders the page heading", async () => {
     renderPage(<ListingNewPage />, "/listing/new", "/listing/new");
-    expect(screen.getByText(/List Your Home/i)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText(/List Your Home/i)).toBeInTheDocument()
+    );
   });
 
-  it("renders the notes / bid deadline fields", () => {
+  it("renders the notes / bid deadline fields", async () => {
     renderPage(<ListingNewPage />, "/listing/new", "/listing/new");
-    expect(screen.getByLabelText(/Notes/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Bid Deadline/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Notes/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Bid Deadline/i)).toBeInTheDocument();
+    });
   });
 
-  it("renders a Submit button", () => {
+  it("renders a Submit button", async () => {
     renderPage(<ListingNewPage />, "/listing/new", "/listing/new");
-    expect(
-      screen.getByRole("button", { name: /submit|create|list/i })
-    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /submit|create|list/i })).toBeInTheDocument()
+    );
   });
 
   it("calls listingService.createBidRequest on submit", async () => {
     renderPage(<ListingNewPage />, "/listing/new", "/listing/new");
+    await waitFor(() => screen.getByLabelText(/Notes/i));
     fireEvent.change(screen.getByLabelText(/Notes/i), { target: { value: "Test notes" } });
     // Set a future datetime-local value for the required bid deadline field
     const future = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 16);
@@ -189,9 +229,11 @@ describe("ListingNewPage", () => {
     });
   });
 
-  it("shows a property selector when multiple properties exist", () => {
+  it("shows a property selector when multiple properties exist", async () => {
     renderPage(<ListingNewPage />, "/listing/new", "/listing/new");
-    expect(screen.getByLabelText(/Property/i)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Property/i)).toBeInTheDocument()
+    );
   });
 });
 
