@@ -208,7 +208,7 @@ function unwrap(result: any): Property {
 
 export const propertyService = {
   async registerProperty(args: RegisterPropertyArgs): Promise<Property> {
-    if (!PROPERTY_CANISTER_ID) {
+    if (!PROPERTY_CANISTER_ID && !process.env.VITEST) {
       const mock: Property = {
         id:                _mockNextId++,
         owner:             "local-dev",
@@ -243,7 +243,7 @@ export const propertyService = {
   },
 
   async getMyProperties(): Promise<Property[]> {
-    if (!PROPERTY_CANISTER_ID) return _mockProperties.map((p) => ({ ...p }));
+    if (!PROPERTY_CANISTER_ID && !process.env.VITEST) return _mockProperties.map((p) => ({ ...p }));
     const a = await getActor();
     const props = await a.getMyProperties();
     return (props as any[]).map(fromProperty);
@@ -357,5 +357,7 @@ export const propertyService = {
 
   reset() {
     _actor = null;
+    _mockProperties = [];
+    _mockNextId = BigInt(1);
   },
 };
