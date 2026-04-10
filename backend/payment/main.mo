@@ -12,7 +12,7 @@ import Time      "mo:core/Time";
 
 persistent actor Payment {
 
-  public type Tier = { #Free; #Pro; #Premium; #ContractorPro };
+  public type Tier = { #Free; #Pro; #Premium; #ContractorFree; #ContractorPro };
 
   public type Subscription = {
     owner: Principal;
@@ -28,6 +28,7 @@ persistent actor Payment {
     free: Nat;
     pro: Nat;
     premium: Nat;
+    contractorFree: Nat;
     contractorPro: Nat;
     activePaid: Nat;
     estimatedMrrUsd: Nat;
@@ -135,6 +136,7 @@ persistent actor Payment {
       case (#Free)          { 0  };
       case (#Pro)           { 10 };
       case (#Premium)       { 20 };
+      case (#ContractorFree){ 0  };
       case (#ContractorPro) { 30 };
     }
   };
@@ -285,8 +287,9 @@ persistent actor Payment {
     };
 
     let durationNs : Int = switch (tier) {
-      case (#Free) { 0 };
-      case (_)     { 30 * 24 * 60 * 60 * 1_000_000_000 };
+      case (#Free)           { 0 };
+      case (#ContractorFree) { 0 };
+      case (_)               { 30 * 24 * 60 * 60 * 1_000_000_000 };
     };
     let now = Time.now();
     let sub: Subscription = {
@@ -304,8 +307,9 @@ persistent actor Payment {
   /// No admin guard — protect at the deployment layer (controller only).
   public shared func grantSubscription(principal: Principal, tier: Tier) : async Result.Result<Subscription, Error> {
     let durationNs : Int = switch (tier) {
-      case (#Free) { 0 };
-      case (_)     { 30 * 24 * 60 * 60 * 1_000_000_000 };
+      case (#Free)           { 0 };
+      case (#ContractorFree) { 0 };
+      case (_)               { 30 * 24 * 60 * 60 * 1_000_000_000 };
     };
     let now = Time.now();
     let sub: Subscription = {
@@ -329,19 +333,21 @@ persistent actor Payment {
 
   public query func getPricing(tier: Tier) : async PricingInfo {
     switch (tier) {
-      case (#Free)          { { tier = #Free;          priceUSD = 0;  periodDays = 0;  propertyLimit = 1;  photosPerJob = 2;  quoteRequestsPerMonth = 3  } };
-      case (#Pro)           { { tier = #Pro;           priceUSD = 10; periodDays = 30; propertyLimit = 5;  photosPerJob = 10; quoteRequestsPerMonth = 10 } };
-      case (#Premium)       { { tier = #Premium;       priceUSD = 20; periodDays = 30; propertyLimit = 20; photosPerJob = 30; quoteRequestsPerMonth = 0  } };
-      case (#ContractorPro) { { tier = #ContractorPro; priceUSD = 30; periodDays = 30; propertyLimit = 0;  photosPerJob = 50; quoteRequestsPerMonth = 0  } };
+      case (#Free)           { { tier = #Free;           priceUSD = 0;  periodDays = 0;  propertyLimit = 1;  photosPerJob = 2;  quoteRequestsPerMonth = 3  } };
+      case (#Pro)            { { tier = #Pro;            priceUSD = 10; periodDays = 30; propertyLimit = 5;  photosPerJob = 10; quoteRequestsPerMonth = 10 } };
+      case (#Premium)        { { tier = #Premium;        priceUSD = 20; periodDays = 30; propertyLimit = 20; photosPerJob = 30; quoteRequestsPerMonth = 0  } };
+      case (#ContractorFree) { { tier = #ContractorFree; priceUSD = 0;  periodDays = 0;  propertyLimit = 0;  photosPerJob = 5;  quoteRequestsPerMonth = 0  } };
+      case (#ContractorPro)  { { tier = #ContractorPro;  priceUSD = 30; periodDays = 30; propertyLimit = 0;  photosPerJob = 50; quoteRequestsPerMonth = 0  } };
     }
   };
 
   public query func getAllPricing() : async [PricingInfo] {
     [
-      { tier = #Free;          priceUSD = 0;  periodDays = 0;  propertyLimit = 1;  photosPerJob = 2;  quoteRequestsPerMonth = 3  },
-      { tier = #Pro;           priceUSD = 10; periodDays = 30; propertyLimit = 5;  photosPerJob = 10; quoteRequestsPerMonth = 10 },
-      { tier = #Premium;       priceUSD = 20; periodDays = 30; propertyLimit = 20; photosPerJob = 30; quoteRequestsPerMonth = 0  },
-      { tier = #ContractorPro; priceUSD = 30; periodDays = 30; propertyLimit = 0;  photosPerJob = 50; quoteRequestsPerMonth = 0  },
+      { tier = #Free;           priceUSD = 0;  periodDays = 0;  propertyLimit = 1;  photosPerJob = 2;  quoteRequestsPerMonth = 3  },
+      { tier = #Pro;            priceUSD = 10; periodDays = 30; propertyLimit = 5;  photosPerJob = 10; quoteRequestsPerMonth = 10 },
+      { tier = #Premium;        priceUSD = 20; periodDays = 30; propertyLimit = 20; photosPerJob = 30; quoteRequestsPerMonth = 0  },
+      { tier = #ContractorFree; priceUSD = 0;  periodDays = 0;  propertyLimit = 0;  photosPerJob = 5;  quoteRequestsPerMonth = 0  },
+      { tier = #ContractorPro;  priceUSD = 30; periodDays = 30; propertyLimit = 0;  photosPerJob = 50; quoteRequestsPerMonth = 0  },
     ]
   };
 
@@ -349,19 +355,21 @@ persistent actor Payment {
 
   public query func getSubscriptionStats() : async SubscriptionStats {
     let now = Time.now();
-    var free          = 0;
-    var pro           = 0;
-    var premium       = 0;
-    var contractorPro = 0;
-    var activePaid    = 0;
+    var free            = 0;
+    var pro             = 0;
+    var premium         = 0;
+    var contractorFree  = 0;
+    var contractorPro   = 0;
+    var activePaid      = 0;
 
     for (sub in Map.values(subscriptions)) {
       let isActive = sub.expiresAt == 0 or sub.expiresAt > now;
       switch (sub.tier) {
-        case (#Free)          { free          += 1 };
-        case (#Pro)           { pro           += 1; if (isActive) { activePaid += 1 } };
-        case (#Premium)       { premium       += 1; if (isActive) { activePaid += 1 } };
-        case (#ContractorPro) { contractorPro += 1; if (isActive) { activePaid += 1 } };
+        case (#Free)           { free           += 1 };
+        case (#Pro)            { pro            += 1; if (isActive) { activePaid += 1 } };
+        case (#Premium)        { premium        += 1; if (isActive) { activePaid += 1 } };
+        case (#ContractorFree) { contractorFree += 1 };
+        case (#ContractorPro)  { contractorPro  += 1; if (isActive) { activePaid += 1 } };
       };
     };
 
@@ -370,6 +378,7 @@ persistent actor Payment {
       free;
       pro;
       premium;
+      contractorFree;
       contractorPro;
       activePaid;
       estimatedMrrUsd = pro * 10 + premium * 20 + contractorPro * 30;

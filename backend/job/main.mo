@@ -60,6 +60,7 @@ persistent actor Job {
     homeownerSigned: Bool;
     contractorSigned: Bool;
     createdAt: Time.Time;
+    sourceQuoteId: ?Text;     // null = not sourced via a HomeGentic quote request; set = referral fee applies on verification
   };
 
   public type Error = {
@@ -222,7 +223,8 @@ persistent actor Job {
     completedDate: Time.Time,
     permitNumber: ?Text,
     warrantyMonths: ?Nat,
-    isDiy: Bool
+    isDiy: Bool,
+    sourceQuoteId: ?Text
   ) : async Result.Result<Job, Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
@@ -287,6 +289,7 @@ persistent actor Job {
       // DIY jobs pre-sign the contractor slot — no contractor to co-sign
       contractorSigned = isDiy;
       createdAt        = now;
+      sourceQuoteId;
     };
 
     Map.add(jobs, Text.compare, id, job);
@@ -857,6 +860,21 @@ persistent actor Job {
     Map.add(inviteTokens, Text.compare, token, usedInvite);
 
     #ok(updated)
+  };
+
+  /// Returns all jobs that were sourced via a HomeGentic quote request.
+  /// Used by the admin referral fee pipeline view.
+  public query func getReferralJobs() : async [Job] {
+    let result = Array.filter<Job>(
+      Iter.toArray(Map.values(jobs)),
+      func(j: Job) : Bool {
+        switch (j.sourceQuoteId) {
+          case null    { false };
+          case (?qid)  { Text.size(qid) > 0 };
+        }
+      }
+    );
+    result
   };
 
   public query func getMetrics() : async Metrics {

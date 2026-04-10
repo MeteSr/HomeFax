@@ -1041,6 +1041,7 @@ export default function LandingPage() {
             <a onClick={() => navigate("/pricing")}>Pricing</a>
             <a onClick={(e) => { e.preventDefault(); scrollTo("hfl-tools"); }}>Free Tools</a>
             <Link to="/privacy" style={{ color: "rgba(253,252,250,0.5)", textDecoration: "none", fontSize: "13px", transition: "color .2s" }}>Privacy</Link>
+            <Link to="/terms" style={{ color: "rgba(253,252,250,0.5)", textDecoration: "none", fontSize: "13px", transition: "color .2s" }}>Terms</Link>
             <Link to="/support" style={{ color: "rgba(253,252,250,0.5)", textDecoration: "none", fontSize: "13px", transition: "color .2s" }}>Support</Link>
           </div>
           <div className="hfl-footer-right">

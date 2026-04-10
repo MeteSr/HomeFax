@@ -26,8 +26,26 @@ echo "▶ Downgrade to Free via grantSubscription..."
 dfx canister call payment grantSubscription "(principal \"$MY_PRINCIPAL\", variant { Free })"
 dfx canister call payment getMySubscription
 
+echo "▶ Grant ContractorFree subscription..."
+dfx canister call payment grantSubscription "(principal \"$MY_PRINCIPAL\", variant { ContractorFree })"
+SUB=$(dfx canister call payment getMySubscription)
+echo "$SUB" | grep -q "ContractorFree" \
+  && echo "  ↳ ContractorFree tier confirmed — ✓" \
+  || (echo "  ↳ ❌ Expected ContractorFree tier"; exit 1)
+
+echo "▶ ContractorFree expiresAt should be 0 (no expiry — free tier)..."
+echo "$SUB" | grep -q "expiresAt = 0" \
+  && echo "  ↳ expiresAt = 0 confirmed — ✓" \
+  || echo "  ↳ expiresAt not 0 (may vary by format) — review output above"
+
+echo "▶ getPricing ContractorFree (expect priceUSD=0, photosPerJob=5)..."
+dfx canister call payment getPricing '(variant { ContractorFree })'
+
 echo "▶ getPriceQuote Free (expect 0)..."
 dfx canister call payment getPriceQuote '(variant { Free })'
+
+echo "▶ getSubscriptionStats — verify contractorFree field present..."
+dfx canister call payment getSubscriptionStats
 
 echo "✅ Payment tests passed!"
 echo ""

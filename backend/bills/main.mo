@@ -95,6 +95,7 @@ persistent actor Bills {
 
   private var billCounter      : Nat                        = 0;
   private var isPaused         : Bool                       = false;
+  private var pauseExpiryNs    : ?Int                       = null;
   private var adminListEntries : [Principal]                = [];
   private var adminInitialized : Bool                       = false;
   private var billEntries      : [(Text, BillRecord)]       = [];
@@ -122,7 +123,13 @@ persistent actor Bills {
   };
 
   private func requireActive() : Result.Result<(), Error> {
-    if (isPaused) return #err(#InvalidInput("Canister is paused"));
+    if (isPaused) {
+      // 14.4.4 — auto-expire timed pauses
+      switch (pauseExpiryNs) {
+        case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
+        case null { return #err(#InvalidInput("Canister is paused")) };
+      };
+    };
     #ok(())
   };
 
@@ -335,12 +342,17 @@ persistent actor Bills {
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := true;
+    pauseExpiryNs := switch (durationSeconds) {
+      case null { null };
+      case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
+    };
     #ok(())
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := false;
+    pauseExpiryNs := null;
     #ok(())
   };
 

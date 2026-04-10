@@ -62,13 +62,14 @@ updateProfile(1) -> (1)"
 
 exports[`Candid contract snapshots — method arity > job 1`] = `
 "createInviteToken(2) -> (1)
-createJob(10) -> (1)
+createJob(11) -> (1)
 getCertificationData(1) -> (1) [query]
 getJob(1) -> (1) [query]
 getJobByInviteToken(1) -> (1) [query]
 getJobsForProperty(1) -> (1) [query]
 getJobsPendingMySignature(0) -> (1) [query]
 getMetrics(0) -> (1) [query]
+getReferralJobs(0) -> (1) [query]
 linkContractor(2) -> (1)
 redeemInviteToken(1) -> (1)
 updateJobStatus(2) -> (1)

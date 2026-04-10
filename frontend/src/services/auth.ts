@@ -1,7 +1,7 @@
 import { Actor } from "@icp-sdk/core/agent";
 import { getAgent } from "./actor";
 
-const AUTH_CANISTER_ID = (process.env as any).AUTH_CANISTER_ID || "";
+function getCanisterId() { return (process.env as any).AUTH_CANISTER_ID || ""; }
 
 export const idlFactory = ({ IDL }: any) => {
   const UserRole = IDL.Variant({
@@ -91,7 +91,7 @@ let _mockProfile: UserProfile | null = null;
 async function getActor() {
   if (!_actor) {
     const ag = await getAgent();
-    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: AUTH_CANISTER_ID });
+    _actor = Actor.createActor(idlFactory, { agent: ag, canisterId: getCanisterId() });
   }
   return _actor;
 }
@@ -120,7 +120,7 @@ function unwrap(result: any): UserProfile {
 
 export const authService = {
   async register(args: RegisterArgs): Promise<UserProfile> {
-    if (!AUTH_CANISTER_ID) {
+    if (!getCanisterId()) {
       _mockProfile = {
         principal:    "local-dev",
         role:         args.role,
@@ -143,7 +143,7 @@ export const authService = {
   },
 
   async getProfile(): Promise<UserProfile> {
-    if (!AUTH_CANISTER_ID) {
+    if (!getCanisterId()) {
       if (!_mockProfile) throw new Error("NotFound");
       return { ..._mockProfile };
     }
@@ -153,7 +153,7 @@ export const authService = {
   },
 
   async updateProfile(args: { email: string; phone: string }): Promise<UserProfile> {
-    if (!AUTH_CANISTER_ID) {
+    if (!getCanisterId()) {
       if (!_mockProfile) throw new Error("NotFound");
       _mockProfile = { ..._mockProfile, email: args.email, phone: args.phone, updatedAt: BigInt(Date.now()) };
       return { ..._mockProfile };
@@ -164,13 +164,13 @@ export const authService = {
   },
 
   async recordLogin(): Promise<void> {
-    if (!AUTH_CANISTER_ID) return;
+    if (!getCanisterId()) return;
     const a = await getActor();
     await a.recordLogin();
   },
 
   async hasRole(role: UserRole): Promise<boolean> {
-    if (!AUTH_CANISTER_ID) return _mockProfile?.role === role;
+    if (!getCanisterId()) return _mockProfile?.role === role;
     const a = await getActor();
     return a.hasRole({ [role]: null });
   },

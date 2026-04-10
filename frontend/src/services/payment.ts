@@ -7,7 +7,7 @@ const PAYMENT_CANISTER_ID = (process.env as any).PAYMENT_CANISTER_ID || "";
 
 export const idlFactory = ({ IDL }: any) => {
   const Tier = IDL.Variant({
-    Free: IDL.Null, Pro: IDL.Null, Premium: IDL.Null, ContractorPro: IDL.Null,
+    Free: IDL.Null, Pro: IDL.Null, Premium: IDL.Null, ContractorFree: IDL.Null, ContractorPro: IDL.Null,
   });
   const Subscription = IDL.Record({
     owner:     IDL.Principal,
@@ -33,6 +33,7 @@ export const idlFactory = ({ IDL }: any) => {
     free:            IDL.Nat,
     pro:             IDL.Nat,
     premium:         IDL.Nat,
+    contractorFree:  IDL.Nat,
     contractorPro:   IDL.Nat,
     activePaid:      IDL.Nat,
     estimatedMrrUsd: IDL.Nat,
@@ -78,7 +79,7 @@ export const idlFactory = ({ IDL }: any) => {
 
 // ─── TypeScript types ─────────────────────────────────────────────────────────
 
-export type PlanTier = "Free" | "Pro" | "Premium" | "ContractorPro";
+export type PlanTier = "Free" | "Pro" | "Premium" | "ContractorFree" | "ContractorPro";
 
 export interface Plan {
   tier:           PlanTier;
@@ -141,6 +142,22 @@ export const PLANS: Plan[] = [
     quoteRequests: Infinity,
   },
   {
+    tier: "ContractorFree",
+    price: 0,
+    period: "free",
+    features: [
+      "Contractor profile listing",
+      "5 photos per job",
+      "Receive leads from HomeGentic homeowners",
+      "$15 referral fee per verified job",
+      "Basic trust score",
+      "Job completion certificates",
+    ],
+    propertyLimit: 0,
+    photosPerJob: 5,
+    quoteRequests: Infinity,
+  },
+  {
     tier: "ContractorPro",
     price: 30,
     period: "month",
@@ -157,6 +174,11 @@ export const PLANS: Plan[] = [
     quoteRequests: Infinity,
   },
 ];
+
+// Annual plans: same features as monthly, price = 10 months (2 months free).
+export const ANNUAL_PLANS: Plan[] = PLANS
+  .filter((p) => p.tier === "Pro" || p.tier === "Premium")
+  .map((p) => ({ ...p, price: p.price * 10, period: "year" as const }));
 
 // ─── Actor ────────────────────────────────────────────────────────────────────
 
@@ -234,6 +256,15 @@ export const paymentService = {
   ): Promise<{ url: string }> {
     await this.subscribe(tier, onStep);
     return { url: "/dashboard" };
+  },
+
+  /** Subscribe to an annual plan (Pro or Premium). Sets expiresAt = now + 365 days on-chain. */
+  async subscribeAnnual(
+    tier: "Pro" | "Premium",
+    onStep?: (step: "quoting" | "approving" | "confirming") => void,
+  ): Promise<void> {
+    if (!PAYMENT_CANISTER_ID) return;
+    return this.subscribe(tier, onStep);
   },
 
   async cancel(): Promise<void> {

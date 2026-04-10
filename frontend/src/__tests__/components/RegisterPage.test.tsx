@@ -184,6 +184,8 @@ function goToStep3(email = "test@example.com", phone = "5125550100") {
   if (email) fireEvent.change(screen.getByPlaceholderText(/you@example\.com/i), { target: { value: email } });
   if (phone) fireEvent.change(screen.getByPlaceholderText(/\+1.*555/i), { target: { value: phone } });
   fireEvent.click(screen.getByRole("button", { name: /review/i }));
+  // Must agree to terms before Create Account is enabled
+  fireEvent.click(screen.getByRole("checkbox"));
 }
 
 describe("RegisterPage — step 3: confirm & submit", () => {
@@ -225,6 +227,7 @@ describe("RegisterPage — step 3: confirm & submit", () => {
     fireEvent.click(screen.getByText("Contractor"));
     fireEvent.click(screen.getByRole("button", { name: /continue/i }));
     fireEvent.click(screen.getByRole("button", { name: /review/i }));
+    fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/contractor-dashboard"));
   });
