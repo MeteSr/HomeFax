@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Home, HardHat, Building2, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/Button";
 import { authService, UserRole } from "@/services/auth";
@@ -39,6 +39,7 @@ export default function RegisterPage() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSubmit = async () => {
     if (!role) return;
@@ -263,9 +264,23 @@ export default function RegisterPage() {
                     </div>
                   ))}
                 </div>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "0.625rem", marginBottom: "1.25rem", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    style={{ marginTop: "2px", accentColor: COLORS.sage, width: "1rem", height: "1rem", flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: "0.8rem", color: COLORS.plumMid, fontWeight: 300, lineHeight: 1.5 }}>
+                    I agree to HomeGentic's{" "}
+                    <Link to="/terms" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.sage }}>Terms of Service</Link>
+                    {" "}and{" "}
+                    <Link to="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: COLORS.sage }}>Privacy Policy</Link>
+                  </span>
+                </label>
                 <div style={{ display: "flex", gap: "0.75rem" }}>
                   <Button variant="outline" onClick={() => setStep(2)} icon={<ArrowLeft size={16} />}>Back</Button>
-                  <Button loading={loading} onClick={handleSubmit} icon={<CheckCircle size={16} />} style={{ flex: 1 }}>
+                  <Button loading={loading} disabled={!agreedToTerms} onClick={handleSubmit} icon={<CheckCircle size={16} />} style={{ flex: 1 }}>
                     Create Account
                   </Button>
                 </div>

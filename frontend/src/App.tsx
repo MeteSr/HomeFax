@@ -10,6 +10,7 @@ import LandingPage           from "@/pages/LandingPage";
 import LoginPage             from "@/pages/LoginPage";
 import PricingPage           from "@/pages/PricingPage";
 import PrivacyPolicyPage     from "@/pages/PrivacyPolicyPage";
+import TermsOfServicePage    from "@/pages/TermsOfServicePage";
 import SupportPage           from "@/pages/SupportPage";
 import ContractorVerifyPage  from "@/pages/ContractorVerifyPage";
 
@@ -99,6 +100,7 @@ export default function App() {
           <Route path="/login"       element={<LoginPage />} />
           <Route path="/pricing"     element={<PricingPage />} />
           <Route path="/privacy"     element={<PrivacyPolicyPage />} />
+          <Route path="/terms"       element={<TermsOfServicePage />} />
           <Route path="/support"     element={<SupportPage />} />
           <Route path="/for-sale/:propertyId" element={<FsboListingPage />} />
 
