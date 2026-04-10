@@ -88,7 +88,7 @@ describe("SettingsPage — subscription expiry display", () => {
 
   it("shows 'Expired' badge when expiresAt is in the past", async () => {
     const pastDate = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days ago
-    (paymentService.getMySubscription as any).mockResolvedValueOnce({
+    (paymentService.getMySubscription as any).mockResolvedValue({
       tier: "Pro",
       expiresAt: pastDate,
     });
@@ -100,7 +100,7 @@ describe("SettingsPage — subscription expiry display", () => {
 
   it("does NOT show 'Renews [past date]' when subscription is expired", async () => {
     const pastDate = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    (paymentService.getMySubscription as any).mockResolvedValueOnce({
+    (paymentService.getMySubscription as any).mockResolvedValue({
       tier: "Pro",
       expiresAt: pastDate,
     });
@@ -112,7 +112,7 @@ describe("SettingsPage — subscription expiry display", () => {
 
   it("shows 'Renews [date]' when expiresAt is in the future", async () => {
     const futureDate = Date.now() + 30 * 24 * 60 * 60 * 1000;
-    (paymentService.getMySubscription as any).mockResolvedValueOnce({
+    (paymentService.getMySubscription as any).mockResolvedValue({
       tier: "Pro",
       expiresAt: futureDate,
     });
@@ -124,7 +124,7 @@ describe("SettingsPage — subscription expiry display", () => {
   });
 
   it("shows 'Active subscription' when expiresAt is null", async () => {
-    (paymentService.getMySubscription as any).mockResolvedValueOnce({
+    (paymentService.getMySubscription as any).mockResolvedValue({
       tier: "Pro",
       expiresAt: null,
     });
@@ -142,7 +142,7 @@ describe("SettingsPage — renewal CTA", () => {
 
   it("shows a Renew button when subscription is expired", async () => {
     const pastDate = Date.now() - 1;
-    (paymentService.getMySubscription as any).mockResolvedValueOnce({
+    (paymentService.getMySubscription as any).mockResolvedValue({
       tier: "Pro",
       expiresAt: pastDate,
     });
@@ -154,7 +154,7 @@ describe("SettingsPage — renewal CTA", () => {
 
   it("does NOT show a Renew button when subscription is active", async () => {
     const futureDate = Date.now() + 30 * 24 * 60 * 60 * 1000;
-    (paymentService.getMySubscription as any).mockResolvedValueOnce({
+    (paymentService.getMySubscription as any).mockResolvedValue({
       tier: "Pro",
       expiresAt: futureDate,
     });
@@ -164,7 +164,7 @@ describe("SettingsPage — renewal CTA", () => {
   });
 
   it("does NOT show a Renew button on Free tier", async () => {
-    (paymentService.getMySubscription as any).mockResolvedValueOnce({
+    (paymentService.getMySubscription as any).mockResolvedValue({
       tier: "Free",
       expiresAt: null,
     });

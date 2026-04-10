@@ -62,6 +62,7 @@ function makeRawProfile(overrides: {
 // ─── beforeEach: reset mock actor state ───────────────────────────────────────
 
 beforeEach(() => {
+  (process.env as any).AUTH_CANISTER_ID = "aaaaa-aa";
   authService.reset();
   for (const fn of Object.values(mockActor)) fn.mockReset();
 });
@@ -188,7 +189,8 @@ describe("hasRole", () => {
 
 describe("recordLogin", () => {
   it("does not call the actor when AUTH_CANISTER_ID is empty", async () => {
-    // In test env AUTH_CANISTER_ID is '' — recordLogin should return early
+    delete (process.env as any).AUTH_CANISTER_ID;
+    authService.reset(); // reset cached actor so getCanisterId() is re-evaluated
     await authService.recordLogin();
     expect(mockActor.recordLogin).not.toHaveBeenCalled();
   });

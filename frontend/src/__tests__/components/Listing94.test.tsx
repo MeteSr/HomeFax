@@ -198,7 +198,7 @@ describe("ListingDetailPage — contract upload (9.4.5)", () => {
     vi.mocked(listingService.getProposalsForRequest).mockResolvedValue([mockAcceptedProposal as any]);
     renderDetail();
     await waitFor(() => {
-      expect(screen.getByText(/listing agreement|contract|upload/i)).toBeInTheDocument();
+      expect(screen.getByText(/listing agreement|signed agreement|contract|upload/i)).toBeInTheDocument();
     });
   });
 
