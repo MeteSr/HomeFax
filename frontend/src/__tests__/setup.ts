@@ -1,6 +1,13 @@
 import "@testing-library/jest-dom";
 import { cleanup, act } from "@testing-library/react";
+import { configure } from "@testing-library/dom";
 import { afterEach } from "vitest";
+
+// Increase waitFor / findBy default timeout from 1000ms to 10000ms so that
+// async UI updates complete even under heavy parallel-suite load (137 files
+// running simultaneously saturate jsdom environment setup and slow individual
+// test files to 15–34s, causing the default 1s RTL timeout to expire first).
+configure({ asyncUtilTimeout: 10000 });
 
 // Vitest global setup — runs before each test file.
 // Provides a minimal window.location.origin for services that reference it.
