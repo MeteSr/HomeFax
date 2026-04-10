@@ -41,6 +41,7 @@ export const idlFactory = ({ IDL }: any) => {
     homeownerSigned:  IDL.Bool,
     contractorSigned: IDL.Bool,
     createdAt:        IDL.Int,
+    sourceQuoteId:    IDL.Opt(IDL.Text),
   });
   const Error = IDL.Variant({
     NotFound:        IDL.Null,
@@ -71,9 +72,15 @@ export const idlFactory = ({ IDL }: any) => {
         IDL.Opt(IDL.Text),// permitNumber
         IDL.Opt(IDL.Nat), // warrantyMonths
         IDL.Bool,         // isDiy
+        IDL.Opt(IDL.Text),// sourceQuoteId
       ],
       [IDL.Variant({ ok: Job, err: Error })],
       []
+    ),
+    getReferralJobs: IDL.Func(
+      [],
+      [IDL.Vec(Job)],
+      ["query"]
     ),
     getJob: IDL.Func(
       [IDL.Text],
@@ -167,6 +174,7 @@ export interface Job {
   contractorSigned: boolean;
   photos: string[];
   createdAt: number;         // ms
+  sourceQuoteId?: string;    // set when job was sourced via a HomeGentic quote request
 }
 
 export interface InvitePreview {
@@ -222,6 +230,7 @@ function fromJob(raw: any): Job {
     contractorSigned: raw.contractorSigned,
     photos:           [],  // photos live in the photo canister
     createdAt:        Number(raw.createdAt) / 1_000_000,
+    sourceQuoteId:    raw.sourceQuoteId?.[0] ?? undefined,
   };
 }
 
@@ -298,6 +307,7 @@ function createJobService() {
       job.permitNumber   ? [job.permitNumber]   : [],     // ?Text
       job.warrantyMonths ? [BigInt(job.warrantyMonths)] : [],  // ?Nat
       job.isDiy,
+      job.sourceQuoteId ? [job.sourceQuoteId] : [],            // ?Text
     );
     return unwrapJob(result);
   },
@@ -468,6 +478,14 @@ function createJobService() {
     const a = await getActor();
     const result = await a.redeemInviteToken(token);
     return unwrapJob(result);
+  },
+
+  /** Admin: return all jobs sourced via a HomeGentic quote request (referral fee pipeline). */
+  async getReferralJobs(): Promise<Job[]> {
+    if (!JOB_CANISTER_ID) return [];
+    const a = await getActor();
+    const raw: any[] = await a.getReferralJobs();
+    return raw.map(fromJob);
   },
 
   reset() {

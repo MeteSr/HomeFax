@@ -3,8 +3,10 @@ import { Navigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { propertyService, Property, VerificationLevel, SubscriptionTier } from "@/services/property";
 import { monitoringService, CanisterMetrics, runwayDays, cyclesToUsd } from "@/services/monitoringService";
+import { jobService, Job } from "@/services/job";
+import { referralService } from "@/services/referralService";
 import { useAuthStore } from "@/store/authStore";
-import { Shield, CheckCircle, XCircle, RefreshCw, AlertTriangle } from "lucide-react";
+import { Shield, CheckCircle, XCircle, RefreshCw, AlertTriangle, DollarSign } from "lucide-react";
 import toast from "react-hot-toast";
 import { COLORS, FONTS } from "@/theme";
 
@@ -19,7 +21,7 @@ const S = {
   mono:     FONTS.mono,
 };
 
-type Tab = "verifications" | "tiers" | "cycles";
+type Tab = "verifications" | "tiers" | "cycles" | "referrals";
 const TIERS: SubscriptionTier[] = ["Free", "Pro", "Premium", "ContractorPro"];
 
 // ─── 13.6.3: Cycles burn rate dashboard ──────────────────────────────────────
@@ -338,6 +340,111 @@ function TierManager() {
   );
 }
 
+function ReferralPipeline() {
+  const [jobs, setJobs]       = useState<Job[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await jobService.getReferralJobs();
+      setJobs(data);
+    } catch {
+      toast.error("Failed to load referral jobs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const pending   = jobs?.filter((j) => !j.verified) ?? [];
+  const collected = jobs?.filter((j) => j.verified)  ?? [];
+  const totalOwed = pending.length   * referralService.REFERRAL_FEE_CENTS / 100;
+  const totalEarned = collected.length * referralService.REFERRAL_FEE_CENTS / 100;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
+        <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
+          Jobs sourced via HomeGentic quote requests. $15 flat fee applies on dual-signature verification.
+        </p>
+        <button
+          onClick={load}
+          disabled={loading}
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 0.875rem", border: `1px solid ${COLORS.rule}`, background: COLORS.white, fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", color: COLORS.plumMid }}
+        >
+          <RefreshCw size={11} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Summary cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+        {[
+          { label: "Pending fees",   value: `$${totalOwed.toFixed(2)}`,   count: pending.length,   note: "awaiting verification" },
+          { label: "Collected fees", value: `$${totalEarned.toFixed(2)}`, count: collected.length, note: "verified jobs" },
+          { label: "Fee per job",    value: `$${(referralService.REFERRAL_FEE_CENTS / 100).toFixed(2)}`, count: null, note: "flat rate" },
+        ].map((card) => (
+          <div key={card.label} style={{ background: COLORS.white, border: `1px solid ${COLORS.rule}`, padding: "1rem 1.25rem" }}>
+            <p style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.375rem" }}>{card.label}</p>
+            <p style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: COLORS.plum, marginBottom: "0.25rem" }}>{card.value}</p>
+            {card.count !== null && (
+              <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid }}>{card.count} {card.note}</p>
+            )}
+            {card.count === null && (
+              <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid }}>{card.note}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
+          <div className="spinner-lg" />
+        </div>
+      ) : jobs === null || jobs.length === 0 ? (
+        <div style={{ border: `1px dashed ${COLORS.rule}`, padding: "3rem", textAlign: "center" }}>
+          <DollarSign size={32} color={COLORS.rule} style={{ margin: "0 auto 0.75rem" }} />
+          <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
+            No referral jobs yet. Jobs sourced via quote requests will appear here once contractors receive their first HomeGentic lead.
+          </p>
+        </div>
+      ) : (
+        <div style={{ border: `1px solid ${COLORS.rule}`, borderRadius: 0, overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: COLORS.sageLight }}>
+                {["Job ID", "Quote ID", "Service", "Amount", "Status", "Fee"].map((h) => (
+                  <th key={h} style={{ textAlign: "left", padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, borderBottom: `1px solid ${COLORS.rule}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {jobs.map((j, i) => (
+                <tr key={j.id} style={{ borderBottom: i < jobs.length - 1 ? `1px solid ${COLORS.rule}` : "none", background: i % 2 === 0 ? COLORS.white : COLORS.sageLight }}>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plum, fontWeight: 600 }}>{j.id}</td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>{j.sourceQuoteId ?? "—"}</td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>{j.serviceType}</td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>${(j.amount / 100).toFixed(2)}</td>
+                  <td style={{ padding: "0.625rem 1rem" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "2px 8px", background: j.verified ? "#dcfce7" : COLORS.butter, color: j.verified ? "#16a34a" : COLORS.plum }}>
+                      {j.verified ? "Verified" : j.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: j.verified ? "#16a34a" : COLORS.plumMid, fontWeight: j.verified ? 700 : 400 }}>
+                    {j.verified ? `$${(referralService.REFERRAL_FEE_CENTS / 100).toFixed(2)}` : "Pending"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboardPage() {
   const { isAuthenticated, principal } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -450,6 +557,7 @@ export default function AdminDashboardPage() {
             { id: "verifications", label: `Verifications${pending.length > 0 ? ` (${pending.length})` : ""}` },
             { id: "tiers",         label: "Subscription Tiers" },
             { id: "cycles",        label: "Cycles & Health" },
+            { id: "referrals",     label: "Referral Fees" },
           ] as { id: Tab; label: string }[]).map((t) => (
             <button
               key={t.id}
@@ -506,6 +614,8 @@ export default function AdminDashboardPage() {
         {tab === "tiers" && <TierManager />}
 
         {tab === "cycles" && <CyclesDashboard />}
+
+        {tab === "referrals" && <ReferralPipeline />}
       </div>
     </Layout>
   );

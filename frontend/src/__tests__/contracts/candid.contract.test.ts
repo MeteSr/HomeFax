@@ -159,6 +159,7 @@ describe("job IDL factory", () => {
       "getJobsForProperty",
       "getJobsPendingMySignature",
       "getMetrics",
+      "getReferralJobs",
       "linkContractor",
       "redeemInviteToken",
       "updateJobStatus",
@@ -179,6 +180,7 @@ describe("job IDL factory", () => {
       "getJobsForProperty",
       "getJobsPendingMySignature",
       "getMetrics",
+      "getReferralJobs",
     ]);
   });
 
