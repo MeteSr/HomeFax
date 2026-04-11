@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CheckCircle, X } from "lucide-react";
+import { CheckCircle, X, Shield, BarChart2, Archive, RefreshCw, TrendingUp, ShieldCheck, CalendarDays, Users, Info } from "lucide-react";
 import { Button } from "@/components/Button";
 import { PLANS, ANNUAL_PLANS } from "@/services/payment";
 import type { Plan } from "@/services/payment";
@@ -47,6 +47,105 @@ const CONTRACTOR_FEATURES_TABLE = [
   { feature: "Referral fee per verified job", ContractorFree: "$15",  ContractorPro: "None" },
 ];
 
+const FEATURE_SPOTLIGHTS = [
+  {
+    icon: Shield,
+    title: "Blockchain-Verified Records",
+    tagline: "Your maintenance history, tamper-proof forever.",
+    description:
+      "Every job you log is sealed on the Internet Computer Protocol — a decentralized network no single company controls. No one can alter or delete your records, not even us.",
+    benefit: "Show buyers, insurers, or inspectors an unimpeachable paper trail on closing day.",
+    color: COLORS.sage,
+  },
+  {
+    icon: ShieldCheck,
+    title: "Insurance Defense Mode",
+    tagline: "Fight a rate hike or claim denial with a single report.",
+    description:
+      "Generates a print-ready document of every insurance-relevant job — roof, HVAC, electrical, plumbing — sorted by system and dated, ready to hand to your insurer.",
+    benefit: "Florida homeowners have used documented maintenance to negotiate premium discounts and overturn claim denials.",
+    color: COLORS.sage,
+  },
+  {
+    icon: TrendingUp,
+    title: "Market Intelligence",
+    tagline: "Know which renovations actually pay off in your zip code.",
+    description:
+      "Uses 2024 Remodeling Magazine data to rank projects by ROI for your area. Compares your home's condition score to similar nearby properties so you see exactly where you stand.",
+    benefit: "Stop guessing. Spend renovation dollars on the projects buyers pay a premium for.",
+    color: COLORS.sage,
+  },
+  {
+    icon: BarChart2,
+    title: "Score Breakdown",
+    tagline: "A report card for your home, not just a number.",
+    description:
+      "Your HomeGentic Score covers Maintenance History, System Ages, Documentation Quality, and more. Each dimension is graded A–F so you see exactly what's dragging the overall score down.",
+    benefit: "Walk into a listing negotiation knowing your home's strengths — and fix the weak spots before you list.",
+    color: COLORS.sage,
+  },
+  {
+    icon: CalendarDays,
+    title: "5-Year Maintenance Calendar",
+    tagline: "Budget for the future instead of being blindsided.",
+    description:
+      "Based on your home's system ages and service history, HomeGentic generates a personalized 5-year maintenance schedule with projected costs for each task.",
+    benefit: "Know that your HVAC needs replacement in year 3 — not when it fails at midnight in August.",
+    color: COLORS.sage,
+  },
+  {
+    icon: Archive,
+    title: "Warranty Wallet",
+    tagline: "Every warranty, receipt, and manual — attached to your home.",
+    description:
+      "Store appliance warranties, installation receipts, and product manuals directly tied to the job and fixture they belong to. Linked to your blockchain record, not buried in your email.",
+    benefit: "File a warranty claim in seconds. Transfer everything to the new owner at closing with one link.",
+    color: COLORS.sage,
+  },
+  {
+    icon: RefreshCw,
+    title: "Recurring Services",
+    tagline: "Never miss the HVAC tune-up that prevents a $12k failure.",
+    description:
+      "Log ongoing service contracts — HVAC, pest control, landscaping — and HomeGentic tracks every visit, sends reminders, and builds a documented service history automatically.",
+    benefit: "Proof of regular maintenance is a selling point. Let the record speak for itself.",
+    color: COLORS.sage,
+  },
+  {
+    icon: Users,
+    title: "Verified Contractor Search",
+    tagline: "Trust scores built from real, dual-signed jobs — not self-reviews.",
+    description:
+      "Browse contractors whose trust scores are calculated from jobs that both the homeowner and contractor confirmed complete. Fake reviews can't game a cryptographically signed record.",
+    benefit: "Hire someone with a proven track record in your neighborhood, not just a 5-star rating they gave themselves.",
+    color: COLORS.sage,
+  },
+];
+
+const FEATURE_TOOLTIPS: Record<string, string> = {
+  "Properties": "How many properties you can register and track under your account.",
+  "Photos per job": "Max photos you can attach to a single maintenance job record.",
+  "Quote requests/mo": "How many contractor quote requests you can open each month.",
+  "Public HomeGentic report": "A shareable link buyers, agents, or insurers can view to see your verified maintenance history.",
+  "Blockchain verified": "Jobs are stored as immutable records on the Internet Computer Protocol — no one can edit or delete them after the fact.",
+  "Score breakdown": "See your HomeGentic Score broken down by category (Maintenance, Age, Documentation, etc.) with an A–F grade for each.",
+  "Warranty Wallet": "Store appliance warranties, receipts, and manuals attached to the specific job and fixture they belong to.",
+  "Recurring Services": "Log and track ongoing service contracts (HVAC, pest, landscaping) with visit history and automatic reminders.",
+  "Market Intelligence": "ROI-ranked renovation recommendations for your zip code, plus a competitive analysis of your home vs. similar properties.",
+  "Insurance Defense Mode": "Generates a print-ready report of all insurance-relevant jobs (roof, HVAC, electrical) to support premium negotiations or claim disputes.",
+  "5-Year Maintenance Calendar": "A personalized maintenance schedule for the next 5 years, based on your home's system ages, with projected costs.",
+  "Contractor search": "Browse verified contractors with trust scores based on completed, dual-signed jobs — not self-reported ratings.",
+  "PDF export": "Download a formatted PDF of your full home report to share offline or attach to a listing.",
+  "Priority support": "Dedicated support with faster response times for Premium subscribers.",
+  "Profile listing": "Your contractor profile is listed in the HomeGentic marketplace for homeowners to discover.",
+  "Receive leads": "Get quote requests from homeowners in your area who need your services.",
+  "Job completion certificates": "Earn a blockchain-backed certificate for every dual-signed completed job — proof of your work you can show future clients.",
+  "Trust score & reviews": "A trust score calculated from your verified job history, displayed on your public profile.",
+  "Lead notifications": "Real-time alerts when a new quote request matches your trade and service area.",
+  "Earnings dashboard": "Track your HomeGentic-sourced revenue, job count, and referral fee history.",
+  "Referral fee per verified job": "ContractorFree accounts pay $15 per job sourced via HomeGentic and verified with a dual-signature. ContractorPro pays no per-job fee.",
+};
+
 const FAQS = [
   { q: "How does the contractor referral fee work?", a: "ContractorFree contractors pay a flat $15 fee per job that is both sourced via a HomeGentic quote request and verified (dual-signed). ContractorPro subscribers pay no referral fees — the monthly subscription covers it." },
   { q: "How does blockchain verification work?", a: "Every maintenance job is stored as an immutable record on the Internet Computer Protocol. The data is cryptographically signed and cannot be altered — not even by us." },
@@ -56,6 +155,105 @@ const FAQS = [
 ];
 
 const BILLING_KEY = "homegentic_pricing_billing";
+
+function FeatureTooltip({ text }: { text: string }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <span
+      style={{ position: "relative", display: "inline-flex", alignItems: "center", marginLeft: "0.35rem", verticalAlign: "middle", cursor: "help" }}
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
+    >
+      <Info size={12} color={COLORS.plumMid} style={{ opacity: 0.5 }} />
+      {visible && (
+        <span style={{
+          position: "absolute", left: "1.25rem", top: "-0.25rem",
+          zIndex: 100, width: "220px",
+          background: COLORS.plum, color: COLORS.white,
+          fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 300,
+          lineHeight: 1.55, padding: "0.625rem 0.875rem",
+          borderRadius: "4px",
+          boxShadow: SHADOWS.hover,
+          pointerEvents: "none",
+        }}>
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function FeatureSpotlights() {
+  return (
+    <div style={{ marginBottom: "4rem" }}>
+      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", background: COLORS.butter, color: COLORS.plum, padding: "5px 16px", borderRadius: 100, fontSize: "0.75rem", fontWeight: 600, marginBottom: "1rem", border: `1px solid rgba(46,37,64,0.1)` }}>
+          What you're getting
+        </div>
+        <h2 style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: COLORS.plum, marginBottom: "0.75rem" }}>
+          Features that actually matter
+        </h2>
+        <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 300, color: COLORS.plumMid, maxWidth: "38rem", margin: "0 auto" }}>
+          Most home apps give you a checklist. HomeGentic gives you documentation that works for you at resale, during insurance claims, and before emergencies happen.
+        </p>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+        gap: "1rem",
+      }}>
+        {FEATURE_SPOTLIGHTS.map((f) => {
+          const Icon = f.icon;
+          return (
+            <div key={f.title} style={{
+              background: COLORS.white,
+              border: `1px solid ${COLORS.rule}`,
+              borderRadius: RADIUS.card,
+              padding: "1.5rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.75rem",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+                <div style={{
+                  width: "2.25rem", height: "2.25rem",
+                  background: COLORS.sageLight,
+                  borderRadius: "6px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <Icon size={16} color={COLORS.sage} />
+                </div>
+                <p style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.plum, lineHeight: 1.2 }}>
+                  {f.title}
+                </p>
+              </div>
+              <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: COLORS.sage, fontWeight: 600, textTransform: "uppercase" }}>
+                {f.tagline}
+              </p>
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.825rem", fontWeight: 300, color: COLORS.plumMid, lineHeight: 1.65, flexGrow: 1 }}>
+                {f.description}
+              </p>
+              <div style={{
+                borderTop: `1px solid ${COLORS.rule}`,
+                paddingTop: "0.75rem",
+                display: "flex", alignItems: "flex-start", gap: "0.5rem",
+              }}>
+                <CheckCircle size={13} color={COLORS.sage} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
+                <p style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 400, color: COLORS.plum, lineHeight: 1.5 }}>
+                  {f.benefit}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function PricingPage() {
   const { login, devLogin } = useAuth();
@@ -234,6 +432,9 @@ export default function PricingPage() {
           })}
         </div>
 
+        {/* Feature spotlights */}
+        {audience === "homeowner" && <FeatureSpotlights />}
+
         {/* Feature comparison */}
         <div style={{ marginBottom: "4rem" }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
@@ -257,7 +458,10 @@ export default function PricingPage() {
                 <tbody>
                   {HOMEOWNER_FEATURES_TABLE.map((row, i) => (
                     <tr key={row.feature} style={{ borderBottom: i < HOMEOWNER_FEATURES_TABLE.length - 1 ? `1px solid ${S.rule}` : "none" }}>
-                      <td style={{ padding: "0.75rem 1.25rem", fontFamily: FONTS.sans, fontSize: "0.85rem", fontWeight: 400, color: S.ink }}>{row.feature}</td>
+                      <td style={{ padding: "0.75rem 1.25rem", fontFamily: FONTS.sans, fontSize: "0.85rem", fontWeight: 400, color: S.ink }}>
+                        {row.feature}
+                        {FEATURE_TOOLTIPS[row.feature] && <FeatureTooltip text={FEATURE_TOOLTIPS[row.feature]} />}
+                      </td>
                       {(["Free", "Pro", "Premium"] as const).map((tier) => {
                         const val = (row as any)[tier];
                         return (
@@ -291,7 +495,10 @@ export default function PricingPage() {
                 <tbody>
                   {CONTRACTOR_FEATURES_TABLE.map((row, i) => (
                     <tr key={row.feature} style={{ borderBottom: i < CONTRACTOR_FEATURES_TABLE.length - 1 ? `1px solid ${S.rule}` : "none" }}>
-                      <td style={{ padding: "0.75rem 1.25rem", fontFamily: FONTS.sans, fontSize: "0.85rem", fontWeight: 400, color: S.ink }}>{row.feature}</td>
+                      <td style={{ padding: "0.75rem 1.25rem", fontFamily: FONTS.sans, fontSize: "0.85rem", fontWeight: 400, color: S.ink }}>
+                        {row.feature}
+                        {FEATURE_TOOLTIPS[row.feature] && <FeatureTooltip text={FEATURE_TOOLTIPS[row.feature]} />}
+                      </td>
                       {(["ContractorFree", "ContractorPro"] as const).map((tier) => {
                         const val = (row as any)[tier];
                         return (
