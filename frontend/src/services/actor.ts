@@ -48,6 +48,18 @@ export function resetAgent() {
 }
 
 /**
+ * Test-only: inject a pre-built HttpAgent so integration tests can bypass
+ * AuthClient and Internet Identity entirely.
+ * Throws in production to prevent accidental misuse.
+ */
+export function setAgentForTesting(agent: HttpAgent): void {
+  if (typeof process !== "undefined" && process.env?.NODE_ENV === "production") {
+    throw new Error("setAgentForTesting must not be called in production");
+  }
+  _agent = agent;
+}
+
+/**
  * Local-dev bypass — creates a deterministic Ed25519 identity without Internet Identity.
  * Only used in development; production always goes through II.
  * Returns the principal text so callers can update auth state.

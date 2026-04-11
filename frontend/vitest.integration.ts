@@ -35,12 +35,14 @@ export default defineConfig({
   define: {
     // Mirror vite.config.ts mappings so services read the right env var names.
     // Integration tests do NOT go through Vite's transform, so we define here.
-    "process.env.DFX_NETWORK":        JSON.stringify(process.env.DFX_NETWORK        || "local"),
-    "process.env.BILLS_CANISTER_ID":  JSON.stringify(process.env.CANISTER_ID_BILLS  || process.env.BILLS_CANISTER_ID  || ""),
-    "process.env.LISTING_CANISTER_ID":JSON.stringify(process.env.CANISTER_ID_LISTING || process.env.LISTING_CANISTER_ID|| ""),
-    "process.env.JOB_CANISTER_ID":    JSON.stringify(process.env.CANISTER_ID_JOB    || process.env.JOB_CANISTER_ID    || ""),
-    "process.env.PROPERTY_CANISTER_ID":JSON.stringify(process.env.CANISTER_ID_PROPERTY||process.env.PROPERTY_CANISTER_ID||""),
-    "process.env.PAYMENT_CANISTER_ID":JSON.stringify(process.env.CANISTER_ID_PAYMENT || process.env.PAYMENT_CANISTER_ID|| ""),
+    "process.env.DFX_NETWORK":         JSON.stringify(process.env.DFX_NETWORK          || "local"),
+    "process.env.AUTH_CANISTER_ID":    JSON.stringify(process.env.CANISTER_ID_AUTH     || process.env.AUTH_CANISTER_ID     || ""),
+    "process.env.BILLS_CANISTER_ID":   JSON.stringify(process.env.CANISTER_ID_BILLS    || process.env.BILLS_CANISTER_ID    || ""),
+    "process.env.JOB_CANISTER_ID":     JSON.stringify(process.env.CANISTER_ID_JOB      || process.env.JOB_CANISTER_ID      || ""),
+    "process.env.LISTING_CANISTER_ID": JSON.stringify(process.env.CANISTER_ID_LISTING   || process.env.LISTING_CANISTER_ID   || ""),
+    "process.env.PAYMENT_CANISTER_ID": JSON.stringify(process.env.CANISTER_ID_PAYMENT   || process.env.PAYMENT_CANISTER_ID   || ""),
+    "process.env.PROPERTY_CANISTER_ID":JSON.stringify(process.env.CANISTER_ID_PROPERTY  || process.env.PROPERTY_CANISTER_ID  || ""),
+    "process.env.QUOTE_CANISTER_ID":   JSON.stringify(process.env.CANISTER_ID_QUOTE     || process.env.QUOTE_CANISTER_ID     || ""),
     // VITE_ vars used by billsIntelligence and other services
     "import.meta.env.VITE_VOICE_AGENT_URL": JSON.stringify(process.env.VITE_VOICE_AGENT_URL || "http://localhost:3001"),
     "import.meta.env.DEV": JSON.stringify(true),
