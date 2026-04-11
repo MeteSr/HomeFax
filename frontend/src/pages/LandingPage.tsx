@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Shield, ShieldCheck, TrendingUp, BarChart2, CalendarDays, Archive, RefreshCw, Users } from "lucide-react";
+import { ShieldCheck, TrendingUp, BarChart2, CalendarDays, Archive, RefreshCw } from "lucide-react";
 
 /* ─── Styles ──────────────────────────────────────────────────────────────── */
 const CSS = `
@@ -445,58 +445,49 @@ const CSS = `
     content: "";
     position: absolute; top: -100px; right: -100px;
     width: 480px; height: 480px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(122,175,118,0.13) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(122,175,118,0.12) 0%, transparent 65%);
     pointer-events: none;
   }
   .hfl-fdd-inner::after {
     content: "";
     position: absolute; bottom: -80px; left: -80px;
     width: 320px; height: 320px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(186,213,232,0.1) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(186,213,232,0.08) 0%, transparent 65%);
     pointer-events: none;
   }
-  .hfl-fdd-header { max-width: 600px; margin-bottom: 52px; position: relative; }
+  .hfl-fdd-header { max-width: 560px; margin-bottom: 56px; position: relative; }
   .hfl-fdd-header h2 { color: white; margin-bottom: 16px; }
   .hfl-fdd-header h2 em { color: var(--sage); }
   .hfl-fdd-header p { font-size: 17px; color: rgba(253,252,250,0.65); line-height: 1.7; }
-  .hfl-fdd-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; position: relative;
+  .hfl-fdd-cols {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0 64px; position: relative;
   }
-  .hfl-fdd-card {
-    background: rgba(253,252,250,0.06);
-    border: 1px solid rgba(253,252,250,0.1);
-    border-radius: 16px; padding: 26px 22px;
-    display: flex; flex-direction: column; gap: 14px;
-    transition: background .2s, border-color .2s, transform .25s;
-    cursor: default;
+  .hfl-fdd-row {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 26px 0; border-bottom: 1px solid rgba(253,252,250,0.08);
+    transition: opacity .2s;
   }
-  .hfl-fdd-card:hover {
-    background: rgba(253,252,250,0.1);
-    border-color: rgba(122,175,118,0.5);
-    transform: translateY(-4px);
-  }
+  .hfl-fdd-row:last-child { border-bottom: none; }
+  .hfl-fdd-row:hover .hfl-fdd-icon-wrap { background: rgba(122,175,118,0.3); border-color: rgba(122,175,118,0.6); }
   .hfl-fdd-icon-wrap {
-    width: 40px; height: 40px;
-    background: rgba(122,175,118,0.18);
-    border: 1px solid rgba(122,175,118,0.4);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(122,175,118,0.15);
+    border: 1px solid rgba(122,175,118,0.35);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+    transition: background .2s, border-color .2s;
   }
+  .hfl-fdd-text { display: flex; flex-direction: column; gap: 4px; }
   .hfl-fdd-title {
-    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700;
-    color: white; line-height: 1.2;
+    font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700;
+    color: white; line-height: 1.2; margin-bottom: 2px;
   }
   .hfl-fdd-tagline {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
     letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage);
+    margin-bottom: 6px;
   }
-  .hfl-fdd-desc { font-size: 13px; color: rgba(253,252,250,0.58); line-height: 1.65; flex-grow: 1; }
-  .hfl-fdd-benefit {
-    border-top: 1px solid rgba(253,252,250,0.09); padding-top: 14px;
-    display: flex; align-items: flex-start; gap: 8px;
-    font-size: 12px; color: rgba(253,252,250,0.8); line-height: 1.55; font-weight: 500;
-  }
-  .hfl-fdd-check { flex-shrink: 0; color: var(--sage); font-weight: 700; line-height: 1.55; }
+  .hfl-fdd-desc { font-size: 13px; color: rgba(253,252,250,0.58); line-height: 1.65; }
 
   /* ── TESTIMONIALS ─────────────────────────────────────────────────────── */
   .hfl-testimonials { padding: 0 56px 100px; }
@@ -833,7 +824,8 @@ const CSS = `
 
     .hfl-fdd { padding: 0 24px 64px; }
     .hfl-fdd-inner { padding: 40px 28px; border-radius: 8px 20px 20px 20px; }
-    .hfl-fdd-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .hfl-fdd-cols { grid-template-columns: 1fr; gap: 0; }
+    .hfl-fdd-row:last-child { border-bottom: 1px solid rgba(253,252,250,0.08); }
     .hfl-testimonials { padding: 0 24px 64px; }
     .hfl-featured-quote { padding: 36px 28px; }
     .hfl-featured-result { display: none; }
@@ -887,7 +879,6 @@ const CSS = `
     .hfl-report { margin-left: 32px; margin-right: 32px; padding: 56px 48px; }
     .hfl-fdd { padding: 0 32px 80px; }
     .hfl-fdd-inner { padding: 56px 48px; }
-    .hfl-fdd-grid { grid-template-columns: repeat(2, 1fr); }
     .hfl-testimonials, .hfl-cta { padding-left: 32px; padding-right: 32px; }
     .hfl-tools { padding: 0 32px 80px; }
     .hfl-tools-inner { padding: 52px 48px; }
@@ -1362,39 +1353,35 @@ export default function LandingPage() {
         {/* ── Feature Deep Dive ───────────────────────────────────────────── */}
         <section className="hfl-fdd">
           <div className="hfl-fdd-inner">
-          <div className="hfl-fdd-header">
-            <div className="hfl-kicker" style={{ background: "rgba(122,175,118,0.18)", color: "var(--sage)", border: "1px solid rgba(122,175,118,0.3)" }}>✦ Feature Deep Dive</div>
-            <h2>Built for the moments<br /><em>that actually matter</em></h2>
-            <p>Most home apps give you a checklist. HomeGentic gives you documentation that works for you at resale, during insurance claims, and before emergencies happen.</p>
-          </div>
-          <div className="hfl-fdd-grid">
-            {([
-              { icon: Shield,       title: "Blockchain-Verified Records",   tagline: "Your maintenance history, tamper-proof forever.",                    desc: "Every job you log is sealed on the Internet Computer Protocol — a decentralized network no single company controls. No one can alter or delete your records, not even us.", benefit: "Show buyers, insurers, or inspectors an unimpeachable paper trail on closing day." },
-              { icon: ShieldCheck,  title: "Insurance Defense Mode",        tagline: "Fight a rate hike or claim denial with a single report.",             desc: "Generates a print-ready document of every insurance-relevant job — roof, HVAC, electrical, plumbing — sorted by system and dated, ready to hand to your insurer.", benefit: "Florida homeowners have used documented maintenance to negotiate premium discounts and overturn claim denials." },
-              { icon: TrendingUp,   title: "Market Intelligence",           tagline: "Know which renovations actually pay off in your zip code.",           desc: "Uses 2024 Remodeling Magazine data to rank projects by ROI for your area. Compares your home's condition score to similar nearby properties so you see exactly where you stand.", benefit: "Stop guessing. Spend renovation dollars on the projects buyers pay a premium for." },
-              { icon: BarChart2,    title: "Score Breakdown",               tagline: "A report card for your home, not just a number.",                    desc: "Your HomeGentic Score covers Maintenance History, System Ages, Documentation Quality, and more. Each dimension is graded A–F so you see exactly what's dragging the overall score down.", benefit: "Walk into a listing negotiation knowing your home's strengths — and fix the weak spots before you list." },
-              { icon: CalendarDays, title: "5-Year Maintenance Calendar",   tagline: "Budget for the future instead of being blindsided.",                 desc: "Based on your home's system ages and service history, HomeGentic generates a personalized 5-year maintenance schedule with projected costs for each task.", benefit: "Know that your HVAC needs replacement in year 3 — not when it fails at midnight in August." },
-              { icon: Archive,      title: "Warranty Wallet",               tagline: "Every warranty, receipt, and manual — attached to your home.",       desc: "Store appliance warranties, installation receipts, and product manuals directly tied to the job and fixture they belong to. Linked to your blockchain record, not buried in your email.", benefit: "File a warranty claim in seconds. Transfer everything to the new owner at closing with one link." },
-              { icon: RefreshCw,    title: "Recurring Services",            tagline: "Never miss the HVAC tune-up that prevents a $12k failure.",          desc: "Log ongoing service contracts — HVAC, pest control, landscaping — and HomeGentic tracks every visit, sends reminders, and builds a documented service history automatically.", benefit: "Proof of regular maintenance is a selling point. Let the record speak for itself." },
-              { icon: Users,        title: "Verified Contractor Search",    tagline: "Trust scores built from real, dual-signed jobs — not self-reviews.", desc: "Browse contractors whose trust scores are calculated from jobs that both the homeowner and contractor confirmed complete. Fake reviews can't game a cryptographically signed record.", benefit: "Hire someone with a proven track record in your neighborhood, not just a 5-star rating they gave themselves." },
-            ] as const).map((f) => {
-              const Icon = f.icon;
-              return (
-                <div key={f.title} className="hfl-fdd-card">
-                  <div className="hfl-fdd-icon-wrap">
-                    <Icon size={18} color="var(--sage)" />
+            <div className="hfl-fdd-header">
+              <div className="hfl-kicker">✦ Feature Deep Dive</div>
+              <h2>Built for the moments<br /><em>that actually matter</em></h2>
+              <p>Most home apps give you a checklist. HomeGentic gives you documentation that works for you at resale, during insurance claims, and before emergencies happen.</p>
+            </div>
+            <div className="hfl-fdd-cols">
+              {([
+                { icon: ShieldCheck,  title: "Insurance Defense Mode",      tagline: "Fight a rate hike or claim denial with a single report.",        desc: "Generates a print-ready document of every insurance-relevant job — roof, HVAC, electrical, plumbing — sorted by system and dated, ready to hand to your insurer." },
+                { icon: TrendingUp,   title: "Market Intelligence",         tagline: "Know which renovations actually pay off in your zip code.",       desc: "Uses 2024 Remodeling Magazine data to rank projects by ROI for your area. Compares your score to similar nearby properties so you see exactly where you stand." },
+                { icon: BarChart2,    title: "Score Breakdown",             tagline: "A report card for your home, not just a number.",                desc: "Your HomeGentic Score covers Maintenance History, System Ages, and Documentation Quality — each graded A–F so you see exactly what to fix before you list." },
+                { icon: CalendarDays, title: "5-Year Maintenance Calendar", tagline: "Budget for the future instead of being blindsided.",             desc: "Based on your home's system ages and service history, HomeGentic generates a personalized 5-year schedule with projected costs for every task." },
+                { icon: Archive,      title: "Warranty Wallet",             tagline: "Every warranty, receipt, and manual — attached to your home.",   desc: "Store appliance warranties, installation receipts, and product manuals tied to the exact job they belong to. Linked to your blockchain record, not buried in your email." },
+                { icon: RefreshCw,    title: "Recurring Services",          tagline: "Never miss the HVAC tune-up that prevents a $12k failure.",      desc: "Log ongoing service contracts — HVAC, pest control, landscaping — and HomeGentic tracks every visit, sends reminders, and builds a documented history automatically." },
+              ] as const).map((f) => {
+                const Icon = f.icon;
+                return (
+                  <div key={f.title} className="hfl-fdd-row">
+                    <div className="hfl-fdd-icon-wrap">
+                      <Icon size={18} color="var(--sage)" />
+                    </div>
+                    <div className="hfl-fdd-text">
+                      <div className="hfl-fdd-title">{f.title}</div>
+                      <div className="hfl-fdd-tagline">{f.tagline}</div>
+                      <div className="hfl-fdd-desc">{f.desc}</div>
+                    </div>
                   </div>
-                  <div className="hfl-fdd-title">{f.title}</div>
-                  <div className="hfl-fdd-tagline">{f.tagline}</div>
-                  <div className="hfl-fdd-desc">{f.desc}</div>
-                  <div className="hfl-fdd-benefit">
-                    <span className="hfl-fdd-check">✓</span>
-                    {f.benefit}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
