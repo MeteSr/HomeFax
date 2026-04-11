@@ -1503,6 +1503,8 @@ export default function LandingPage() {
         {/* ── Free Tools ──────────────────────────────────────────────────── */}
         <section id="hfl-tools" className="hfl-tools">
           <div className="hfl-tools-inner">
+            <div className="hfl-cta-blob1" />
+            <div className="hfl-cta-blob2" />
           <div className="hfl-tools-header">
             <div className="hfl-tools-eyebrow">✦ No account needed</div>
             <h2>Free tools for buyers &amp; homeowners</h2>
