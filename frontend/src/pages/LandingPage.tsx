@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ShieldCheck, TrendingUp, BarChart2, CalendarDays, Archive, RefreshCw } from "lucide-react";
+import { ShieldCheck, TrendingUp, CalendarDays, Archive, RefreshCw } from "lucide-react";
 
 /* ─── Styles ──────────────────────────────────────────────────────────────── */
 const CSS = `
@@ -1361,8 +1361,7 @@ export default function LandingPage() {
               {([
                 { icon: ShieldCheck,  title: "Insurance Defense Mode",      tagline: "Fight a rate hike or claim denial with a single report.",        desc: "Generates a print-ready document of every insurance-relevant job — roof, HVAC, electrical, plumbing — sorted by system and dated, ready to hand to your insurer." },
                 { icon: TrendingUp,   title: "Market Intelligence",         tagline: "Know which renovations actually pay off in your zip code.",       desc: "Uses 2024 Remodeling Magazine data to rank projects by ROI for your area. Compares your score to similar nearby properties so you see exactly where you stand." },
-                { icon: BarChart2,    title: "Score Breakdown",             tagline: "A report card for your home, not just a number.",                desc: "Your HomeGentic Score covers Maintenance History, System Ages, and Documentation Quality — each graded A–F so you see exactly what to fix before you list." },
-                { icon: CalendarDays, title: "5-Year Maintenance Calendar", tagline: "Budget for the future instead of being blindsided.",             desc: "Based on your home's system ages and service history, HomeGentic generates a personalized 5-year schedule with projected costs for every task." },
+                  { icon: CalendarDays, title: "5-Year Maintenance Calendar", tagline: "Budget for the future instead of being blindsided.",             desc: "Based on your home's system ages and service history, HomeGentic generates a personalized 5-year schedule with projected costs for every task." },
                 { icon: Archive,      title: "Warranty Wallet",             tagline: "Every warranty, receipt, and manual — attached to your home.",   desc: "Store appliance warranties, installation receipts, and product manuals tied to the exact job they belong to. Linked to your blockchain record, not buried in your email." },
                 { icon: RefreshCw,    title: "Recurring Services",          tagline: "Never miss the HVAC tune-up that prevents a $12k failure.",      desc: "Log ongoing service contracts — HVAC, pest control, landscaping — and HomeGentic tracks every visit, sends reminders, and builds a documented history automatically." },
               ] as const).map((f) => {
