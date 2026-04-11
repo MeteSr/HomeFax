@@ -495,34 +495,34 @@ const CSS = `
   .hfl-testimonials-header h2 { margin-bottom: 12px; }
   .hfl-testimonials-header p { font-size: 17px; color: var(--plum-mid); }
   .hfl-featured-quote {
-    background: var(--plum); border-radius: 24px; padding: 52px 60px;
+    background: linear-gradient(135deg, var(--blush), var(--butter)); border-radius: 24px; padding: 52px 60px;
     margin-bottom: 22px; position: relative; overflow: hidden;
   }
   .hfl-featured-quote::before {
     content: '"'; position: absolute; top: -32px; left: 36px;
     font-family: 'Fraunces', serif; font-size: 200px; font-weight: 900;
-    color: rgba(122,175,118,0.12); line-height: 1; pointer-events: none;
+    color: rgba(46,37,64,0.07); line-height: 1; pointer-events: none;
   }
   .hfl-featured-quote-text {
     font-family: 'Fraunces', serif; font-size: clamp(20px, 2.5vw, 28px);
-    font-weight: 600; color: white; line-height: 1.5; margin-bottom: 32px;
+    font-weight: 600; color: var(--plum); line-height: 1.5; margin-bottom: 32px;
     max-width: 720px; position: relative;
   }
-  .hfl-featured-quote-text em { color: var(--sage); font-style: italic; }
+  .hfl-featured-quote-text em { color: var(--plum); font-style: italic; font-weight: 900; }
   .hfl-featured-author { display: flex; align-items: center; gap: 16px; }
   .hfl-featured-avi {
-    width: 52px; height: 52px; border-radius: 50%; background: var(--blush);
+    width: 52px; height: 52px; border-radius: 50%; background: rgba(46,37,64,0.1);
     display: flex; align-items: center; justify-content: center; font-size: 26px;
-    border: 2px solid rgba(122,175,118,0.4); flex-shrink: 0;
+    border: 2px solid rgba(46,37,64,0.15); flex-shrink: 0;
   }
-  .hfl-featured-name { font-size: 15px; font-weight: 700; color: white; margin-bottom: 3px; }
-  .hfl-featured-role { font-size: 13px; color: rgba(253,252,250,0.55); }
+  .hfl-featured-name { font-size: 15px; font-weight: 700; color: var(--plum); margin-bottom: 3px; }
+  .hfl-featured-role { font-size: 13px; color: var(--plum-mid); }
   .hfl-featured-result { margin-left: auto; text-align: right; flex-shrink: 0; }
   .hfl-featured-result-num {
     font-family: 'Fraunces', serif; font-size: 38px; font-weight: 900;
-    color: var(--sage); line-height: 1; margin-bottom: 4px;
+    color: var(--plum); line-height: 1; margin-bottom: 4px;
   }
-  .hfl-featured-result-lbl { font-size: 12px; color: rgba(253,252,250,0.5); }
+  .hfl-featured-result-lbl { font-size: 12px; color: var(--plum-mid); }
   .hfl-test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .hfl-test-card {
     background: white; border-radius: 20px; padding: 30px;
