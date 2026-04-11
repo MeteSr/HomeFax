@@ -84,7 +84,7 @@ persistent actor Auth {
   private var adminInitialized: Bool = false;
 
   /// Per-principal update-call rate limiting (cycle-drain protection).
-  private var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private transient var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
 
   /// Migration buffer — populated by the last old-code preupgrade, cleared once.
   /// After the first upgrade with this code, this array is always [].
@@ -147,6 +147,7 @@ persistent actor Auth {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#Paused) };

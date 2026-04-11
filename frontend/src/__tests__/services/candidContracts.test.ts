@@ -117,6 +117,7 @@ import { idlFactory as agentIdl }       from "@/services/agent";
 import { idlFactory as recurringIdl }   from "@/services/recurringService";
 import { idlFactory as aiProxyIdl }     from "@/services/aiProxy";
 import { idlFactory as monitoringIdl }  from "@/services/monitoringService";
+import { idlFactory as billsIdl }       from "@/services/billService";
 
 describe("Candid contract snapshots — method arity", () => {
   it("auth", ()         => { expect(extractServiceDef(authIdl as any)).toMatchSnapshot(); });
@@ -134,4 +135,5 @@ describe("Candid contract snapshots — method arity", () => {
   it("recurring", ()    => { expect(extractServiceDef(recurringIdl as any)).toMatchSnapshot(); });
   it("ai_proxy", ()     => { expect(extractServiceDef(aiProxyIdl as any)).toMatchSnapshot(); });
   it("monitoring", ()   => { expect(extractServiceDef(monitoringIdl as any)).toMatchSnapshot(); });
+  it("bills", ()        => { expect(extractServiceDef(billsIdl as any)).toMatchSnapshot(); });
 });

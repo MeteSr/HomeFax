@@ -150,7 +150,7 @@ persistent actor Job {
 
   // ─── Rate Limit (cycle-drain protection, §enterprise/#46) ────────────────────
 
-  private var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private transient var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
 
   /// Admin-adjustable rate limit — default 30/min.
   private var maxUpdatesPerMin : Nat = 30;
@@ -192,6 +192,7 @@ persistent actor Job {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
+    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };

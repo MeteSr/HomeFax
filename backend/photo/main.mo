@@ -116,7 +116,7 @@ persistent actor Photo {
 
   // ─── Update-call rate limit (cycle-drain protection) ────────────────────────
 
-  private var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private transient var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
   /// Admin-adjustable rate limit — default 30/min.
   private var maxUpdatesPerMin : Nat = 30;
   private let ONE_MINUTE_NS       : Int = 60_000_000_000;
@@ -140,6 +140,7 @@ persistent actor Photo {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
+    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };

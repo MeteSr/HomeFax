@@ -157,7 +157,7 @@ persistent actor Payment {
 
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
 
-  private var updateCallLimits        : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private transient var updateCallLimits        : Map.Map<Text, (Nat, Int)> = Map.empty();
   private var maxUpdatesPerMin        : Nat = 30;
   private let ONE_MINUTE_NS           : Int = 60_000_000_000;
   private var trustedCanisterEntries  : [Principal] = [];
@@ -237,6 +237,7 @@ persistent actor Payment {
   /// The frontend must call icrc2_approve on the ICP ledger first (use getPriceQuote for amount).
   /// For Free: records the subscription immediately with no payment.
   public shared(msg) func subscribe(tier: Tier) : async Result.Result<Subscription, Error> {
+    if (Principal.isAnonymous(msg.caller)) return #err(#NotAuthorized);
     if (not tryConsumeUpdateSlot(msg.caller)) return #err(#RateLimited);
 
     let usdPrice = priceUsd(tier);

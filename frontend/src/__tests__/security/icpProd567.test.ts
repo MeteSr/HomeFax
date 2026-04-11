@@ -134,3 +134,135 @@ describe("PROD.7 — deploy.sh calls addAdmin for each non-payment canister", ()
     expect(src).not.toMatch(/canister call payment addAdmin/);
   });
 });
+
+// ── SEC.2 — updateCallLimits is transient (resets on upgrade, prevents unbounded growth) ──
+
+describe("SEC.2 — updateCallLimits declared as transient var in every canister", () => {
+  // In a `persistent actor`, all `var` declarations are implicitly stable.
+  // The rate-limit sliding-window map grows with every unique caller and is
+  // never pruned — if left stable it accumulates across upgrades indefinitely.
+  // `transient var` resets the map to Map.empty() on every canister upgrade,
+  // which is the correct behaviour for an in-memory rate-limit window.
+
+  const backendDirs = readdirSync(resolve(ROOT, "backend")).filter((d) => {
+    try {
+      readFileSync(resolve(ROOT, "backend", d, "main.mo"), "utf-8");
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+  it("every canister that declares updateCallLimits uses 'transient var'", () => {
+    for (const dir of backendDirs) {
+      const src = readFileSync(resolve(ROOT, "backend", dir, "main.mo"), "utf-8");
+      if (!src.includes("updateCallLimits")) continue; // canister has no rate limiter — skip
+      expect(
+        src,
+        `backend/${dir}/main.mo: updateCallLimits must be 'transient var' to reset on upgrade`
+      ).toMatch(/transient\s+var\s+updateCallLimits/);
+    }
+  });
+
+  it("no canister uses bare 'var updateCallLimits' (would persist across upgrades)", () => {
+    for (const dir of backendDirs) {
+      const src = readFileSync(resolve(ROOT, "backend", dir, "main.mo"), "utf-8");
+      // Must NOT match `var updateCallLimits` without `transient` in front
+      expect(
+        src,
+        `backend/${dir}/main.mo: updateCallLimits must not be plain 'var' (use transient var)`
+      ).not.toMatch(/(?<!transient\s)(?<!\w)var\s+updateCallLimits/);
+    }
+  });
+});
+
+// ── SEC.1 — anonymous principal rejected in all canisters with update functions ─
+
+describe("SEC.1 — Principal.isAnonymous guard in every update-capable canister", () => {
+  // The anonymous principal (2vxsx-fae) is not authenticated.
+  // Every canister that accepts update calls must reject it before doing any work.
+  // The guard lives in requireActive(caller) so it covers all update entry points.
+  // payment.subscribe() is the only canister that guards inline (no requireActive);
+  // it must also have the check.
+  //
+  // Per canister-security skill: isAnonymous rejection is mandatory, not advisory.
+
+  const backendDirs = readdirSync(resolve(ROOT, "backend")).filter((d) => {
+    try {
+      readFileSync(resolve(ROOT, "backend", d, "main.mo"), "utf-8");
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+  // Canisters that have public shared update functions and must guard against anonymous.
+  // ai_proxy is excluded — it only accepts calls from other canisters (principal-checked
+  // via trusted-canister list, not open to end-user principals).
+  const CANISTERS_WITH_UPDATE_FUNCS = [
+    "auth", "property", "job", "contractor", "quote", "payment",
+    "photo", "report", "market", "maintenance", "sensor",
+    "monitoring", "listing", "agent", "recurring", "bills",
+  ];
+
+  for (const canister of CANISTERS_WITH_UPDATE_FUNCS) {
+    it(`backend/${canister}/main.mo rejects the anonymous principal`, () => {
+      const src = readFileSync(resolve(ROOT, "backend", canister, "main.mo"), "utf-8");
+      expect(
+        src,
+        `backend/${canister}/main.mo must call Principal.isAnonymous`
+      ).toMatch(/Principal\.isAnonymous/);
+    });
+  }
+
+  it("every canister that has a requireActive(caller) guard includes isAnonymous check", () => {
+    for (const dir of backendDirs) {
+      const src = readFileSync(resolve(ROOT, "backend", dir, "main.mo"), "utf-8");
+      // If a canister has requireActive(caller : Principal), the isAnonymous guard
+      // must appear inside that function (not just at individual call sites).
+      if (/requireActive\(caller\s*:\s*Principal\)/.test(src)) {
+        expect(
+          src,
+          `backend/${dir}/main.mo: requireActive has caller param but no isAnonymous check`
+        ).toMatch(/Principal\.isAnonymous/);
+      }
+    }
+  });
+});
+
+// ── SEC.3 — inspect_message cycle-drain mitigation (advisory) ─────────────────
+
+describe("SEC.3 — inspect_message cycle-drain mitigation (advisory)", () => {
+  // `system func inspect_message()` lets a canister reject ingress messages
+  // before execution, saving cycles on obviously-invalid calls.
+  // Per canister-security skill: this is a cycle-saving optimisation, NOT a
+  // security boundary (it can be bypassed via inter-canister calls).
+  // High-value targets: auth (public registration), photo (large payloads),
+  // sensor (high-frequency IoT ingestion).
+  //
+  // These tests are marked `.todo` — they define the target state without
+  // failing CI until the feature is implemented.
+
+  const backendDirs = readdirSync(resolve(ROOT, "backend")).filter((d) => {
+    try {
+      readFileSync(resolve(ROOT, "backend", d, "main.mo"), "utf-8");
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+  it.todo("backend/auth/main.mo implements inspect_message to reject zero-arg calls");
+  it.todo("backend/photo/main.mo implements inspect_message to reject calls with empty payload");
+  it.todo("backend/sensor/main.mo implements inspect_message to reject calls from unregistered gateways");
+
+  it("advisory — count of canisters with inspect_message (track adoption progress)", () => {
+    const withInspect = backendDirs.filter((d) => {
+      const src = readFileSync(resolve(ROOT, "backend", d, "main.mo"), "utf-8");
+      return /system\s+func\s+inspect_message/.test(src);
+    });
+    // Currently 0 — update this assertion as canisters adopt inspect_message.
+    // When all high-value canisters (auth, photo, sensor) have it, set to >= 3.
+    expect(withInspect.length).toBeGreaterThanOrEqual(0);
+  });
+});

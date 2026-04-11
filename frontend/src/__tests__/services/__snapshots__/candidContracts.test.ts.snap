@@ -46,6 +46,14 @@ register(1) -> (1)
 updateProfile(1) -> (1)"
 `;
 
+exports[`Candid contract snapshots — method arity > bills 1`] = `
+"addBill(1) -> (1)
+deleteBill(1) -> (1)
+getBillsForProperty(1) -> (1)
+getUsageTrend(3) -> (1)
+metrics(0) -> (1) [query]"
+`;
+
 exports[`Candid contract snapshots — method arity > contractor 1`] = `
 "getAll(0) -> (1) [query]
 getBySpecialty(1) -> (1) [query]

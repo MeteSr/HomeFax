@@ -94,7 +94,7 @@ persistent actor AiProxy {
   private var permitsFetched         : Nat = 0;
 
   // Rate limiting
-  private var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private transient var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
   private var maxUpdatesPerMin : Nat = 30;
   private let ONE_MINUTE_NS    : Int = 60_000_000_000;
   private let ONE_DAY_NS       : Int = 86_400_000_000_000;
@@ -125,6 +125,7 @@ persistent actor AiProxy {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
+    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() >= expiry) { isPaused := false } else { return #err(#Paused) } };

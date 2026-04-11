@@ -128,7 +128,8 @@ persistent actor Bills {
     Option.isSome(Array.find<Principal>(adminListEntries, func(a) { a == caller }))
   };
 
-  private func requireActive() : Result.Result<(), Error> {
+  private func requireActive(caller: Principal) : Result.Result<(), Error> {
+    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
     if (isPaused) {
       // 14.4.4 — auto-expire timed pauses
       switch (pauseExpiryNs) {
@@ -230,7 +231,7 @@ persistent actor Bills {
   /// Anomaly detection runs after the tier check against the 3-month rolling
   /// average for (propertyId, billType) and sets anomalyFlag if > 20%.
   public shared(msg) func addBill(args: AddBillArgs) : async Result.Result<BillRecord, Error> {
-    switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
+    switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
     if (Text.size(args.propertyId)  == 0)   return #err(#InvalidInput("propertyId cannot be empty"));
     if (Text.size(args.propertyId)  > 200)  return #err(#InvalidInput("propertyId exceeds 200 characters"));
@@ -351,7 +352,7 @@ persistent actor Bills {
 
   /// Delete a specific bill record. Caller must be the owner or an admin.
   public shared(msg) func deleteBill(id: Text) : async Result.Result<(), Error> {
-    switch (requireActive()) { case (#err(e)) return #err(e); case _ {} };
+    switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
     switch (Map.get(bills, Text.compare, id)) {
       case null { #err(#NotFound) };
       case (?b) {

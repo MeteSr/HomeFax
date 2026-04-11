@@ -6,12 +6,10 @@
  * Calls the bills canister's getUsageTrend query directly for usage trend data.
  */
 
-import { Actor } from "@icp-sdk/core/agent";
-import { getAgent } from "./actor";
+import { billService } from "./billService";
 import type { BillType } from "./billService";
 
-const BILLS_CANISTER_ID = (process.env as any).BILLS_CANISTER_ID || "";
-const VOICE_AGENT_URL   = (import.meta as any).env?.VITE_VOICE_AGENT_URL || "http://localhost:3001";
+const VOICE_AGENT_URL = (import.meta as any).env?.VITE_VOICE_AGENT_URL || "http://localhost:3001";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,57 +67,30 @@ export async function getUsageTrend(
   billType:   BillType,
   months:     number,
 ): Promise<UsagePeriod[]> {
-  if (!BILLS_CANISTER_ID) {
-    // Mock fallback for local dev without deployed canister
-    return [];
-  }
+  // Use billService (which has its own mock fallback) and filter client-side.
+  // This allows unit tests to mock getBillsForProperty, and integration tests
+  // to hit the real canister via the same code path.
+  const bills = await billService.getBillsForProperty(propertyId);
 
-  const agent = await getAgent();
-  const UsagePeriodIDL = ({ IDL }: any) => {
-    const BillTypeVariant = IDL.Variant({
-      Electric: IDL.Null, Gas: IDL.Null, Water: IDL.Null,
-      Internet: IDL.Null, Telecom: IDL.Null, Other: IDL.Null,
-    });
-    const UsagePeriod = IDL.Record({
-      periodStart: IDL.Text,
-      usageAmount: IDL.Float64,
-      usageUnit:   IDL.Text,
-    });
-    const Error = IDL.Variant({
-      NotFound: IDL.Null, Unauthorized: IDL.Null,
-      InvalidInput: IDL.Text, TierLimitReached: IDL.Text,
-    });
-    return IDL.Service({
-      getUsageTrend: IDL.Func(
-        [IDL.Text, BillTypeVariant, IDL.Nat],
-        [IDL.Variant({ ok: IDL.Vec(UsagePeriod), err: Error })],
-        ["query"]
-      ),
-    });
-  };
+  // Compute the cutoff: only include bills within the requested window.
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - months);
+  const cutoffStr = cutoff.toISOString().slice(0, 10); // YYYY-MM-DD
 
-  const actor: any = Actor.createActor(UsagePeriodIDL, {
-    agent,
-    canisterId: BILLS_CANISTER_ID,
-  });
-
-  const result = await actor.getUsageTrend(
-    propertyId,
-    { [billType]: null },
-    BigInt(months)
-  );
-
-  if ("err" in result) {
-    const key = Object.keys(result.err)[0];
-    const val = (result.err as any)[key];
-    throw new Error(typeof val === "string" ? val : key);
-  }
-
-  return (result.ok as any[]).map((r: any) => ({
-    periodStart: r.periodStart as string,
-    usageAmount: Number(r.usageAmount),
-    usageUnit:   r.usageUnit as string,
-  }));
+  return bills
+    .filter(
+      (b) =>
+        b.billType === billType &&
+        b.usageAmount != null &&
+        b.usageUnit   != null &&
+        b.periodStart >= cutoffStr,
+    )
+    .sort((a, b) => a.periodStart.localeCompare(b.periodStart))
+    .map((b) => ({
+      periodStart: b.periodStart,
+      usageAmount: b.usageAmount as number,
+      usageUnit:   b.usageUnit   as string,
+    }));
 }
 
 /**
@@ -144,7 +115,10 @@ export function analyzeEfficiencyTrend(trend: UsagePeriod[]): EfficiencyAnalysis
   }
 
   const estimatedAnnualWaste = Math.round((lateAvg - earlyAvg) * 12);
-  const recommendation = `Usage has risen ${trendPct.toFixed(1)}% over this period. ` +
+  const unit = trend[0]?.usageUnit ?? "";
+  const unitSuffix = unit ? ` ${unit}` : "";
+  const recommendation = `Usage has risen ${trendPct.toFixed(1)}% over this period ` +
+    `(~${Math.round(lateAvg - earlyAvg)}${unitSuffix}/period). ` +
     `Consider scheduling an HVAC tune-up or home energy audit.`;
 
   return { degradationDetected: true, estimatedAnnualWaste, recommendation, trendPct };

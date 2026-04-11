@@ -25,10 +25,19 @@
 
 import { describe, it, expect } from "vitest";
 import { IDL } from "@icp-sdk/core/candid";
-import { idlFactory as authIdlFactory }     from "../../services/auth";
-import { idlFactory as paymentIdlFactory }  from "../../services/payment";
-import { idlFactory as jobIdlFactory }      from "../../services/job";
-import { idlFactory as propertyIdlFactory } from "../../services/property";
+import { idlFactory as authIdlFactory }        from "../../services/auth";
+import { idlFactory as paymentIdlFactory }     from "../../services/payment";
+import { idlFactory as jobIdlFactory }         from "../../services/job";
+import { idlFactory as propertyIdlFactory }    from "../../services/property";
+import { idlFactory as listingIdlFactory }     from "../../services/listing";
+import { idlFactory as quoteIdlFactory }       from "../../services/quote";
+import { idlFactory as contractorIdlFactory }  from "../../services/contractor";
+import { idlFactory as photoIdlFactory }       from "../../services/photo";
+import { idlFactory as reportIdlFactory }      from "../../services/report";
+import { idlFactory as sensorIdlFactory }      from "../../services/sensor";
+import { idlFactory as maintenanceIdlFactory } from "../../services/maintenance";
+import { idlFactory as agentIdlFactory }       from "../../services/agent";
+import { idlFactory as billsIdlFactory }       from "../../services/billService";
 
 // ── Helper ─���──────────────────────────────────────────────────────────────────
 
@@ -233,5 +242,381 @@ describe("property IDL factory", () => {
 
   it("full signature snapshot", () => {
     expect(extractService(propertyIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Listing canister ──────────────────────────────────────────────────────────
+
+describe("listing IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(listingIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "acceptProposal",
+      "cancelBidRequest",
+      "createBidRequest",
+      "getBidRequest",
+      "getMyBidRequests",
+      "getMyProposals",
+      "getOpenBidRequests",
+      "getProposalsForRequest",
+      "submitProposal",
+    ]);
+  });
+
+  it("marks the correct methods as query", () => {
+    const svc = extractService(listingIdlFactory);
+    const queries = Object.entries(svc)
+      .filter(([, sig]) => sig.mode.includes("query"))
+      .map(([name]) => name)
+      .sort();
+    expect(queries).toEqual([
+      "getBidRequest",
+      "getMyBidRequests",
+      "getMyProposals",
+      "getOpenBidRequests",
+      "getProposalsForRequest",
+    ]);
+  });
+
+  it("createBidRequest uses IDL.Int for date fields (not IDL.Nat — dates are signed)", () => {
+    // targetListDate and bidDeadline are Motoko Time.Time (Int, signed nanoseconds)
+    // A type drift to IDL.Nat would silently break date serialization for past dates.
+    const svc = extractService(listingIdlFactory);
+    expect(svc.createBidRequest.args[1]).toContain("int");  // targetListDate
+    expect(svc.createBidRequest.args[4]).toContain("int");  // bidDeadline
+  });
+
+  it("createBidRequest desiredSalePrice is opt nat (nullable)", () => {
+    const svc = extractService(listingIdlFactory);
+    expect(svc.createBidRequest.args[2]).toMatch(/opt\s+nat/i);
+  });
+
+  it("submitProposal commissionBps is nat (positive basis points, not signed)", () => {
+    const svc = extractService(listingIdlFactory);
+    // commissionBps is the 4th arg (index 3), validUntil (Int) is the 10th arg (index 9)
+    expect(svc.submitProposal.args[3]).toContain("nat");
+    expect(svc.submitProposal.args[9]).toContain("int"); // validUntil
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(listingIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Quote canister ────────────────────────────────────────────────────────────
+
+describe("quote IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(quoteIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "acceptQuote",
+      "closeQuoteRequest",
+      "createQuoteRequest",
+      "getMyQuoteRequests",
+      "getOpenRequests",
+      "getQuoteRequest",
+      "getQuotesForRequest",
+      "submitQuote",
+    ]);
+  });
+
+  it("marks the correct methods as query", () => {
+    const svc = extractService(quoteIdlFactory);
+    const queries = Object.entries(svc)
+      .filter(([, sig]) => sig.mode.includes("query"))
+      .map(([name]) => name)
+      .sort();
+    expect(queries).toEqual([
+      "getMyQuoteRequests",
+      "getOpenRequests",
+      "getQuoteRequest",
+      "getQuotesForRequest",
+    ]);
+  });
+
+  it("createQuoteRequest ServiceType Variant has all 8 service categories", () => {
+    // 8 ServiceType variants — drift (e.g. a renamed arm) silently breaks the UI filter
+    const svc = extractService(quoteIdlFactory);
+    const serviceTypeArg = svc.createQuoteRequest.args[1];
+    expect(serviceTypeArg).toContain("Plumbing");
+    expect(serviceTypeArg).toContain("Electrical");
+    expect(serviceTypeArg).toContain("HVAC");
+    expect(serviceTypeArg).toContain("Roofing");
+  });
+
+  it("submitQuote validUntil is int (signed, Time.Time)", () => {
+    const svc = extractService(quoteIdlFactory);
+    expect(svc.submitQuote.args[3]).toContain("int");
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(quoteIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Contractor canister ───────────────────────────────────────────────────────
+
+describe("contractor IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(contractorIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "getAll",
+      "getBySpecialty",
+      "getContractor",
+      "getCredentials",
+      "getMyProfile",
+      "getReviewsForContractor",
+      "recordJobVerified",
+      "register",
+      "setJobCanisterId",
+      "submitReview",
+      "updateProfile",
+    ]);
+  });
+
+  it("marks the correct methods as query", () => {
+    const svc = extractService(contractorIdlFactory);
+    const queries = Object.entries(svc)
+      .filter(([, sig]) => sig.mode.includes("query"))
+      .map(([name]) => name)
+      .sort();
+    expect(queries).toEqual([
+      "getAll",
+      "getBySpecialty",
+      "getContractor",
+      "getCredentials",
+      "getMyProfile",
+      "getReviewsForContractor",
+    ]);
+  });
+
+  it("submitReview rating arg is nat (0–5 scale, not signed)", () => {
+    const svc = extractService(contractorIdlFactory);
+    expect(svc.submitReview.args[1]).toContain("nat");
+  });
+
+  it("getContractor and submitReview take IDL.Principal (not Text)", () => {
+    const svc = extractService(contractorIdlFactory);
+    expect(svc.getContractor.args[0]).toContain("principal");
+    expect(svc.submitReview.args[0]).toContain("principal");
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(contractorIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Photo canister ────────────────────────────────────────────────────────────
+
+describe("photo IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(photoIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "deletePhoto",
+      "getPhotosByJob",
+      "getPhotosByProperty",
+      "getPhotosByRoom",
+      "uploadPhoto",
+    ]);
+  });
+
+  it("getPhotosByJob/Property/Room are NOT query calls (update required for tier checks)", () => {
+    // These reads go through the update path to enforce quota checks server-side.
+    // A drift to ["query"] would bypass those checks.
+    const svc = extractService(photoIdlFactory);
+    expect(svc.getPhotosByJob.mode).not.toContain("query");
+    expect(svc.getPhotosByProperty.mode).not.toContain("query");
+    expect(svc.getPhotosByRoom.mode).not.toContain("query");
+  });
+
+  it("uploadPhoto image bytes arg is vec nat8", () => {
+    const svc = extractService(photoIdlFactory);
+    // The last arg (index 5) carries the raw image bytes
+    expect(svc.uploadPhoto.args[5]).toMatch(/vec\s+nat8/i);
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(photoIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Report canister ───────────────────────────────────────────────────────────
+
+describe("report IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(reportIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "generateReport",
+      "getReport",
+      "listShareLinks",
+      "revokeShareLink",
+    ]);
+  });
+
+  it("generateReport args include opt fields for schema-compatible extension", () => {
+    // Args 7–11 are new trailing Opt args added for backwards compatibility.
+    // They must remain opt or existing callers break.
+    const svc = extractService(reportIdlFactory);
+    expect(svc.generateReport.args.length).toBeGreaterThanOrEqual(7);
+    for (let i = 7; i < svc.generateReport.args.length; i++) {
+      expect(svc.generateReport.args[i]).toMatch(/opt/i);
+    }
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(reportIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Sensor canister ───────────────────────────────────────────────────────────
+
+describe("sensor IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(sensorIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "deactivateDevice",
+      "getDevicesForProperty",
+      "getEventsForProperty",
+      "getPendingAlerts",
+      "registerDevice",
+    ]);
+  });
+
+  it("marks the correct methods as query", () => {
+    const svc = extractService(sensorIdlFactory);
+    const queries = Object.entries(svc)
+      .filter(([, sig]) => sig.mode.includes("query"))
+      .map(([name]) => name)
+      .sort();
+    expect(queries).toEqual([
+      "getDevicesForProperty",
+      "getEventsForProperty",
+      "getPendingAlerts",
+    ]);
+  });
+
+  it("getEventsForProperty limit arg is nat", () => {
+    const svc = extractService(sensorIdlFactory);
+    expect(svc.getEventsForProperty.args[1]).toContain("nat");
+  });
+
+  it("registerDevice DeviceSource Variant is in args", () => {
+    const svc = extractService(sensorIdlFactory);
+    // DeviceSource is a Variant — its display string contains "variant"
+    expect(svc.registerDevice.args[2]).toMatch(/variant/i);
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(sensorIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Maintenance canister ──────────────────────────────────────────────────────
+
+describe("maintenance IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(maintenanceIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "createScheduleEntry",
+      "getScheduleByProperty",
+      "markCompleted",
+    ]);
+  });
+
+  it("getScheduleByProperty is a query", () => {
+    const svc = extractService(maintenanceIdlFactory);
+    expect(svc.getScheduleByProperty.mode).toContain("query");
+  });
+
+  it("createScheduleEntry optional args are opt nat (nullable interval/last-completed)", () => {
+    const svc = extractService(maintenanceIdlFactory);
+    expect(svc.createScheduleEntry.args[4]).toMatch(/opt\s+nat/i);
+    expect(svc.createScheduleEntry.args[5]).toMatch(/opt\s+nat/i);
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(maintenanceIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Agent (Realtor) canister ──────────────────────────────────────────────────
+
+describe("agent IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(agentIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "addReview",
+      "getAllProfiles",
+      "getMyProfile",
+      "getProfile",
+      "getReviews",
+      "register",
+      "updateProfile",
+      "verifyAgent",
+    ]);
+  });
+
+  it("marks the correct methods as query", () => {
+    const svc = extractService(agentIdlFactory);
+    const queries = Object.entries(svc)
+      .filter(([, sig]) => sig.mode.includes("query"))
+      .map(([name]) => name)
+      .sort();
+    expect(queries).toEqual(["getAllProfiles", "getMyProfile", "getProfile", "getReviews"]);
+  });
+
+  it("getMyProfile returns opt AgentProfile (not a Result — null means not registered)", () => {
+    // A drift to ok/err Result would break the 'not yet registered' code path.
+    const svc = extractService(agentIdlFactory);
+    expect(svc.getMyProfile.rets[0]).toMatch(/opt/i);
+    expect(svc.getMyProfile.rets[0]).not.toMatch(/variant\s*\{\s*ok/i);
+  });
+
+  it("getReviews and verifyAgent take IDL.Principal (not Text)", () => {
+    const svc = extractService(agentIdlFactory);
+    expect(svc.getReviews.args[0]).toContain("principal");
+    expect(svc.verifyAgent.args[0]).toContain("principal");
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(agentIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Bills canister ────────────────────────────────────────────────────────────
+
+describe("bills IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(billsIdlFactory);
+    expect(Object.keys(svc).sort()).toEqual([
+      "addBill",
+      "deleteBill",
+      "getBillsForProperty",
+      "getUsageTrend",
+      "metrics",
+    ]);
+  });
+
+  it("only metrics is a query (reads go through update for tier-gated filtering)", () => {
+    const svc = extractService(billsIdlFactory);
+    const queries = Object.entries(svc)
+      .filter(([, sig]) => sig.mode.includes("query"))
+      .map(([name]) => name);
+    expect(queries).toEqual(["metrics"]);
+  });
+
+  it("getUsageTrend BillType arg is a Variant (not Text)", () => {
+    // A drift from Variant to Text would silently accept invalid bill types.
+    const svc = extractService(billsIdlFactory);
+    expect(svc.getUsageTrend.args[1]).toMatch(/variant/i);
+  });
+
+  it("getUsageTrend months arg is nat", () => {
+    const svc = extractService(billsIdlFactory);
+    expect(svc.getUsageTrend.args[2]).toContain("nat");
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(billsIdlFactory)).toMatchSnapshot();
   });
 });
