@@ -316,7 +316,7 @@ export default function PricingPage() {
 
                 <Button
                   variant={isPopular ? "secondary" : "outline"}
-                  style={{ width: "100%", background: isPopular ? COLORS.sage : undefined, color: isPopular ? COLORS.white : undefined, borderColor: isPopular ? COLORS.sage : isFeatured ? COLORS.sage : undefined }}
+                  style={{ width: "100%", backgroundColor: isPopular ? COLORS.sage : undefined, color: isPopular ? COLORS.white : undefined, borderColor: isPopular ? COLORS.sage : isFeatured ? COLORS.sage : undefined }}
                   loading={checkoutLoading === plan.tier}
                   disabled={checkoutLoading !== null}
                   onClick={() => handleUpgrade(plan.tier)}
