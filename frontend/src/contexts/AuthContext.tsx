@@ -84,7 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile.role === "Contractor") {
         navigate("/contractor-dashboard");
       } else {
-        navigate(await homeownerDestination());
+        const pending = sessionStorage.getItem("pendingCheckout");
+        if (pending) {
+          sessionStorage.removeItem("pendingCheckout");
+          const { tier, billing } = JSON.parse(pending);
+          navigate(`/pricing?checkout=${tier}&billing=${billing}`);
+        } else {
+          navigate(await homeownerDestination());
+        }
       }
     } catch {
       navigate("/register");
@@ -102,7 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile.role === "Contractor") {
         navigate("/contractor-dashboard");
       } else {
-        navigate(await homeownerDestination());
+        const pending = sessionStorage.getItem("pendingCheckout");
+        if (pending) {
+          sessionStorage.removeItem("pendingCheckout");
+          const { tier, billing } = JSON.parse(pending);
+          navigate(`/pricing?checkout=${tier}&billing=${billing}`);
+        } else {
+          navigate(await homeownerDestination());
+        }
       }
     } catch {
       navigate("/register");

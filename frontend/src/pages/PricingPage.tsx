@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, X, Info } from "lucide-react";
 import { Button } from "@/components/Button";
 import { PLANS, ANNUAL_PLANS, paymentService } from "@/services/payment";
@@ -116,6 +116,7 @@ export default function PricingPage() {
   const handleLogin = import.meta.env.DEV ? devLogin : login;
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [annual, setAnnual] = useState<boolean>(() => {
     try { return localStorage.getItem(BILLING_KEY) === "annual"; } catch { return false; }
@@ -144,11 +145,12 @@ export default function PricingPage() {
       await handleLogin();
       return;
     }
+    const billing: BillingCycle = annual ? "Yearly" : "Monthly";
     if (!isAuthenticated) {
+      sessionStorage.setItem("pendingCheckout", JSON.stringify({ tier, billing }));
       await handleLogin();
       return;
     }
-    const billing: BillingCycle = annual ? "Yearly" : "Monthly";
     setCheckoutLoading(tier);
     setCheckoutError(null);
     try {
@@ -158,6 +160,20 @@ export default function PricingPage() {
       setCheckoutLoading(null);
     }
   };
+
+  // Auto-trigger checkout after login/registration redirects back with ?checkout=Tier&billing=X
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const tier = searchParams.get("checkout") as PlanTier | null;
+    const billing = searchParams.get("billing") as BillingCycle | null;
+    if (!tier || !billing) return;
+    setCheckoutLoading(tier);
+    setCheckoutError(null);
+    paymentService.startStripeCheckout(tier, billing).catch((err: any) => {
+      setCheckoutError(err.message || "Checkout failed");
+      setCheckoutLoading(null);
+    });
+  }, [isAuthenticated]);
 
   return (
     <div style={{ minHeight: "100vh", background: S.paper }}>

@@ -51,7 +51,14 @@ export default function RegisterPage() {
       const profile = await authService.register({ role, email, phone });
       setProfile(profile);
       toast.success("Welcome to HomeGentic!");
-      navigate(profile.role === "Contractor" ? "/contractor-dashboard" : "/onboarding");
+      const pending = sessionStorage.getItem("pendingCheckout");
+      if (pending && profile.role !== "Contractor") {
+        sessionStorage.removeItem("pendingCheckout");
+        const { tier, billing } = JSON.parse(pending);
+        navigate(`/pricing?checkout=${tier}&billing=${billing}`);
+      } else {
+        navigate(profile.role === "Contractor" ? "/contractor-dashboard" : "/onboarding");
+      }
     } catch (err: any) {
       toast.error(err.message || "Registration failed");
     } finally {
