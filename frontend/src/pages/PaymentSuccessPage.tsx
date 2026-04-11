@@ -30,7 +30,7 @@ export default function PaymentSuccessPage() {
   }, [sessionId]);
 
   const S = {
-    page:   { minHeight: "100vh", background: COLORS.paper, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem", fontFamily: FONTS.sans },
+    page:   { minHeight: "100vh", background: COLORS.sageLight, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem", fontFamily: FONTS.sans },
     card:   { background: COLORS.white, border: `1px solid ${COLORS.rule}`, maxWidth: 520, width: "100%", padding: "3rem 2.5rem", textAlign: "center" as const },
     icon:   { marginBottom: "1.5rem" },
     h1:     { fontFamily: FONTS.serif, fontSize: "clamp(1.75rem, 4vw, 2.25rem)", fontWeight: 900, color: COLORS.plum, letterSpacing: "-0.5px", margin: "0 0 0.75rem" },

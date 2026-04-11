@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle, X, Info } from "lucide-react";
 import { Button } from "@/components/Button";
-import { PLANS, ANNUAL_PLANS } from "@/services/payment";
-import type { Plan } from "@/services/payment";
+import { PLANS, ANNUAL_PLANS, paymentService } from "@/services/payment";
+import type { Plan, PlanTier, BillingCycle } from "@/services/payment";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthStore } from "@/store/authStore";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const S = {
@@ -113,12 +114,15 @@ function FeatureTooltip({ text }: { text: string }) {
 export default function PricingPage() {
   const { login, devLogin } = useAuth();
   const handleLogin = import.meta.env.DEV ? devLogin : login;
+  const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
 
   const [annual, setAnnual] = useState<boolean>(() => {
     try { return localStorage.getItem(BILLING_KEY) === "annual"; } catch { return false; }
   });
   const [audience, setAudience] = useState<"homeowner" | "contractor">("homeowner");
+  const [checkoutLoading, setCheckoutLoading] = useState<PlanTier | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     try { localStorage.setItem(BILLING_KEY, annual ? "annual" : "monthly"); } catch {}
@@ -134,6 +138,26 @@ export default function PricingPage() {
   );
 
   const displayPlans = audience === "homeowner" ? homeownerPlans : contractorPlans;
+
+  const handleUpgrade = async (tier: PlanTier) => {
+    if (tier === "Free" || tier === "ContractorFree") {
+      await handleLogin();
+      return;
+    }
+    if (!isAuthenticated) {
+      await handleLogin();
+      return;
+    }
+    const billing: BillingCycle = annual ? "Yearly" : "Monthly";
+    setCheckoutLoading(tier);
+    setCheckoutError(null);
+    try {
+      await paymentService.startStripeCheckout(tier, billing);
+    } catch (err: any) {
+      setCheckoutError(err.message || "Checkout failed");
+      setCheckoutLoading(null);
+    }
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: S.paper }}>
@@ -277,7 +301,9 @@ export default function PricingPage() {
                 <Button
                   variant={isPopular ? "secondary" : "outline"}
                   style={{ width: "100%", background: isPopular ? COLORS.sage : undefined, color: isPopular ? COLORS.white : undefined, borderColor: isPopular ? COLORS.sage : isFeatured ? COLORS.sage : undefined }}
-                  onClick={handleLogin}
+                  loading={checkoutLoading === plan.tier}
+                  disabled={checkoutLoading !== null}
+                  onClick={() => handleUpgrade(plan.tier)}
                 >
                   {plan.price === 0 ? "Get Started Free" : `Upgrade to ${plan.tier === "ContractorPro" ? "Contractor Pro" : plan.tier}`}
                 </Button>
@@ -285,6 +311,12 @@ export default function PricingPage() {
             );
           })}
         </div>
+
+        {checkoutError && (
+          <p style={{ textAlign: "center", color: COLORS.rust, fontFamily: FONTS.mono, fontSize: "0.75rem", marginTop: "1rem" }}>
+            {checkoutError}
+          </p>
+        )}
 
         {/* Gift callout */}
         {audience === "homeowner" && (
