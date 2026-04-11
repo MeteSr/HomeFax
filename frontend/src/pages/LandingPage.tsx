@@ -290,28 +290,28 @@ const CSS = `
   /* REPORT CTA */
   .hfl-report {
     margin: 0 56px 100px;
-    background: linear-gradient(135deg, var(--plum), #4A3870);
+    background: linear-gradient(135deg, var(--blush), var(--butter));
     border-radius: 28px; padding: 72px 80px;
     display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
   }
-  .hfl-rc-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--sage); margin-bottom: 18px; }
-  .hfl-report h2 { font-size: 46px; color: white; margin-bottom: 18px; }
-  .hfl-report h2 em { color: var(--sage); font-style: italic; font-weight: 300; }
-  .hfl-report p { font-size: 16px; color: rgba(253,252,250,0.72); line-height: 1.7; margin-bottom: 36px; }
+  .hfl-rc-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--plum); margin-bottom: 18px; }
+  .hfl-report h2 { font-size: 46px; color: var(--plum); margin-bottom: 18px; }
+  .hfl-report h2 em { color: var(--plum-mid); font-style: italic; font-weight: 300; }
+  .hfl-report p { font-size: 16px; color: rgba(46,37,64,0.7); line-height: 1.7; margin-bottom: 36px; }
   .hfl-rc-actions { display: flex; gap: 14px; flex-wrap: wrap; }
   .hfl-rc-btn {
-    background: var(--sage); color: var(--plum); padding: 16px 32px; border-radius: 100px;
+    background: var(--plum); color: white; padding: 16px 32px; border-radius: 100px;
     font-weight: 700; font-size: 15px; border: none; cursor: pointer;
     font-family: 'Plus Jakarta Sans', sans-serif; transition: transform .2s, box-shadow .2s;
   }
-  .hfl-rc-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.3); }
+  .hfl-rc-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(46,37,64,0.3); }
   .hfl-rc-ghost {
-    background: rgba(255,255,255,0.1); color: white; padding: 16px 24px; border-radius: 100px;
-    font-weight: 600; font-size: 15px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;
+    background: rgba(46,37,64,0.08); color: var(--plum); padding: 16px 24px; border-radius: 100px;
+    font-weight: 600; font-size: 15px; border: 1px solid rgba(46,37,64,0.2); cursor: pointer;
     font-family: 'Plus Jakarta Sans', sans-serif; transition: background .2s;
   }
-  .hfl-rc-ghost:hover { background: rgba(255,255,255,0.18); }
-  .hfl-report-mock { background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+  .hfl-rc-ghost:hover { background: rgba(46,37,64,0.14); }
+  .hfl-report-mock { background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(46,37,64,0.18); }
   .hfl-mock-top { background: var(--plum); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
   .hfl-mock-addr { font-family: 'Fraunces', serif; font-size: 15px; color: white; font-weight: 700; }
   .hfl-mock-badge { background: var(--sage); color: var(--plum); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 100px; letter-spacing: 1px; }
