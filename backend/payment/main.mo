@@ -158,6 +158,8 @@ persistent actor Payment {
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
 
   private transient var updateCallLimits        : Map.Map<Text, (Nat, Int)> = Map.empty();
+  // CallerGuard: prevents concurrent subscribe() calls from the same principal
+  private transient var activeSubscribers       : Map.Map<Text, Bool>       = Map.empty();
   private var maxUpdatesPerMin        : Nat = 30;
   private let ONE_MINUTE_NS           : Int = 60_000_000_000;
   private var trustedCanisterEntries  : [Principal] = [];
@@ -240,6 +242,15 @@ persistent actor Payment {
     if (Principal.isAnonymous(msg.caller)) return #err(#NotAuthorized);
     if (not tryConsumeUpdateSlot(msg.caller)) return #err(#RateLimited);
 
+    // CallerGuard: block concurrent subscribe calls from the same principal.
+    // Without this, two concurrent calls could both pass the rate-limit check,
+    // then both await xrc and both await icrc2_transfer_from — double-charging.
+    let callerKey = Principal.toText(msg.caller);
+    if (Option.isSome(Map.get(activeSubscribers, Text.compare, callerKey))) {
+      return #err(#RateLimited);
+    };
+    Map.add(activeSubscribers, Text.compare, callerKey, true);
+
     let usdPrice = priceUsd(tier);
     if (usdPrice > 0) {
       // Fetch fresh rate at subscription time (separate from quote to get current price)
@@ -249,9 +260,15 @@ persistent actor Payment {
         timestamp   = null;
       });
       let priceE8s = switch (rateResult) {
-        case (#Err(_)) { return #err(#PaymentFailed("Could not fetch ICP/USD exchange rate")) };
+        case (#Err(_)) {
+          Map.delete(activeSubscribers, Text.compare, callerKey);
+          return #err(#PaymentFailed("Could not fetch ICP/USD exchange rate"));
+        };
         case (#Ok(r)) {
-          if (r.rate == 0) return #err(#PaymentFailed("Invalid exchange rate"));
+          if (r.rate == 0) {
+            Map.delete(activeSubscribers, Text.compare, callerKey);
+            return #err(#PaymentFailed("Invalid exchange rate"));
+          };
           computeE8s(usdPrice, r.rate, r.metadata.decimals)
         };
       };
@@ -281,6 +298,7 @@ persistent actor Payment {
             };
             case _ { "Payment transfer failed" };
           };
+          Map.delete(activeSubscribers, Text.compare, callerKey);
           return #err(#PaymentFailed(errMsg));
         };
         case (#Ok(_)) {};
@@ -300,6 +318,7 @@ persistent actor Payment {
       createdAt = now;
     };
     Map.add(subscriptions, Principal.compare, msg.caller, sub);
+    Map.delete(activeSubscribers, Text.compare, callerKey);
     #ok(sub)
   };
 

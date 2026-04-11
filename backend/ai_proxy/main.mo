@@ -603,13 +603,19 @@ persistent actor AiProxy {
     };
     body #= "}";
 
+    // Idempotency key: stable within a single canister message (Time.now() is
+    // the message timestamp, identical across all subnet nodes retrying this
+    // http_request). Prevents Resend from sending duplicate emails on retry.
+    let idempotencyKey = Int.toText(Time.now()) # "-" # Principal.toText(msg.caller) # "-" # to;
+
     try {
       let response = await (with cycles = 2_000_000_000) ic.http_request({
         url               = "https://api.resend.com/emails";
         max_response_bytes = ?Nat64.fromNat(4096);
         headers           = [
-          { name = "Content-Type";  value = "application/json" },
-          { name = "Authorization"; value = "Bearer " # resendApiKey },
+          { name = "Content-Type";    value = "application/json" },
+          { name = "Authorization";   value = "Bearer " # resendApiKey },
+          { name = "Idempotency-Key"; value = idempotencyKey },
         ];
         body              = ?Text.encodeUtf8(body);
         method            = #post;

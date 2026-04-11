@@ -74,7 +74,7 @@ export async function login(): Promise<void> {
   return new Promise((resolve, reject) => {
     client.login({
       identityProvider: II_URL,
-      maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1_000_000_000),
+      maxTimeToLive: BigInt(8 * 60 * 60 * 1_000_000_000),
       onSuccess: () => {
         resetAgent();
         resolve();
