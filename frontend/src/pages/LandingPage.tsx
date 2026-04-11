@@ -433,32 +433,70 @@ const CSS = `
   .hfl-mock-footer { padding: 10px 20px 14px; display: flex; align-items: center; gap: 8px; background: var(--sage-light); border-top: 1px solid var(--sage-mid); font-size: 11px; color: var(--plum-mid); font-weight: 600; }
 
   /* ── FEATURE DEEP DIVE ───────────────────────────────────────────────── */
-  .hfl-fdd { padding: 100px 56px; background: var(--white); }
-  .hfl-fdd-header { text-align: center; max-width: 620px; margin: 0 auto 60px; }
-  .hfl-fdd-header h2 { margin-bottom: 14px; }
-  .hfl-fdd-header p { font-size: 17px; color: var(--plum-mid); line-height: 1.7; }
+  .hfl-fdd { padding: 0 56px 100px; }
+  .hfl-fdd-inner {
+    background: var(--plum);
+    border-radius: 8px 40px 40px 40px;
+    border: 1px solid rgba(122,175,118,0.15);
+    padding: 72px 80px;
+    position: relative; overflow: hidden;
+  }
+  .hfl-fdd-inner::before {
+    content: "";
+    position: absolute; top: -100px; right: -100px;
+    width: 480px; height: 480px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(122,175,118,0.13) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .hfl-fdd-inner::after {
+    content: "";
+    position: absolute; bottom: -80px; left: -80px;
+    width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(186,213,232,0.1) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .hfl-fdd-header { max-width: 600px; margin-bottom: 52px; position: relative; }
+  .hfl-fdd-header h2 { color: white; margin-bottom: 16px; }
+  .hfl-fdd-header h2 em { color: var(--sage); }
+  .hfl-fdd-header p { font-size: 17px; color: rgba(253,252,250,0.65); line-height: 1.7; }
   .hfl-fdd-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; position: relative;
   }
   .hfl-fdd-card {
-    background: var(--paper); border: 1px solid var(--rule);
-    padding: 28px 24px; display: flex; flex-direction: column; gap: 12px;
-    transition: border-color .2s, box-shadow .2s;
+    background: rgba(253,252,250,0.06);
+    border: 1px solid rgba(253,252,250,0.1);
+    border-radius: 16px; padding: 26px 22px;
+    display: flex; flex-direction: column; gap: 14px;
+    transition: background .2s, border-color .2s, transform .25s;
+    cursor: default;
   }
-  .hfl-fdd-card:hover { border-color: var(--sage-mid); box-shadow: 0 8px 28px rgba(46,37,64,0.08); }
+  .hfl-fdd-card:hover {
+    background: rgba(253,252,250,0.1);
+    border-color: rgba(122,175,118,0.5);
+    transform: translateY(-4px);
+  }
   .hfl-fdd-icon-wrap {
-    width: 36px; height: 36px; background: var(--sage-light);
+    width: 40px; height: 40px;
+    background: rgba(122,175,118,0.18);
+    border: 1px solid rgba(122,175,118,0.4);
+    border-radius: 10px;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .hfl-fdd-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; color: var(--plum); line-height: 1.2; }
-  .hfl-fdd-tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage); }
-  .hfl-fdd-desc { font-size: 13px; color: var(--plum-mid); line-height: 1.65; flex-grow: 1; }
-  .hfl-fdd-benefit {
-    border-top: 1px solid var(--rule); padding-top: 12px;
-    display: flex; align-items: flex-start; gap: 8px;
-    font-size: 13px; color: var(--plum); line-height: 1.5;
+  .hfl-fdd-title {
+    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700;
+    color: white; line-height: 1.2;
   }
-  .hfl-fdd-check { flex-shrink: 0; color: var(--sage); margin-top: 1px; }
+  .hfl-fdd-tagline {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage);
+  }
+  .hfl-fdd-desc { font-size: 13px; color: rgba(253,252,250,0.58); line-height: 1.65; flex-grow: 1; }
+  .hfl-fdd-benefit {
+    border-top: 1px solid rgba(253,252,250,0.09); padding-top: 14px;
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 12px; color: rgba(253,252,250,0.8); line-height: 1.55; font-weight: 500;
+  }
+  .hfl-fdd-check { flex-shrink: 0; color: var(--sage); font-weight: 700; line-height: 1.55; }
 
   /* ── TESTIMONIALS ─────────────────────────────────────────────────────── */
   .hfl-testimonials { padding: 0 56px 100px; }
@@ -793,8 +831,9 @@ const CSS = `
     .hfl-report h2 { font-size: 32px; }
     .hfl-report > div:last-child { display: none; }
 
-    .hfl-fdd { padding: 64px 24px; }
-    .hfl-fdd-grid { grid-template-columns: 1fr; }
+    .hfl-fdd { padding: 0 24px 64px; }
+    .hfl-fdd-inner { padding: 40px 28px; border-radius: 8px 20px 20px 20px; }
+    .hfl-fdd-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
     .hfl-testimonials { padding: 0 24px 64px; }
     .hfl-featured-quote { padding: 36px 28px; }
     .hfl-featured-result { display: none; }
@@ -846,7 +885,9 @@ const CSS = `
     .hfl-how { padding: 80px 32px; }
     .hfl-feat { padding: 72px 32px; gap: 48px; }
     .hfl-report { margin-left: 32px; margin-right: 32px; padding: 56px 48px; }
-    .hfl-fdd { padding: 80px 32px; }
+    .hfl-fdd { padding: 0 32px 80px; }
+    .hfl-fdd-inner { padding: 56px 48px; }
+    .hfl-fdd-grid { grid-template-columns: repeat(2, 1fr); }
     .hfl-testimonials, .hfl-cta { padding-left: 32px; padding-right: 32px; }
     .hfl-tools { padding: 0 32px 80px; }
     .hfl-tools-inner { padding: 52px 48px; }
@@ -1320,8 +1361,9 @@ export default function LandingPage() {
 
         {/* ── Feature Deep Dive ───────────────────────────────────────────── */}
         <section className="hfl-fdd">
+          <div className="hfl-fdd-inner">
           <div className="hfl-fdd-header">
-            <div className="hfl-kicker">✦ Feature Deep Dive</div>
+            <div className="hfl-kicker" style={{ background: "rgba(122,175,118,0.18)", color: "var(--sage)", border: "1px solid rgba(122,175,118,0.3)" }}>✦ Feature Deep Dive</div>
             <h2>Built for the moments<br /><em>that actually matter</em></h2>
             <p>Most home apps give you a checklist. HomeGentic gives you documentation that works for you at resale, during insurance claims, and before emergencies happen.</p>
           </div>
@@ -1339,12 +1381,10 @@ export default function LandingPage() {
               const Icon = f.icon;
               return (
                 <div key={f.title} className="hfl-fdd-card">
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div className="hfl-fdd-icon-wrap">
-                      <Icon size={16} color="var(--sage)" />
-                    </div>
-                    <div className="hfl-fdd-title">{f.title}</div>
+                  <div className="hfl-fdd-icon-wrap">
+                    <Icon size={18} color="var(--sage)" />
                   </div>
+                  <div className="hfl-fdd-title">{f.title}</div>
                   <div className="hfl-fdd-tagline">{f.tagline}</div>
                   <div className="hfl-fdd-desc">{f.desc}</div>
                   <div className="hfl-fdd-benefit">
@@ -1354,6 +1394,7 @@ export default function LandingPage() {
                 </div>
               );
             })}
+          </div>
           </div>
         </section>
 
