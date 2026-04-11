@@ -77,7 +77,7 @@ cp .env.example .env
 
 ```bash
 make dev
-# Starts local ICP replica, deploys all 15 canisters, and runs the frontend dev server
+# Starts local ICP replica, deploys all 16 canisters, and runs the frontend dev server
 ```
 
 Or step by step:
@@ -145,13 +145,13 @@ User speaks
 
 ```
 homegentic/
-├── dfx.json                      # ICP canister configuration (15 canisters + Internet Identity)
-├── mops.toml                     # Motoko package manager config
+├── dfx.json                      # ICP canister configuration (16 backend + frontend + Internet Identity)
+├── mops.toml                     # Motoko package manager config (core = "2.3.1")
 ├── package.json                  # Root scripts (test, deploy, upgrade, etc.)
 ├── Makefile                      # make dev / deploy / test / upgrade / clean
 ├── .env.example                  # Environment variable template
 │
-├── backend/                      # Motoko canisters (15)
+├── backend/                      # Motoko canisters (16)
 │   ├── auth/main.mo
 │   ├── property/main.mo
 │   ├── job/main.mo
@@ -166,9 +166,11 @@ homegentic/
 │   ├── monitoring/main.mo
 │   ├── listing/main.mo
 │   ├── agent/main.mo
-│   └── recurring/main.mo
+│   ├── recurring/main.mo
+│   ├── bills/main.mo             # Utility bills per property; anomaly detection; feeds Activity feed
+│   └── ai_proxy/main.mo          # IC HTTP outcalls: permit imports, transactional email (Resend)
 │
-├── candid/                       # Hand-maintained Candid IDL snapshots (5 core canisters)
+├── candid/                       # Hand-maintained Candid IDL snapshots (all canisters)
 │
 ├── agents/                       # AI agent services
 │   └── voice/                    # Claude voice assistant proxy (Express, port 3001)

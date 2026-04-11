@@ -37,7 +37,7 @@ No traditional database. No centralized server. No single point of failure.
 │   ICP Local/Main   │   │           Voice Agent Proxy (Node/Express)   │
 │     Replica        │   │                  :3001                       │
 │                    │   │                                              │
-│  15 Motoko         │   │  POST /api/agent   ── agentic tool-use loop  │
+│  16 Motoko         │   │  POST /api/agent   ── agentic tool-use loop  │
 │  canisters         │   │  POST /api/chat    ── SSE streaming chat     │
 │  (see below)       │   │  GET  /api/check   ── buyer report lookup    │
 │                    │   │  GET  /api/price-benchmark                   │
@@ -52,9 +52,11 @@ No traditional database. No centralized server. No single point of failure.
 
 ## Canister Map
 
-All 16 canisters use `persistent actor` + stable variable
-`preupgrade` / `postupgrade` for zero-data-loss upgrades. Each exports
-`metrics()`, `pause()`, and `unpause()` for operational control.
+All 16 canisters use `persistent actor` (Motoko mo:core) — all variables
+are implicitly stable, so no `preupgrade`/`postupgrade` hooks are needed.
+`transient var` is used for in-memory structures that should reset on upgrade
+(e.g. rate-limit sliding-window maps). Each canister exports `metrics()`,
+`pause()`, and `unpause()` for operational control.
 
 ```
 ┌──────────────────┬─────────────────────────────────────────────────────────┐
@@ -123,19 +125,17 @@ Enforced server-side inside `payment`, `quote`, `photo`, and `property`.
 The frontend reflects tier state but never gates logic unilaterally.
 
 ```
-┌─────────────────┬────────────┬───────────┬───────────┬────────────────┐
-│                 │   Free     │    Pro    │  Premium  │ ContractorPro  │
-├─────────────────┼────────────┼───────────┼───────────┼────────────────┤
-│ Price           │ $0         │ $10 / mo  │ $49 / yr  │ $49 / mo       │
-│ Properties      │ 1          │ 5         │ 25        │ unlimited      │
-│ Photos / job    │ 5          │ 20        │ unlimited │ 50             │
-│ Open quotes     │ 3          │ 10        │ 10        │ unlimited      │
-│ Warranty Wallet │ —          │ yes       │ yes       │ yes            │
-│ Recurring svcs  │ —          │ yes       │ yes       │ yes            │
-│ Market Intel    │ —          │ yes       │ yes       │ —              │
-│ Insurance Def.  │ —          │ yes       │ yes       │ —              │
-└─────────────────┴────────────┴───────────┴───────────┴────────────────┘
+┌──────────────────┬────────────┬───────────┬───────────┬────────────────┐
+│                  │   Free     │    Pro    │  Premium  │ ContractorPro  │
+├──────────────────┼────────────┼───────────┼───────────┼────────────────┤
+│ Price            │ $0         │ $10 / mo  │ $20 / mo  │ $30 / mo       │
+│ Properties       │ 1          │ 5         │ 20        │ unlimited      │
+│ Photos / job     │ 2          │ 10        │ 30        │ 50             │
+│ Open quote reqs  │ 3          │ 10        │ 10        │ unlimited      │
+└──────────────────┴────────────┴───────────┴───────────┴────────────────┘
 ```
+
+All limits are enforced server-side in the `payment`, `quote`, `photo`, and `property` canisters.
 
 ---
 
@@ -235,13 +235,21 @@ load without authentication and call the voice-agent relay for data.
 
 ## Data Persistence Model
 
-```
-Canister stable variable  ←── preupgrade() copies HashMap → Array
-                          ──► postupgrade() restores Array → HashMap
+All canisters use `persistent actor` with `mo:core/Map` (a functional B-tree):
 
-In-memory:   HashMap<K, V>   fast O(1) lookups during query/update calls
-Persistent:  stable var []   survives canister upgrades, node reboots
 ```
+persistent actor {
+  // All vars are implicitly stable — survive upgrades automatically.
+  // No preupgrade / postupgrade hooks needed.
+  private var records : Map.Map<Text, Record> = Map.empty();
+
+  // Exception: transient var resets on upgrade (correct for rate-limit windows)
+  private transient var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+}
+```
+
+`mo:core/Map` is a purely functional B-tree that lives in stable memory natively.
+Reads are O(log n); writes via `Map.add` / `Map.delete` return new tree roots.
 
 Photos are stored as SHA-256 hashes only — raw bytes live off-chain.
 The hash on-chain provides tamper evidence without consuming cycle budget.

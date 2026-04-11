@@ -113,7 +113,7 @@ dfx canister info <canister-name> --network ic
    ```bash
    for c in auth property job contractor quote payment photo report \
              maintenance market sensor monitoring listing agent \
-             recurring ai_proxy frontend; do
+             recurring bills ai_proxy frontend; do
      dfx canister update-settings $c --add-controller <NEW_PRINCIPAL> --network ic
    done
    ```
@@ -122,7 +122,7 @@ dfx canister info <canister-name> --network ic
    ```bash
    for c in auth property job contractor quote payment photo report \
              maintenance market sensor monitoring listing agent \
-             recurring ai_proxy frontend; do
+             recurring bills ai_proxy frontend; do
      dfx canister update-settings $c --remove-controller <OLD_PRINCIPAL> --network ic
    done
    ```
