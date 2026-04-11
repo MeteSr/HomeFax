@@ -527,8 +527,11 @@ const CSS = `
   .hfl-persona:hover .hfl-persona-arrow { transform: translateX(4px); }
 
   /* ── DATA SECTION ─────────────────────────────────────────────────────── */
-  .hfl-data {
-    padding: 96px 56px; background: var(--plum);
+  .hfl-data { padding: 0 56px 100px; }
+  .hfl-data-inner {
+    background: var(--plum); border-radius: 8px 40px 40px 40px;
+    border: 1px solid rgba(122,175,118,0.15);
+    padding: 72px 80px;
     display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
   }
   .hfl-data-eyebrow {
@@ -789,7 +792,8 @@ const CSS = `
     .hfl-personas { grid-template-columns: 1fr 1fr; max-width: 100%; }
     .hfl-personas > *:last-child:nth-child(odd) { grid-column: span 2; max-width: 340px; margin: 0 auto; }
 
-    .hfl-data { grid-template-columns: 1fr; padding: 64px 24px; gap: 48px; }
+    .hfl-data { padding: 0 24px 64px; }
+    .hfl-data-inner { grid-template-columns: 1fr; padding: 40px 28px; gap: 48px; border-radius: 8px 20px 20px 20px; }
     .hfl-data h2 { font-size: 34px; }
 
     .hfl-tools { padding: 56px 24px; }
@@ -827,7 +831,8 @@ const CSS = `
     .hfl-feat { padding: 72px 32px; gap: 48px; }
     .hfl-report { margin-left: 32px; margin-right: 32px; padding: 56px 48px; }
     .hfl-testimonials, .hfl-cta, .hfl-tools { padding-left: 32px; padding-right: 32px; }
-    .hfl-data { padding: 80px 32px; }
+    .hfl-data { padding: 0 32px 80px; }
+    .hfl-data-inner { padding: 56px 48px; }
     .hfl-footer { padding: 52px 32px 28px; }
   }
 `;
@@ -1456,33 +1461,35 @@ export default function LandingPage() {
 
         {/* ── Your Data ───────────────────────────────────────────────────── */}
         <section id="hfl-data" className="hfl-data">
-          <div>
-            <div className="hfl-data-eyebrow">🔒 Your Data</div>
-            <h2>Your records.<br /><em>Forever yours.</em></h2>
-            <p className="hfl-data-lead">
-              Most apps keep your data on their servers. If they shut down, your records disappear.
-              HomeGentic is different — every record you log lives on a public blockchain that no one
-              controls, including us. You own it completely.
-            </p>
-            <p className="hfl-data-note">
-              No lock-in. No middleman. No expiry date.
-            </p>
-          </div>
-          <div className="hfl-data-cards">
-            {[
-              { icon: "🏠", title: "Your home, your history", body: "Every repair, permit, and inspection you log is yours to keep — whether you stay with HomeGentic for one year or ten." },
-              { icon: "📥", title: "Download anytime",        body: "Export your full record as a PDF or raw data file whenever you want. No hoops, no waiting, no fees." },
-              { icon: "🔗", title: "Survives us",             body: "Even if HomeGentic ever closed tomorrow, your records would still be readable by anyone with the address. That's the promise." },
-              { icon: "🔐", title: "Private by default",      body: "Only you decide who sees what. Sharing a HomeGentic Report with a buyer is your choice — nothing is public until you say so." },
-            ].map((card) => (
-              <div key={card.title} className="hfl-data-card">
-                <div className="hfl-data-card-icon">{card.icon}</div>
-                <div>
-                  <div className="hfl-data-card-title">{card.title}</div>
-                  <div className="hfl-data-card-body">{card.body}</div>
+          <div className="hfl-data-inner">
+            <div>
+              <div className="hfl-data-eyebrow">🔒 Your Data</div>
+              <h2>Your records.<br /><em>Forever yours.</em></h2>
+              <p className="hfl-data-lead">
+                Most apps keep your data on their servers. If they shut down, your records disappear.
+                HomeGentic is different — every record you log lives on a public blockchain that no one
+                controls, including us. You own it completely.
+              </p>
+              <p className="hfl-data-note">
+                No lock-in. No middleman. No expiry date.
+              </p>
+            </div>
+            <div className="hfl-data-cards">
+              {[
+                { icon: "🏠", title: "Your home, your history", body: "Every repair, permit, and inspection you log is yours to keep — whether you stay with HomeGentic for one year or ten." },
+                { icon: "📥", title: "Download anytime",        body: "Export your full record as a PDF or raw data file whenever you want. No hoops, no waiting, no fees." },
+                { icon: "🔗", title: "Survives us",             body: "Even if HomeGentic ever closed tomorrow, your records would still be readable by anyone with the address. That's the promise." },
+                { icon: "🔐", title: "Private by default",      body: "Only you decide who sees what. Sharing a HomeGentic Report with a buyer is your choice — nothing is public until you say so." },
+              ].map((card) => (
+                <div key={card.title} className="hfl-data-card">
+                  <div className="hfl-data-card-icon">{card.icon}</div>
+                  <div>
+                    <div className="hfl-data-card-title">{card.title}</div>
+                    <div className="hfl-data-card-body">{card.body}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
