@@ -491,21 +491,31 @@ const CSS = `
 
   /* ── TESTIMONIALS ─────────────────────────────────────────────────────── */
   .hfl-testimonials { padding: 0 56px 100px; }
-  .hfl-testimonials-header { text-align: center; margin-bottom: 48px; }
-  .hfl-testimonials-header h2 { margin-bottom: 12px; }
-  .hfl-testimonials-header p { font-size: 17px; color: var(--plum-mid); }
+  .hfl-test-inner {
+    background: white; border-radius: 18px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(46,37,64,0.18);
+  }
+  .hfl-test-top {
+    background: var(--plum); padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .hfl-test-top-title { font-family: 'Fraunces', serif; font-size: 15px; color: white; font-weight: 700; }
+  .hfl-test-top-badge {
+    background: var(--sage); color: var(--plum);
+    font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 100px; letter-spacing: 1px;
+  }
   .hfl-featured-quote {
-    background: var(--plum); border-radius: 24px; padding: 52px 60px;
-    margin-bottom: 22px; position: relative; overflow: hidden;
+    background: var(--sage-light); padding: 48px 52px 44px;
+    border-bottom: 1px solid var(--sage-mid); position: relative; overflow: hidden;
   }
   .hfl-featured-quote::before {
-    content: '"'; position: absolute; top: -32px; left: 36px;
+    content: '"'; position: absolute; top: -28px; left: 32px;
     font-family: 'Fraunces', serif; font-size: 200px; font-weight: 900;
-    color: rgba(122,175,118,0.12); line-height: 1; pointer-events: none;
+    color: rgba(46,37,64,0.07); line-height: 1; pointer-events: none;
   }
   .hfl-featured-quote-text {
-    font-family: 'Fraunces', serif; font-size: clamp(20px, 2.5vw, 28px);
-    font-weight: 600; color: white; line-height: 1.5; margin-bottom: 32px;
+    font-family: 'Fraunces', serif; font-size: clamp(19px, 2.2vw, 26px);
+    font-weight: 600; color: var(--plum); line-height: 1.5; margin-bottom: 28px;
     max-width: 720px; position: relative;
   }
   .hfl-featured-quote-text em { color: var(--sage); font-style: italic; }
@@ -513,31 +523,37 @@ const CSS = `
   .hfl-featured-avi {
     width: 52px; height: 52px; border-radius: 50%; background: var(--blush);
     display: flex; align-items: center; justify-content: center; font-size: 26px;
-    border: 2px solid rgba(122,175,118,0.4); flex-shrink: 0;
+    border: 2px solid rgba(46,37,64,0.12); flex-shrink: 0;
   }
-  .hfl-featured-name { font-size: 15px; font-weight: 700; color: white; margin-bottom: 3px; }
-  .hfl-featured-role { font-size: 13px; color: rgba(253,252,250,0.55); }
+  .hfl-featured-name { font-size: 15px; font-weight: 700; color: var(--plum); margin-bottom: 3px; }
+  .hfl-featured-role { font-size: 13px; color: var(--plum-mid); }
   .hfl-featured-result { margin-left: auto; text-align: right; flex-shrink: 0; }
   .hfl-featured-result-num {
     font-family: 'Fraunces', serif; font-size: 38px; font-weight: 900;
     color: var(--sage); line-height: 1; margin-bottom: 4px;
   }
-  .hfl-featured-result-lbl { font-size: 12px; color: rgba(253,252,250,0.5); }
-  .hfl-test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .hfl-featured-result-lbl { font-size: 12px; color: var(--plum-mid); }
+  .hfl-test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
   .hfl-test-card {
-    background: white; border-radius: 20px; padding: 30px;
-    border: 1.5px solid rgba(122,175,118,0.2); transition: border-color .2s, box-shadow .2s;
+    padding: 28px; border-right: 1px solid var(--rule);
+    transition: background .2s;
   }
-  .hfl-test-card:hover { border-color: var(--sage); box-shadow: 0 8px 32px rgba(122,175,118,0.15); }
-  .hfl-stars { color: #F4B942; font-size: 16px; margin-bottom: 14px; }
-  .hfl-test-card blockquote { font-size: 14px; line-height: 1.75; color: var(--plum-mid); margin-bottom: 20px; font-style: italic; }
+  .hfl-test-card:last-child { border-right: none; }
+  .hfl-test-card:hover { background: #F9F7F4; }
+  .hfl-stars { color: #F4B942; font-size: 15px; margin-bottom: 12px; }
+  .hfl-test-card blockquote { font-size: 14px; line-height: 1.75; color: var(--plum-mid); margin-bottom: 18px; font-style: italic; }
   .hfl-test-author { display: flex; align-items: center; gap: 12px; }
-  .hfl-avi { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .hfl-avi { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .hfl-avi-1 { background: var(--blush); }
   .hfl-avi-2 { background: var(--sky); }
   .hfl-avi-3 { background: var(--butter); }
   .hfl-test-name { font-weight: 700; font-size: 13px; color: var(--plum); }
   .hfl-test-role { font-size: 11px; color: var(--plum-mid); }
+  .hfl-test-footer {
+    background: var(--sage-light); border-top: 1px solid var(--sage-mid);
+    padding: 10px 28px; display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--plum-mid); font-weight: 600;
+  }
 
   /* ── PERSONA CTA ──────────────────────────────────────────────────────── */
   .hfl-cta { padding: 0 56px 100px; }
@@ -827,9 +843,11 @@ const CSS = `
     .hfl-fdd-cols { grid-template-columns: 1fr; gap: 0; }
     .hfl-fdd-row:last-child { border-bottom: 1px solid rgba(253,252,250,0.08); }
     .hfl-testimonials { padding: 0 24px 64px; }
-    .hfl-featured-quote { padding: 36px 28px; }
+    .hfl-featured-quote { padding: 32px 24px; }
     .hfl-featured-result { display: none; }
     .hfl-test-grid { grid-template-columns: 1fr; }
+    .hfl-test-card { border-right: none; border-bottom: 1px solid var(--rule); }
+    .hfl-test-card:last-child { border-bottom: none; }
 
     .hfl-cta { padding: 0 24px 64px; }
     .hfl-cta-inner { padding: 48px 24px; }
@@ -1091,8 +1109,7 @@ export default function LandingPage() {
         {/* ── How It Works ────────────────────────────────────────────────── */}
         <section id="hfl-features" className="hfl-how">
           <div className="hfl-section-header">
-            <div className="hfl-kicker">How It Works</div>
-            <h2>Own It. Manage It.<br /><em>Prove It. Sell It.</em></h2>
+            <h2>How It Works</h2>
             <p className="hfl-sec-sub">HomeGentic works across the entire homeownership lifecycle — from move-in to sale day.</p>
           </div>
           <div className="hfl-flow">
@@ -1387,57 +1404,68 @@ export default function LandingPage() {
 
         {/* ── Testimonials ────────────────────────────────────────────────── */}
         <section className="hfl-testimonials">
-          <div className="hfl-testimonials-header">
-            <div className="hfl-kicker">★ Homeowner Stories</div>
-            <h2>Homeowners Love HomeGentic</h2>
-            <p>Real results from real people who took control of their home's story.</p>
-          </div>
+          <div className="hfl-test-inner">
 
-          <div className="hfl-featured-quote">
-            <p className="hfl-featured-quote-text">
-              "We got <em>$28k over asking</em>. Our buyers said the HomeGentic Report was
-              the reason they felt comfortable waiving the inspection contingency. It's a game changer."
-            </p>
-            <div className="hfl-featured-author">
-              <div className="hfl-featured-avi">👩</div>
-              <div>
-                <div className="hfl-featured-name">Sarah M.</div>
-                <div className="hfl-featured-role">Seller · Austin, TX</div>
-              </div>
-              <div className="hfl-featured-result">
-                <div className="hfl-featured-result-num">+$28k</div>
-                <div className="hfl-featured-result-lbl">over asking price</div>
-              </div>
+            {/* Header bar — mirrors hfl-mock-top */}
+            <div className="hfl-test-top">
+              <span className="hfl-test-top-title">Homeowner Stories</span>
+              <span className="hfl-test-top-badge">★★★★★ HomeGentic ✓</span>
             </div>
-          </div>
 
-          <div className="hfl-test-grid">
-            {[
-              {
-                quote: "I posted my listing intent and got five agent proposals in 48 hours. Ended up saving $11k in commission compared to what I would have paid without negotiating.",
-                name: "Marcus T.", role: "Seller · Denver, CO", avi: "hfl-avi-2", emoji: "👨",
-              },
-              {
-                quote: "The AI agent reminded me my HVAC was overdue, booked a verified tech, and logged it to my HomeGentic automatically. When I sold six months later, it was right there in the report.",
-                name: "Priya K.", role: "Homeowner · Seattle, WA", avi: "hfl-avi-3", emoji: "👩",
-              },
-              {
-                quote: "Our inspector said our HomeGentic Score was the highest he'd seen. Buyers skipped the inspection entirely. Closed in 11 days.",
-                name: "James L.", role: "Seller · Tampa, FL", avi: "hfl-avi-1", emoji: "👨",
-              },
-            ].map((t) => (
-              <div key={t.name} className="hfl-test-card">
-                <div className="hfl-stars">★★★★★</div>
-                <blockquote>"{t.quote}"</blockquote>
-                <div className="hfl-test-author">
-                  <div className={`hfl-avi ${t.avi}`}>{t.emoji}</div>
-                  <div>
-                    <div className="hfl-test-name">{t.name}</div>
-                    <div className="hfl-test-role">{t.role}</div>
-                  </div>
+            {/* Featured quote — mirrors sage-light score band */}
+            <div className="hfl-featured-quote">
+              <p className="hfl-featured-quote-text">
+                "We got <em>$28k over asking</em>. Our buyers said the HomeGentic Report was
+                the reason they felt comfortable waiving the inspection contingency. It's a game changer."
+              </p>
+              <div className="hfl-featured-author">
+                <div className="hfl-featured-avi">👩</div>
+                <div>
+                  <div className="hfl-featured-name">Sarah M.</div>
+                  <div className="hfl-featured-role">Seller · Austin, TX</div>
+                </div>
+                <div className="hfl-featured-result">
+                  <div className="hfl-featured-result-num">+$28k</div>
+                  <div className="hfl-featured-result-lbl">over asking price</div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Three reviews — mirrors white rows band */}
+            <div className="hfl-test-grid">
+              {[
+                {
+                  quote: "I posted my listing intent and got five agent proposals in 48 hours. Ended up saving $11k in commission compared to what I would have paid without negotiating.",
+                  name: "Marcus T.", role: "Seller · Denver, CO", avi: "hfl-avi-2", emoji: "👨",
+                },
+                {
+                  quote: "The AI agent reminded me my HVAC was overdue, booked a verified tech, and logged it to my HomeGentic automatically. When I sold six months later, it was right there in the report.",
+                  name: "Priya K.", role: "Homeowner · Seattle, WA", avi: "hfl-avi-3", emoji: "👩",
+                },
+                {
+                  quote: "Our inspector said our HomeGentic Score was the highest he'd seen. Buyers skipped the inspection entirely. Closed in 11 days.",
+                  name: "James L.", role: "Seller · Tampa, FL", avi: "hfl-avi-1", emoji: "👨",
+                },
+              ].map((t) => (
+                <div key={t.name} className="hfl-test-card">
+                  <div className="hfl-stars">★★★★★</div>
+                  <blockquote>"{t.quote}"</blockquote>
+                  <div className="hfl-test-author">
+                    <div className={`hfl-avi ${t.avi}`}>{t.emoji}</div>
+                    <div>
+                      <div className="hfl-test-name">{t.name}</div>
+                      <div className="hfl-test-role">{t.role}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer bar — mirrors sage-light footer */}
+            <div className="hfl-test-footer">
+              📋 <span>Real results from verified homeowners · All stories collected in-app</span>
+            </div>
+
           </div>
         </section>
 
