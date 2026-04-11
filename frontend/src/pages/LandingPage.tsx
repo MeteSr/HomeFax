@@ -582,6 +582,115 @@ const CSS = `
   .hfl-tool-desc { font-size: 13px; color: var(--plum-mid); line-height: 1.65; flex: 1; }
   .hfl-tool-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--plum); margin-top: 4px; }
 
+  /* ── FEATURE SHOWCASE ────────────────────────────────────────────────── */
+  .hfl-showcase { padding: 0 56px 100px; }
+  .hfl-showcase-header { max-width: 540px; margin-bottom: 40px; }
+  .hfl-showcase-inner {
+    background: var(--plum);
+    border-radius: 8px 40px 40px 40px;
+    display: flex; overflow: hidden; min-height: 560px;
+    border: 1px solid rgba(122,175,118,0.15);
+  }
+  /* Left nav */
+  .hfl-sc-nav {
+    width: 248px; flex-shrink: 0;
+    background: rgba(253,252,250,0.04);
+    border-right: 1px solid rgba(253,252,250,0.08);
+    padding: 28px 16px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .hfl-sc-nav-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: rgba(253,252,250,0.25); padding: 0 12px; margin-bottom: 12px;
+  }
+  .hfl-sc-tab {
+    width: 100%; background: none; border: none; cursor: pointer; text-align: left;
+    padding: 12px 14px; border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: background .15s;
+  }
+  .hfl-sc-tab:hover:not(.hfl-sc-tab-active) { background: rgba(253,252,250,0.06); }
+  .hfl-sc-tab-active { background: rgba(253,252,250,0.1); }
+  .hfl-sc-tab-row { display: flex; align-items: center; gap: 10px; }
+  .hfl-sc-tab-icon { font-size: 16px; flex-shrink: 0; }
+  .hfl-sc-tab-title {
+    font-size: 13px; font-weight: 600; color: rgba(253,252,250,0.45); line-height: 1.3;
+  }
+  .hfl-sc-tab-active .hfl-sc-tab-title { color: white; }
+  .hfl-sc-progress-track {
+    height: 2px; background: rgba(253,252,250,0.08); border-radius: 100px;
+    overflow: hidden; margin-top: 10px;
+  }
+  .hfl-sc-progress-bar {
+    height: 100%; background: var(--sage); border-radius: 100px;
+    animation: hfl-sc-fill 5s linear forwards;
+  }
+  @keyframes hfl-sc-fill { from { width: 0 } to { width: 100% } }
+  /* Content panel */
+  .hfl-sc-content {
+    flex: 1; min-width: 0; padding: 48px 52px;
+    display: grid; grid-template-columns: 1fr 320px; gap: 44px; align-items: start;
+    position: relative; overflow: hidden;
+  }
+  .hfl-sc-content::before {
+    content: ''; position: absolute; top: -30%; right: -5%; width: 380px; height: 380px;
+    background: radial-gradient(circle, rgba(122,175,118,0.1), transparent 65%);
+    pointer-events: none;
+  }
+  .hfl-sc-kicker {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--sage); margin-bottom: 14px;
+  }
+  .hfl-sc-heading {
+    font-family: 'Fraunces', serif; font-size: clamp(26px, 2.8vw, 36px);
+    font-weight: 900; color: white; line-height: 1.1;
+    letter-spacing: -0.5px; margin-bottom: 14px;
+  }
+  .hfl-sc-heading em { color: var(--sage); font-style: italic; font-weight: 300; }
+  .hfl-sc-desc {
+    font-size: 15px; color: rgba(253,252,250,0.62); line-height: 1.75; margin-bottom: 24px;
+  }
+  .hfl-sc-bullets {
+    list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 28px;
+  }
+  .hfl-sc-bullets li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px; color: rgba(253,252,250,0.78); line-height: 1.5;
+  }
+  .hfl-sc-bullet-dot {
+    width: 18px; height: 18px; background: rgba(122,175,118,0.22); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--sage); flex-shrink: 0; margin-top: 2px; font-weight: 700;
+  }
+  .hfl-sc-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--sage); color: var(--plum);
+    padding: 11px 22px; border-radius: 100px;
+    font-size: 13px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .hfl-sc-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(122,175,118,0.3); }
+  /* Slide-in animation */
+  .hfl-sc-slide { animation: hfl-sc-in .35s ease both; }
+  @keyframes hfl-sc-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  /* Visual column */
+  .hfl-sc-visual {
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35); flex-shrink: 0;
+  }
+  /* Mobile showcase */
+  @media (max-width: 900px) {
+    .hfl-showcase { padding: 0 24px 64px; }
+    .hfl-showcase-inner { flex-direction: column; border-radius: 8px 20px 20px 20px; min-height: auto; }
+    .hfl-sc-nav { width: 100%; flex-direction: row; gap: 6px; overflow-x: auto; padding: 16px; border-right: none; border-bottom: 1px solid rgba(253,252,250,0.08); }
+    .hfl-sc-nav-label { display: none; }
+    .hfl-sc-tab { padding: 10px 14px; white-space: nowrap; flex-shrink: 0; width: auto; }
+    .hfl-sc-progress-track { display: none; }
+    .hfl-sc-content { grid-template-columns: 1fr; padding: 28px 24px; gap: 28px; }
+    .hfl-sc-visual { display: none; }
+  }
+
   /* ── FOOTER ───────────────────────────────────────────────────────────── */
   .hfl-footer { background: var(--charcoal); padding: 64px 56px 32px; }
   .hfl-footer-top {
@@ -725,6 +834,46 @@ const CSS = `
 export default function LandingPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const [activeFeature, setActiveFeature] = React.useState(0);
+  const [showcasePaused, setShowcasePaused] = React.useState(false);
+
+  const FEATURES = [
+    {
+      icon: "📋", kicker: "The Verified Record",
+      heading: <>The Carfax<br /><em>your home deserves</em></>,
+      desc: "Every service, repair, and renovation — documented, signed, and stored permanently on the Internet Computer blockchain. No middlemen, no expiry.",
+      bullets: ["Full ownership & transaction history", "Verified contractor records & warranties", "Permitted renovations on file", "AI agents continuously update your score"],
+      cta: "Build my record",
+    },
+    {
+      icon: "🎤", kicker: "AI Home Intelligence",
+      heading: <>Your home has a voice.<br /><em>So do you.</em></>,
+      desc: "Ask your home anything — and it reaches out first when something needs attention. Voice-powered, home-aware, always on.",
+      bullets: ["Voice queries across your full maintenance history", "Proactive alerts before costly failures occur", "Utility bill anomaly & spike detection", "IoT sensor events trigger auto-scheduling"],
+      cta: "Try the AI",
+    },
+    {
+      icon: "⚖️", kicker: "Sell Smarter",
+      heading: <>Make agents<br /><em>compete for you</em></>,
+      desc: "Post your listing intent and let verified agents submit competing proposals. Compare commissions and net proceeds side by side — or go FSBO.",
+      bullets: ["Competing agent proposals within 48 hours", "Compare commissions & estimated net proceeds", "FSBO mode with showing management & offer inbox", "Sealed-bid offer management"],
+      cta: "List your home",
+    },
+    {
+      icon: "👷", kicker: "Service Network",
+      heading: <>Verified contractors,<br /><em>auto-logged work</em></>,
+      desc: "Every contractor in our network is credentialed, reviewed, and bonded. Their completed work is automatically logged to your home's permanent record.",
+      bullets: ["Credentialed & background-checked providers", "Work auto-signed and logged to your record", "Verified receipts & warranties on file", "Rate-limited reviews — real feedback only"],
+      cta: "Browse the network",
+    },
+    {
+      icon: "🏡", kicker: "Your Data",
+      heading: <>Your records.<br /><em>Forever yours.</em></>,
+      desc: "Your data lives on the Internet Computer blockchain under your control. If HomeGentic ever closed tomorrow, every record would still be readable by anyone with the address.",
+      bullets: ["Blockchain-stored — no one can delete it", "Download full record as PDF anytime", "Private by default — you control sharing", "No lock-in, no middleman, no expiry"],
+      cta: "Learn about ICP",
+    },
+  ];
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -751,6 +900,12 @@ export default function LandingPage() {
       document.getElementById("hf-landing-fonts")?.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (showcasePaused) return;
+    const t = setInterval(() => setActiveFeature((p) => (p + 1) % FEATURES.length), 5000);
+    return () => clearInterval(t);
+  }, [showcasePaused, FEATURES.length]);
 
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -822,10 +977,6 @@ export default function LandingPage() {
         {/* ── Hero ────────────────────────────────────────────────────────── */}
         <section className="hfl-hero">
           <div className="hfl-hero-left">
-            <div className="hfl-eyebrow">
-              <span className="hfl-dot" />
-              Verified Records · AI-Powered · Built on ICP
-            </div>
             <h1>Own It.<br /><em>Prove It.</em><br />Sell It.</h1>
             <p className="hfl-sub">
               HomeGentic tracks every repair, reminds you before things break, and builds
@@ -898,20 +1049,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Trust Strip ─────────────────────────────────────────────────── */}
-        <div className="hfl-trust-strip">
-          <span className="hfl-trust-label">Trusted in</span>
-          <div className="hfl-trust-divider" />
-          <div className="hfl-trust-cities">
-            {["Austin, TX", "Denver, CO", "Seattle, WA", "Tampa, FL", "Chicago, IL", "Phoenix, AZ", "Charlotte, NC"].map((c) => (
-              <span key={c} className="hfl-trust-city">{c}</span>
-            ))}
-          </div>
-          <div className="hfl-trust-rating">
-            <span className="hfl-trust-stars">★★★★★</span>
-            <span>4.9 Homeowner Rating</span>
-          </div>
-        </div>
 
         {/* ── Metrics ─────────────────────────────────────────────────────── */}
         <div className="hfl-metrics">
@@ -954,160 +1091,205 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Feature 1: Verified Record ───────────────────────────────────── */}
-        <section className="hfl-feat">
-          <div className="hfl-feat-text">
-            <div className="hfl-feat-eyebrow">📋 The Verified Record</div>
-            <h2>The Carfax<br /><em>your home deserves</em></h2>
-            <p className="hfl-feat-lead">
-              Every service, every repair, every renovation — documented, signed, and stored
-              permanently on the Internet Computer blockchain. No middlemen, no expiry.
-            </p>
-            <ul className="hfl-feat-checklist">
-              <li><span className="hfl-feat-check">✓</span>Full ownership &amp; transaction history</li>
-              <li><span className="hfl-feat-check">✓</span>Verified contractor records &amp; warranties</li>
-              <li><span className="hfl-feat-check">✓</span>Permitted renovations on file</li>
-              <li><span className="hfl-feat-check">✓</span>Recurring services under contract</li>
-              <li><span className="hfl-feat-check">✓</span>AI agents continuously update your score</li>
-              <li><span className="hfl-feat-check">✓</span>Share with buyers instantly — no middlemen</li>
-            </ul>
-            <button className="hfl-feat-cta" onClick={() => navigate("/login")}>Build my record →</button>
+        {/* ── Feature Showcase ────────────────────────────────────────────── */}
+        <section id="hfl-sell" className="hfl-showcase">
+          <div className="hfl-showcase-header">
+            <div className="hfl-kicker">✦ Everything You Need</div>
+            <h2>Built for the entire<br /><em>homeownership journey</em></h2>
           </div>
-          <div className="hfl-feat-visual">
-            <div className="hfl-feat-panel">
-              <div className="hfl-rec-hdr">
-                <div className="hfl-rec-hdr-top">
-                  <span className="hfl-rec-title">HomeGentic Record</span>
-                  <span className="hfl-rec-verified">✓ Blockchain Verified</span>
-                </div>
-                <div className="hfl-rec-addr">327 Keech Street, Daytona Beach FL</div>
-                <div className="hfl-rec-score-row">
-                  <div className="hfl-rec-score-num">91</div>
-                  <div className="hfl-rec-score-right">
-                    <div className="hfl-rec-score-lbl">HomeGentic Score</div>
-                    <div className="hfl-rec-bar-wrap"><div className="hfl-rec-bar" /></div>
+          <div
+            className="hfl-showcase-inner"
+            onMouseEnter={() => setShowcasePaused(true)}
+            onMouseLeave={() => setShowcasePaused(false)}
+          >
+            {/* Tab nav */}
+            <div className="hfl-sc-nav">
+              <div className="hfl-sc-nav-label">Features</div>
+              {FEATURES.map((f, i) => (
+                <button
+                  key={i}
+                  className={`hfl-sc-tab${activeFeature === i ? " hfl-sc-tab-active" : ""}`}
+                  onClick={() => setActiveFeature(i)}
+                >
+                  <div className="hfl-sc-tab-row">
+                    <span className="hfl-sc-tab-icon">{f.icon}</span>
+                    <span className="hfl-sc-tab-title">{f.kicker}</span>
                   </div>
-                </div>
-              </div>
-              <div className="hfl-rec-body">
-                <div className="hfl-rec-section-lbl">Verified History</div>
-                <div className="hfl-rec-items">
-                  {[
-                    { icon: "🔨", label: "Roof Replacement", val: "2022 · Licensed · Signed ✓", cls: "hfl-rec-pass" },
-                    { icon: "❄️", label: "HVAC Full Service", val: "Aug 2024 · Verified ✓",      cls: "hfl-rec-pass" },
-                    { icon: "🔌", label: "Electrical Panel",  val: "Permitted 2021 ✓",            cls: "hfl-rec-pass" },
-                    { icon: "🌿", label: "Landscaping",       val: "Contract Active ✓",           cls: "hfl-rec-pass" },
-                    { icon: "🚰", label: "Water Heater",      val: "Est. Lifespan: 2 yrs",        cls: "hfl-rec-due" },
-                  ].map((r) => (
-                    <div key={r.label} className="hfl-rec-item">
-                      <span className="hfl-rec-item-l"><span>{r.icon}</span>{r.label}</span>
-                      <span className={r.cls}>{r.val}</span>
+                  {activeFeature === i && (
+                    <div className="hfl-sc-progress-track">
+                      <div className="hfl-sc-progress-bar" key={`${i}-${showcasePaused}`} style={{ animationPlayState: showcasePaused ? "paused" : "running" }} />
                     </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div className="hfl-sc-content">
+              <div className="hfl-sc-slide" key={activeFeature}>
+                <div className="hfl-sc-kicker">{FEATURES[activeFeature].kicker}</div>
+                <div className="hfl-sc-heading">{FEATURES[activeFeature].heading}</div>
+                <p className="hfl-sc-desc">{FEATURES[activeFeature].desc}</p>
+                <ul className="hfl-sc-bullets">
+                  {FEATURES[activeFeature].bullets.map((b) => (
+                    <li key={b}><span className="hfl-sc-bullet-dot">✓</span>{b}</li>
                   ))}
-                </div>
+                </ul>
+                <button className="hfl-sc-cta" onClick={() => navigate("/login")}>
+                  {FEATURES[activeFeature].cta} →
+                </button>
               </div>
-              <div className="hfl-rec-footer">
-                📋 <span>47 records verified · Shareable link ready</span>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* ── Feature 2: AI Voice (dark, flipped) ─────────────────────────── */}
-        <section className="hfl-feat hfl-feat-2">
-          <div className="hfl-feat-visual">
-            <div className="hfl-feat-panel">
-              <div className="hfl-ai-panel-hdr">
-                <div className="hfl-ai-panel-hdr-l">
-                  <span style={{ fontSize: 18 }}>🏠</span>
-                  <span className="hfl-ai-panel-name">HomeGentic AI</span>
-                </div>
-                <div className="hfl-ai-panel-live">
-                  <div className="hfl-ai-panel-dot" />
-                  Live
-                </div>
-              </div>
-              <div className="hfl-ai-panel-body">
-                <div className="hfl-ai-notice">
-                  <div className="hfl-ai-notice-tag"><span>⚡</span> HomeGentic noticed</div>
-                  <p>Your water heater (installed 2013) is past average lifespan. Winter is the worst time for failures — want me to find a verified quote before that happens?</p>
-                  <button className="hfl-ai-notice-btn">Yes, get me quotes →</button>
-                </div>
-                <div className="hfl-ai-user-msg">
-                  <div className="hfl-ai-user-icon">🎤</div>
-                  <p>"What's my biggest maintenance risk heading into winter?"</p>
-                </div>
-                <div className="hfl-ai-reply">
-                  <div className="hfl-ai-reply-tag">HomeGentic AI</div>
-                  <p>Based on your records: your roof was last inspected in 2021 and your furnace filter is 3 months overdue. I'd prioritize both before the cold. Want me to schedule a checkup?</p>
-                </div>
-              </div>
-              <div className="hfl-ai-panel-footer">
-                <div className="hfl-ai-mic">🎤</div>
-                <span className="hfl-ai-mic-hint">Tap to ask anything about your home…</span>
-              </div>
-            </div>
-          </div>
-          <div className="hfl-feat-text">
-            <div className="hfl-feat-eyebrow">✦ AI Home Intelligence</div>
-            <h2>Your home has a voice.<br /><em>So do you.</em></h2>
-            <p className="hfl-feat-lead">
-              HomeGentic doesn't just store your records — it thinks about them.
-              Ask your home anything. And when something needs your attention, it reaches out first.
-            </p>
-            <ul className="hfl-feat-checklist">
-              <li><span className="hfl-feat-check">✓</span>Voice queries about your full maintenance history</li>
-              <li><span className="hfl-feat-check">✓</span>Proactive alerts before costly failures occur</li>
-              <li><span className="hfl-feat-check">✓</span>Utility bill anomaly detection</li>
-              <li><span className="hfl-feat-check">✓</span>IoT sensor event responses and auto-scheduling</li>
-            </ul>
-            <button className="hfl-feat-cta" onClick={() => navigate("/login")}>Try the AI →</button>
-          </div>
-        </section>
-
-        {/* ── Feature 3: Sell Smarter ──────────────────────────────────────── */}
-        <section id="hfl-sell" className="hfl-feat">
-          <div className="hfl-feat-text">
-            <div className="hfl-feat-eyebrow">⚖️ Sell Smarter</div>
-            <h2>Make agents<br /><em>compete for you</em></h2>
-            <p className="hfl-feat-lead">
-              Post your listing intent and let real estate agents submit competing proposals.
-              Compare commissions, marketing plans, and net proceeds — side by side — or go FSBO
-              with our full seller toolkit.
-            </p>
-            <ul className="hfl-feat-checklist">
-              <li><span className="hfl-feat-check">✓</span>Receive competing agent proposals in 48 hours</li>
-              <li><span className="hfl-feat-check">✓</span>Compare commissions and estimated net proceeds</li>
-              <li><span className="hfl-feat-check">✓</span>FSBO mode with showing management &amp; offer inbox</li>
-              <li><span className="hfl-feat-check">✓</span>Sealed-bid offer management</li>
-            </ul>
-            <button className="hfl-feat-cta" onClick={() => navigate("/login")}>List your home →</button>
-          </div>
-          <div className="hfl-feat-visual">
-            <div className="hfl-feat-panel">
-              <div className="hfl-compete-hdr">
-                <div className="hfl-compete-title">Agent Proposals</div>
-                <div className="hfl-compete-sub">327 Keech Street · 5 proposals received</div>
-              </div>
-              <div className="hfl-compete-body">
-                {[
-                  { avi: "👩", name: "Lisa Chen · Keller Williams", detail: "2.4% commission · Est. net $487k · 18 days avg", comm: "2.4%", best: true },
-                  { avi: "👨", name: "Marcus Rivera · RE/MAX", detail: "2.8% commission · Est. net $481k · 22 days avg", comm: "2.8%", best: false },
-                  { avi: "👩", name: "Priya Nair · Compass",  detail: "3.0% commission · Est. net $479k · 25 days avg", comm: "3.0%", best: false },
-                ].map((a, i) => (
-                  <div key={i} className={`hfl-compete-agent${a.best ? " hfl-compete-agent-featured" : ""}`}>
-                    <div className="hfl-compete-avi">{a.avi}</div>
-                    <div className="hfl-compete-info">
-                      <div className="hfl-compete-name">{a.name}</div>
-                      <div className="hfl-compete-detail">{a.detail}</div>
-                      {a.best && <span className="hfl-compete-best">✦ Best offer</span>}
+              {/* Visual panel */}
+              <div className="hfl-sc-visual" key={`v-${activeFeature}`}>
+                {activeFeature === 0 && (
+                  <div className="hfl-rec-hdr" style={{ borderRadius: 0 }}>
+                    <div className="hfl-rec-hdr-top">
+                      <span className="hfl-rec-title">HomeGentic Record</span>
+                      <span className="hfl-rec-verified">✓ Verified</span>
                     </div>
-                    <div className="hfl-compete-comm">{a.comm}</div>
+                    <div className="hfl-rec-addr">327 Keech Street, Daytona Beach FL</div>
+                    <div className="hfl-rec-score-row">
+                      <div className="hfl-rec-score-num">91</div>
+                      <div className="hfl-rec-score-right">
+                        <div className="hfl-rec-score-lbl">HomeGentic Score</div>
+                        <div className="hfl-rec-bar-wrap"><div className="hfl-rec-bar" /></div>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="hfl-compete-footer">
-                ⚖️ <span>All agents verified HomeGentic partners</span>
+                )}
+                {activeFeature === 0 && (
+                  <div className="hfl-rec-body">
+                    <div className="hfl-rec-section-lbl">Verified History</div>
+                    <div className="hfl-rec-items">
+                      {[
+                        { icon: "🔨", label: "Roof Replacement", val: "2022 · Signed ✓", cls: "hfl-rec-pass" },
+                        { icon: "❄️", label: "HVAC Full Service", val: "Aug 2024 · Verified ✓", cls: "hfl-rec-pass" },
+                        { icon: "🔌", label: "Electrical Panel",  val: "Permitted 2021 ✓", cls: "hfl-rec-pass" },
+                        { icon: "🚰", label: "Water Heater",      val: "Lifespan: 2 yrs", cls: "hfl-rec-due" },
+                      ].map((r) => (
+                        <div key={r.label} className="hfl-rec-item">
+                          <span className="hfl-rec-item-l"><span>{r.icon}</span>{r.label}</span>
+                          <span className={r.cls}>{r.val}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="hfl-rec-footer" style={{ margin: "16px -26px -20px", padding: "14px 26px" }}>
+                      📋 <span>47 records verified · Link ready</span>
+                    </div>
+                  </div>
+                )}
+
+                {activeFeature === 1 && (<>
+                  <div className="hfl-ai-panel-hdr">
+                    <div className="hfl-ai-panel-hdr-l">
+                      <span style={{ fontSize: 16 }}>🏠</span>
+                      <span className="hfl-ai-panel-name">HomeGentic AI</span>
+                    </div>
+                    <div className="hfl-ai-panel-live"><div className="hfl-ai-panel-dot" />Live</div>
+                  </div>
+                  <div className="hfl-ai-panel-body">
+                    <div className="hfl-ai-notice">
+                      <div className="hfl-ai-notice-tag"><span>⚡</span> HomeGentic noticed</div>
+                      <p>Your water heater (2013) is past average lifespan. Want a verified quote before winter?</p>
+                      <button className="hfl-ai-notice-btn">Yes, get me quotes →</button>
+                    </div>
+                    <div className="hfl-ai-user-msg">
+                      <div className="hfl-ai-user-icon">🎤</div>
+                      <p>"What's my biggest maintenance risk this winter?"</p>
+                    </div>
+                    <div className="hfl-ai-reply">
+                      <div className="hfl-ai-reply-tag">HomeGentic AI</div>
+                      <p>Your roof was last inspected in 2021 and your furnace filter is 3 months overdue. I'd prioritize both. Want me to schedule?</p>
+                    </div>
+                  </div>
+                  <div className="hfl-ai-panel-footer">
+                    <div className="hfl-ai-mic">🎤</div>
+                    <span className="hfl-ai-mic-hint">Tap to ask anything…</span>
+                  </div>
+                </>)}
+
+                {activeFeature === 2 && (<>
+                  <div className="hfl-compete-hdr">
+                    <div className="hfl-compete-title">Agent Proposals</div>
+                    <div className="hfl-compete-sub">327 Keech Street · 5 received</div>
+                  </div>
+                  <div className="hfl-compete-body">
+                    {[
+                      { avi: "👩", name: "Lisa Chen · Keller Williams", detail: "2.4% · Est. net $487k · 18 days", comm: "2.4%", best: true },
+                      { avi: "👨", name: "Marcus Rivera · RE/MAX",      detail: "2.8% · Est. net $481k · 22 days", comm: "2.8%", best: false },
+                      { avi: "👩", name: "Priya Nair · Compass",        detail: "3.0% · Est. net $479k · 25 days", comm: "3.0%", best: false },
+                    ].map((a, i) => (
+                      <div key={i} className={`hfl-compete-agent${a.best ? " hfl-compete-agent-featured" : ""}`}>
+                        <div className="hfl-compete-avi">{a.avi}</div>
+                        <div className="hfl-compete-info">
+                          <div className="hfl-compete-name">{a.name}</div>
+                          <div className="hfl-compete-detail">{a.detail}</div>
+                          {a.best && <span className="hfl-compete-best">✦ Best offer</span>}
+                        </div>
+                        <div className="hfl-compete-comm">{a.comm}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hfl-compete-footer">⚖️ <span>All verified HomeGentic partners</span></div>
+                </>)}
+
+                {activeFeature === 3 && (<>
+                  <div style={{ background: "var(--plum)", padding: "18px 22px", borderBottom: "1px solid rgba(253,252,250,0.08)" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ fontFamily: "'Fraunces',serif", fontSize: 15, fontWeight: 700, color: "white" }}>Service Network</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#A8DCA5", background: "rgba(122,175,118,0.25)", border: "1px solid rgba(122,175,118,0.4)", borderRadius: 100, padding: "3px 9px" }}>247 providers nearby</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>Daytona Beach, FL · All trades</div>
+                  </div>
+                  <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column" as const, gap: 10 }}>
+                    {[
+                      { emoji: "🔧", name: "Mike's HVAC Pro",      rating: "4.9★", jobs: "32 jobs on HomeGentic", verified: true },
+                      { emoji: "🔌", name: "Coastal Electric",      rating: "4.8★", jobs: "18 jobs on HomeGentic", verified: true },
+                      { emoji: "🔨", name: "Sunrise Roofing Co.",   rating: "5.0★", jobs: "41 jobs on HomeGentic", verified: true },
+                    ].map((c) => (
+                      <div key={c.name} style={{ background: "var(--sage-light)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, fontSize: 12 }}>
+                        <span style={{ fontSize: 20 }}>{c.emoji}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, color: "var(--plum)", marginBottom: 2 }}>{c.name}</div>
+                          <div style={{ color: "var(--plum-mid)" }}>{c.jobs}</div>
+                        </div>
+                        <div style={{ textAlign: "right" as const }}>
+                          <div style={{ fontWeight: 700, color: "var(--plum)" }}>{c.rating}</div>
+                          {c.verified && <div style={{ fontSize: 10, color: "var(--sage)", fontWeight: 700 }}>✓ Verified</div>}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 11, color: "var(--plum-mid)", fontWeight: 600, padding: "8px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
+                      👷 <span>Work auto-logged to your HomeGentic Record</span>
+                    </div>
+                  </div>
+                </>)}
+
+                {activeFeature === 4 && (<>
+                  <div style={{ background: "rgba(253,252,250,0.08)", padding: "18px 22px", borderBottom: "1px solid rgba(253,252,250,0.08)" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--sage)", letterSpacing: "1.5px", textTransform: "uppercase" as const, marginBottom: 8 }}>⬡ Internet Computer</div>
+                    <div style={{ fontFamily: "'Fraunces',serif", fontSize: 15, fontWeight: 700, color: "white", marginBottom: 4 }}>Your Records</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>327 Keech Street · Principal ID: 2vxsx-aa</div>
+                  </div>
+                  <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column" as const, gap: 10 }}>
+                    {[
+                      { icon: "🏠", title: "47 records",      sub: "Stored on-chain · never expiring",       ok: true },
+                      { icon: "📥", title: "Export ready",    sub: "Download PDF or raw data anytime",        ok: true },
+                      { icon: "🔐", title: "Private by default", sub: "Only you control who sees what",       ok: true },
+                      { icon: "🔗", title: "Survives us",     sub: "Readable even if HomeGentic closes",      ok: true },
+                    ].map((d) => (
+                      <div key={d.title} style={{ background: "rgba(253,252,250,0.06)", border: "1px solid rgba(253,252,250,0.1)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 12, fontSize: 12 }}>
+                        <span style={{ fontSize: 18 }}>{d.icon}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, color: "white", marginBottom: 2 }}>{d.title}</div>
+                          <div style={{ color: "rgba(253,252,250,0.5)" }}>{d.sub}</div>
+                        </div>
+                        {d.ok && <span style={{ fontSize: 11, fontWeight: 700, color: "var(--sage)" }}>✓</span>}
+                      </div>
+                    ))}
+                  </div>
+                </>)}
               </div>
             </div>
           </div>
