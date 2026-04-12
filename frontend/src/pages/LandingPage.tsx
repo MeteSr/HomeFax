@@ -664,7 +664,7 @@ const CSS = `
   }
   .hfl-sc-progress-bar {
     height: 100%; background: var(--sage); border-radius: 100px;
-    animation: hfl-sc-fill 5s linear forwards;
+    animation: hfl-sc-fill 8s linear forwards;
   }
   @keyframes hfl-sc-fill { from { width: 0 } to { width: 100% } }
   /* Content panel */
@@ -948,7 +948,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (showcasePaused) return;
-    const t = setInterval(() => setActiveFeature((p) => (p + 1) % FEATURES.length), 5000);
+    const t = setInterval(() => setActiveFeature((p) => (p + 1) % FEATURES.length), 8000);
     return () => clearInterval(t);
   }, [showcasePaused, FEATURES.length]);
 
