@@ -10,9 +10,10 @@ type PageState = "verifying" | "subscription" | "gift" | "error";
 export default function PaymentSuccessPage() {
   const [params]    = useSearchParams();
   const sessionId   = params.get("session_id") ?? "";
-  const [state, setState]     = useState<PageState>("verifying");
+  const [state, setState]       = useState<PageState>("verifying");
   const [giftToken, setGiftToken] = useState<string>("");
   const [errorMsg, setErrorMsg]   = useState<string>("");
+  const [tierName, setTierName]   = useState<string>("Pro");
 
   useEffect(() => {
     if (!sessionId) { setState("error"); setErrorMsg("No session ID found."); return; }
@@ -21,6 +22,7 @@ export default function PaymentSuccessPage() {
         setGiftToken(result.giftToken);
         setState("gift");
       } else {
+        if (result.tier) setTierName(result.tier.replace("Contractor", "Contractor "));
         setState("subscription");
       }
     }).catch((e) => {
@@ -91,11 +93,11 @@ export default function PaymentSuccessPage() {
 
   return (
     <>
-      <Helmet><title>Welcome to Pro — HomeGentic</title></Helmet>
+      <Helmet><title>Welcome to {tierName} — HomeGentic</title></Helmet>
       <div style={S.page}>
         <div style={S.card}>
           <div style={S.icon}><CheckCircle size={40} color={COLORS.sage} /></div>
-          <h1 style={S.h1}>You're all set</h1>
+          <h1 style={S.h1}>Welcome to {tierName}</h1>
           <p style={S.body}>
             Your subscription is active. Your verified home record is now building toward a higher
             HomeGentic Score and a stronger resale position.

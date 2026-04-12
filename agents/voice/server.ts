@@ -926,6 +926,29 @@ app.post("/api/stripe/create-checkout", async (req: Request, res: Response) => {
 });
 
 // ── POST /api/stripe/verify-session (dev only) ────────────────────────────────
+// Verifies Stripe payment then activates the subscription tier in the ICP canister
+// by calling adminActivateStripeSubscription via dfx CLI (local dev only).
+// Returns { type, tier?, billing? } so the frontend can refresh the subscription state.
+
+const VALID_TIERS = new Set(["Free", "Pro", "Premium", "ContractorFree", "ContractorPro"]);
+
+async function activateInCanister(principal: string, tier: string, months: number): Promise<void> {
+  // Validate inputs before passing to shell
+  if (!VALID_TIERS.has(tier)) throw new Error(`Invalid tier: ${tier}`);
+  // ICP principals: base32 segments separated by hyphens, or short text form
+  if (!/^[a-z0-9]([a-z0-9-]{0,60}[a-z0-9])?$/.test(principal)) {
+    throw new Error(`Invalid principal format`);
+  }
+  const { exec }     = await import("child_process");
+  const { promisify } = await import("util");
+  const execAsync = promisify(exec);
+  const cmd = `dfx canister call payment adminActivateStripeSubscription '(principal "${principal}", variant { ${tier} }, ${months})'`;
+  const { stderr } = await execAsync(cmd);
+  if (stderr && /error/i.test(stderr)) {
+    throw new Error(`Canister activation failed: ${stderr.trim()}`);
+  }
+}
+
 app.post("/api/stripe/verify-session", async (req: Request, res: Response) => {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) { res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" }); return; }
@@ -943,12 +966,28 @@ app.post("/api/stripe/verify-session", async (req: Request, res: Response) => {
       return;
     }
 
-    const isGift = session.metadata?.is_gift === "true";
+    const isGift    = session.metadata?.is_gift === "true";
+    const tier      = session.metadata?.tier    ?? "Pro";
+    const billing   = session.metadata?.billing ?? "Monthly";
+    const principal = session.metadata?.principal ?? "";
+    const months    = billing === "Yearly" ? 12 : 1;
+
     if (isGift) {
       res.json({ type: "gift", giftToken: sessionId });
-    } else {
-      res.json({ type: "subscription" });
+      return;
     }
+
+    // Activate in the ICP canister (best-effort — don't fail the response if dfx unavailable)
+    if (principal) {
+      try {
+        await activateInCanister(principal, tier, months);
+        console.log(`[stripe] activated ${tier}/${billing} for ${principal}`);
+      } catch (e) {
+        console.warn(`[stripe] canister activation skipped: ${(e as Error).message}`);
+      }
+    }
+
+    res.json({ type: "subscription", tier, billing });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Stripe error" });
   }

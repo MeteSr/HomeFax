@@ -699,10 +699,31 @@ persistent actor Payment {
     #ok(sub)
   };
 
+  /// Called by the Express voice server after Stripe confirms payment.
+  /// Admin-guarded: only principals in adminEntries may call this.
+  /// months = 1 for monthly, 12 for yearly.
+  public shared(msg) func adminActivateStripeSubscription(
+    userPrincipal : Principal,
+    tier           : Tier,
+    months         : Nat,
+  ) : async Result.Result<Subscription, Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    let now = Time.now();
+    let durationNs : Int = Int.fromNat(months) * 30 * 24 * 60 * 60 * 1_000_000_000;
+    let sub : Subscription = {
+      owner     = userPrincipal;
+      tier;
+      expiresAt = now + durationNs;
+      createdAt = now;
+    };
+    Map.add(subscriptions, Principal.compare, userPrincipal, sub);
+    #ok(sub)
+  };
+
   /// Admin helper: grant a subscription without payment.
   /// Use for local development, support tickets, and trials.
-  /// No admin guard — protect at the deployment layer (controller only).
-  public shared func grantSubscription(principal: Principal, tier: Tier) : async Result.Result<Subscription, Error> {
+  public shared(msg) func grantSubscription(principal: Principal, tier: Tier) : async Result.Result<Subscription, Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     let durationNs : Int = switch (tier) {
       case (#Free)           { 0 };
       case (#ContractorFree) { 0 };

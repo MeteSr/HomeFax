@@ -485,7 +485,7 @@ export const paymentService = {
    */
   async verifyStripeSession(
     sessionId: string,
-  ): Promise<{ type: "subscription" } | { type: "gift"; giftToken: string }> {
+  ): Promise<{ type: "subscription"; tier?: string; billing?: string } | { type: "gift"; giftToken: string }> {
     if (USE_EXPRESS_CHECKOUT) {
       const resp = await fetch(`${VOICE_AGENT_URL}/api/stripe/verify-session`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -493,7 +493,7 @@ export const paymentService = {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error ?? "Verification failed");
-      return data as { type: "subscription" } | { type: "gift"; giftToken: string };
+      return data as { type: "subscription"; tier?: string; billing?: string } | { type: "gift"; giftToken: string };
     }
 
     if (!PAYMENT_CANISTER_ID) throw new Error("Payment canister not deployed");
