@@ -900,7 +900,7 @@ export default function LandingPage() {
     {
       icon: "🎤", kicker: "AI Home Intelligence",
       heading: <>Your home has a voice.<br /><em>So do you.</em></>,
-      desc: "Ask your home anything — and it reaches out first when something needs attention. Voice-powered, home-aware, always on.",
+      desc: "Ask your home anything out loud, and it reaches out first when something needs attention — before you even think to ask.",
       bullets: ["Voice queries across your full maintenance history", "Proactive alerts before costly failures occur", "Utility bill anomaly & spike detection", "IoT sensor events trigger auto-scheduling"],
       cta: "Try the AI",
     },
