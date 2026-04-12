@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (pending) {
           sessionStorage.removeItem("pendingCheckout");
           const { tier, billing } = JSON.parse(pending);
-          navigate(`/pricing?checkout=${tier}&billing=${billing}`);
+          navigate(`/checkout?tier=${tier}&billing=${billing}`);
         } else {
           navigate(await homeownerDestination());
         }
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (pending) {
           sessionStorage.removeItem("pendingCheckout");
           const { tier, billing } = JSON.parse(pending);
-          navigate(`/pricing?checkout=${tier}&billing=${billing}`);
+          navigate(`/checkout?tier=${tier}&billing=${billing}`);
         } else {
           navigate(await homeownerDestination());
         }

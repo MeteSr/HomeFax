@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CheckCircle, Gift } from "lucide-react";
 import { COLORS, FONTS } from "@/theme";
@@ -11,6 +11,7 @@ const VOICE_AGENT_URL = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http:
 
 export default function PaymentSuccessPage() {
   const [params]    = useSearchParams();
+  const navigate    = useNavigate();
   // PaymentElement flow sends subscription_id + tier + billing
   const subscriptionId    = params.get("subscription_id") ?? "";
   // Stripe appends this to the return_url on success
@@ -44,6 +45,8 @@ export default function PaymentSuccessPage() {
           const t = (data.tier ?? urlTier).replace("Contractor", "Contractor ");
           if (t) setTierName(t);
           setState("subscription");
+          // Auto-redirect to dashboard — no button needed
+          setTimeout(() => navigate("/dashboard"), 2500);
         })
         .catch((e) => { setErrorMsg(e?.message ?? "Verification failed."); setState("error"); });
       return;
@@ -137,7 +140,9 @@ export default function PaymentSuccessPage() {
             HomeGentic Score and a stronger resale position.
           </p>
           <Link to="/dashboard" style={S.cta}>Go to Dashboard</Link>
-          <Link to="/properties/new" style={S.link}>Add your first property</Link>
+          <p style={{ ...S.link, fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase" as const, color: COLORS.plumMid, marginTop: "1rem" }}>
+            Redirecting automatically…
+          </p>
         </div>
       </div>
     </>

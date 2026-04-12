@@ -55,7 +55,7 @@ export default function RegisterPage() {
       if (pending && profile.role !== "Contractor") {
         sessionStorage.removeItem("pendingCheckout");
         const { tier, billing } = JSON.parse(pending);
-        navigate(`/pricing?checkout=${tier}&billing=${billing}`);
+        navigate(`/checkout?tier=${tier}&billing=${billing}`);
       } else {
         navigate(profile.role === "Contractor" ? "/contractor-dashboard" : "/onboarding");
       }
