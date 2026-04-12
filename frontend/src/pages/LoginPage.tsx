@@ -44,8 +44,8 @@ export default function LoginPage() {
       <div style={{ width: "100%", maxWidth: "26rem" }}>
         {/* Logo */}
         <div style={{ marginBottom: "2rem", textAlign: "center" }}>
-          <div style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem", letterSpacing: "-0.5px", color: COLORS.plum }}>
-            Home<span style={{ color: COLORS.sage }}>Gentic</span>
+          <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 900, fontSize: "1.5rem", letterSpacing: "-0.5px", color: COLORS.plum }}>
+            Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
           </div>
         </div>
 
