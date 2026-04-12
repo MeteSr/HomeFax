@@ -878,7 +878,7 @@ Rules:
 // Local dfx replica doesn't forward custom HTTP headers in outcalls correctly.
 // This endpoint proxies Stripe checkout creation for local development.
 // In production the ICP canister makes the Stripe outcall directly.
-app.post("/api/stripe/create-checkout", requireApiKey, async (req: Request, res: Response) => {
+app.post("/api/stripe/create-checkout", async (req: Request, res: Response) => {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) { res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" }); return; }
 
