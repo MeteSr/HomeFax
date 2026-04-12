@@ -220,7 +220,9 @@ export default function CheckoutPage() {
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error ?? "Failed to initialise payment");
-      setClientSecret(data.clientSecret);
+      // Stripe client_secret may contain URL-encoded chars (e.g. %2F for /);
+      // Elements expects the decoded form.
+      setClientSecret(decodeURIComponent(data.clientSecret));
       setSessionId(data.sessionId);
     } catch (e: any) {
       setLoadError(e.message ?? "Failed to load checkout");
