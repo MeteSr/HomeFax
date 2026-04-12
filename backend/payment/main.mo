@@ -1,6 +1,4 @@
 import Array     "mo:core/Array";
-import Blob      "mo:core/Blob";
-import Int       "mo:core/Int";
 import Map       "mo:core/Map";
 import Nat       "mo:core/Nat";
 import Nat32     "mo:core/Nat32";
@@ -10,6 +8,7 @@ import Principal "mo:core/Principal";
 import Result    "mo:core/Result";
 import Text      "mo:core/Text";
 import Time      "mo:core/Time";
+import OutCall   "mo:caffeineai-http-outcalls/outcall";
 
 persistent actor Payment {
 
@@ -172,28 +171,9 @@ persistent actor Payment {
 
   // ─── IC Management Canister (HTTP outcalls for Stripe) ───────────────────────
 
-  type HttpHeader    = { name: Text; value: Text };
-  type HttpMethod    = { #get; #post; #head };
-  type HttpResponse  = { status: Nat; headers: [HttpHeader]; body: Blob };
-  type TransformArgs = { response: HttpResponse; context: Blob };
-
-  let ic : actor {
-    http_request : shared ({
-      url                : Text;
-      max_response_bytes : ?Nat64;
-      headers            : [HttpHeader];
-      body               : ?Blob;
-      method             : HttpMethod;
-      transform          : ?{
-        function : shared query (TransformArgs) -> async HttpResponse;
-        context  : Blob;
-      };
-    }) -> async HttpResponse;
-  } = actor "aaaaa-aa";
-
-  /// Strips non-deterministic headers from Stripe responses for subnet consensus.
-  public query func transformStripe(args: TransformArgs) : async HttpResponse {
-    { status = args.response.status; headers = []; body = args.response.body }
+  /// Transform function required by caffeineai-http-outcalls for subnet consensus.
+  public query func transform(args: OutCall.TransformationInput) : async OutCall.TransformationOutput {
+    OutCall.transform(args)
   };
 
   // ─── Price helpers ───────────────────────────────────────────────────────────
@@ -460,30 +440,18 @@ persistent actor Payment {
     };
 
     try {
-      let response = await (with cycles = 3_000_000_000) ic.http_request({
-        url                = "https://api.stripe.com/v1/checkout/sessions";
-        max_response_bytes = ?Nat64.fromNat(8192);
-        headers            = [
-          { name = "Content-Type";  value = "application/x-www-form-urlencoded" },
-          { name = "Authorization"; value = "Bearer " # cfg.secretKey },
-        ];
-        body      = ?Text.encodeUtf8(body);
-        method    = #post;
-        transform = ?{ function = transformStripe; context = Blob.fromArray([]) };
-      });
-
-      switch (Text.decodeUtf8(response.body)) {
-        case null { #err(#PaymentFailed("Could not decode Stripe response")) };
-        case (?json) {
-          if (response.status == 200) {
-            let id  = switch (jsonExtract(json, "id"))  { case (?v) v; case null return #err(#PaymentFailed("No session ID in Stripe response")) };
-            let url = switch (jsonExtract(json, "url")) { case (?v) v; case null return #err(#PaymentFailed("No URL in Stripe response")) };
-            #ok({ id; url })
-          } else {
-            #err(#PaymentFailed("Stripe error " # Nat.toText(response.status) # ": " # json))
-          }
-        };
-      }
+      let json = await OutCall.httpPostRequest(
+        "https://api.stripe.com/v1/checkout/sessions",
+        [
+          { name = "content-type";  value = "application/x-www-form-urlencoded" },
+          { name = "authorization"; value = "Bearer " # cfg.secretKey },
+        ],
+        body,
+        transform,
+      );
+      let id  = switch (jsonExtract(json, "id"))  { case (?v) v; case null return #err(#PaymentFailed("No session ID in Stripe response: " # json)) };
+      let url = switch (jsonExtract(json, "url")) { case (?v) v; case null return #err(#PaymentFailed("No URL in Stripe response: " # json)) };
+      #ok({ id; url })
     } catch (_e) {
       #err(#PaymentFailed("Stripe checkout request failed"))
     }
@@ -503,86 +471,71 @@ persistent actor Payment {
     };
 
     try {
-      let response = await (with cycles = 3_000_000_000) ic.http_request({
-        url                = "https://api.stripe.com/v1/checkout/sessions/" # sessionId;
-        max_response_bytes = ?Nat64.fromNat(8192);
-        headers            = [{ name = "Authorization"; value = "Bearer " # cfg.secretKey }];
-        body               = null;
-        method             = #get;
-        transform          = ?{ function = transformStripe; context = Blob.fromArray([]) };
-      });
+      let json = await OutCall.httpGetRequest(
+        "https://api.stripe.com/v1/checkout/sessions/" # sessionId,
+        [{ name = "authorization"; value = "Bearer " # cfg.secretKey }],
+        transform,
+      );
 
-      switch (Text.decodeUtf8(response.body)) {
-        case null { #err(#PaymentFailed("Could not decode Stripe response")) };
-        case (?json) {
-          if (response.status != 200) {
-            return #err(#PaymentFailed("Stripe error " # Nat.toText(response.status) # ": " # json));
-          };
+      if (json.contains(#text "\"error\"")) {
+        return #err(#PaymentFailed("Stripe error: " # json));
+      };
 
-          let payStatus = switch (jsonExtract(json, "payment_status")) {
-            case (?s) s;
-            case null return #err(#PaymentFailed("Missing payment_status in session"));
-          };
-          let sessStatus = switch (jsonExtract(json, "status")) {
-            case (?s) s;
-            case null return #err(#PaymentFailed("Missing status in session"));
-          };
+      let payStatus = switch (jsonExtract(json, "payment_status")) {
+        case (?s) s;
+        case null return #err(#PaymentFailed("Missing payment_status in session"));
+      };
+      let sessStatus = switch (jsonExtract(json, "status")) {
+        case (?s) s;
+        case null return #err(#PaymentFailed("Missing status in session"));
+      };
 
-          if (payStatus != "paid" or sessStatus != "complete") {
-            return #err(#PaymentFailed(
-              "Payment not complete — status: " # sessStatus # ", payment_status: " # payStatus
-            ));
-          };
+      if (payStatus != "paid" or sessStatus != "complete") {
+        return #err(#PaymentFailed(
+          "Payment not complete — status: " # sessStatus # ", payment_status: " # payStatus
+        ));
+      };
 
-          let tierText_ = switch (jsonExtract(json, "tier")) {
-            case (?t) t;
-            case null return #err(#PaymentFailed("Missing tier in session metadata"));
-          };
-          let tier = switch (tierFromText(tierText_)) {
-            case (?t) t;
-            case null return #err(#PaymentFailed("Unknown tier: " # tierText_));
-          };
-          let billing  = billingFromText(Option.get(jsonExtract(json, "billing"), "Monthly"));
-          let isGift   = Option.get(jsonExtract(json, "is_gift"), "false") == "true";
+      let tierText_ = switch (jsonExtract(json, "tier")) {
+        case (?t) t;
+        case null return #err(#PaymentFailed("Missing tier in session metadata"));
+      };
+      let tier = switch (tierFromText(tierText_)) {
+        case (?t) t;
+        case null return #err(#PaymentFailed("Unknown tier: " # tierText_));
+      };
+      let billing  = billingFromText(Option.get(jsonExtract(json, "billing"), "Monthly"));
+      let isGift   = Option.get(jsonExtract(json, "is_gift"), "false") == "true";
+      let now = Time.now();
 
-          let now = Time.now();
-
-          if (isGift) {
-            // Build a pending gift record; caller (payer) is NOT the beneficiary.
-            // giftToken = sessionId — stable, unique, known to the payer.
-            let gift : PendingGift = {
-              giftToken      = sessionId;
-              tier;
-              billing;
-              recipientEmail = Option.get(jsonExtract(json, "recipient_email"), "");
-              recipientName  = Option.get(jsonExtract(json, "recipient_name"),  "");
-              senderName     = Option.get(jsonExtract(json, "sender_name"),     "");
-              giftMessage    = Option.get(jsonExtract(json, "gift_message"),    "");
-              deliveryDate   = Option.get(jsonExtract(json, "delivery_date"),   "");
-              createdAt      = now;
-              redeemedBy     = null;
-            };
-            Map.add(pendingGifts, Text.compare, sessionId, gift);
-            // Return a synthetic Free subscription with the gift token in owner field
-            // so the frontend knows to show the gift-sent confirmation.
-            // Convention: caller's own sub is untouched; gift is pending redemption.
-            #err(#NotFound) // frontend detects this + sessionId to show gift-sent screen
-          } else {
-            // Self-subscription: verify caller matches session creator
-            let sessionPrincipal = Option.get(jsonExtract(json, "principal"), "");
-            if (sessionPrincipal != Principal.toText(msg.caller)) {
-              return #err(#NotAuthorized);
-            };
-            let sub : Subscription = {
-              owner     = msg.caller;
-              tier;
-              expiresAt = now + durationNsFor(billing);
-              createdAt = now;
-            };
-            Map.add(subscriptions, Principal.compare, msg.caller, sub);
-            #ok(sub)
-          }
+      if (isGift) {
+        let gift : PendingGift = {
+          giftToken      = sessionId;
+          tier;
+          billing;
+          recipientEmail = Option.get(jsonExtract(json, "recipient_email"), "");
+          recipientName  = Option.get(jsonExtract(json, "recipient_name"),  "");
+          senderName     = Option.get(jsonExtract(json, "sender_name"),     "");
+          giftMessage    = Option.get(jsonExtract(json, "gift_message"),    "");
+          deliveryDate   = Option.get(jsonExtract(json, "delivery_date"),   "");
+          createdAt      = now;
+          redeemedBy     = null;
         };
+        Map.add(pendingGifts, Text.compare, sessionId, gift);
+        #err(#NotFound) // frontend detects this + sessionId to show gift-sent screen
+      } else {
+        let sessionPrincipal = Option.get(jsonExtract(json, "principal"), "");
+        if (sessionPrincipal != Principal.toText(msg.caller)) {
+          return #err(#NotAuthorized);
+        };
+        let sub : Subscription = {
+          owner     = msg.caller;
+          tier;
+          expiresAt = now + durationNsFor(billing);
+          createdAt = now;
+        };
+        Map.add(subscriptions, Principal.compare, msg.caller, sub);
+        #ok(sub)
       }
     } catch (_e) {
       #err(#PaymentFailed("Stripe verification request failed"))
