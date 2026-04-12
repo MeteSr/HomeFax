@@ -111,7 +111,7 @@ export default function App() {
           <Route path="/gift"             element={<GiftPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-failure" element={<PaymentFailurePage />} />
-          <Route path="/checkout"        element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+          <Route path="/checkout"        element={<CheckoutPage />} />
           <Route path="/for-sale/:propertyId" element={<FsboListingPage />} />
 
           <Route path="/register"     element={<ProtectedRoute><RegisterPage /></ProtectedRoute>} />

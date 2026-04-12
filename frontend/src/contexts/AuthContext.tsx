@@ -84,6 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile.role === "Contractor") {
         navigate("/contractor-dashboard");
       } else {
+        // pendingVerification: user paid before logging in — return them to the
+        // success page so verification runs with their real principal.
+        const pendingVerification = sessionStorage.getItem("pendingVerification");
+        if (pendingVerification) {
+          sessionStorage.removeItem("pendingVerification");
+          navigate(pendingVerification);
+          return;
+        }
         const pending = sessionStorage.getItem("pendingCheckout");
         if (pending) {
           sessionStorage.removeItem("pendingCheckout");
@@ -109,6 +117,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile.role === "Contractor") {
         navigate("/contractor-dashboard");
       } else {
+        // pendingVerification: user paid before logging in — return them to the
+        // success page so verification runs with their real principal.
+        const pendingVerification = sessionStorage.getItem("pendingVerification");
+        if (pendingVerification) {
+          sessionStorage.removeItem("pendingVerification");
+          navigate(pendingVerification);
+          return;
+        }
         const pending = sessionStorage.getItem("pendingCheckout");
         if (pending) {
           sessionStorage.removeItem("pendingCheckout");

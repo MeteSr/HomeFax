@@ -1,17 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CheckCircle, Gift } from "lucide-react";
 import { COLORS, FONTS } from "@/theme";
 import { paymentService } from "@/services/payment";
+import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/contexts/AuthContext";
+import { getPrincipal } from "@/services/actor";
 
-type PageState = "verifying" | "subscription" | "gift" | "error";
+type PageState = "verifying" | "awaiting-login" | "subscription" | "gift" | "error";
 
 const VOICE_AGENT_URL = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http://localhost:3001";
 
 export default function PaymentSuccessPage() {
   const [params]    = useSearchParams();
   const navigate    = useNavigate();
+  const { isAuthenticated } = useAuthStore();
+  const { login, devLogin } = useAuth();
+
   // PaymentElement flow sends subscription_id + tier + billing
   const subscriptionId    = params.get("subscription_id") ?? "";
   // Stripe appends this to the return_url on success
@@ -22,33 +28,43 @@ export default function PaymentSuccessPage() {
   const urlTier           = params.get("tier") ?? "";
   const urlBilling        = params.get("billing") ?? "";
 
-  const [state, setState]         = useState<PageState>("verifying");
-  const [giftToken, setGiftToken]   = useState<string>("");
-  const [errorMsg, setErrorMsg]     = useState<string>("");
-  const [tierName, setTierName]     = useState<string>("Pro");
+  const [state, setState]       = useState<PageState>("verifying");
+  const [giftToken, setGiftToken] = useState<string>("");
+  const [errorMsg, setErrorMsg]   = useState<string>("");
+  const [tierName, setTierName]   = useState<string>("Pro");
+
+  const verifySubscription = useCallback(async () => {
+    const principal = await getPrincipal().catch(() => "");
+    const resp = await fetch(`${VOICE_AGENT_URL}/api/stripe/verify-subscription`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subscriptionId,
+        paymentIntentId: paymentIntentId || undefined,
+        principal: principal || undefined,
+      }),
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    const t = (data.tier ?? urlTier).replace("Contractor", "Contractor ");
+    if (t) setTierName(t);
+    setState("subscription");
+    setTimeout(() => navigate("/dashboard"), 2500);
+  }, [subscriptionId, paymentIntentId, urlTier, navigate]);
 
   useEffect(() => {
     // New PaymentElement flow: verify subscription
     if (subscriptionId) {
-      fetch(`${VOICE_AGENT_URL}/api/stripe/verify-subscription`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscriptionId,
-          // Forward the PI id so the server can verify via payment status rather than
-          // subscription status (subscription may still be 'incomplete' at redirect time).
-          paymentIntentId: paymentIntentId || undefined,
-        }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.error) throw new Error(data.error);
-          const t = (data.tier ?? urlTier).replace("Contractor", "Contractor ");
-          if (t) setTierName(t);
-          setState("subscription");
-          // Auto-redirect to dashboard — no button needed
-          setTimeout(() => navigate("/dashboard"), 2500);
-        })
-        .catch((e) => { setErrorMsg(e?.message ?? "Verification failed."); setState("error"); });
+      if (!isAuthenticated) {
+        // Payment succeeded but user hasn't set up their account yet.
+        // Save this URL so AuthContext can redirect back here after login.
+        sessionStorage.setItem("pendingVerification", window.location.pathname + window.location.search);
+        setState("awaiting-login");
+        return;
+      }
+      verifySubscription().catch((e) => {
+        setErrorMsg(e?.message ?? "Verification failed.");
+        setState("error");
+      });
       return;
     }
 
@@ -66,7 +82,7 @@ export default function PaymentSuccessPage() {
       setErrorMsg(e?.message ?? "Verification failed.");
       setState("error");
     });
-  }, [subscriptionId, sessionId]);
+  }, [subscriptionId, sessionId, isAuthenticated, verifySubscription]);
 
   const S = {
     page:   { minHeight: "100vh", background: COLORS.sageLight, display: "flex", flexDirection: "column" as const, alignItems: "center", justifyContent: "center", padding: "3rem 1.5rem", fontFamily: FONTS.sans },
@@ -86,6 +102,30 @@ export default function PaymentSuccessPage() {
           <p style={{ fontFamily: FONTS.sans, color: COLORS.plumMid }}>Confirming your payment…</p>
         </div>
       </div>
+    );
+  }
+
+  if (state === "awaiting-login") {
+    return (
+      <>
+        <Helmet><title>One Last Step — HomeGentic</title></Helmet>
+        <div style={S.page}>
+          <div style={S.card}>
+            <div style={S.icon}><CheckCircle size={40} color={COLORS.sage} /></div>
+            <h1 style={S.h1}>Payment confirmed</h1>
+            <p style={S.body}>
+              Your payment went through. Now set up your secure passkey to activate
+              your subscription and access your dashboard.
+            </p>
+            <button
+              onClick={import.meta.env.DEV ? devLogin : login}
+              style={{ ...S.cta, border: "none", cursor: "pointer", width: "100%" }}
+            >
+              Set up my account →
+            </button>
+          </div>
+        </div>
+      </>
     );
   }
 

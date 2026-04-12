@@ -936,8 +936,8 @@ app.post("/api/stripe/create-subscription-intent", async (req: Request, res: Res
   const { tier, billing, principal, email } = req.body as {
     tier: string; billing: string; principal: string; email?: string;
   };
-  if (!tier || !billing || !principal) {
-    res.status(400).json({ error: "tier, billing, and principal are required" }); return;
+  if (!tier || !billing) {
+    res.status(400).json({ error: "tier and billing are required" }); return;
   }
 
   const priceEnvMap: Record<string, string | undefined> = {
@@ -1083,9 +1083,10 @@ app.post("/api/stripe/verify-subscription", async (req: Request, res: Response) 
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) { res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" }); return; }
 
-  const { subscriptionId, paymentIntentId } = req.body as {
+  const { subscriptionId, paymentIntentId, principal: bodyPrincipal } = req.body as {
     subscriptionId: string;
     paymentIntentId?: string;
+    principal?: string;       // passed when user paid before logging in
   };
   if (!subscriptionId) { res.status(400).json({ error: "subscriptionId required" }); return; }
 
@@ -1116,7 +1117,9 @@ app.post("/api/stripe/verify-subscription", async (req: Request, res: Response) 
 
     const tier      = subscription.metadata?.tier    ?? "Pro";
     const billing   = subscription.metadata?.billing ?? "Monthly";
-    const principal = subscription.metadata?.icp_principal ?? "";
+    // Use principal from request body when user paid before logging in (no principal
+    // in subscription metadata at payment time); fall back to metadata if present.
+    const principal = bodyPrincipal || subscription.metadata?.icp_principal || "";
     const months    = billing === "Yearly" ? 12 : 1;
 
     if (principal) {
