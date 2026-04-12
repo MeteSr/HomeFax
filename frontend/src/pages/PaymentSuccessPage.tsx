@@ -12,12 +12,14 @@ const VOICE_AGENT_URL = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http:
 export default function PaymentSuccessPage() {
   const [params]    = useSearchParams();
   // PaymentElement flow sends subscription_id + tier + billing
-  const subscriptionId = params.get("subscription_id") ?? "";
+  const subscriptionId    = params.get("subscription_id") ?? "";
+  // Stripe appends this to the return_url on success
+  const paymentIntentId   = params.get("payment_intent") ?? "";
   // Legacy Stripe-hosted checkout flow sends session_id
-  const sessionId      = params.get("session_id") ?? "";
+  const sessionId         = params.get("session_id") ?? "";
   // PaymentElement also passes tier/billing directly in the URL
-  const urlTier        = params.get("tier") ?? "";
-  const urlBilling     = params.get("billing") ?? "";
+  const urlTier           = params.get("tier") ?? "";
+  const urlBilling        = params.get("billing") ?? "";
 
   const [state, setState]         = useState<PageState>("verifying");
   const [giftToken, setGiftToken]   = useState<string>("");
@@ -29,7 +31,12 @@ export default function PaymentSuccessPage() {
     if (subscriptionId) {
       fetch(`${VOICE_AGENT_URL}/api/stripe/verify-subscription`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId }),
+        body: JSON.stringify({
+          subscriptionId,
+          // Forward the PI id so the server can verify via payment status rather than
+          // subscription status (subscription may still be 'incomplete' at redirect time).
+          paymentIntentId: paymentIntentId || undefined,
+        }),
       })
         .then((r) => r.json())
         .then((data) => {

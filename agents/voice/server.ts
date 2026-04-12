@@ -1072,24 +1072,45 @@ app.post("/api/stripe/verify-session", async (req: Request, res: Response) => {
 });
 
 // ── POST /api/stripe/verify-subscription ─────────────────────────────────────
-// Called by the success page after PaymentElement confirms. Looks up the
-// subscription by paymentIntentId, extracts tier/principal from metadata,
-// and activates in the ICP canister.
+// Called by the success page after PaymentElement confirms. Accepts the
+// subscriptionId and the paymentIntentId from the Stripe redirect URL params.
+//
+// Stripe redirects immediately after payment confirmation — before the webhook
+// transitions the subscription from 'incomplete' to 'active'. So we verify via
+// the PaymentIntent status (which IS 'succeeded' right away) rather than waiting
+// for the subscription to become active.
 app.post("/api/stripe/verify-subscription", async (req: Request, res: Response) => {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) { res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" }); return; }
 
-  const { subscriptionId } = req.body as { subscriptionId: string };
+  const { subscriptionId, paymentIntentId } = req.body as {
+    subscriptionId: string;
+    paymentIntentId?: string;
+  };
   if (!subscriptionId) { res.status(400).json({ error: "subscriptionId required" }); return; }
 
   try {
     const Stripe = (await import("stripe")).default;
     const stripe  = new Stripe(stripeSecretKey);
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-      expand: ["latest_invoice.payment_intent"],
-    });
 
-    if (subscription.status !== "active" && subscription.status !== "trialing") {
+    // Verify payment via PaymentIntent if provided (redirect happens before subscription
+    // transitions from 'incomplete' → 'active', so PI status is the reliable signal).
+    if (paymentIntentId) {
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      if (pi.status !== "succeeded") {
+        res.status(400).json({ error: `Payment not confirmed — status: ${pi.status}` }); return;
+      }
+    }
+
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+    // Accept incomplete if payment was confirmed above; active/trialing always pass.
+    const paymentConfirmed = !!paymentIntentId;
+    if (
+      subscription.status !== "active" &&
+      subscription.status !== "trialing" &&
+      !(paymentConfirmed && subscription.status === "incomplete")
+    ) {
       res.status(400).json({ error: `Subscription not active — status: ${subscription.status}` }); return;
     }
 
