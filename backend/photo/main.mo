@@ -160,7 +160,7 @@ persistent actor Photo {
 
   private func quotaFor(tier: SubscriptionTier) : PhotoQuota {
     switch (tier) {
-      case (#Free)          { { tier; maxPerJob = 2;   maxPerProperty = 10  } };
+      case (#Free)          { { tier; maxPerJob = 0;   maxPerProperty = 0   } };  // no access
       case (#Pro)           { { tier; maxPerJob = 10;  maxPerProperty = 100 } };
       case (#Premium)       { { tier; maxPerJob = 30;  maxPerProperty = 0   } };
       case (#ContractorPro) { { tier; maxPerJob = 50;  maxPerProperty = 0   } };
@@ -262,10 +262,18 @@ persistent actor Photo {
     let quota = quotaFor(callerTierRaw);
 
     let callerTier = quota.tier;
-    let upgradeHint = switch (callerTier) {
+
+    // Free tier has no photo access — subscription required.
+    switch (callerTier) {
       case (#Free) {
-        " Upgrade to Pro ($10/mo) for 10 photos/job, or Premium ($20/mo) for unlimited."
+        return #err(#QuotaExceeded(
+          "Photo uploads require a paid subscription. Upgrade to Pro ($10/mo) for 10 photos/job."
+        ));
       };
+      case _ {};
+    };
+
+    let upgradeHint = switch (callerTier) {
       case (#Pro) {
         " Upgrade to Premium ($20/mo) for 30 photos/job, or ContractorPro ($30/mo) for 50."
       };

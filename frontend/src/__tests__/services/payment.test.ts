@@ -5,21 +5,16 @@ import type { PlanTier } from "@/services/payment";
 // ─── PLANS data integrity ─────────────────────────────────────────────────────
 
 describe("PLANS", () => {
-  it("contains exactly 5 tiers (Free, Pro, Premium, ContractorFree, ContractorPro)", () => {
-    expect(PLANS).toHaveLength(5);
+  it("contains exactly 4 tiers (Pro, Premium, ContractorFree, ContractorPro)", () => {
+    expect(PLANS).toHaveLength(4);
   });
 
-  it("contains all expected tiers in order", () => {
-    expect(PLANS.map((p) => p.tier)).toEqual(["Free", "Pro", "Premium", "ContractorFree", "ContractorPro"]);
+  it("contains all expected tiers in order (no Free homeowner tier)", () => {
+    expect(PLANS.map((p) => p.tier)).toEqual(["Pro", "Premium", "ContractorFree", "ContractorPro"]);
   });
 
-  it("Free tier is $0 with 1 property limit", () => {
-    const free = PLANS.find((p) => p.tier === "Free")!;
-    expect(free.price).toBe(0);
-    expect(free.period).toBe("free");
-    expect(free.propertyLimit).toBe(1);
-    expect(free.photosPerJob).toBe(2);
-    expect(free.quoteRequests).toBe(3);
+  it("does not include a Free homeowner tier", () => {
+    expect(PLANS.find((p) => p.tier === "Free")).toBeUndefined();
   });
 
   it("Pro tier is $10/month with 5 property limit", () => {
@@ -74,12 +69,10 @@ describe("PLANS", () => {
     });
   });
 
-  it("homeowner paid tiers have higher property limits than Free", () => {
-    const free = PLANS.find((p) => p.tier === "Free")!;
-    // Contractor plans (propertyLimit=0 means N/A for homeowners).
+  it("homeowner paid tiers have positive property limits", () => {
     const homeownerPaid = PLANS.filter((p) => p.price > 0 && p.tier !== "ContractorPro" && p.tier !== "ContractorFree");
     homeownerPaid.forEach((p) => {
-      expect(p.propertyLimit).toBeGreaterThan(free.propertyLimit);
+      expect(p.propertyLimit).toBeGreaterThan(0);
     });
   });
 });
@@ -128,16 +121,16 @@ describe("ANNUAL_PLANS", () => {
 // ─── getPlan ──────────────────────────────────────────────────────────────────
 
 describe("paymentService.getPlan", () => {
-  const tiers: PlanTier[] = ["Free", "Pro", "Premium", "ContractorFree", "ContractorPro"];
+  const tiers: PlanTier[] = ["Pro", "Premium", "ContractorFree", "ContractorPro"];
 
   it.each(tiers)("returns the correct plan for '%s'", (tier) => {
     const plan = paymentService.getPlan(tier);
     expect(plan.tier).toBe(tier);
   });
 
-  it("falls back to Free for an unknown tier", () => {
+  it("falls back to Pro (first plan) for an unknown tier", () => {
     const plan = paymentService.getPlan("unknown" as PlanTier);
-    expect(plan.tier).toBe("Free");
+    expect(plan.tier).toBe("Pro");
   });
 
   it("returns the same object as in PLANS", () => {
@@ -167,10 +160,6 @@ describe("paymentService.subscribeAnnual (mock)", () => {
 // ─── subscribe (mock path — no PAYMENT_CANISTER_ID) ──────────────────────────
 
 describe("paymentService.subscribe (mock)", () => {
-  it("resolves without error when no canister is deployed (Free)", async () => {
-    await expect(paymentService.subscribe("Free")).resolves.toBeUndefined();
-  });
-
   it("resolves without error when no canister is deployed (Pro)", async () => {
     await expect(paymentService.subscribe("Pro")).resolves.toBeUndefined();
   });
