@@ -12,6 +12,7 @@ import { buildScoreTrend } from "../services/scoreTrend";
 import { loadHistory } from "../services/scoreService";
 import { buildImageUserMessage, fileToBase64, type SupportedImageMimeType } from "../services/imageUtils";
 import { useAuthStore } from "../store/authStore";
+import { paymentService } from "../services/payment";
 import { contractorService } from "../services/contractor";
 import { proposeJob } from "../services/contractorJobProposal";
 
@@ -360,6 +361,13 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
     try {
       const context = await buildContext();
 
+      // Fetch tier once per loop for the rate-limit header.
+      // getMySubscription() uses a cached ICP actor, so this is cheap.
+      const { principal } = useAuthStore.getState();
+      const tier = await paymentService.getMySubscription()
+        .then((s) => s.tier)
+        .catch(() => "Free");
+
       // If an image is attached, prepend it as an image+text content block (16.6.2)
       const firstMessage: MessageParam = image
         ? buildImageUserMessage(userMessage, image.base64, image.mimeType) as unknown as MessageParam
@@ -368,16 +376,27 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
       const messages: MessageParam[] = [firstMessage];
 
       for (let turn = 0; turn < MAX_TURNS; turn++) {
-        const { principal } = useAuthStore.getState();
         const res = await fetch(`${PROXY_URL}/api/agent`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":        "application/json",
             ...(VOICE_API_KEY ? { "x-api-key": VOICE_API_KEY } : {}),
             ...(principal    ? { "x-icp-principal": principal } : {}),
+            "x-subscription-tier": tier,
           },
           body: JSON.stringify({ messages, context }),
         });
+
+        if (res.status === 429) {
+          const body = await res.json().catch(() => ({}));
+          const resetsAt: string | undefined = body.resetsAt;
+          const resetTime = resetsAt
+            ? new Date(resetsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : "midnight UTC";
+          throw new Error(
+            `You've used your ${body.limit ?? ""} AI assistant calls for today. Resets at ${resetTime} — or upgrade for more.`
+          );
+        }
 
         if (!res.ok) throw new Error(`Proxy error: HTTP ${res.status}`);
         const data = await res.json();

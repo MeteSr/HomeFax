@@ -58,7 +58,7 @@ agents/iot-gateway/  IoT event ingestion (future)
 dashboard/        Standalone monitoring SPA (admin use)
 tests/e2e/        Playwright tests
 scripts/          Bash deploy/upgrade/test scripts
-docs/             ARCHITECTURE.md, API.md, DEPLOYMENT.md, SECURITY.md
+docs/             ARCHITECTURE.md, API.md, DEPLOYMENT.md, SECURITY.md, AI_RATE_LIMITS.md
 ```
 
 ### ICP Canister Map
@@ -88,9 +88,22 @@ All 13 active canisters use `persistent actor` + stable variable preupgrade/post
 | Tier | Properties | Photos/Job | Open Quotes | Price |
 |---|---|---|---|---|
 | Free | 1 | 2 | 3 | $0 |
-| Pro | 5 | 10 | 10 | $10/mo |
-| Premium | 20 | 30 | 10 | $20/mo |
+| Basic | 1 | 5 | 3 | $10/mo |
+| Pro | 5 | 10 | 10 | $20/mo |
+| Premium | 20 | 30 | unlimited | $35/mo |
+| ContractorFree | 0 | 5 | unlimited | $0 |
 | ContractorPro | unlimited | 50 | unlimited | $30/mo |
+
+### AI Agent Rate Limits (enforced in Express voice server)
+
+Agent calls (agentic tool-use loop) are counted separately from chat calls. See `docs/AI_RATE_LIMITS.md` for full financial basis and implementation notes.
+
+| Tier | Agent calls/day | Chat calls/day |
+|---|---|---|
+| Free / ContractorFree | 0 | 3 |
+| Basic | 5 | Unlimited |
+| Pro / ContractorPro | 10 | Unlimited |
+| Premium | 20 | Unlimited |
 
 ### Frontend Service Layer
 

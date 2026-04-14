@@ -190,7 +190,7 @@ describe("UpgradeModal", () => {
     });
   });
 
-  it("shows error message when ICP subscribe rejects", async () => {
+  it("shows simplified 'Insufficient ICP balance.' for balance errors", async () => {
     (paymentService.subscribe as any).mockRejectedValueOnce(
       new Error("Insufficient ICP balance")
     );
@@ -198,7 +198,45 @@ describe("UpgradeModal", () => {
     fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
     fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
     await waitFor(() =>
-      expect(screen.getByText(/Insufficient ICP balance/i)).toBeInTheDocument()
+      expect(screen.getByText("Insufficient ICP balance.")).toBeInTheDocument()
+    );
+  });
+
+  it("shows 'Payment service is temporarily unavailable.' for IC0 / wasm errors", async () => {
+    (paymentService.subscribe as any).mockRejectedValueOnce(
+      new Error("Requested canister has no wasm module Error code: IC0537")
+    );
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Payment service is temporarily unavailable.")
+      ).toBeInTheDocument()
+    );
+  });
+
+  it("shows 'Approval cancelled or timed out.' for approve/identity errors", async () => {
+    (paymentService.subscribe as any).mockRejectedValueOnce(
+      new Error("User cancelled approve in Internet Identity")
+    );
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    await waitFor(() =>
+      expect(screen.getByText("Approval cancelled or timed out.")).toBeInTheDocument()
+    );
+  });
+
+  it("shows 'Payment failed. Please try again.' for unknown ICP errors", async () => {
+    (paymentService.subscribe as any).mockRejectedValueOnce(
+      new Error("Something unexpected went wrong")
+    );
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    await waitFor(() =>
+      expect(screen.getByText("Payment failed. Please try again.")).toBeInTheDocument()
     );
   });
 

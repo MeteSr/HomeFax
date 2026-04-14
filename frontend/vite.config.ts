@@ -50,7 +50,13 @@ export default defineConfig(({ mode }) => {
       "process.env.JOB_CANISTER_ID": JSON.stringify(env.CANISTER_ID_JOB || env.JOB_CANISTER_ID || ""),
       "process.env.CONTRACTOR_CANISTER_ID": JSON.stringify(env.CANISTER_ID_CONTRACTOR || env.CONTRACTOR_CANISTER_ID || ""),
       "process.env.QUOTE_CANISTER_ID": JSON.stringify(env.CANISTER_ID_QUOTE || env.QUOTE_CANISTER_ID || ""),
-      "process.env.PAYMENT_CANISTER_ID": JSON.stringify(env.CANISTER_ID_PAYMENT || env.PAYMENT_CANISTER_ID || ""),
+      // In test mode, fall back to a placeholder ID so service code paths
+      // reach the mocked actor rather than returning early on !CANISTER_ID.
+      "process.env.PAYMENT_CANISTER_ID": JSON.stringify(
+        mode === "test"
+          ? (env.CANISTER_ID_PAYMENT || env.PAYMENT_CANISTER_ID || "rrkah-fqaaa-aaaaa-aaaaq-cai")
+          : (env.CANISTER_ID_PAYMENT || env.PAYMENT_CANISTER_ID || "")
+      ),
       "process.env.PHOTO_CANISTER_ID": JSON.stringify(env.CANISTER_ID_PHOTO || env.PHOTO_CANISTER_ID || ""),
       "process.env.MONITORING_CANISTER_ID": JSON.stringify(env.CANISTER_ID_MONITORING || env.MONITORING_CANISTER_ID || ""),
       "process.env.REPORT_CANISTER_ID": JSON.stringify(env.CANISTER_ID_REPORT || env.REPORT_CANISTER_ID || ""),

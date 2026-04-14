@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle, X, Info } from "lucide-react";
+import { CheckCircle, X, Info, Sparkles } from "lucide-react";
 import { Button } from "@/components/Button";
 import { PLANS, ANNUAL_PLANS, paymentService } from "@/services/payment";
 import type { Plan, PlanTier, BillingCycle } from "@/services/payment";
@@ -116,7 +116,7 @@ export default function PricingPage() {
   const handleLogin = import.meta.env.DEV ? devLogin : login;
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [annual, setAnnual] = useState<boolean>(() => {
     try { return localStorage.getItem(BILLING_KEY) === "annual"; } catch { return false; }
@@ -145,18 +145,19 @@ export default function PricingPage() {
     }
     const billing: BillingCycle = annual ? "Yearly" : "Monthly";
     if (!isAuthenticated) {
-      sessionStorage.setItem("pendingCheckout", JSON.stringify({ tier, billing }));
+      // Stamp the intent into the URL so the effect below can navigate after II resolves.
+      setSearchParams({ checkout: tier, billing }, { replace: true });
       await handleLogin();
       return;
     }
     navigate(`/checkout?tier=${tier}&billing=${billing}`);
   };
 
-  // After login redirect with ?checkout=Tier&billing=X, go straight to checkout page
+  // After II login completes, forward to checkout if an intent was stamped in the URL.
   useEffect(() => {
     if (!isAuthenticated) return;
-    const tier = searchParams.get("checkout") as PlanTier | null;
-    const billing = searchParams.get("billing") as BillingCycle | null;
+    const tier    = searchParams.get("checkout") as PlanTier | null;
+    const billing = searchParams.get("billing")  as BillingCycle | null;
     if (!tier || !billing) return;
     navigate(`/checkout?tier=${tier}&billing=${billing}`);
   }, [isAuthenticated]);
@@ -286,8 +287,27 @@ Upgrade when you're ready. Cancel anytime.
                   </div>
                 )}
 
+                {/* AI agent call badge — shown for paid homeowner tiers */}
+                {(plan.tier === "Basic" || plan.tier === "Pro" || plan.tier === "Premium") && (() => {
+                  const agentCalls = plan.tier === "Basic" ? 5 : plan.tier === "Pro" ? 10 : 20;
+                  return (
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: "0.5rem",
+                      padding: "0.5rem 0.75rem", marginBottom: "1rem",
+                      background: isPopular ? "rgba(255,255,255,0.1)" : COLORS.sageLight,
+                      border: `1px solid ${isPopular ? "rgba(255,255,255,0.2)" : COLORS.sageMid}`,
+                      borderRadius: RADIUS.sm,
+                    }}>
+                      <Sparkles size={12} color={COLORS.sage} style={{ flexShrink: 0 }} />
+                      <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: isPopular ? COLORS.sageLight : COLORS.sage, fontWeight: 600 }}>
+                        {agentCalls} AI agent calls/day · unlimited chat
+                      </span>
+                    </div>
+                  );
+                })()}
+
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                  {plan.features.map((f) => {
+                  {plan.features.filter((f) => !f.includes("AI agent calls")).map((f) => {
                     const isIncludes = f.startsWith("Everything in ");
                     return (
                       <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", fontFamily: FONTS.sans, fontSize: "0.85rem", color: isPopular ? COLORS.sageLight : COLORS.plumMid, fontWeight: isIncludes ? 600 : 300 }}>

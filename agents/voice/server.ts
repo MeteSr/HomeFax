@@ -14,6 +14,8 @@ import {
 } from "./extractDocumentHelpers";
 import type { ChatRequest } from "./types";
 import type { MaintenanceContext } from "../maintenance/prompts";
+import { checkAndRecord, TIER_LIMITS } from "./agentLimiter";
+import type { SubscriptionTier } from "./agentLimiter";
 // NOTE: Email (Resend), permits, price-benchmark, forecast, check, report-request
 // and lookup-year-built are handled by the ai_proxy Motoko canister.
 // This relay handles only the 6 Claude AI endpoints.
@@ -160,8 +162,14 @@ app.post("/api/chat", async (req: Request, res: Response): Promise<void> => {
 // Caller maintains conversation history and executes tool calls in the browser.
 //
 // Request:  { messages: MessageParam[], context: AgentContext }
+// Headers:  x-icp-principal   — ICP principal (required for rate limiting)
+//           x-subscription-tier — user's plan tier (Free/Basic/Pro/Premium/…)
+//
 // Response: { type: "answer",     text: string }
 //         | { type: "tool_calls", assistantMessage, toolCalls: [...] }
+//
+// 429 when daily agent limit reached:
+//   { error: "daily_agent_limit_reached", limit: N, resetsAt: "<ISO>" }
 app.post("/api/agent", async (req: Request, res: Response): Promise<void> => {
   const { messages, context } = req.body;
 
@@ -169,6 +177,22 @@ app.post("/api/agent", async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ error: "messages array is required" });
     return;
   }
+
+  // ── rate limit check ──────────────────────────────────────────────────────
+  const principal = (req.headers["x-icp-principal"] as string | undefined) ?? "anon";
+  const rawTier   = (req.headers["x-subscription-tier"] as string | undefined) ?? "Free";
+  const tier      = (rawTier in TIER_LIMITS ? rawTier : "Free") as SubscriptionTier;
+
+  const { allowed, count, limit, resetsAt } = checkAndRecord(principal, tier);
+
+  if (!allowed) {
+    res.status(429).json({ error: "daily_agent_limit_reached", limit, count, resetsAt });
+    return;
+  }
+
+  // ── respond with remaining quota header so the UI can update the counter ──
+  res.setHeader("X-Agent-Calls-Used",  String(count));
+  res.setHeader("X-Agent-Calls-Limit", String(limit));
 
   try {
     const result = await provider.completeWithTools({
