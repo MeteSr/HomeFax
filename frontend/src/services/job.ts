@@ -285,7 +285,7 @@ function unwrapJob(result: any): Job {
 function createJobService() {
   // Seed from Playwright test globals if present (window.__e2e_jobs set by addInitScript)
   const mockJobs: Job[] =
-    typeof window !== "undefined" && (window as any).__e2e_jobs
+    import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_jobs
       ? [...(window as any).__e2e_jobs]
       : [];
 
@@ -321,7 +321,7 @@ function createJobService() {
       const newJob: Job = {
         ...job,
         id: String(Date.now()),
-        homeowner: (typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-principal",
+        homeowner: (import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-principal",
         contractor: undefined,
         status: "pending",
         verified: false,
@@ -546,7 +546,7 @@ function createJobService() {
         id:               `PROPOSAL_${Date.now()}`,
         propertyId:       input.propertyId,
         homeowner:        "mock-homeowner",
-        contractor:       (typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-contractor",
+        contractor:       (import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-contractor",
         serviceType:      input.serviceType,
         contractorName:   input.contractorName,
         amount:           input.amountCents,
@@ -583,7 +583,7 @@ function createJobService() {
 
   async getPendingProposals(): Promise<Job[]> {
     if (!JOB_CANISTER_ID) {
-      const pending = typeof window !== "undefined" && (window as any).__e2e_pending_proposals;
+      const pending = import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_pending_proposals;
       if (pending) return pending as Job[];
       return mockJobs.filter((j) => j.status === "pending_homeowner_approval");
     }
@@ -600,7 +600,7 @@ function createJobService() {
         return mockJobs[idx];
       }
       // Also check __e2e_pending_proposals mock
-      const pending: Job[] = (typeof window !== "undefined" && (window as any).__e2e_pending_proposals) || [];
+      const pending: Job[] = (import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_pending_proposals) || [];
       const pidx = pending.findIndex((j) => j.id === jobId);
       if (pidx !== -1) {
         const approved = { ...pending[pidx], homeownerSigned: true, status: "pending" as JobStatus };
@@ -619,7 +619,7 @@ function createJobService() {
     if (!JOB_CANISTER_ID) {
       const idx = mockJobs.findIndex((j) => j.id === jobId);
       if (idx !== -1) { mockJobs.splice(idx, 1); return; }
-      const pending: Job[] = (typeof window !== "undefined" && (window as any).__e2e_pending_proposals) || [];
+      const pending: Job[] = (import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_pending_proposals) || [];
       const pidx = pending.findIndex((j) => j.id === jobId);
       if (pidx !== -1) { pending.splice(pidx, 1); return; }
       throw new Error("NotFound");

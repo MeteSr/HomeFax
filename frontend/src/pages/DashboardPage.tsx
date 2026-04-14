@@ -97,7 +97,7 @@ export default function DashboardPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadProperties(): Promise<Property[]> {
-    if ((window as any).__e2e_properties) {
+    if (import.meta.env.DEV && (window as any).__e2e_properties) {
       const list = (window as any).__e2e_properties as Property[];
       setProperties(list);
       return list;
@@ -126,7 +126,7 @@ export default function DashboardPage() {
 
   async function loadRecurringServices() {
     try {
-      const props = (typeof window !== "undefined" && (window as any).__e2e_properties)
+      const props = (import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_properties)
         || [];
       // Load after properties are set — use store or fallback to empty
       const { usePropertyStore: store } = await import("@/store/propertyStore");
@@ -173,7 +173,7 @@ export default function DashboardPage() {
   async function loadPendingProposals() {
     try {
       // E2E test injection point
-      if ((window as any).__e2e_pending_proposals) {
+      if (import.meta.env.DEV && (window as any).__e2e_pending_proposals) {
         setPendingProposals((window as any).__e2e_pending_proposals as Job[]);
         return;
       }
@@ -1787,7 +1787,7 @@ function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
         {yGridLines.map((v) => (
           <g key={v}>
             <line x1={padL} y1={toY(v)} x2={padL + innerW} y2={toY(v)} stroke={COLORS.rule} strokeWidth="0.5" strokeDasharray="3,3" />
-            <text x={padL - 4} y={toY(v)} textAnchor="end" dominantBaseline="middle" fill={COLORS.plumMid} fontSize="9" fontFamily="'IBM Plex Mono', monospace">{v}</text>
+            <text x={padL - 4} y={toY(v)} textAnchor="end" dominantBaseline="middle" fill={COLORS.plumMid} fontSize="9" fontFamily={FONTS.mono}>{v}</text>
           </g>
         ))}
 
@@ -1808,7 +1808,7 @@ function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
           const d   = new Date(s.timestamp);
           const lbl = `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, "0")}`;
           return (
-            <text key={i} x={toX(i)} y={padT + innerH + 14} textAnchor="middle" fill={COLORS.plumMid} fontSize="8" fontFamily="'IBM Plex Mono', monospace">
+            <text key={i} x={toX(i)} y={padT + innerH + 14} textAnchor="middle" fill={COLORS.plumMid} fontSize="8" fontFamily={FONTS.mono}>
               {lbl}
             </text>
           );

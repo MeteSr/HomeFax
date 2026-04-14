@@ -278,9 +278,11 @@ persistent actor Payment {
 
   // ─── Admin ───────────────────────────────────────────────────────────────────
 
-  /// One-time admin bootstrap. Fails if already initialized.
+  /// One-time admin bootstrap. Fails if already initialized or called by anonymous principal.
   public shared(msg) func initAdmins(newAdmins: [Principal]) : async Result.Result<(), Error> {
-    if (adminInitialized) return #err(#NotAuthorized);
+    if (adminInitialized)              return #err(#NotAuthorized);
+    if (Principal.isAnonymous(msg.caller)) return #err(#NotAuthorized);
+    if (newAdmins.size() == 0)         return #err(#InvalidInput("admin list cannot be empty"));
     adminEntries     := newAdmins;
     adminInitialized := true;
     #ok(())

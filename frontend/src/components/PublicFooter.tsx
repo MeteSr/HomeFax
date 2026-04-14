@@ -45,22 +45,22 @@ export function PublicFooter() {
             to={href}
             style={{
               textDecoration: "none",
-              fontFamily:     FONTS.mono,
-              fontSize:       "0.65rem",
-              letterSpacing:  "0.06em",
+              fontFamily:     FONTS.sans,
+              fontSize:       "0.8125rem",
+              fontWeight:     500,
               color:          COLORS.plumMid,
             }}
           >
-            {label.toUpperCase()}
+            {label}
           </Link>
         ))}
       </nav>
 
       <p style={{
-        fontFamily:    FONTS.mono,
-        fontSize:      "0.65rem",
-        letterSpacing: "0.04em",
-        color:         COLORS.plumMid,
+        fontFamily: FONTS.sans,
+        fontSize:   "0.8125rem",
+        fontWeight: 400,
+        color:      COLORS.plumMid,
       }}>
         © {new Date().getFullYear()} HomeGentic Inc.
       </p>

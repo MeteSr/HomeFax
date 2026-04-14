@@ -195,7 +195,7 @@ const btnStyle: React.CSSProperties = {
   color:         "#F4F1EB",
   border:        "none",
   padding:       "8px 16px",
-  fontFamily:    "'IBM Plex Mono', monospace",
+  fontFamily:    FONTS.mono,
   fontSize:      "0.75rem",
   textTransform: "uppercase",
   letterSpacing: "0.06em",
@@ -203,7 +203,7 @@ const btnStyle: React.CSSProperties = {
 };
 
 const thStyle: React.CSSProperties = {
-  fontFamily:    "'IBM Plex Mono', monospace",
+  fontFamily:    FONTS.mono,
   fontSize:      "0.65rem",
   textTransform: "uppercase",
   letterSpacing: "0.08em",

@@ -234,7 +234,7 @@ function createContractorService() {
       const fromMock = mockContractors.find((c) => c.id === principalText);
       if (fromMock) return fromMock;
       // Playwright e2e injection
-      const e2eContractors = typeof window !== "undefined" && (window as any).__e2e_contractors;
+      const e2eContractors = import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_contractors;
       if (e2eContractors) {
         const raw = (e2eContractors as any[]).find((c) => c.principal === principalText);
         if (raw) return {

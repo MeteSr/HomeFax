@@ -252,7 +252,7 @@ function createRecurringService() {
   let _actor: any = null;
   // Seed from Playwright test globals if present (window.__e2e_recurring set by addInitScript)
   const mockServices: RecurringService[] =
-    typeof window !== "undefined" && (window as any).__e2e_recurring
+    import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_recurring
       ? [...(window as any).__e2e_recurring]
       : [];
   const mockVisits: VisitLog[] = [];
@@ -289,7 +289,7 @@ function createRecurringService() {
       const svc: RecurringService = {
         ...input,
         id:        `REC_${Date.now()}`,
-        homeowner: (typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-principal",
+        homeowner: (import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-principal",
         status:    "Active",
         createdAt: Date.now(),
       };

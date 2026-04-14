@@ -377,8 +377,7 @@ persistent actor Property {
       case null    [];
       case (?list) list;
     };
-    let notifEntry : OwnerNotification = notif;
-    Map.add(ownerNotifs, Nat.compare, propertyId, existing # [notifEntry]);
+    Map.add(ownerNotifs, Nat.compare, propertyId, Array.concat<OwnerNotification>(existing, [notif]));
   };
 
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
@@ -1017,7 +1016,7 @@ persistent actor Property {
               addedAt     = Time.now();
             };
             Map.add(managersMap, Nat.compare, invite.propertyId,
-              filtered # [newMgr]);
+              Array.concat<PropertyManager>(filtered, [newMgr]));
             // Consume the token
             Map.remove(managerInvites,  Text.compare, token);
             Map.remove(managerTokenIdx, Text.compare, token);
@@ -1104,8 +1103,7 @@ persistent actor Property {
           switch (Map.get(properties, Nat.compare, propId)) {
             case null {};
             case (?prop) {
-              let entry : { property: Property; role: ManagerRole } = { property = prop; role = m.role };
-              result := result # [entry];
+              result := Array.concat<{ property: Property; role: ManagerRole }>(result, [{ property = prop; role = m.role }]);
             };
           };
         };
@@ -1320,7 +1318,8 @@ persistent actor Property {
   public shared(msg) func bulkRegisterProperties(
     rows : [RegisterPropertyArgs]
   ) : async BulkImportResult {
-    if (isPaused) { return { succeeded = []; failed = [] } };
+    if (isPaused)                  { return { succeeded = []; failed = [] } };
+    if (not isAdmin(msg.caller))   { return { succeeded = []; failed = [] } };
 
     var succeeded : [Nat]             = [];
     var failed    : [BulkImportError] = [];
@@ -1386,6 +1385,14 @@ persistent actor Property {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
     if (Text.size(args.propertyId) == 0)   return #err(#InvalidInput("propertyId cannot be empty"));
+
+    // Verify caller owns or manages the property
+    switch (Nat.fromText(args.propertyId)) {
+      case null    { return #err(#InvalidInput("propertyId must be a numeric ID")) };
+      case (?pid)  {
+        if (not checkAuthorized(pid, msg.caller, true)) return #err(#Unauthorized);
+      };
+    };
     if (Text.size(args.name)       == 0)   return #err(#InvalidInput("name cannot be empty"));
     if (Text.size(args.name)       > 100)  return #err(#InvalidInput("name exceeds 100 characters"));
     if (Text.size(args.floorType)  > 100)  return #err(#InvalidInput("floorType exceeds 100 characters"));

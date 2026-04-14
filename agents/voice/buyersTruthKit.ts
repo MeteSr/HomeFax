@@ -251,8 +251,14 @@ async function querySocrata(
   streetName: string,
 ): Promise<PermitRecord[]> {
   try {
+    // Sanitize user-controlled streetName before embedding in SoQL LIKE expression.
+    // Strip single quotes (SoQL string delimiter), percent/underscore wildcards, and
+    // parentheses to prevent query manipulation.
+    const safeStreet = streetName.replace(/['"%;()\\]/g, "").trim();
+    if (!safeStreet) return [];
+
     // Use a simple $limit=20 query; field-level filtering varies too much by dataset.
-    const url = `${endpoint}?$limit=20&$where=${encodeURIComponent(`upper(${addrField}) like upper('%${streetName}%')`)}`;
+    const url = `${endpoint}?$limit=20&$where=${encodeURIComponent(`upper(${addrField}) like upper('%${safeStreet}%')`)}`;
     const res = await fetch(url, {
       headers: { "Accept": "application/json" },
       signal:  AbortSignal.timeout(6000),

@@ -315,7 +315,7 @@ function createQuoteService() {
       const fromSeed = mockRequests.find((r) => r.id === id);
       if (fromSeed) return fromSeed;
       // Playwright e2e injection
-      const e2eRequests = typeof window !== "undefined" && (window as any).__e2e_quote_requests;
+      const e2eRequests = import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_quote_requests;
       return e2eRequests ? (e2eRequests as QuoteRequest[]).find((r) => r.id === id) : undefined;
     }
     const a = await getActor();
@@ -358,7 +358,7 @@ function createQuoteService() {
     if (!QUOTE_CANISTER_ID) {
       const fromMap = mockQuotesByRequest.get(requestId) ?? [];
       // Playwright e2e injection
-      const e2eQuotes = typeof window !== "undefined" && (window as any).__e2e_quotes;
+      const e2eQuotes = import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_quotes;
       const fromWindow = e2eQuotes
         ? (e2eQuotes as Quote[]).filter((q) => q.requestId === requestId)
         : [];
