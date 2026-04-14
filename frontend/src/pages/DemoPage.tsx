@@ -1456,20 +1456,7 @@ export default function DemoPage() {
           Interactive Demo
         </div>
         <h1>See HomeGentic<br /><em>in action.</em></h1>
-        <p className="dm-hero-sub">
-          Describe a problem in plain language. Our AI diagnoses it, drafts the job, collects quotes, and can start the hiring process — without you filling out a single form.
-        </p>
       </section>
-
-      {/* AI Banner */}
-      <div className="dm-ai-banner">
-        <div className="dm-ai-pill">
-          <Sparkles size={14} style={{ color: "var(--sage)", flexShrink: 0 }} />
-          <span className="dm-ai-pill-text">
-            <strong>Powered by AI</strong> — every tab below shows how our AI assistant works for your role
-          </span>
-        </div>
-      </div>
 
       {/* Persona Tabs */}
       <div className="dm-tabs">
