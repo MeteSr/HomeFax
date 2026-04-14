@@ -51,7 +51,16 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
         onClose();
       }
     } catch (err: any) {
-      setError(err.message ?? "Payment failed. Please try again.");
+      console.error("[ICP payment]", err);
+      if (method === "icp") {
+        const msg: string = err?.message ?? "";
+        if (/balance|insufficient/i.test(msg))    setError("Insufficient ICP balance.");
+        else if (/reject|wasm|canister|IC0/i.test(msg)) setError("Payment service is temporarily unavailable.");
+        else if (/approve|identity/i.test(msg))   setError("Approval cancelled or timed out.");
+        else                                       setError("Payment failed. Please try again.");
+      } else {
+        setError(err.message ?? "Payment failed. Please try again.");
+      }
     } finally {
       setLoading(null);
       setIcpStep(null);

@@ -3,9 +3,11 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { CreditCard, Coins } from "lucide-react";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 import { useAuthStore } from "@/store/authStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { paymentService, type PlanTier } from "@/services/payment";
 
 // ── Stripe init — lazy so Stripe.js only loads when checkout page mounts ──────
 
@@ -272,6 +274,80 @@ function LoginStep({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+// ── ICP error helper ──────────────────────────────────────────────────────────
+
+function icpUserMessage(err: any): string {
+  const msg: string = err?.message ?? "";
+  console.error("[ICP payment]", err);
+  if (/balance|insufficient/i.test(msg))   return "Insufficient ICP balance.";
+  if (/reject|wasm|canister|IC0/i.test(msg)) return "Payment service is temporarily unavailable.";
+  if (/approve|identity/i.test(msg))        return "Approval cancelled or timed out.";
+  return "Payment failed. Please try again.";
+}
+
+// ── ICP payment button ────────────────────────────────────────────────────────
+
+type IcpStep = "quoting" | "approving" | "confirming";
+const ICP_STEP_LABEL: Record<IcpStep, string> = {
+  quoting:    "Fetching ICP price…",
+  approving:  "Approve in Internet Identity…",
+  confirming: "Confirming on-chain…",
+};
+
+interface IcpPayButtonProps {
+  tier:    string;
+  billing: string;
+  onError: (msg: string) => void;
+}
+
+function IcpPayButton({ tier, billing, onError }: IcpPayButtonProps) {
+  const navigate = useNavigate();
+  const [step, setStep] = useState<IcpStep | null>(null);
+
+  const handlePay = async () => {
+    try {
+      if (billing === "Yearly") {
+        await paymentService.subscribeAnnual(tier as "Pro" | "Premium", (s) => setStep(s as IcpStep));
+      } else {
+        await paymentService.subscribe(tier as PlanTier, (s) => setStep(s as IcpStep));
+      }
+      navigate(`/payment-success?tier=${encodeURIComponent(tier)}&billing=${encodeURIComponent(billing)}&type=subscription`);
+    } catch (err: any) {
+      onError(icpUserMessage(err));
+    } finally {
+      setStep(null);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <button
+        onClick={handlePay}
+        disabled={step !== null}
+        style={{
+          width: "100%", padding: "14px 24px",
+          backgroundColor: step ? COLORS.plumMid : COLORS.plum,
+          color: COLORS.white, border: "none",
+          borderRadius: RADIUS.input,
+          cursor: step ? "not-allowed" : "pointer",
+          fontFamily: FONTS.sans, fontWeight: 700, fontSize: "1rem",
+          transition: "background-color 0.15s",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+        }}
+      >
+        <Coins size={16} />
+        {step ? ICP_STEP_LABEL[step] : "Pay with ICP"}
+      </button>
+      <p style={{
+        fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid,
+        textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center", margin: 0,
+      }}>
+        No processing fees · Requires ICP tokens in Internet Identity
+      </p>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CheckoutPage() {
@@ -288,6 +364,7 @@ export default function CheckoutPage() {
   const billing = searchParams.get("billing") ?? "Monthly";
   const plan    = PLAN_META[tier];
 
+  const [payMethod,      setPayMethod]      = useState<"card" | "icp">("card");
   const [clientSecret,   setClientSecret]   = useState<string | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string>("");
   const [loadError,      setLoadError]      = useState<string | null>(null);
@@ -318,12 +395,12 @@ export default function CheckoutPage() {
     }
   }, [tier, billing, profile?.email]);
 
-  // Kick off the Stripe intent as soon as we have a confirmed principal.
+  // Kick off the Stripe intent as soon as we have a confirmed principal (card path only).
   useEffect(() => {
-    if (isAuthenticated && principal) {
+    if (isAuthenticated && principal && payMethod === "card") {
       fetchIntent(principal);
     }
-  }, [isAuthenticated, principal, fetchIntent]);
+  }, [isAuthenticated, principal, payMethod, fetchIntent]);
 
   if (!plan) {
     return (
@@ -441,7 +518,7 @@ export default function CheckoutPage() {
               marginTop: "auto", paddingTop: "36px",
               display: "flex", flexDirection: "column", gap: "8px",
             }}>
-              {["Cancel anytime", "Blockchain-backed records stay yours", "Secured by Stripe"].map((t) => (
+              {["Cancel anytime", "Blockchain-backed records stay yours", payMethod === "icp" ? "No processing fees" : "Secured by Stripe"].map((t) => (
                 <div key={t} style={{
                   display: "flex", alignItems: "center", gap: "8px",
                   fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.06em",
@@ -494,6 +571,34 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {/* Payment method toggle */}
+                <div style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
+                  {(["card", "icp"] as const).map((m) => {
+                    const active = payMethod === m;
+                    return (
+                      <button
+                        key={m}
+                        onClick={() => { setPayMethod(m); setPayError(null); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "6px",
+                          padding: "8px 16px",
+                          fontFamily: FONTS.mono, fontSize: "0.65rem", fontWeight: 700,
+                          textTransform: "uppercase", letterSpacing: "0.08em",
+                          border: `1.5px solid ${active ? COLORS.plum : COLORS.rule}`,
+                          background: active ? COLORS.plum : "transparent",
+                          color: active ? COLORS.white : COLORS.plumMid,
+                          borderRadius: RADIUS.sm, cursor: "pointer",
+                          transition: "all .15s",
+                        }}
+                      >
+                        {m === "card"
+                          ? <><CreditCard size={13} /> Card</>
+                          : <><Coins size={13} /> ICP</>}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <p style={{
                   fontFamily: FONTS.mono, fontSize: "0.65rem", fontWeight: 500,
                   textTransform: "uppercase", letterSpacing: "0.08em",
@@ -502,45 +607,63 @@ export default function CheckoutPage() {
                   Payment details
                 </p>
 
-                {loadError && (
-                  <div style={{
-                    padding: "12px 14px", marginBottom: "16px",
-                    background: "#FEF2EF", border: `1px solid ${COLORS.rust}`,
-                    borderRadius: RADIUS.sm, color: COLORS.rust,
-                    fontFamily: FONTS.sans, fontSize: "0.85rem",
-                  }}>
-                    {loadError}
-                  </div>
-                )}
+                {payMethod === "icp" ? (
+                  <>
+                    <IcpPayButton tier={tier} billing={billing} onError={setPayError} />
+                    {payError && (
+                      <div style={{
+                        marginTop: "12px", padding: "12px 14px",
+                        background: "#FEF2EF", border: `1px solid ${COLORS.rust}`,
+                        borderRadius: RADIUS.sm, color: COLORS.rust,
+                        fontFamily: FONTS.sans, fontSize: "0.85rem",
+                      }}>
+                        {payError}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {loadError && (
+                      <div style={{
+                        padding: "12px 14px", marginBottom: "16px",
+                        background: "#FEF2EF", border: `1px solid ${COLORS.rust}`,
+                        borderRadius: RADIUS.sm, color: COLORS.rust,
+                        fontFamily: FONTS.sans, fontSize: "0.85rem",
+                      }}>
+                        {loadError}
+                      </div>
+                    )}
 
-                {!loadError && !clientSecret && (
-                  <div style={{
-                    height: 180, background: COLORS.sageLight,
-                    borderRadius: RADIUS.input,
-                    animation: "pulse 1.5s ease-in-out infinite",
-                  }} />
-                )}
+                    {!loadError && !clientSecret && (
+                      <div style={{
+                        height: 180, background: COLORS.sageLight,
+                        borderRadius: RADIUS.input,
+                        animation: "pulse 1.5s ease-in-out infinite",
+                      }} />
+                    )}
 
-                {clientSecret && (
-                  <Elements stripe={getStripePromise()} options={{ clientSecret, appearance: stripeAppearance }}>
-                    <PaymentForm
-                      tier={tier}
-                      billing={billing}
-                      subscriptionId={subscriptionId}
-                      onError={setPayError}
-                    />
-                  </Elements>
-                )}
+                    {clientSecret && (
+                      <Elements stripe={getStripePromise()} options={{ clientSecret, appearance: stripeAppearance }}>
+                        <PaymentForm
+                          tier={tier}
+                          billing={billing}
+                          subscriptionId={subscriptionId}
+                          onError={setPayError}
+                        />
+                      </Elements>
+                    )}
 
-                {payError && (
-                  <div style={{
-                    marginTop: "12px", padding: "12px 14px",
-                    background: "#FEF2EF", border: `1px solid ${COLORS.rust}`,
-                    borderRadius: RADIUS.sm, color: COLORS.rust,
-                    fontFamily: FONTS.sans, fontSize: "0.85rem",
-                  }}>
-                    {payError}
-                  </div>
+                    {payError && (
+                      <div style={{
+                        marginTop: "12px", padding: "12px 14px",
+                        background: "#FEF2EF", border: `1px solid ${COLORS.rust}`,
+                        borderRadius: RADIUS.sm, color: COLORS.rust,
+                        fontFamily: FONTS.sans, fontSize: "0.85rem",
+                      }}>
+                        {payError}
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

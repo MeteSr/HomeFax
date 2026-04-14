@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { useJobStore } from "@/store/jobStore";
 import toast from "react-hot-toast";
+import UpgradeModal from "@/components/UpgradeModal";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { isValidEmail, isValidPhone, isValidHttpsUrl } from "@/utils/validators";
@@ -259,12 +260,12 @@ function AgentDashboardLink() {
 
 function SubscriptionTab({ profile }: { profile: any }) {
   const navigate = useNavigate();
-  const [tier,      setTier]      = useState<PlanTier>(profile?.role === "Contractor" ? "ContractorPro" : "Free");
-  const [expiresAt, setExpiresAt] = useState<number | null>(null);
-  const [subLoaded, setSubLoaded] = useState(false);
-  const [upgrading, setUpgrading] = useState<PlanTier | null>(null);
-  const [cancelStep, setCancelStep] = useState<"idle" | "confirm" | "loading" | "done">("idle");
-  const [pauseState, setPauseState] = useState(paymentService.getPauseState());
+  const [tier,             setTier]             = useState<PlanTier>(profile?.role === "Contractor" ? "ContractorPro" : "Free");
+  const [expiresAt,        setExpiresAt]        = useState<number | null>(null);
+  const [subLoaded,        setSubLoaded]        = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [cancelStep,       setCancelStep]       = useState<"idle" | "confirm" | "loading" | "done">("idle");
+  const [pauseState,       setPauseState]       = useState(paymentService.getPauseState());
 
   useEffect(() => {
     paymentService.getMySubscription().then((sub) => {
@@ -288,20 +289,6 @@ function SubscriptionTab({ profile }: { profile: any }) {
   const currentPlan = PLANS.find((p) => p.tier === tier) ?? PLANS[0];
   const isPaid      = tier !== "Free";
 
-  const handleUpgrade = async (targetTier: PlanTier) => {
-    setUpgrading(targetTier);
-    try {
-      await paymentService.initiate(targetTier);
-      setTier(targetTier);
-      setExpiresAt(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      toast.success(`Upgraded to ${targetTier}!`);
-      navigate("/dashboard");
-    } catch (err: any) {
-      toast.error(err.message || "Upgrade failed");
-    } finally {
-      setUpgrading(null);
-    }
-  };
 
   const handleCancel = async () => {
     setCancelStep("loading");
@@ -340,7 +327,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
               </div>
             </div>
             <button
-              onClick={() => navigate("/pricing")}
+              onClick={() => setShowUpgradeModal(true)}
               style={{ fontFamily: S.mono, fontWeight: 700, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.55rem 1.25rem", border: "none", background: COLORS.plum, color: COLORS.white, cursor: "pointer" }}
             >
               {profile?.role === "Contractor" ? "Upgrade to ContractorPro →" : "Upgrade to Pro →"}
@@ -379,8 +366,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
             </div>
             {expiresAt && expiresAt < Date.now() && (
               <button
-                onClick={() => handleUpgrade(tier)}
-                disabled={upgrading !== null}
+                onClick={() => setShowUpgradeModal(true)}
                 aria-label={`Renew ${tier}`}
                 style={{
                   alignSelf:   "flex-start",
@@ -393,10 +379,10 @@ function SubscriptionTab({ profile }: { profile: any }) {
                   fontSize:    "0.65rem",
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
-                  cursor:      upgrading ? "wait" : "pointer",
+                  cursor:      "pointer",
                 }}
               >
-                {upgrading === tier ? "Processing…" : "Renew →"}
+                Renew →
               </button>
             )}
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
@@ -440,8 +426,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
                 <Button
                   size="sm"
                   variant={plan.tier === "Pro" ? "primary" : "outline"}
-                  loading={upgrading === plan.tier}
-                  onClick={() => handleUpgrade(plan.tier)}
+                  onClick={() => setShowUpgradeModal(true)}
                 >
                   {isPaid ? "Switch" : "Upgrade"}
                 </Button>
@@ -593,6 +578,11 @@ function SubscriptionTab({ profile }: { profile: any }) {
           </div>
         </div>
       )}
+
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </div>
   );
 }
