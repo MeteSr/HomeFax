@@ -251,7 +251,7 @@ persistent actor Quote {
   };
 
   /// Encode Nat to little-endian Nat8 bytes (mock client-side IBE encryption).
-  private func mockEncryptBytes(amount: Nat) : [Nat8] {
+  private func _mockEncryptBytes(amount: Nat) : [Nat8] {
     if (amount == 0) return [0];
     var n = amount;
     var bytes: [Nat8] = [];

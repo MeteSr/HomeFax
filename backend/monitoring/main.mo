@@ -228,7 +228,7 @@ persistent actor Monitoring {
     Option.isSome(Array.find<Principal>(adminListEntries, func(a) { a == p }))
   };
 
-  private func requireActive(caller: Principal) : Result.Result<(), Error> {
+  private func _requireActive(caller: Principal) : Result.Result<(), Error> {
     if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
@@ -379,7 +379,7 @@ persistent actor Monitoring {
       case (?existing) {
         // Exponential moving average: new_avg = 0.8 × old_avg + 0.2 × sample
         let alpha = 20;   // 20% weight to new sample (integer arithmetic: ×100)
-        let newAvg = (existing.avgCycles * (100 - alpha) + cycles * alpha) / 100;
+        let newAvg = (existing.avgCycles * 80 + cycles * alpha) / 100;
         {
           method;
           avgCycles     = newAvg;
@@ -421,7 +421,7 @@ persistent actor Monitoring {
   public query func calculateProfitability(
     revenue: Float,
     users: Nat,
-    activeUsers: Nat
+    _activeUsers: Nat
   ) : async ProfitabilityMetrics {
     // Derive cost from stored metrics (same logic as calculateCostMetrics)
     var totalBurned : Nat = 0;

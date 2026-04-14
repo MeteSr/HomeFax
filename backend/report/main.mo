@@ -272,6 +272,9 @@ persistent actor Report {
   // ─── Upgrade Hook ────────────────────────────────────────────────────────────
 
   system func postupgrade() {
+    // Suppress M0194: these stable vars must keep their names (renaming drops stable state).
+    ignore reportCounter;
+    ignore snapshotSchemaVersion;
     // ── One-time V0 migration (upgrade from pre-1.4.7) ────────────────────────
     // linkEntries / snapshotEntries: old records without rooms / disclosure flags.
     for ((k, v) in linkEntries.vals()) {

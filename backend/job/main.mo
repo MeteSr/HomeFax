@@ -668,7 +668,7 @@ persistent actor Job {
     verifiedKeySystems : [Text];
     meetsStructural    : Bool;   // verifiedJobCount >= 3 AND verifiedKeySystems.size() >= 2
   } {
-    let KEY_SYSTEMS : [Text] = ["HVAC", "Roofing", "Plumbing", "Electrical"];
+    let _KEY_SYSTEMS : [Text] = ["HVAC", "Roofing", "Plumbing", "Electrical"];
     var verifiedCount : Nat = 0;
     var foundSystems : [Text] = [];
 
@@ -1037,7 +1037,7 @@ persistent actor Job {
     if (existing.homeowner != msg.caller) return #err(#Unauthorized);
     if (existing.status != #PendingHomeownerApproval) return #err(#InvalidInput("Job is not pending approval"));
 
-    ignore Map.remove(jobs, Text.compare, jobId);
+    Map.remove(jobs, Text.compare, jobId);
     #ok(())
   };
 
