@@ -148,7 +148,10 @@ jobs:
 
   test-e2e:
     runs-on: ubuntu-latest
-    needs: [test-frontend, motoko-check]
+    # No DFX/replica needed: tests run in mock mode (no .env → no canister IDs →
+    # all service calls fall back to in-memory mocks). loginWithLocalIdentity()
+    # now silently skips fetchRootKey when the replica is absent.
+    needs: [test-frontend]
     steps:
       - uses: actions/checkout@v4
 
@@ -158,41 +161,20 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
-      - name: Cache DFX binary
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/dfinity
-          key: dfx-${{ runner.os }}-${{ hashFiles('dfx.json') }}
-
-      - name: Install DFX
-        uses: dfinity/setup-dfx@main
-
-      - name: Cache mops packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/mops
-          key: mops-${{ runner.os }}-${{ hashFiles('mops.toml') }}
-
-      - name: Install mops
-        run: npm install -g ic-mops
-
-      - name: Install Playwright browsers
-        run: cd frontend && npx playwright install --with-deps chromium
-
       - run: npm install
 
-      - name: Start replica and deploy
-        run: |
-          dfx start --background --clean
-          bash scripts/deploy.sh
+      - name: Install Playwright browsers
+        # Must run AFTER npm install so the locally-pinned @playwright/test
+        # version (not the latest npx fallback) determines which Chromium
+        # revision is downloaded. Version mismatch causes "Executable doesn't
+        # exist" for every test.
+        run: cd frontend && npx @playwright/test install --with-deps chromium
 
       - name: Run E2E tests
         # Playwright's webServer config starts the Vite dev server and waits
         # for it — no need to start it manually. reuseExistingServer is set
         # to true in CI so Playwright owns the server lifecycle.
         run: npm run test:e2e
-        env:
-          DFX_NETWORK: local
 
       - name: Upload E2E artifacts on failure
         if: failure()
