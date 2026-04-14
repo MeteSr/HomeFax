@@ -110,14 +110,15 @@ describe("UpgradeModal", () => {
   it("shows Pro plan card with price", () => {
     renderModal();
     expect(screen.getByRole("button", { name: /select pro/i })).toBeInTheDocument();
-    // "$10" with per-month suffix rendered by the plan card
-    expect(screen.getAllByText(/\$10/).length).toBeGreaterThan(0);
+    // Pro is $20/month
+    expect(screen.getAllByText(/\$20/).length).toBeGreaterThan(0);
   });
 
   it("shows Premium plan card with price", () => {
     renderModal();
     expect(screen.getByRole("button", { name: /select premium/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/\$20/).length).toBeGreaterThan(0);
+    // Premium is $35/month
+    expect(screen.getAllByText(/\$35/).length).toBeGreaterThan(0);
   });
 
   it("shows at least one feature for each plan", () => {
@@ -199,7 +200,7 @@ describe("UpgradeGate with onUpgrade prop", () => {
         <UpgradeGate feature="Score Breakdown" description="See details." onUpgrade={onUpgrade} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole("button", { name: /upgrade to pro/i }));
+    fireEvent.click(screen.getByRole("button", { name: /upgrade to basic/i }));
     expect(onUpgrade).toHaveBeenCalledTimes(1);
   });
 
@@ -210,6 +211,6 @@ describe("UpgradeGate with onUpgrade prop", () => {
       </MemoryRouter>
     );
     // Should render without error
-    expect(screen.getByRole("button", { name: /upgrade to pro/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /upgrade to basic/i })).toBeInTheDocument();
   });
 });

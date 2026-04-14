@@ -39,28 +39,28 @@ describe("GiftPage", () => {
   it("renders step 1 — tier selection", () => {
     renderPage();
     expect(screen.getByText(/Give the gift of a/i)).toBeTruthy();
-    expect(screen.getByText(/Pro/i)).toBeTruthy();
-    expect(screen.getByText(/Premium/i)).toBeTruthy();
+    expect(screen.getAllByText(/Pro/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Premium/i).length).toBeGreaterThan(0);
   });
 
   it("advances to recipient step on Continue", async () => {
     renderPage();
-    const continueBtn = screen.getAllByText(/Continue/i)[0];
-    fireEvent.click(continueBtn);
+    // Step 1 uses "Gift Basic/Pro/Premium" buttons — click any to advance
+    fireEvent.click(screen.getByRole("button", { name: /gift basic/i }));
     await waitFor(() => {
-      expect(screen.getByText(/Recipient/i)).toBeTruthy();
+      expect(screen.getByPlaceholderText(/Alex Johnson/i)).toBeTruthy();
     });
   });
 
   it("shows validation error when recipient email is empty", async () => {
     renderPage();
-    // step 1 → step 2
-    fireEvent.click(screen.getAllByText(/Continue/i)[0]);
-    await waitFor(() => screen.getByText(/Recipient/i));
-    // try to advance without filling required fields
+    // step 1 → step 2: click a tier button
+    fireEvent.click(screen.getByRole("button", { name: /gift basic/i }));
+    await waitFor(() => screen.getByPlaceholderText(/Alex Johnson/i));
+    // try to advance without filling required fields (NavButtons "Continue")
     fireEvent.click(screen.getAllByText(/Continue/i)[0]);
     await waitFor(() => {
-      expect(screen.getByText(/required/i)).toBeTruthy();
+      expect(screen.getAllByText(/required/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -68,19 +68,19 @@ describe("GiftPage", () => {
     mockStartCheckout.mockResolvedValue(undefined);
     renderPage();
 
-    // step 1: select Pro monthly (default) → continue
-    fireEvent.click(screen.getAllByText(/Continue/i)[0]);
-    await waitFor(() => screen.getByPlaceholderText(/recipient name/i));
+    // step 1: click "Gift Pro" to select Pro and advance
+    fireEvent.click(screen.getByRole("button", { name: /gift pro/i }));
+    await waitFor(() => screen.getByPlaceholderText(/Alex Johnson/i));
 
     // step 2: fill recipient
-    fireEvent.change(screen.getByPlaceholderText(/recipient name/i), { target: { value: "Jane Doe" } });
-    fireEvent.change(screen.getByPlaceholderText(/jane@example\.com/i), { target: { value: "jane@example.com" } });
-    fireEvent.change(screen.getByPlaceholderText(/your name/i), { target: { value: "Bob Agent" } });
-    fireEvent.change(screen.getByPlaceholderText(/bob@realty\.com/i), { target: { value: "bob@realty.com" } });
+    fireEvent.change(screen.getByPlaceholderText(/Alex Johnson/i), { target: { value: "Jane Doe" } });
+    fireEvent.change(screen.getByPlaceholderText(/alex@email\.com/i), { target: { value: "jane@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText(/Sarah Miller/i), { target: { value: "Bob Agent" } });
+    fireEvent.change(screen.getByPlaceholderText(/sarah@realty\.com/i), { target: { value: "bob@realty.com" } });
     fireEvent.click(screen.getAllByText(/Continue/i)[0]);
 
     // step 3: message → continue
-    await waitFor(() => screen.getByText(/Message/i));
+    await waitFor(() => screen.getByText(/Gift message/i));
     fireEvent.click(screen.getAllByText(/Continue/i)[0]);
 
     // step 4: review → submit
@@ -101,15 +101,15 @@ describe("GiftPage", () => {
     mockStartCheckout.mockRejectedValue(new Error("Stripe not configured"));
     renderPage();
 
-    // Navigate to review step
+    // Navigate to review step — click "Gift Basic" to advance from step 1
+    fireEvent.click(screen.getByRole("button", { name: /gift basic/i }));
+    await waitFor(() => screen.getByPlaceholderText(/Alex Johnson/i));
+    fireEvent.change(screen.getByPlaceholderText(/Alex Johnson/i), { target: { value: "Jane" } });
+    fireEvent.change(screen.getByPlaceholderText(/alex@email\.com/i), { target: { value: "j@j.com" } });
+    fireEvent.change(screen.getByPlaceholderText(/Sarah Miller/i), { target: { value: "Bob" } });
+    fireEvent.change(screen.getByPlaceholderText(/sarah@realty\.com/i), { target: { value: "b@b.com" } });
     fireEvent.click(screen.getAllByText(/Continue/i)[0]);
-    await waitFor(() => screen.getByPlaceholderText(/recipient name/i));
-    fireEvent.change(screen.getByPlaceholderText(/recipient name/i), { target: { value: "Jane" } });
-    fireEvent.change(screen.getByPlaceholderText(/jane@example\.com/i), { target: { value: "j@j.com" } });
-    fireEvent.change(screen.getByPlaceholderText(/your name/i), { target: { value: "Bob" } });
-    fireEvent.change(screen.getByPlaceholderText(/bob@realty\.com/i), { target: { value: "b@b.com" } });
-    fireEvent.click(screen.getAllByText(/Continue/i)[0]);
-    await waitFor(() => screen.getByText(/Message/i));
+    await waitFor(() => screen.getByText(/Gift message/i));
     fireEvent.click(screen.getAllByText(/Continue/i)[0]);
     await waitFor(() => screen.getByText(/Pay & Send Gift/i));
 

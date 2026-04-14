@@ -1390,7 +1390,7 @@ persistent actor Property {
     switch (Nat.fromText(args.propertyId)) {
       case null    { return #err(#InvalidInput("propertyId must be a numeric ID")) };
       case (?pid)  {
-        if (not checkAuthorized(pid, msg.caller, true)) return #err(#Unauthorized);
+        if (not checkAuthorized(pid, msg.caller, true)) return #err(#NotAuthorized);
       };
     };
     if (Text.size(args.name)       == 0)   return #err(#InvalidInput("name cannot be empty"));
