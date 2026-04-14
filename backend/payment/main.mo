@@ -1,4 +1,5 @@
 import Array     "mo:core/Array";
+import Int       "mo:core/Int";
 import Map       "mo:core/Map";
 import Nat       "mo:core/Nat";
 import Nat32     "mo:core/Nat32";
