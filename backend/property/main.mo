@@ -71,11 +71,12 @@ persistent actor Property {
   };
 
   public type SubscriptionTier = {
-    #Free;          // unsubscribed sentinel — 0 properties (blocked)
-    #Basic;         // 1 property
-    #Pro;           // 5 properties
-    #Premium;       // 20 properties
-    #ContractorPro; // unlimited
+    #Free;             // unsubscribed sentinel — 0 properties (blocked)
+    #Basic;            // 1 property
+    #Pro;              // 5 properties
+    #Premium;          // 20 properties
+    #ContractorFree;   // 0 properties — contractors work on others' properties
+    #ContractorPro;    // unlimited
   };
 
   /// Full on-chain property record.
@@ -459,11 +460,12 @@ persistent actor Property {
 
   public query func getPropertyLimitForTier(tier: SubscriptionTier) : async Nat {
     switch tier {
-      case (#Free)          { 0  };  // blocked — unsubscribed
-      case (#Basic)         { 1  };
-      case (#Pro)           { 5  };
-      case (#Premium)       { 20 };
-      case (#ContractorPro) { 0  };  // 0 = unlimited (ContractorPro)
+      case (#Free)             { 0  };  // blocked — unsubscribed
+      case (#Basic)            { 1  };
+      case (#Pro)              { 5  };
+      case (#Premium)          { 20 };
+      case (#ContractorFree)   { 0  };  // contractors don't own properties
+      case (#ContractorPro)    { 0  };  // 0 = unlimited (ContractorPro)
     }
   };
 
@@ -523,26 +525,28 @@ persistent actor Property {
     // otherwise falls back to the local admin-grant map.
     let callerTier : SubscriptionTier = if (payCanisterId != "") {
       let payActor = actor(payCanisterId) : actor {
-        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorPro };
+        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorFree; #ContractorPro };
       };
       await payActor.getTierForPrincipal(caller)
     } else {
       tierFor(caller)
     };
     let limit = switch (callerTier) {
-      case (#Free)          { 0  };  // blocked — unsubscribed
-      case (#Basic)         { 1  };
-      case (#Pro)           { 5  };
-      case (#Premium)       { 20 };
-      case (#ContractorPro) { 0  };  // 0 = unlimited (ContractorPro)
+      case (#Free)             { 0  };  // blocked — unsubscribed
+      case (#Basic)            { 1  };
+      case (#Pro)              { 5  };
+      case (#Premium)          { 20 };
+      case (#ContractorFree)   { 0  };  // contractors don't own properties
+      case (#ContractorPro)    { 0  };  // 0 = unlimited (ContractorPro)
     };
-    if (callerTier == #Free or (limit > 0 and countOwnerProperties(caller) >= limit)) {
+    if (callerTier == #Free or callerTier == #ContractorFree or (limit > 0 and countOwnerProperties(caller) >= limit)) {
       let tierName = switch (callerTier) {
-        case (#Free)          "Free";
-        case (#Basic)         "Basic";
-        case (#Pro)           "Pro";
-        case (#Premium)       "Premium";
-        case (#ContractorPro) "ContractorPro";
+        case (#Free)             "Free";
+        case (#Basic)            "Basic";
+        case (#Pro)              "Pro";
+        case (#Premium)          "Premium";
+        case (#ContractorFree)   "ContractorFree";
+        case (#ContractorPro)    "ContractorPro";
       };
       let upgradeMsg = switch (callerTier) {
         case (#Free)  " Subscribe to Basic ($10/mo) for 1 property, or Pro ($20/mo) for 5.";

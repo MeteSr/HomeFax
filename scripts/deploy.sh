@@ -248,6 +248,13 @@ echo "  payment: initializing admin list..."
 dfx canister call payment initAdmins "(vec { principal \"$DEPLOYER\" })" --network "$NETWORK" \
   2>/dev/null || echo "  ⚠️  payment initAdmins failed (may already be initialized)"
 
+# Grant the deployer a Pro subscription so backend tests (job, quote, photo)
+# can call createJob / createQuoteRequest / uploadPhoto without hitting the
+# Free-tier block. Tests that need to test tier limits downgrade explicitly.
+echo "  payment: granting deployer Pro subscription for test compatibility..."
+dfx canister call payment grantSubscription "(principal \"$DEPLOYER\", variant { Pro })" --network "$NETWORK" \
+  2>/dev/null || echo "  ⚠️  grantSubscription failed"
+
 echo ""
 echo "============================================"
 echo "  Wiring Inter-Canister IDs"

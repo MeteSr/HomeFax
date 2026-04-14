@@ -255,7 +255,7 @@ persistent actor Job {
     // so the manager doesn't need their own paid subscription.
     if (payCanisterId != "") {
       let payActor = actor(payCanisterId) : actor {
-        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorPro };
+        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorFree; #ContractorPro };
       };
       let effectivePrincipal : Principal = if (propCanisterId != "") {
         let propActor = actor(propCanisterId) : actor {

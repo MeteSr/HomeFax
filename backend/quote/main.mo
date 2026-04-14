@@ -53,11 +53,12 @@ persistent actor Quote {
   };
 
   public type SubscriptionTier = {
-    #Free;          // unsubscribed sentinel — blocked (0)
-    #Basic;         // 3 concurrent open requests
-    #Pro;           // 10
-    #Premium;       // 10
-    #ContractorPro; // unlimited (999_999)
+    #Free;             // unsubscribed sentinel — blocked (0)
+    #Basic;            // 3 concurrent open requests
+    #Pro;              // 10
+    #Premium;          // 10
+    #ContractorFree;   // unlimited (999_999) — contractors get unlimited quote requests
+    #ContractorPro;    // unlimited (999_999)
   };
 
   public type QuoteRequest = {
@@ -274,11 +275,12 @@ persistent actor Quote {
   /// Max concurrent open requests for a tier. 0 = blocked/unlimited sentinel — see callers.
   private func tierOpenLimit(tier: SubscriptionTier) : Nat {
     switch tier {
-      case (#Free)          { 0       };  // blocked — unsubscribed
-      case (#Basic)         { 3       };
-      case (#Pro)           { 10      };
-      case (#Premium)       { 10      };
-      case (#ContractorPro) { 999_999 };  // effectively unlimited
+      case (#Free)             { 0       };  // blocked — unsubscribed
+      case (#Basic)            { 3       };
+      case (#Pro)              { 10      };
+      case (#Premium)          { 10      };
+      case (#ContractorFree)   { 999_999 };  // effectively unlimited for contractors
+      case (#ContractorPro)    { 999_999 };  // effectively unlimited
     }
   };
 
@@ -353,7 +355,7 @@ persistent actor Quote {
     } else { msg.caller };
     let callerTier : SubscriptionTier = if (payCanisterId != "") {
       let payActor = actor(payCanisterId) : actor {
-        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorPro };
+        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorFree; #ContractorPro };
       };
       await payActor.getTierForPrincipal(effectivePrincipal)
     } else {
@@ -624,7 +626,7 @@ persistent actor Quote {
     } else { msg.caller };
     let callerTier : SubscriptionTier = if (payCanisterId != "") {
       let payActor = actor(payCanisterId) : actor {
-        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorPro };
+        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorFree; #ContractorPro };
       };
       await payActor.getTierForPrincipal(effectivePrincipalSB)
     } else {

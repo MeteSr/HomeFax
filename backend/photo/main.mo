@@ -37,6 +37,7 @@ persistent actor Photo {
     #Basic;
     #Pro;
     #Premium;
+    #ContractorFree;
     #ContractorPro;
   };
 
@@ -166,6 +167,7 @@ persistent actor Photo {
   private func quotaFor(tier: SubscriptionTier) : PhotoQuota {
     switch (tier) {
       case (#Free)          { { tier; maxPerJob = 0;   maxPerProperty = 0   } };  // blocked
+      case (#ContractorFree){ { tier; maxPerJob = 5;   maxPerProperty = 25  } };
       case (#Basic)         { { tier; maxPerJob = 5;   maxPerProperty = 25  } };
       case (#Pro)           { { tier; maxPerJob = 10;  maxPerProperty = 100 } };
       case (#Premium)       { { tier; maxPerJob = 30;  maxPerProperty = 0   } };
@@ -275,7 +277,7 @@ persistent actor Photo {
     } else { msg.caller };
     let callerTierRaw : SubscriptionTier = if (payCanisterId != "") {
       let payActor = actor(payCanisterId) : actor {
-        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorPro };
+        getTierForPrincipal : (Principal) -> async { #Free; #Basic; #Pro; #Premium; #ContractorFree; #ContractorPro };
       };
       await payActor.getTierForPrincipal(effectivePrincipal)
     } else {
