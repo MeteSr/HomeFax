@@ -20,9 +20,10 @@ vi.mock("@/services/payment", async (importOriginal) => {
   return {
     ...actual, // re-export PLANS constant
     paymentService: {
-      subscribe:           vi.fn().mockResolvedValue(undefined),
-      getMySubscription:   vi.fn().mockResolvedValue({ tier: "Free", expiresAt: null }),
-      initiate:            vi.fn().mockResolvedValue({ url: "/" }),
+      subscribe:              vi.fn().mockResolvedValue(undefined),
+      startStripeCheckout:    vi.fn().mockResolvedValue(undefined),
+      getMySubscription:      vi.fn().mockResolvedValue({ tier: "Free", expiresAt: null }),
+      initiate:               vi.fn().mockResolvedValue({ url: "/" }),
     },
   };
 });
@@ -123,68 +124,99 @@ describe("UpgradeModal", () => {
 
   it("shows at least one feature for each plan", () => {
     renderModal();
-    expect(screen.getByText(/5 properties/i)).toBeInTheDocument();       // Pro feature
-    expect(screen.getByText(/20 properties/i)).toBeInTheDocument();         // Premium feature
+    expect(screen.getByText(/5 properties/i)).toBeInTheDocument();
+    expect(screen.getByText(/20 properties/i)).toBeInTheDocument();
   });
 
-  it("calls paymentService.subscribe('Pro') when Pro plan is selected", async () => {
+  it("shows payment method toggle defaulting to Card", () => {
     renderModal();
+    expect(screen.getByRole("button", { name: /pay with card/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /pay with icp/i })).toBeInTheDocument();
+  });
+
+  // ── Card path (default) ──────────────────────────────────────────────────────
+
+  it("calls startStripeCheckout('Pro') when Pro is selected on card", async () => {
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    await waitFor(() => {
+      expect(paymentService.startStripeCheckout).toHaveBeenCalledWith("Pro", "Monthly");
+    });
+  });
+
+  it("calls startStripeCheckout('Premium') when Premium is selected on card", async () => {
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /select premium/i }));
+    await waitFor(() => {
+      expect(paymentService.startStripeCheckout).toHaveBeenCalledWith("Premium", "Monthly");
+    });
+  });
+
+  it("calls onClose after card checkout resolves", async () => {
+    const onClose = vi.fn();
+    render(<MemoryRouter><UpgradeModal open onClose={onClose} /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("shows error message when startStripeCheckout rejects", async () => {
+    (paymentService.startStripeCheckout as any).mockRejectedValueOnce(
+      new Error("Stripe not configured")
+    );
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/Stripe not configured/i)).toBeInTheDocument()
+    );
+  });
+
+  // ── ICP path ─────────────────────────────────────────────────────────────────
+
+  it("calls paymentService.subscribe('Pro') when ICP is selected and Pro clicked", async () => {
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
     fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
     await waitFor(() => {
       expect(paymentService.subscribe).toHaveBeenCalledWith("Pro", expect.any(Function));
     });
   });
 
-  it("calls paymentService.subscribe('Premium') when Premium plan is selected", async () => {
+  it("calls paymentService.subscribe('Premium') when ICP is selected and Premium clicked", async () => {
     renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
     fireEvent.click(screen.getByRole("button", { name: /select premium/i }));
     await waitFor(() => {
       expect(paymentService.subscribe).toHaveBeenCalledWith("Premium", expect.any(Function));
     });
   });
 
-  it("calls onClose after a plan is successfully selected", async () => {
-    const onClose = vi.fn();
-    render(
-      <MemoryRouter>
-        <UpgradeModal open onClose={onClose} />
-      </MemoryRouter>
-    );
-    fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
-  });
-
-  it("shows error message when subscribe rejects", async () => {
+  it("shows error message when ICP subscribe rejects", async () => {
     (paymentService.subscribe as any).mockRejectedValueOnce(
       new Error("Insufficient ICP balance")
     );
     renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
     fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
     await waitFor(() =>
       expect(screen.getByText(/Insufficient ICP balance/i)).toBeInTheDocument()
     );
   });
 
-  it("disables the unselected plan button while one plan is loading", async () => {
+  it("disables the unselected plan button while one plan is loading (ICP)", async () => {
     let resolveSubscribe!: () => void;
     (paymentService.subscribe as any).mockImplementationOnce(
       () => new Promise<void>((res) => { resolveSubscribe = res; })
     );
     renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /pay with icp/i }));
     fireEvent.click(screen.getByRole("button", { name: /select pro/i }));
-    // While Pro is loading, Premium button should be disabled
-    const premiumBtn = screen.getByRole("button", { name: /select premium/i });
-    expect(premiumBtn).toBeDisabled();
+    expect(screen.getByRole("button", { name: /select premium/i })).toBeDisabled();
     resolveSubscribe();
   });
 
   it("calls onClose when the dismiss button is clicked", () => {
     const onClose = vi.fn();
-    render(
-      <MemoryRouter>
-        <UpgradeModal open onClose={onClose} />
-      </MemoryRouter>
-    );
+    render(<MemoryRouter><UpgradeModal open onClose={onClose} /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: /maybe later/i }));
     expect(onClose).toHaveBeenCalled();
   });
