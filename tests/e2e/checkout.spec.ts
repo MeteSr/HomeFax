@@ -94,7 +94,7 @@ test.describe("CheckoutPage — /checkout", () => {
 
     test("switching to ICP tab shows 'No processing fees' note", async ({ page }) => {
       await page.getByRole("button", { name: /icp/i }).click();
-      await expect(page.getByText(/No processing fees/i)).toBeVisible();
+      await expect(page.getByText(/No processing fees/i).first()).toBeVisible();
     });
 
     test("switching back to Card tab hides ICP button", async ({ page }) => {

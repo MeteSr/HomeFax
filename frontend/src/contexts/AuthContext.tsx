@@ -40,15 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Only active in development builds; stripped from production by Vite.
     if (import.meta.env.DEV && (window as any).__e2e_principal) {
       setAuthenticated((window as any).__e2e_principal);
+      const e2eProfile = (window as any).__e2e_profile;
       setProfile({
         principal:    (window as any).__e2e_principal,
-        role:         "Homeowner",
-        email:        "e2e@test.com",
-        phone:        "0000000000",
-        createdAt:    BigInt(0),
-        updatedAt:    BigInt(0),
-        isActive:     true,
-        lastLoggedIn: null,
+        role:         e2eProfile?.role        ?? "Homeowner",
+        email:        e2eProfile?.email       ?? "e2e@test.com",
+        phone:        e2eProfile?.phone       ?? "0000000000",
+        createdAt:    e2eProfile?.createdAt   ?? BigInt(0),
+        updatedAt:    e2eProfile?.updatedAt   ?? BigInt(0),
+        isActive:     e2eProfile?.isActive    ?? true,
+        lastLoggedIn: e2eProfile?.lastLoggedIn ?? null,
       });
       setLastLoginAt(null);
       setLoading(false);

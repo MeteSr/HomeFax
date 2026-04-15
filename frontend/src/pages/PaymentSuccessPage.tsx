@@ -34,6 +34,16 @@ export default function PaymentSuccessPage() {
   const [tierName, setTierName]   = useState<string>("Pro");
 
   const verifySubscription = useCallback(async () => {
+    // E2E test bypass — avoids a cross-origin fetch that Playwright can't intercept reliably.
+    if (import.meta.env.DEV && (window as any).__e2e_verifySubscription) {
+      const mock = (window as any).__e2e_verifySubscription;
+      if (mock.error) throw new Error(mock.error);
+      const t = (mock.tier ?? urlTier).replace("Contractor", "Contractor ");
+      if (t) setTierName(t);
+      setState("subscription");
+      setTimeout(() => navigate("/dashboard"), 2500);
+      return;
+    }
     const principal = await getPrincipal().catch(() => "");
     const resp = await fetch(`${VOICE_AGENT_URL}/api/stripe/verify-subscription`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -70,6 +80,15 @@ export default function PaymentSuccessPage() {
 
     // Legacy Stripe-hosted checkout flow
     if (!sessionId) { setState("error"); setErrorMsg("No session ID found."); return; }
+    // E2E test bypass — avoids a cross-origin fetch that Playwright can't intercept reliably.
+    if (import.meta.env.DEV && (window as any).__e2e_verifySession) {
+      const mock = (window as any).__e2e_verifySession;
+      if (mock.error) { setErrorMsg(mock.error); setState("error"); return; }
+      if (mock.type === "gift") { setGiftToken(mock.giftToken); setState("gift"); return; }
+      if (mock.tier) setTierName(mock.tier.replace("Contractor", "Contractor "));
+      setState("subscription");
+      return;
+    }
     paymentService.verifyStripeSession(sessionId).then((result) => {
       if (result.type === "gift") {
         setGiftToken(result.giftToken);
