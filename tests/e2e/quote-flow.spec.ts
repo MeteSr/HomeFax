@@ -15,7 +15,7 @@
 import { test, expect } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
 import { injectTestProperties } from "./helpers/testData";
-import { injectQuoteRequests, injectQuotes } from "./helpers/testData";
+import { injectQuoteRequests, injectQuotes, injectSubscription } from "./helpers/testData";
 
 // ─── shared fixtures ──────────────────────────────────────────────────────────
 
@@ -247,10 +247,8 @@ test.describe("QF — open-quote tier limit", () => {
 
   // QF.7 — Pro tier: 9 open requests → button still enabled (limit = 10)
   test("Pro tier: 9 open requests still allow submission (limit = 10)", async ({ page }) => {
-    // The QuoteRequestPage reads tier from (reqs[0] as any)?.tier.
-    // Inject requests with tier="Pro" on the first entry so tierLimit = 10.
+    await injectSubscription(page, "Pro");
     const nineOpen = Array.from({ length: 9 }, (_, i) => ({
-      ...(i === 0 ? { tier: "Pro" } : {}),
       id:          `E2E_PRO_${i}`,
       propertyId:  "1",
       homeowner:   "test-e2e-principal",
@@ -268,8 +266,8 @@ test.describe("QF — open-quote tier limit", () => {
 
   // QF.7 — Pro tier: 10 open requests → limit reached
   test("Pro tier: submit button disabled at 10 open requests", async ({ page }) => {
+    await injectSubscription(page, "Pro");
     const tenOpen = Array.from({ length: 10 }, (_, i) => ({
-      ...(i === 0 ? { tier: "Pro" } : {}),
       id:          `E2E_PRO10_${i}`,
       propertyId:  "1",
       homeowner:   "test-e2e-principal",

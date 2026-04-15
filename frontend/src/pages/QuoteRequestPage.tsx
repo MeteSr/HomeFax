@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { PhotoQuotaDisplay } from "@/components/PhotoQuotaDisplay";
 import { quoteService, Urgency } from "@/services/quote";
+import { paymentService } from "@/services/payment";
 import { jobService, Job } from "@/services/job";
 import { getPriceRange, PriceRange, SERVICE_SUBCATEGORIES } from "@/services/market";
 import { PriceBenchmarkWidget } from "@/components/PriceBenchmarkWidget";
@@ -32,9 +33,10 @@ const URGENCY_OPTIONS: { value: Urgency; label: string; desc: string }[] = [
   { value: "emergency", label: "Emergency", desc: "ASAP" },
 ];
 
-// Tier → open request limit
+// Tier → open request limit (Infinity = no limit)
 const TIER_LIMITS: Record<string, number> = {
-  Free: 3, Pro: 10, Premium: 10, ContractorPro: 999,
+  Free: 3, Basic: 3, Pro: 10,
+  Premium: Infinity, ContractorFree: Infinity, ContractorPro: Infinity,
 };
 
 export default function QuoteRequestPage() {
@@ -58,12 +60,12 @@ export default function QuoteRequestPage() {
   });
 
   useEffect(() => {
-    quoteService.getRequests().then((reqs) => {
-      const open = reqs.filter((r) => r.status === "open" || r.status === "quoted").length;
-      setOpenCount(open);
-      const tier = (reqs[0] as any)?.tier ?? "Free";
-      setTierLimit(TIER_LIMITS[tier] ?? 3);
-    }).catch(() => {});
+    Promise.all([quoteService.getRequests(), paymentService.getMySubscription()])
+      .then(([reqs, sub]) => {
+        const open = reqs.filter((r) => r.status === "open" || r.status === "quoted").length;
+        setOpenCount(open);
+        setTierLimit(TIER_LIMITS[sub.tier] ?? 3);
+      }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load jobs for the selected property to inform price range
