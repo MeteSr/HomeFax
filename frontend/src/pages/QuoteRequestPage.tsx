@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { PhotoQuotaDisplay } from "@/components/PhotoQuotaDisplay";
 import { quoteService, Urgency } from "@/services/quote";
 import { paymentService } from "@/services/payment";
+import { propertyService } from "@/services/property";
 import { jobService, Job } from "@/services/job";
 import { getPriceRange, PriceRange, SERVICE_SUBCATEGORIES } from "@/services/market";
 import { PriceBenchmarkWidget } from "@/components/PriceBenchmarkWidget";
@@ -43,7 +44,7 @@ export default function QuoteRequestPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const prefill   = (location.state as { prefill?: Record<string, string> } | null)?.prefill ?? null;
-  const { properties } = usePropertyStore();
+  const { properties, setProperties } = usePropertyStore();
   const [loading,     setLoading]     = useState(false);
   const [openCount,   setOpenCount]   = useState(0);
   const [tierLimit,   setTierLimit]   = useState(3);
@@ -60,12 +61,28 @@ export default function QuoteRequestPage() {
   });
 
   useEffect(() => {
-    Promise.all([quoteService.getRequests(), paymentService.getMySubscription()])
-      .then(([reqs, sub]) => {
-        const open = reqs.filter((r) => r.status === "open" || r.status === "quoted").length;
-        setOpenCount(open);
-        setTierLimit(TIER_LIMITS[sub.tier] ?? 3);
-      }).catch(() => {});
+    if (properties.length === 0) {
+      propertyService.getMyProperties()
+        .then((list) => {
+          if (list.length > 0) {
+            setProperties(list);
+            setForm((f) => f.propertyId ? f : { ...f, propertyId: String(list[0].id) });
+          }
+        })
+        .catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    Promise.allSettled([quoteService.getRequests(), paymentService.getMySubscription()])
+      .then(([reqsResult, subResult]) => {
+        if (reqsResult.status === "fulfilled") {
+          const open = reqsResult.value.filter((r) => r.status === "open" || r.status === "quoted").length;
+          setOpenCount(open);
+        }
+        const tier = subResult.status === "fulfilled" ? subResult.value.tier : "Free";
+        setTierLimit(TIER_LIMITS[tier] ?? 3);
+      });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load jobs for the selected property to inform price range
@@ -159,8 +176,8 @@ export default function QuoteRequestPage() {
           </div>
 
           <div>
-            <label className="form-label">Property *</label>
-            <select className="form-input" value={form.propertyId} onChange={(e) => update("propertyId", e.target.value)}>
+            <label className="form-label" htmlFor="property">Property *</label>
+            <select id="property" className="form-input" value={form.propertyId} onChange={(e) => update("propertyId", e.target.value)}>
               {properties.map((p) => (
                 <option key={String(p.id)} value={String(p.id)}>{p.address}, {p.city}</option>
               ))}
@@ -168,8 +185,8 @@ export default function QuoteRequestPage() {
           </div>
 
           <div>
-            <label className="form-label">Service Type *</label>
-            <select className="form-input" value={form.serviceType} onChange={(e) => update("serviceType", e.target.value)}>
+            <label className="form-label" htmlFor="service-type">Service Type *</label>
+            <select id="service-type" className="form-input" value={form.serviceType} onChange={(e) => update("serviceType", e.target.value)}>
               {SERVICE_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -284,8 +301,8 @@ export default function QuoteRequestPage() {
           </div>
 
           <div>
-            <label className="form-label">Describe the work needed *</label>
-            <textarea className="form-input" rows={4} placeholder="Describe the issue or project in detail. Include any relevant measurements, materials, or constraints." value={form.description} onChange={(e) => update("description", e.target.value)} style={{ resize: "vertical" }} />
+            <label className="form-label" htmlFor="description">Describe the work needed *</label>
+            <textarea id="description" className="form-input" rows={4} placeholder="Describe the issue or project in detail. Include any relevant measurements, materials, or constraints." value={form.description} onChange={(e) => update("description", e.target.value)} style={{ resize: "vertical" }} />
           </div>
 
           <Button loading={loading} disabled={atLimit} onClick={handleSubmit} icon={<Send size={14} />} size="lg" style={{ width: "100%" }}>
