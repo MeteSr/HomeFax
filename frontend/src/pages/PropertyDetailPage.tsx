@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Share2, Shield, Wrench, MessageSquare, AlertCircle } from "lucide-react";
 import { Layout } from "@/components/Layout";
@@ -8,21 +8,15 @@ import { GenerateReportModal }     from "@/components/GenerateReportModal";
 import { LogJobModal }              from "@/components/LogJobModal";
 import { RequestQuoteModal }        from "@/components/RequestQuoteModal";
 import { InviteContractorModal }    from "@/components/InviteContractorModal";
-import { propertyService, Property } from "@/services/property";
-import { jobService, Job } from "@/services/job";
-import { photoService, Photo } from "@/services/photo";
-import { computeScore, computeScoreWithDecay, computeBreakdown, getScoreGrade, recordSnapshot, premiumEstimate, isCertified, loadHistory, scoreDelta, type ScoreSnapshot } from "@/services/scoreService";
+import { type Job, jobService } from "@/services/job";
+import { computeScoreWithDecay, computeBreakdown, getScoreGrade, premiumEstimate, isCertified, scoreDelta } from "@/services/scoreService";
 import { ScoreValueBanner } from "@/components/ScoreValueBanner";
 import { PropertyEstimatedValueInput, getStoredEstimatedValue } from "@/components/PropertyEstimatedValueInput";
 import { getAllDecayEvents, getAtRiskWarnings, getTotalDecay, type DecayEvent, type AtRiskWarning } from "@/services/scoreDecayService";
-import { systemAgesService, type SystemAges } from "@/services/systemAges";
-import { recurringService, type RecurringService, type VisitLog } from "@/services/recurringService";
 import { getRecentScoreEvents, type ScoreEvent } from "@/services/scoreEventService";
 import { getReEngagementPrompts, type ReEngagementPrompt } from "@/services/reEngagementService";
 import { marketService, jobToSummary, type PropertyProfile, type ProjectRecommendation } from "@/services/market";
 import { getWeeklyPulse } from "@/services/pulseService";
-import { roomService, type Room as RoomRecord } from "@/services/room";
-import { paymentService, type PlanTier } from "@/services/payment";
 import { ScorePanel } from "@/components/ScorePanel";
 import { ScoreActivityFeed } from "@/components/ScoreActivityFeed";
 import { AlertStack } from "@/components/AlertStack";
@@ -33,13 +27,21 @@ import { RecurringServicesPanel } from "@/components/RecurringServicesPanel";
 import FsboPanel from "@/components/FsboPanel";
 import { usePropertyStore } from "@/store/propertyStore";
 import { useAuthStore } from "@/store/authStore";
-import toast from "react-hot-toast";
+import { usePropertyDetail } from "@/hooks/usePropertyDetail";
+import { usePropertyJobs } from "@/hooks/usePropertyJobs";
+import { usePropertyPhotos } from "@/hooks/usePropertyPhotos";
+import { usePropertyRooms } from "@/hooks/usePropertyRooms";
+import { usePropertyMaintenance } from "@/hooks/usePropertyMaintenance";
+import { usePropertyScore } from "@/hooks/usePropertyScore";
+import { useUserTier } from "@/hooks/useUserTier";
 import { TimelineTab }  from "./PropertyDetail/TimelineTab";
 import { JobsTab }      from "./PropertyDetail/JobsTab";
 import { DocumentsTab } from "./PropertyDetail/DocumentsTab";
 import { SettingsTab }  from "./PropertyDetail/SettingsTab";
 import { RoomsTab }     from "./PropertyDetail/RoomsTab";
 import { BillsTab }     from "./PropertyDetail/BillsTab";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
@@ -55,120 +57,53 @@ const UI = {
 
 type Tab = "timeline" | "jobs" | "rooms" | "documents" | "bills" | "settings";
 
+interface ModalState {
+  report:        boolean;
+  logJob:        boolean;
+  quote:         boolean;
+  inviteJob:     Job | null;
+  logJobPrefill: { serviceType?: string; contractorName?: string } | undefined;
+}
+
+const MODALS_CLOSED: ModalState = {
+  report:        false,
+  logJob:        false,
+  quote:         false,
+  inviteJob:     null,
+  logJobPrefill: undefined,
+};
+
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { properties: storeProperties } = usePropertyStore();
   const { principal, profile } = useAuthStore();
-  const [property, setProperty] = useState<Property | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([]);
+
+  // ── domain hooks (each owns its own data + loading) ──────────────────────
+  const { property, loading: propLoading } = usePropertyDetail(id);
+  const { jobs, loading: jobsLoading, reload: reloadJobs, verifyJob } = usePropertyJobs(id);
+  const { photosByJob, uploadPhoto, uploadRoomPhoto } = usePropertyPhotos(id);
+  const { rooms, setRooms } = usePropertyRooms(id);
+  const { recurringServices, visitLogMap, systemAges } = usePropertyMaintenance(id);
+  const loading = propLoading || jobsLoading;
+  const { scoreHistory } = usePropertyScore(id, property, jobs, loading);
+  const userTier = useUserTier();
+
+  // ── UI state (3 useState calls) ───────────────────────────────────────────
   const initialTab = (searchParams.get("tab") as Tab | null) ?? "timeline";
-  const [tab, setTab] = useState<Tab>(initialTab);
-  const [loading, setLoading] = useState(true);
-  const [showReportModal,  setShowReportModal]  = useState(false);
-  const [showLogJobModal,  setShowLogJobModal]  = useState(false);
-  const [inviteJob,        setInviteJob]        = useState<Job | null>(null);
-  const [logJobPrefill,    setLogJobPrefill]    = useState<{ serviceType?: string; contractorName?: string } | undefined>(undefined);
-  const [showQuoteModal,   setShowQuoteModal]   = useState(false);
-  const [photosByJob, setPhotosByJob] = useState<Record<string, Photo[]>>({});
-  const [rooms, setRooms] = useState<RoomRecord[]>([]);
-  const [userTier, setUserTier] = useState<PlanTier>("Free");
-  const [systemAges,         setSystemAges]         = useState<SystemAges>({});
-  const [recurringServices,  setRecurringServices]  = useState<RecurringService[]>([]);
-  const [visitLogMap,        setVisitLogMap]        = useState<Record<string, VisitLog[]>>({});
-  const [scoreHistory,       setScoreHistory]       = useState<ScoreSnapshot[]>([]);
+  const [tab,   setTab]   = useState<Tab>(initialTab);
+  const [modals, setModals] = useState<ModalState>(MODALS_CLOSED);
   const [estimatedHomeDollars, setEstimatedHomeDollars] = useState<number | null>(null);
 
-  // Load persisted estimated home value for this property
   useEffect(() => {
     if (id) setEstimatedHomeDollars(getStoredEstimatedValue(id));
   }, [id]);
 
-  useEffect(() => {
-    paymentService.getMySubscription().then((s) => setUserTier(s.tier)).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      propertyService.getProperty(BigInt(id)).then(setProperty).catch(() => {
-        const cached = storeProperties.find((p) => String(p.id) === id);
-        if (cached) setProperty(cached);
-      }),
-      jobService.getByProperty(id).then(setJobs).catch(() => {}),
-      roomService.getRoomsByProperty(id).then(setRooms).catch(() => {}),
-      photoService.getByProperty(id).then((photos) => {
-        const map: Record<string, Photo[]> = {};
-        for (const p of photos) {
-          (map[p.jobId] ??= []).push(p);
-        }
-        setPhotosByJob(map);
-      }).catch(() => {}),
-      // Load recurring services for Home Panel
-      recurringService.getByProperty(id).then(async (svcs) => {
-        setRecurringServices(svcs);
-        const logEntries = await Promise.all(
-          svcs.map(async (s) => {
-            const logs = await recurringService.getVisitLogs(s.id).catch(() => [] as VisitLog[]);
-            return [s.id, logs] as [string, VisitLog[]];
-          })
-        );
-        setVisitLogMap(Object.fromEntries(logEntries));
-      }).catch(() => {}),
-    ]).finally(() => setLoading(false));
-    // Load system ages and score history
-    setSystemAges(systemAgesService.get(id));
-    setScoreHistory(loadHistory(id));
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Record score snapshot (with decay) whenever property + jobs are resolved
-  useEffect(() => {
-    if (!loading && property) {
-      const rawScore = computeScore(jobs, [property]);
-      const history  = recordSnapshot(rawScore, String(property.id));
-      setScoreHistory(history);
-    }
-  }, [loading, property, jobs]);
-
-  const handlePhotoUpload = async (jobId: string, file: File) => {
-    try {
-      const photo = await photoService.upload(file, jobId, id!, "PostConstruction", "Job photo");
-      setPhotosByJob((prev) => ({
-        ...prev,
-        [jobId]: [...(prev[jobId] ?? []), photo],
-      }));
-    } catch (err: any) {
-      toast.error(err.message ?? "Photo upload failed");
-    }
-  };
-
-  const handleRoomPhotoUpload = async (roomId: string, file: File) => {
-    try {
-      const photo = await photoService.uploadRoomPhoto(file, roomId, id!, "PostConstruction", "Room photo");
-      const key = `ROOM_${roomId}`;
-      setPhotosByJob((prev) => ({
-        ...prev,
-        [key]: [...(prev[key] ?? []), photo],
-      }));
-    } catch (err: any) {
-      toast.error(err.message ?? "Photo upload failed");
-    }
-  };
-
-  const handleVerify = async (jobId: string) => {
-    try {
-      const updated = await jobService.verifyJob(jobId);
-      setJobs((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
-    } catch {
-      toast.error("Could not sign job. Please try again.");
-    }
-  };
-
-  const totalValue = jobService.getTotalValue(jobs);
+  // ── derived values ────────────────────────────────────────────────────────
+  const totalValue    = jobService.getTotalValue(jobs);
   const verifiedCount = jobService.getVerifiedCount(jobs);
 
-  // Decay-aware score
   const decayEvents: DecayEvent[] = React.useMemo(
     () => !loading ? getAllDecayEvents(jobs, systemAges, Date.now()) : [],
     [jobs, systemAges, loading]
@@ -177,45 +112,40 @@ export default function PropertyDetailPage() {
     () => !loading ? getAtRiskWarnings(jobs, systemAges, Date.now()) : [],
     [jobs, systemAges, loading]
   );
-  const totalDecay   = getTotalDecay(decayEvents);
+  const totalDecay      = getTotalDecay(decayEvents);
   const homegenticScore = property ? computeScoreWithDecay(jobs, [property], totalDecay) : 0;
-  const scoreGrade   = getScoreGrade(homegenticScore);
-  const delta        = scoreDelta(scoreHistory);
-  const certified    = isCertified(homegenticScore, jobs);
+  const scoreGrade      = getScoreGrade(homegenticScore);
+  const delta           = scoreDelta(scoreHistory);
+  const certified       = isCertified(homegenticScore, jobs);
 
-  // Score activity feed (positive events + decay)
   const scoreEvents: ScoreEvent[] = React.useMemo(
     () => !loading && property ? getRecentScoreEvents(jobs, [property]) : [],
     [jobs, property, loading]
   );
 
-  // Contractor re-engagement prompts
   const reEngagementPrompts: ReEngagementPrompt[] = React.useMemo(
     () => !loading ? getReEngagementPrompts(jobs) : [],
     [jobs, loading]
   );
 
-  // ROI-ranked project recommendations
   const recommendations: ProjectRecommendation[] = React.useMemo(() => {
     if (!property) return [];
-    const profile: PropertyProfile = {
+    const prof: PropertyProfile = {
       yearBuilt:    Number(property.yearBuilt),
       squareFeet:   Number(property.squareFeet),
       propertyType: String(property.propertyType),
       state:        property.state,
       zipCode:      property.zipCode,
     };
-    return marketService.recommendValueAddingProjects(profile, jobs.map(jobToSummary), 0).slice(0, 3);
+    return marketService.recommendValueAddingProjects(prof, jobs.map(jobToSummary), 0).slice(0, 3);
   }, [property, jobs]);
 
-  // Weekly pulse tip
   const pulseTip = React.useMemo(
     () => !loading && property ? getWeeklyPulse([property], jobs) : null,
     [property, jobs, loading]
   );
   const pulseEnabled = localStorage.getItem("homegentic_pulse_enabled") !== "false";
 
-  // Score stagnation
   const scoreStagnant = React.useMemo(() => {
     if (scoreHistory.length < 2) return false;
     const FOUR_WEEKS_MS = 28 * 24 * 60 * 60 * 1000;
@@ -226,7 +156,6 @@ export default function PropertyDetailPage() {
     return current.score <= old.score;
   }, [scoreHistory]);
 
-  // Account age (for milestone logic)
   const accountAgeMs = profile?.createdAt ? Date.now() - Number(profile.createdAt) / 1_000_000 : 0;
 
   const tabs: { key: Tab; label: string }[] = [
@@ -303,9 +232,9 @@ export default function PropertyDetailPage() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
             <Badge variant={verificationColor as any}>{property.verificationLevel}</Badge>
-            <Button variant="outline" icon={<Wrench size={14} />} onClick={() => setShowLogJobModal(true)}>Log Job</Button>
-            <Button variant="outline" icon={<MessageSquare size={14} />} onClick={() => setShowQuoteModal(true)}>Request Quote</Button>
-            <Button icon={<Share2 size={14} />} onClick={() => setShowReportModal(true)}>
+            <Button variant="outline" icon={<Wrench size={14} />} onClick={() => setModals((m) => ({ ...m, logJob: true }))}>Log Job</Button>
+            <Button variant="outline" icon={<MessageSquare size={14} />} onClick={() => setModals((m) => ({ ...m, quote: true }))}>Request Quote</Button>
+            <Button icon={<Share2 size={14} />} onClick={() => setModals((m) => ({ ...m, report: true }))}>
               Share HomeGentic Report
             </Button>
           </div>
@@ -477,7 +406,7 @@ export default function PropertyDetailPage() {
               pulseTip={pulseTip}
               pulseEnabled={pulseEnabled}
               userTier={userTier}
-              onLogJob={() => { setLogJobPrefill(undefined); setShowLogJobModal(true); }}
+              onLogJob={() => setModals((m) => ({ ...m, logJob: true, logJobPrefill: undefined }))}
               onNavigate={(path) => navigate(path)}
             />
             <MilestoneStack
@@ -489,12 +418,12 @@ export default function PropertyDetailPage() {
             <ScoreActivityFeed scoreEvents={scoreEvents} decayEvents={decayEvents} />
             <ReEngagementStack
               prompts={reEngagementPrompts}
-              onRequestQuote={(prefill) => { setShowQuoteModal(true); }}
-              onLogJob={(prefill) => { setLogJobPrefill(prefill); setShowLogJobModal(true); }}
+              onRequestQuote={() => setModals((m) => ({ ...m, quote: true }))}
+              onLogJob={(prefill) => setModals((m) => ({ ...m, logJob: true, logJobPrefill: prefill }))}
             />
             <MarketIntelPanel
               recommendations={recommendations}
-              onLogJob={(prefill) => { setLogJobPrefill(prefill); setShowLogJobModal(true); }}
+              onLogJob={(prefill) => setModals((m) => ({ ...m, logJob: true, logJobPrefill: prefill }))}
               onSeeAll={() => navigate("/market")}
             />
             <RecurringServicesPanel
@@ -564,43 +493,40 @@ export default function PropertyDetailPage() {
           ))}
         </div>
 
-        {tab === "timeline"  && <TimelineTab property={property} jobs={jobs} onVerify={handleVerify} currentPrincipal={principal} photosByJob={photosByJob} onPhotoUpload={handlePhotoUpload} onInviteContractor={setInviteJob} />}
+        {tab === "timeline"  && <TimelineTab property={property} jobs={jobs} onVerify={verifyJob} currentPrincipal={principal} photosByJob={photosByJob} onPhotoUpload={(jobId, file) => uploadPhoto(jobId, file, id!)} onInviteContractor={(job) => setModals((m) => ({ ...m, inviteJob: job }))} />}
         {tab === "jobs"      && <JobsTab jobs={jobs} />}
-        {tab === "rooms"     && <RoomsTab propertyId={id!} rooms={rooms} onRoomsChange={setRooms} photosByJob={photosByJob} onRoomPhotoUpload={handleRoomPhotoUpload} />}
+        {tab === "rooms"     && <RoomsTab propertyId={id!} rooms={rooms} onRoomsChange={setRooms} photosByJob={photosByJob} onRoomPhotoUpload={(roomId, file) => uploadRoomPhoto(roomId, file, id!)} />}
         {tab === "documents" && <DocumentsTab propertyId={id!} />}
         {tab === "bills"     && <BillsTab propertyId={id!} />}
         {tab === "settings"  && <SettingsTab property={property} currentPrincipal={principal ?? ""} />}
       </div>
 
-      {showReportModal && (
-        <GenerateReportModal property={property} onClose={() => setShowReportModal(false)} />
+      {modals.report && (
+        <GenerateReportModal property={property} onClose={() => setModals((m) => ({ ...m, report: false }))} />
       )}
 
       <LogJobModal
-        isOpen={showLogJobModal}
-        onClose={() => setShowLogJobModal(false)}
-        onSuccess={() => {
-          jobService.getByProperty(id!).then(setJobs).catch(() => {});
-        }}
+        isOpen={modals.logJob}
+        onClose={() => setModals((m) => ({ ...m, logJob: false }))}
+        onSuccess={reloadJobs}
         properties={storeProperties.length > 0 ? storeProperties : (property ? [property] : [])}
-        prefill={logJobPrefill}
+        prefill={modals.logJobPrefill}
       />
 
       <RequestQuoteModal
-        isOpen={showQuoteModal}
-        onClose={() => setShowQuoteModal(false)}
-        onSuccess={(quoteId) => { setShowQuoteModal(false); navigate(`/quotes/${quoteId}`); }}
+        isOpen={modals.quote}
+        onClose={() => setModals((m) => ({ ...m, quote: false }))}
+        onSuccess={(quoteId) => { setModals((m) => ({ ...m, quote: false })); navigate(`/quotes/${quoteId}`); }}
         properties={storeProperties.length > 0 ? storeProperties : (property ? [property] : [])}
       />
 
-      {inviteJob && property && (
+      {modals.inviteJob && property && (
         <InviteContractorModal
-          job={inviteJob}
+          job={modals.inviteJob}
           propertyAddress={`${property.address}, ${property.city} ${property.state} ${property.zipCode}`}
-          onClose={() => setInviteJob(null)}
+          onClose={() => setModals((m) => ({ ...m, inviteJob: null }))}
         />
       )}
     </Layout>
   );
 }
-
