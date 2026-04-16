@@ -163,8 +163,11 @@ export const idlFactory = ({ IDL }: any) => {
 // never accidentally suppresses PLANS / ANNUAL_PLANS — those are pure data
 // with no canister dependency and should never need mocking.
 
+// Types & static data live in planConstants so mocking @/services/payment
+// never suppresses them.  Re-export types only (no value re-exports) so the
+// payment mock surface stays limited to canister-facing functions.
+import type { PlanTier, BillingCycle, GiftMeta, Plan } from "./planConstants";
 export type { PlanTier, BillingCycle, GiftMeta, Plan } from "./planConstants";
-export { PLANS, ANNUAL_PLANS } from "./planConstants";
 import { PLANS } from "./planConstants";
 
 // ─── Actor ────────────────────────────────────────────────────────────────────

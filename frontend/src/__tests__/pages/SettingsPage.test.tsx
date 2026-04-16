@@ -13,6 +13,8 @@ import { MemoryRouter } from "react-router-dom";
 
 // ─── Service mocks ────────────────────────────────────────────────────────────
 
+import { PLANS } from "@/services/planConstants";
+
 vi.mock("@/services/payment", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/services/payment")>();
   return {
@@ -25,7 +27,7 @@ vi.mock("@/services/payment", async (importOriginal) => {
       pause:             vi.fn(),
       resume:            vi.fn(),
       getPauseState:     vi.fn().mockReturnValue(null),
-      getPlan:           vi.fn((tier) => actual.PLANS.find((p) => p.tier === tier) ?? actual.PLANS[0]),
+      getPlan:           vi.fn((tier) => PLANS.find((p) => p.tier === tier) ?? PLANS[0]),
     },
   };
 });

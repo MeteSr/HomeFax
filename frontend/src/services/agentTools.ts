@@ -776,7 +776,7 @@ export async function executeTool(
           paymentService.getMySubscription(),
           propertyService.getMyProperties(),
         ]);
-        const limit = TIER_PROPERTY_LIMIT[sub.tier] ?? 0;
+        const limit = TIER_PROPERTY_LIMIT[sub.tier as PlanTier] ?? 0;
 
         if (existingProps.length >= limit) {
           return {

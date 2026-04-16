@@ -16,7 +16,8 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { paymentService, PLANS } from "@/services/payment";
+import { paymentService } from "@/services/payment";
+import { PLANS } from "@/services/planConstants";
 
 const CANISTER_ID = process.env.PAYMENT_CANISTER_ID || "";
 const deployed = !!CANISTER_ID;
