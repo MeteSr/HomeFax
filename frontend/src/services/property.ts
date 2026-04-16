@@ -577,6 +577,7 @@ export const propertyService = {
 
   /** Returns all properties where the caller has a manager role. */
   async getMyManagedProperties(): Promise<ManagedProperty[]> {
+    if (!PROPERTY_CANISTER_ID) return [];
     const a = await getActor();
     const results: any[] = await a.getMyManagedProperties();
     return results.map((r) => ({
@@ -616,6 +617,7 @@ export const propertyService = {
 
   /** Owner fetches notifications about manager actions on their property. */
   async getOwnerNotifications(propertyId: bigint): Promise<OwnerNotification[]> {
+    if (!PROPERTY_CANISTER_ID) return [];
     const a = await getActor();
     const result = await a.getOwnerNotifications(propertyId);
     if ("ok" in result) return (result.ok as any[]).map(fromOwnerNotification);
