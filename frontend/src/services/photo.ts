@@ -152,8 +152,8 @@ async function compressImage(file: File): Promise<File> {
   });
 }
 
-async function computeHash(bytes: Uint8Array): Promise<string> {
-  const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
+async function computeHash(buffer: ArrayBuffer): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
   const hashArray  = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -181,9 +181,9 @@ function createPhotoService() {
     description: string
   ): Promise<Photo> {
     const compressed = await compressImage(file);
-    const buffer     = await compressed.arrayBuffer();
+    const buffer     = await compressed.arrayBuffer() as ArrayBuffer;
     const bytes      = new Uint8Array(buffer);
-    const hash       = await computeHash(bytes);
+    const hash       = await computeHash(buffer);
 
     if (!PHOTO_CANISTER_ID) {
       const photo: Photo = {
