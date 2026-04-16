@@ -514,6 +514,7 @@ describe("sensor IDL factory", () => {
       "getDevicesForProperty",
       "getEventsForProperty",
       "getPendingAlerts",
+      "recordEvent",
       "registerDevice",
     ]);
   });

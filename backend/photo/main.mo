@@ -105,6 +105,19 @@ persistent actor Photo {
   private let tierGrants  = Map.empty<Text, SubscriptionTier>();
   private let photoRateLimits = Map.empty<Text, (Nat, Int)>();
 
+  // ─── Ingress Inspection ───────────────────────────────────────────────────────
+
+  /// Reject uploadPhoto calls that arrive with an empty payload — a real photo
+  /// upload always carries binary data, so 0 bytes means a malformed or probe call.
+  /// Saves execution cycles by short-circuiting before the function body runs.
+  system func inspect({ caller : Principal; arg : Blob }) : Bool {
+    // Reject anonymous principals and bare empty-payload calls before execution.
+    // Valid Candid always carries at least a header — 0 bytes means a malformed
+    // or probe call that would waste cycles. Photo uploads with real data will
+    // always exceed this threshold by orders of magnitude.
+    not Principal.isAnonymous(caller) and arg.size() > 0
+  };
+
   // ─── Upgrade Hook ────────────────────────────────────────────────────────────
 
   system func postupgrade() {

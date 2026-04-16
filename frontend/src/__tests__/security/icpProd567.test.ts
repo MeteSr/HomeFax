@@ -252,9 +252,6 @@ describe("SEC.3 — inspect_message cycle-drain mitigation (advisory)", () => {
   // High-value targets: auth (public registration), photo (large payloads),
   // sensor (high-frequency IoT ingestion).
   //
-  // These tests are marked `.todo` — they define the target state without
-  // failing CI until the feature is implemented.
-
   const backendDirs = readdirSync(resolve(ROOT, "backend")).filter((d) => {
     try {
       readFileSync(resolve(ROOT, "backend", d, "main.mo"), "utf-8");
@@ -264,17 +261,36 @@ describe("SEC.3 — inspect_message cycle-drain mitigation (advisory)", () => {
     }
   });
 
-  it.todo("backend/auth/main.mo implements inspect_message to reject zero-arg calls");
-  it.todo("backend/photo/main.mo implements inspect_message to reject calls with empty payload");
-  it.todo("backend/sensor/main.mo implements inspect_message to reject calls from unregistered gateways");
+  const readCanister = (name: string) =>
+    readFileSync(resolve(ROOT, "backend", name, "main.mo"), "utf-8");
 
-  it("advisory — count of canisters with inspect_message (track adoption progress)", () => {
+  it("backend/auth/main.mo implements inspect to reject anonymous/empty-payload calls", () => {
+    const src = readCanister("auth");
+    expect(src).toMatch(/system\s+func\s+inspect/);
+    expect(src).toMatch(/isAnonymous/);
+    expect(src).toMatch(/arg\.size\(\)/);
+  });
+
+  it("backend/photo/main.mo implements inspect to reject anonymous/empty-payload calls", () => {
+    const src = readCanister("photo");
+    expect(src).toMatch(/system\s+func\s+inspect/);
+    expect(src).toMatch(/isAnonymous/);
+    expect(src).toMatch(/arg\.size\(\)/);
+  });
+
+  it("backend/sensor/main.mo implements inspect to reject anonymous/empty-payload calls", () => {
+    const src = readCanister("sensor");
+    expect(src).toMatch(/system\s+func\s+inspect/);
+    expect(src).toMatch(/isAnonymous/);
+    expect(src).toMatch(/arg\.size\(\)/);
+  });
+
+  it("advisory — count of canisters with inspect (track adoption progress)", () => {
     const withInspect = backendDirs.filter((d) => {
       const src = readFileSync(resolve(ROOT, "backend", d, "main.mo"), "utf-8");
-      return /system\s+func\s+inspect_message/.test(src);
+      return /system\s+func\s+inspect/.test(src);
     });
-    // Currently 0 — update this assertion as canisters adopt inspect_message.
-    // When all high-value canisters (auth, photo, sensor) have it, set to >= 3.
-    expect(withInspect.length).toBeGreaterThanOrEqual(0);
+    // auth, photo, sensor all implemented — set to >= 3.
+    expect(withInspect.length).toBeGreaterThanOrEqual(3);
   });
 });

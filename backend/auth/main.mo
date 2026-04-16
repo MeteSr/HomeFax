@@ -95,6 +95,19 @@ persistent actor Auth {
   /// No preupgrade serialisation required — eliminates the upgrade instruction-limit footgun.
   private let users = Map.empty<Principal, UserProfile>();
 
+  // ─── Ingress Inspection ───────────────────────────────────────────────────────
+
+  /// Reject ingress calls to argument-bearing update methods when the raw Candid
+  /// payload is empty (0 bytes). An empty buffer cannot be valid Candid for any
+  /// method that takes a struct argument — these are probe / garbage calls that
+  /// would waste cycles. Rejected here before execution, no charge to the canister.
+  system func inspect({ caller : Principal; arg : Blob }) : Bool {
+    // Reject anonymous principals and empty-payload calls from all update paths.
+    // Empty payload cannot be valid Candid for any method that takes a struct
+    // argument — these are probe / garbage calls that waste cycles.
+    not Principal.isAnonymous(caller) and arg.size() > 0
+  };
+
   // ─── Upgrade Hook ────────────────────────────────────────────────────────────
 
   /// One-time migration: if userEntries is non-empty (i.e. we are upgrading from

@@ -210,5 +210,6 @@ exports[`Candid contract snapshots — method arity > sensor 1`] = `
 getDevicesForProperty(1) -> (1) [query]
 getEventsForProperty(2) -> (1) [query]
 getPendingAlerts(1) -> (1) [query]
+recordEvent(5) -> (1)
 registerDevice(4) -> (1)"
 `;

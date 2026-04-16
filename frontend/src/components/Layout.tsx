@@ -83,7 +83,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [userMenuOpen]);
 
   useEffect(() => {
-    paymentService.getMySubscription().then((s) => setUserTier(s.tier)).catch(() => {});
+    paymentService.getMySubscription().then((s) => setUserTier(s.tier)).catch((err: unknown) => {
+      console.error("[Layout] subscription fetch failed — tier will default to Free:", err);
+    });
   }, [principal]);
 
   useEffect(() => {
@@ -147,7 +149,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         { to: "/maintenance",    label: "Maintenance",  Icon: Cpu },
         ...(userTier !== "Free" ? [{ to: "/contractors", label: "Contractors", Icon: Users }] : []),
         { to: "/sensors",        label: "Sensors",      Icon: Radio },
-        { to: "/listing/new",    label: "List Home",    Icon: HomeIcon },
+        ...(singlePropertyId
+          ? [{ to: `/my-listing/${singlePropertyId}`, label: "My Listing", Icon: HomeIcon }]
+          : [{ to: "/listing/new", label: "List Home", Icon: HomeIcon }]),
         { to: "/properties/new", label: "Add Property", Icon: PlusSquare },
       ];
 
