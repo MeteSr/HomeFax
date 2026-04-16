@@ -105,7 +105,9 @@ describe("13.3.2: predictMaintenance() at scale", () => {
     const t10  = time(() => predictMaintenance(2000, makeJobs(10)));
     const t100 = time(() => predictMaintenance(2000, makeJobs(100)));
 
-    const ratio = t100 / Math.max(t10, 0.01);
+    // Use 0.5 ms floor: when base time is below timer resolution the ratio is
+    // dominated by measurement noise and the assertion is meaningless.
+    const ratio = t100 / Math.max(t10, 0.5);
     expect(
       ratio,
       `10× jobs multiplied time by ${ratio.toFixed(1)}× — possible super-linear behavior`
