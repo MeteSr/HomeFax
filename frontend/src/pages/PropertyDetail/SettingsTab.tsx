@@ -4,7 +4,7 @@ import { propertyService, type Property, type TransferRecord, type PropertyManag
 import { COLORS, FONTS } from "@/theme";
 import toast from "react-hot-toast";
 
-export function SettingsTab({ property, currentPrincipal }: { property: Property; currentPrincipal: string }) {
+export function SettingsTab({ property, currentPrincipal, onVerifyOwnership }: { property: Property; currentPrincipal: string; onVerifyOwnership?: () => void }) {
   const TC = {
     rule:     COLORS.rule,
     inkLight: COLORS.plumMid,
@@ -58,9 +58,9 @@ export function SettingsTab({ property, currentPrincipal }: { property: Property
 
   const verificationNext =
     property.verificationLevel === "Unverified"
-      ? { label: "Verify Ownership", href: `/properties/${property.id}/verify`, color: TC.rust }
+      ? { label: "Verify Ownership", onClick: onVerifyOwnership ?? (() => navigate(`/properties/${property.id}/verify`)), color: TC.rust }
       : property.verificationLevel === "Basic"
-      ? { label: "Upgrade to Premium", href: "/pricing", color: TC.ink }
+      ? { label: "Upgrade to Premium", onClick: () => navigate("/pricing"), color: TC.ink }
       : null;
 
   const section = (title: string) => (
@@ -112,7 +112,7 @@ export function SettingsTab({ property, currentPrincipal }: { property: Property
           </div>
           {verificationNext && (
             <button
-              onClick={() => navigate(verificationNext.href)}
+              onClick={verificationNext.onClick}
               style={{ fontFamily: TC.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: verificationNext.color, color: "#fff", border: "none", cursor: "pointer", flexShrink: 0 }}
             >
               {verificationNext.label} →

@@ -9,14 +9,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #FDFCFA; color: #2E2540; font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+    body { background: #FDFCFA; color: #2E2540; font-family: 'IBM Plex Sans', sans-serif; }
     @media print {
       .no-print { display: none !important; }
       body { background: white; }
     }
     .report { max-width: 52rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; background: #FDFCFA; min-height: 100vh; }
     .serif  { font-family: 'Playfair Display', Georgia, serif; }
-    .mono   { font-family: 'IBM Plex Mono', 'Courier New', monospace; }
+    .mono   { font-family: 'IBM Plex Sans', sans-serif; }
     .sans   { font-family: 'IBM Plex Sans', sans-serif; }
 
     /* ── Cover ──────────────────────────────────────────────────── */
@@ -29,7 +29,7 @@
     .cover-brand {
       display: flex; align-items: center; gap: 0.625rem;
       margin-bottom: 2rem; opacity: 0.7;
-      font-family: 'IBM Plex Mono', monospace; font-weight: 700;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 700;
       font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
     }
     .cover-body {
@@ -43,7 +43,7 @@
       color: #FDFCFA; margin-bottom: 0.375rem;
     }
     .cover-sub {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.75rem;
       color: #6B5B7B; margin-bottom: 1.25rem; letter-spacing: 0.06em;
     }
     .cover-meta {
@@ -51,26 +51,26 @@
       justify-content: start; gap: 0.25rem 2rem;
     }
     .cover-meta-label {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.5rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.5rem;
       letter-spacing: 0.14em; text-transform: uppercase;
       color: rgba(255,255,255,0.30); margin-bottom: 0.1rem;
     }
     .cover-meta-value {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       color: #C4DCC2;
     }
     .cover-badges { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
     .cover-badge {
       display: inline-flex; align-items: center; gap: 0.5rem;
       border: 1px solid; padding: 0.5rem 1.25rem;
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       letter-spacing: 0.1em; text-transform: uppercase;
     }
     .cover-footer {
       margin-top: 1.75rem; padding-top: 1.25rem;
       border-top: 1px solid rgba(255,255,255,0.1);
       display: flex; justify-content: space-between; flex-wrap: wrap;
-      gap: 0.5rem; font-family: 'IBM Plex Mono', monospace;
+      gap: 0.5rem; font-family: 'IBM Plex Sans', sans-serif;
       font-size: 0.6rem; color: #6B5B7B;
     }
 
@@ -84,11 +84,11 @@
       font-size: 1.75rem; line-height: 1; color: #2E2540;
     }
     .stat-sub {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem;
       letter-spacing: 0.08em; color: #7AAF76; font-weight: 700; margin-top: 0.125rem;
     }
     .stat-label {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem;
       letter-spacing: 0.1em; text-transform: uppercase; color: #6B5B7B; margin-top: 0.25rem;
     }
 
@@ -99,7 +99,7 @@
       flex-wrap: wrap; gap: 0.75rem;
     }
     .premium-label {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem;
       letter-spacing: 0.14em; text-transform: uppercase; color: #6B5B7B; margin-bottom: 0.25rem;
     }
     .premium-value {
@@ -107,7 +107,7 @@
       font-size: 1.5rem; line-height: 1; color: #2E2540;
     }
     .premium-note {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem;
       letter-spacing: 0.06em; color: #6B5B7B; max-width: 22rem; line-height: 1.6;
     }
 
@@ -117,11 +117,11 @@
       padding: 1.25rem; display: flex; gap: 1rem; margin-bottom: 2rem; align-items: flex-start;
     }
     .verify-title {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 0.65rem;
       letter-spacing: 0.1em; text-transform: uppercase; color: #7AAF76; margin-bottom: 0.25rem;
     }
     .verify-body {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       letter-spacing: 0.04em; color: #7AAF76; opacity: 0.85;
     }
 
@@ -131,7 +131,7 @@
       padding-bottom: 0.75rem; border-bottom: 1px solid #D4CFC8; margin-bottom: 1.25rem;
     }
     .section-title {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 0.65rem;
       letter-spacing: 0.14em; text-transform: uppercase; color: #6B5B7B;
     }
     .section { margin-bottom: 2.5rem; }
@@ -158,12 +158,12 @@
       font-weight: 700; color: #2E2540; font-size: 0.875rem;
     }
     .badge-verified {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.55rem;
       letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;
       color: #7AAF76; border: 1px solid rgba(122,175,118,0.4); padding: 0.1rem 0.4rem;
     }
     .badge-diy {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.55rem;
       letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;
       color: #2E2540; border: 1px solid #C4DCC2; padding: 0.1rem 0.4rem;
     }
@@ -171,12 +171,12 @@
       font-family: 'Playfair Display', serif; font-weight: 700; color: #2E2540;
     }
     .timeline-desc {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       letter-spacing: 0.04em; color: #6B5B7B; margin-bottom: 0.5rem;
     }
     .timeline-meta {
       display: flex; flex-wrap: wrap; gap: 1rem;
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem;
       letter-spacing: 0.06em; color: #6B5B7B;
     }
 
@@ -189,16 +189,16 @@
     }
     .system-icon { font-size: 1.5rem; margin-bottom: 0.375rem; }
     .system-name {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       letter-spacing: 0.08em; font-weight: 700; color: #2E2540;
     }
     .system-bar-track { height: 3px; background: #D4CFC8; margin: 0.375rem 0; }
     .system-bar-fill { height: 3px; }
     .system-health-label {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; font-weight: 700;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem; font-weight: 700;
     }
     .system-updated {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: #6B5B7B;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.55rem; color: #6B5B7B;
     }
 
     /* ── Ongoing Services ───────────────────────────────────────── */
@@ -208,18 +208,18 @@
       margin-bottom: 1rem;
     }
     .service-name {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.7rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 0.7rem;
       letter-spacing: 0.04em; color: #2E2540; margin-bottom: 0.2rem;
     }
     .service-sub {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: #6B5B7B;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem; color: #6B5B7B;
     }
     .service-right { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
     .service-meta {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: #6B5B7B;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem; color: #6B5B7B;
     }
     .status-badge {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.55rem;
       letter-spacing: 0.1em; text-transform: uppercase; padding: 0.15rem 0.5rem;
     }
 
@@ -229,18 +229,18 @@
     }
     .room-card { border: 1px solid #D4CFC8; padding: 1rem 1.25rem; }
     .room-name {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.7rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 0.7rem;
       letter-spacing: 0.08em; color: #2E2540; margin-bottom: 0.625rem;
     }
     .room-row {
       display: flex; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.3rem;
     }
     .room-key {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.55rem;
       letter-spacing: 0.08em; text-transform: uppercase; color: #6B5B7B;
     }
     .room-val {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: #2E2540;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem; color: #2E2540;
       text-align: right;
     }
 
@@ -252,18 +252,18 @@
     }
     .warranty-left { display: flex; align-items: center; gap: 0.625rem; }
     .warranty-name {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 0.65rem;
       letter-spacing: 0.04em; color: #2E2540; margin-bottom: 0.125rem;
     }
     .warranty-who {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: #6B5B7B;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem; color: #6B5B7B;
     }
     .warranty-remaining {
       font-family: 'Playfair Display', serif; font-weight: 700; font-size: 0.875rem;
       text-align: right;
     }
     .warranty-months {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.55rem; color: #6B5B7B;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.55rem; color: #6B5B7B;
     }
 
     /* ── Contractors ────────────────────────────────────────────── */
@@ -272,10 +272,10 @@
       padding: 0.75rem 1rem; border: 1px solid #D4CFC8; margin-bottom: 0.5rem;
     }
     .contractor-name {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 0.65rem; color: #2E2540;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 0.65rem; color: #2E2540;
     }
     .contractor-meta {
-      display: flex; gap: 1rem; font-family: 'IBM Plex Mono', monospace;
+      display: flex; gap: 1rem; font-family: 'IBM Plex Sans', sans-serif;
       font-size: 0.6rem; color: #6B5B7B;
     }
 
@@ -285,11 +285,11 @@
       padding: 0.75rem 1rem; border: 1px solid #D4CFC8; margin-bottom: 0.5rem;
     }
     .permit-type {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 0.65rem; color: #2E2540;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 0.65rem; color: #2E2540;
     }
-    .permit-date { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: #6B5B7B; margin-left: 0.75rem; }
+    .permit-date { font-family: 'IBM Plex Sans', sans-serif; font-size: 0.6rem; color: #6B5B7B; margin-left: 0.75rem; }
     .permit-number {
-      font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: 0.65rem;
       color: #2E2540; border: 1px solid #D4CFC8; padding: 0.2rem 0.5rem;
     }
 
@@ -306,6 +306,13 @@
       display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.625rem;
     }
 
+    /* ── Rounded borders ────────────────────────────────────────── */
+    .cover, .stat-box, .timeline-card, .room-card,
+    .system-card, .service-row, .premium-box, .verify-box,
+    .warranty-row, .contractor-row, .permit-row, .cta-box    { border-radius: 12px; }
+    .status-badge, .badge-verified, .badge-diy,
+    .permit-number, .cover-badge, .cta-signup, .cta-back     { border-radius: 6px;  }
+
     /* ── Print controls ─────────────────────────────────────────── */
     /* ── Visitor CTA banner ─────────────────────────────────────────── */
     .cta-banner {
@@ -316,7 +323,7 @@
       gap: 1rem;
     }
     .cta-banner-text {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       letter-spacing: 0.08em; color: rgba(255,255,255,0.65);
     }
     .cta-banner-text strong { color: #FDFCFA; }
@@ -324,7 +331,7 @@
     .cta-signup {
       background: #7AAB7A; color: #1E1928; border: none;
       padding: 0.5rem 1.125rem;
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
       cursor: pointer; text-decoration: none; display: inline-block;
     }
@@ -332,7 +339,7 @@
     .cta-back {
       background: none; border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.6);
       padding: 0.5rem 0.875rem;
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 0.65rem;
       letter-spacing: 0.1em; text-transform: uppercase;
       cursor: pointer; text-decoration: none; display: inline-block;
     }
@@ -360,7 +367,7 @@
     <div class="cover-brand">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       HOMEGENTIC
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:#6B5B7B;font-weight:400;">Property History Report</span>
+      <span style="font-family:'IBM Plex Sans',sans-serif;font-size:0.65rem;color:#6B5B7B;font-weight:400;">Property History Report</span>
     </div>
 
     <div class="cover-body">
@@ -393,9 +400,9 @@
           stroke-dasharray="195.09 289.03" stroke-linecap="butt" transform="rotate(-225, 60, 65)"/>
         <text x="60" y="62" text-anchor="middle" font-family="'Playfair Display',serif"
           font-weight="900" font-size="26" fill="#FDFCFA">90</text>
-        <text x="60" y="78" text-anchor="middle" font-family="'IBM Plex Mono',monospace"
+        <text x="60" y="78" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif"
           font-size="8" fill="rgba(244,241,235,0.40)" letter-spacing="1">/100</text>
-        <text x="60" y="91" text-anchor="middle" font-family="'IBM Plex Mono',monospace"
+        <text x="60" y="91" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif"
           font-size="7" fill="#6B5B7B" letter-spacing="2">CERTIFIED</text>
       </svg>
     </div>
@@ -875,7 +882,7 @@
       </div>
     </div>
 
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;letter-spacing:0.04em;color:#6B5B7B;margin-top:0.5rem;">
+    <p style="font-family:'IBM Plex Sans',sans-serif;font-size:0.55rem;letter-spacing:0.04em;color:#6B5B7B;margin-top:0.5rem;">
       2 active warranties on record. Verify transferability with contractor before sale.
     </p>
   </div>
@@ -948,17 +955,17 @@
 
   <!-- ═══ CTA ══════════════════════════════════════════════════════════ -->
   <div class="cta-box no-print" style="background:#FDFCFA;">
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:#6B5B7B;margin-bottom:0.5rem;">
+    <p style="font-family:'IBM Plex Sans',sans-serif;font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:#6B5B7B;margin-bottom:0.5rem;">
       Interested in this property?
     </p>
     <p style="font-family:'Playfair Display',serif;font-weight:900;font-size:1.35rem;color:#2E2540;margin-bottom:0.625rem;">
       Get the Complete HomeGentic Report
     </p>
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.04em;color:#6B5B7B;max-width:24rem;margin:0 auto 1.25rem;line-height:1.6;">
+    <p style="font-family:'IBM Plex Sans',sans-serif;font-size:0.6rem;letter-spacing:0.04em;color:#6B5B7B;max-width:24rem;margin:0 auto 1.25rem;line-height:1.6;">
       Ask the homeowner to share the full version — including contractor contacts,
       all photos, receipts, and permit verification.
     </p>
-    <div style="display:inline-flex;align-items:center;gap:0.5rem;border:1px solid #2E2540;padding:0.625rem 1.75rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:#2E2540;font-weight:600;">
+    <div style="display:inline-flex;align-items:center;gap:0.5rem;border:1px solid #2E2540;padding:0.625rem 1.75rem;font-family:'IBM Plex Sans',sans-serif;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:#2E2540;font-weight:600;">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       homegentic.io
     </div>
@@ -968,14 +975,14 @@
   <div class="report-footer">
     <div class="report-footer-brand">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7AAF76" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <span style="font-family:'IBM Plex Mono',monospace;font-weight:900;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#2E2540;">HOMEGENTIC</span>
+      <span style="font-family:'IBM Plex Sans',sans-serif;font-weight:900;font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:#2E2540;">HOMEGENTIC</span>
     </div>
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.04em;color:#6B5B7B;max-width:28rem;margin:0 auto;">
+    <p style="font-family:'IBM Plex Sans',sans-serif;font-size:0.6rem;letter-spacing:0.04em;color:#6B5B7B;max-width:28rem;margin:0 auto;">
       This report was generated from records anchored on the Internet Computer blockchain.
       Verified records include cryptographic signatures from both the homeowner and contractor.
       Report ID: SNAP_a4f8b2c9d1e3f7a0b5c6d8e2f4a1b3c5
     </p>
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#6B5B7B;margin-top:0.5rem;">
+    <p style="font-family:'IBM Plex Sans',sans-serif;font-size:0.55rem;color:#6B5B7B;margin-top:0.5rem;">
       Expires in 30 days · 0 views
     </p>
   </div>

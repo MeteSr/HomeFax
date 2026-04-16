@@ -13,6 +13,8 @@ import { contractorService } from "./contractor";
 import { maintenanceService } from "./maintenance";
 import { propertyService } from "./property";
 import { roomService } from "./room";
+import { recurringService } from "./recurringService";
+import { paymentService, PLANS } from "./payment";
 import { buildMaintenanceForecast } from "./maintenanceForecast";
 import { reportService, jobToInput, propertyToInput } from "./report";
 import { getPriceBenchmark } from "./priceBenchmark";
@@ -40,7 +42,9 @@ export type ToolName =
   | "get_price_benchmark"
   | "propose_job"
   | "confirm_job_proposal"
-  | "add_room";
+  | "add_room"
+  | "add_recurring_service"
+  | "add_property";
 
 export interface ToolCallResult {
   success: boolean;
@@ -739,6 +743,65 @@ export async function executeTool(
         };
       }
 
+      // ── Add recurring service ─────────────────────────────────────────────
+      case "add_recurring_service": {
+        const svc = await recurringService.create({
+          propertyId:      String(input.property_id),
+          serviceType:     String(input.service_type) as any,
+          providerName:    String(input.provider_name),
+          providerLicense: input.provider_license  ? String(input.provider_license)  : undefined,
+          providerPhone:   input.provider_phone    ? String(input.provider_phone)    : undefined,
+          frequency:       String(input.frequency) as any,
+          startDate:       String(input.start_date),
+          contractEndDate: input.contract_end_date ? String(input.contract_end_date) : undefined,
+          notes:           input.notes             ? String(input.notes)             : undefined,
+        });
+        return {
+          success: true,
+          data: {
+            serviceId: svc.id,
+            summary: `${svc.serviceType} recurring service added with ${svc.providerName} — ${svc.frequency} starting ${svc.startDate}.`,
+          },
+        };
+      }
+
+      // ── Add property (with tier limit guard) ──────────────────────────────
+      case "add_property": {
+        const [sub, existingProps] = await Promise.all([
+          paymentService.getMySubscription(),
+          propertyService.getMyProperties(),
+        ]);
+        const plan  = PLANS.find((p) => p.tier === sub.tier);
+        const limit = plan?.propertyLimit ?? 0;
+
+        if (existingProps.length >= limit) {
+          return {
+            success: false,
+            error: `Your ${sub.tier} plan allows up to ${limit} propert${limit === 1 ? "y" : "ies"} and you've already reached that limit. Upgrade your plan to add more properties.`,
+          };
+        }
+
+        const property = await propertyService.registerProperty({
+          address:      String(input.address),
+          city:         String(input.city),
+          state:        String(input.state),
+          zipCode:      String(input.zip_code),
+          propertyType: String(input.property_type) as any,
+          yearBuilt:    Number(input.year_built),
+          squareFeet:   Number(input.square_feet),
+          tier:         sub.tier as any,
+        });
+
+        return {
+          success: true,
+          data: {
+            propertyId: String(property.id),
+            address:    property.address,
+            summary: `Property added: ${property.address}, ${property.city}, ${property.state} ${property.zipCode}. It starts as Unverified — visit the property page to begin verification.`,
+          },
+        };
+      }
+
       default:
         return { success: false, error: `Unknown tool: ${name}` };
     }
@@ -775,6 +838,8 @@ export function toolActionLabel(name: ToolName): string {
     propose_job:               "proposing job to homeowner",
     confirm_job_proposal:      "confirming job proposal",
     add_room:                  "adding room",
+    add_recurring_service:     "adding recurring service",
+    add_property:              "registering property",
   };
   return labels[name] ?? name;
 }

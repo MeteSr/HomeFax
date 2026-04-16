@@ -352,6 +352,13 @@ export function predictMaintenance(
   let budgetHigh = 0;
 
   for (const sys of SYSTEMS) {
+    // Solar Panels are opt-in — skip unless the user explicitly set an age or has a solar job
+    if (sys.name === "Solar Panels") {
+      const hasSolarJob  = jobs.some((j) => j.serviceType === "Solar Panels");
+      const hasSolarAge  = systemInstallYears["Solar Panels"] !== undefined;
+      if (!hasSolarJob && !hasSolarAge) continue;
+    }
+
     // Use an explicit install year if the user set one, otherwise fall back to yearBuilt
     let lastYear = systemInstallYears[sys.name] ?? yearBuilt;
     for (const job of jobs) {

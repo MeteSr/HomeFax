@@ -29,6 +29,7 @@ import { ResponsiveGrid } from "@/components/ResponsiveGrid";
 import { NeighborhoodBenchmark } from "@/components/NeighborhoodBenchmark";
 import { ScoreActivityFeed } from "@/components/ScoreActivityFeed";
 import UpgradeModal from "@/components/UpgradeModal";
+import RecurringServiceCreateModal from "@/components/RecurringServiceCreateModal";
 import { usePropertySummary } from "@/hooks/usePropertySummary";
 import { useJobSummary } from "@/hooks/useJobSummary";
 import { useQuoteSummary } from "@/hooks/useQuoteSummary";
@@ -54,6 +55,7 @@ interface ModalState {
   logJobPrefill: { serviceType?: string; contractorName?: string } | undefined;
   showQuoteModal: boolean;
   showUpgradeModal: boolean;
+  showAddService: boolean;
   showScoreBreakdown: boolean;
   showScoreChart: boolean;
 }
@@ -63,6 +65,7 @@ const MODAL_INITIAL: ModalState = {
   logJobPrefill: undefined,
   showQuoteModal: false,
   showUpgradeModal: false,
+  showAddService: false,
   showScoreBreakdown: false,
   showScoreChart: false,
 };
@@ -1461,7 +1464,7 @@ export default function DashboardPage() {
                 Recurring Services
               </div>
               <button
-                onClick={() => navigate("/recurring/new")}
+                onClick={() => setModals((m) => ({ ...m, showAddService: true }))}
                 style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.75rem", border: `1px solid ${UI.rust}`, color: UI.rust, background: "none", cursor: "pointer", borderRadius: RADIUS.sm }}
               >
                 + Add
@@ -1473,7 +1476,7 @@ export default function DashboardPage() {
                   Lawn care, pest control, pool service — log ongoing contracts once and let the visit log do the rest.
                 </p>
                 <button
-                  onClick={() => navigate("/recurring/new")}
+                  onClick={() => setModals((m) => ({ ...m, showAddService: true }))}
                   style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 1rem", border: `1px solid ${UI.ink}`, background: "none", cursor: "pointer", color: UI.ink, borderRadius: RADIUS.sm }}
                 >
                   Add first service →
@@ -1543,6 +1546,12 @@ export default function DashboardPage() {
       <UpgradeModal
         open={modals.showUpgradeModal}
         onClose={closeUpgrade}
+      />
+
+      <RecurringServiceCreateModal
+        open={modals.showAddService}
+        onClose={() => setModals((m) => ({ ...m, showAddService: false }))}
+        onSuccess={() => { /* useMaintenanceSchedule / usePropertySummary will refresh on next mount */ }}
       />
 
     </Layout>

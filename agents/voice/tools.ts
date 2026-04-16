@@ -703,6 +703,121 @@ After adding: "Done — I've added [room name] to your property. You can add fix
   },
 
   {
+    name: "add_recurring_service",
+    description: `Add a recurring service contract to a property — e.g. lawn care, pest control, pool maintenance.
+
+Use this when the homeowner says "set up recurring lawn care", "add my pest control provider", "log my pool service", etc.
+
+Before calling this tool, confirm:
+- Which property (use property_id from context)
+- Service type (Lawn Care, Pest Control, Pool Maintenance, Gutter Cleaning, Pressure Washing, or Other)
+- Provider/company name
+- How often (weekly, biweekly, monthly, quarterly, semi-annually, or annually)
+- Start date
+
+Phone and license are optional — don't push for them unless the user volunteers.
+
+After adding: "Done — I've set up [provider name] for [service type] starting [date]. You can view and manage it in the Maintenance tab."`,
+    parameters: {
+      type: "object" as const,
+      properties: {
+        property_id: {
+          type: "string",
+          description: "The ID of the property this service is for",
+        },
+        service_type: {
+          type: "string",
+          enum: ["LawnCare", "PestControl", "PoolMaintenance", "GutterCleaning", "PressureWashing", "Other"],
+          description: "Category of recurring service",
+        },
+        provider_name: {
+          type: "string",
+          description: "Name of the service provider or company",
+        },
+        frequency: {
+          type: "string",
+          enum: ["Weekly", "BiWeekly", "Monthly", "Quarterly", "SemiAnnually", "Annually"],
+          description: "How often the service recurs",
+        },
+        start_date: {
+          type: "string",
+          description: "Date the service begins, YYYY-MM-DD",
+        },
+        provider_license: {
+          type: "string",
+          description: "Provider's license number if known. Omit if not provided.",
+        },
+        provider_phone: {
+          type: "string",
+          description: "Provider's phone number if known. Omit if not provided.",
+        },
+        contract_end_date: {
+          type: "string",
+          description: "Contract end date YYYY-MM-DD if there is a fixed term. Omit for open-ended.",
+        },
+        notes: {
+          type: "string",
+          description: "Any additional notes about the service. Omit if none.",
+        },
+      },
+      required: ["property_id", "service_type", "provider_name", "frequency", "start_date"],
+    },
+  },
+
+  {
+    name: "add_property",
+    description: `Register a new property to the homeowner's account.
+
+Use this when the user says "add a property", "register my house", "add my condo", etc.
+
+Before calling this tool, confirm:
+- Full street address, city, state, and zip code
+- Property type (Single Family, Condo, Townhouse, or Multi-Family)
+- Year built
+- Square footage
+
+After adding, always tell the user:
+"Your property has been added as Unverified. To unlock full features like sharing reports, visit the property page and begin the verification process."
+
+IMPORTANT: If the system returns a limit error, tell the user their current tier and suggest upgrading their plan.`,
+    parameters: {
+      type: "object" as const,
+      properties: {
+        address: {
+          type: "string",
+          description: "Street address, e.g. '123 Main St'",
+        },
+        city: {
+          type: "string",
+          description: "City name",
+        },
+        state: {
+          type: "string",
+          description: "Two-letter US state code, e.g. 'TX'",
+        },
+        zip_code: {
+          type: "string",
+          description: "5-digit US zip code",
+        },
+        property_type: {
+          type: "string",
+          enum: ["SingleFamily", "Condo", "Townhouse", "MultiFamily"],
+          description: "Type of property",
+        },
+        year_built: {
+          type: "number",
+          description: "Year the property was built, e.g. 1998",
+        },
+        square_feet: {
+          type: "number",
+          description: "Total livable square footage",
+        },
+      },
+      required: ["address", "city", "state", "zip_code", "property_type", "year_built", "square_feet"],
+    },
+  },
+
+  {
     name: "get_price_benchmark",
     description: `Look up the typical price range for a home service in a specific zip code.
 
