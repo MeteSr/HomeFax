@@ -147,7 +147,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         { to: "/maintenance",    label: "Maintenance",  Icon: Cpu },
         ...(userTier !== "Free" ? [{ to: "/contractors", label: "Contractors", Icon: Users }] : []),
         { to: "/sensors",        label: "Sensors",      Icon: Radio },
-        { to: "/listing/new",    label: "List Home",    Icon: HomeIcon },
+        ...(singlePropertyId
+          ? [{ to: `/my-listing/${singlePropertyId}`, label: "My Listing", Icon: HomeIcon }]
+          : [{ to: "/listing/new", label: "List Home", Icon: HomeIcon }]),
         { to: "/properties/new", label: "Add Property", Icon: PlusSquare },
       ];
 

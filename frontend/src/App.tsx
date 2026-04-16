@@ -56,6 +56,7 @@ const AgentPublicPage            = React.lazy(() => import("@/pages/AgentPublicP
 const AgentBrowsePage            = React.lazy(() => import("@/pages/AgentBrowsePage"));
 const FsboListingPage            = React.lazy(() => import("@/pages/FsboListingPage"));
 const FsboSearchPage             = React.lazy(() => import("@/pages/FsboSearchPage"));
+const FsboListingManagerPage     = React.lazy(() => import("@/pages/FsboListingManagerPage"));
 const HomeSystemsEstimatorPage   = React.lazy(() => import("@/pages/HomeSystemsEstimatorPage"));
 const CheckAddressPage           = React.lazy(() => import("@/pages/CheckAddressPage"));
 const PriceLookupPage            = React.lazy(() => import("@/pages/PriceLookupPage"));
@@ -118,6 +119,7 @@ export default function App() {
           <Route path="/payment-failure" element={<PaymentFailurePage />} />
           <Route path="/checkout"        element={<CheckoutPage />} />
           <Route path="/homes"                  element={<FsboSearchPage />} />
+          <Route path="/my-listing/:propertyId" element={<ProtectedRoute><FsboListingManagerPage /></ProtectedRoute>} />
           <Route path="/for-sale/:propertyId"    element={<FsboListingPage />} />
           <Route path="/transfer/claim/:token" element={<PropertyTransferClaimPage />} />
           <Route path="/manage/claim/:token"   element={<PropertyManagerClaimPage />} />

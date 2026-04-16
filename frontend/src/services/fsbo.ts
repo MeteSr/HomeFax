@@ -433,6 +433,15 @@ function createFsboService() {
       return [...(_priceHistory.get(propertyId) ?? [])];
     },
 
+    // 10.2.4 — Update list price on an active listing.
+    updatePrice(propertyId: string, listPriceCents: number): FsboRecord {
+      const rec = _records.get(propertyId);
+      if (!rec) throw new Error("FSBO record not found for " + propertyId);
+      const updated: FsboRecord = { ...rec, listPriceCents };
+      _records.set(propertyId, updated);
+      return { ...updated };
+    },
+
     // 10.5 — Mark a property as under contract after a FSBO offer is accepted.
     setUnderContract(propertyId: string): void {
       const rec = _records.get(propertyId);
