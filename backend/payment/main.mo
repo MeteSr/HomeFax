@@ -205,7 +205,6 @@ persistent actor Payment {
 
   // ─── State ───────────────────────────────────────────────────────────────────
 
-  private var subscriptionEntries: [(Principal, Subscription)] = [];
   private let subscriptions = Map.empty<Principal, Subscription>();
 
   // Admin
@@ -218,7 +217,6 @@ persistent actor Payment {
 
   // Stripe
   private var stripeConfig        : ?StripeConfig                  = null;
-  private var pendingGiftEntries  : [(Text, PendingGift)]          = [];
   private let pendingGifts        = Map.empty<Text, PendingGift>();  // key = giftToken
 
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
@@ -264,17 +262,6 @@ persistent actor Payment {
 
   public query func getTrustedCanisters() : async [Principal] {
     trustedCanisterEntries
-  };
-
-  system func postupgrade() {
-    for ((k, v) in subscriptionEntries.vals()) {
-      Map.add(subscriptions, Principal.compare, k, v);
-    };
-    subscriptionEntries := [];
-    for ((k, v) in pendingGiftEntries.vals()) {
-      Map.add(pendingGifts, Text.compare, k, v);
-    };
-    pendingGiftEntries := [];
   };
 
   // ─── Admin ───────────────────────────────────────────────────────────────────

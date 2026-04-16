@@ -105,11 +105,6 @@ persistent actor Sensor {
   private var eventCounter    : Nat         = 0;
   private var jobsCreatedCount : Nat        = 0;
 
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var devicesEntries       : [(Text, SensorDevice)] = [];
-  private var eventsEntries        : [(Text, SensorEvent)]  = [];
-  private var externalIdIdxEntries : [(Text, Text)]          = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────
 
   private let devices      = Map.empty<Text, SensorDevice>();
@@ -127,17 +122,6 @@ persistent actor Sensor {
     // isGateway / isAdmin checks remain in each function body for per-method
     // enforcement; this guard saves cycles on clearly invalid ingress messages.
     not Principal.isAnonymous(caller) and arg.size() > 0
-  };
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in devicesEntries.vals())       { Map.add(devices,       Text.compare, k, v) };
-    devicesEntries := [];
-    for ((k, v) in eventsEntries.vals())        { Map.add(events,        Text.compare, k, v) };
-    eventsEntries := [];
-    for ((k, v) in externalIdIdxEntries.vals()) { Map.add(externalIdIdx, Text.compare, k, v) };
-    externalIdIdxEntries := [];
   };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────

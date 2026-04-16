@@ -97,23 +97,10 @@ persistent actor Recurring {
   private var pauseExpiryNs     : ?Int        = null;
   private var adminListEntries  : [Principal] = [];
   private var adminInitialized  : Bool        = false;
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var recurringEntries : [(Text, RecurringService)] = [];
-  private var visitEntries     : [(Text, VisitLog)]         = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let services = Map.empty<Text, RecurringService>();
   private let visits   = Map.empty<Text, VisitLog>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in recurringEntries.vals()) { Map.add(services, Text.compare, k, v) };
-    recurringEntries := [];
-    for ((k, v) in visitEntries.vals())     { Map.add(visits,   Text.compare, k, v) };
-    visitEntries := [];
-  };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 

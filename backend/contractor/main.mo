@@ -124,13 +124,6 @@ persistent actor Contractor {
   /// When non-empty, recordJobVerified() accepts calls from the job canister.
   private var jobCanisterId:      Text        = "";
 
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var contractorEntries:      [(Principal, ContractorProfile)] = [];
-  private var reviewEntries:          [(Text, Review)]                 = [];
-  private var credentialEntries:      [(Nat, JobCredential)]           = [];
-  private var reviewKeyEntries:       [(Text, Text)]                   = [];
-  private var reviewRateLimitEntries: [(Text, (Nat, Int))]             = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let contractors    = Map.empty<Principal, ContractorProfile>();
@@ -140,21 +133,6 @@ persistent actor Contractor {
   private let reviewKeys     = Map.empty<Text, Text>();
   /// Daily review rate limits per reviewer.
   private let reviewRateLimits = Map.empty<Text, (Nat, Int)>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in contractorEntries.vals())      { Map.add(contractors,    Principal.compare, k, v) };
-    contractorEntries := [];
-    for ((k, v) in reviewEntries.vals())           { Map.add(reviews,        Text.compare,      k, v) };
-    reviewEntries := [];
-    for ((k, v) in credentialEntries.vals())       { Map.add(credentials,    Nat.compare,       k, v) };
-    credentialEntries := [];
-    for ((k, v) in reviewKeyEntries.vals())        { Map.add(reviewKeys,     Text.compare,      k, v) };
-    reviewKeyEntries := [];
-    for ((k, v) in reviewRateLimitEntries.vals())  { Map.add(reviewRateLimits, Text.compare,    k, v) };
-    reviewRateLimitEntries := [];
-  };
 
   // ─── Private Helpers ──────────────────────────────────────────────────────────
 

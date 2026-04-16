@@ -286,18 +286,11 @@ persistent actor Property {
   /// reading the local tierGrants map.
   private var payCanisterId            : Text        = "";
 
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var propertyEntries        : [(Nat, Property)]              = [];
-  private var addressIdxEntries      : [(Text, Nat)]                  = [];
-  private var tierGrantEntries       : [(Text, SubscriptionTier)]     = [];
   private var transferCounter        : Nat                            = 0;
-  private var transferEntries        : [(Nat, TransferRecord)]        = [];
-  private var pendingTransferEntries : [(Nat, PendingTransfer)]       = [];
 
   // Room state
   private var roomCounter    : Nat                  = 0;
   private var fixtureCounter : Nat                  = 0;
-  private var roomEntries    : [(Text, RoomRecord)] = [];
 
   // ─── Stable State ────────────────────────────────────────────────────────
 
@@ -321,23 +314,6 @@ persistent actor Property {
   /// propertyId → [OwnerNotification]
   private let ownerNotifs      = Map.empty<Nat,  [OwnerNotification]>();
   private var notifCounter     : Nat = 0;
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in propertyEntries.vals())        { Map.add(properties,       Nat.compare,  k, v) };
-    propertyEntries := [];
-    for ((k, v) in addressIdxEntries.vals())      { Map.add(addressIdx,       Text.compare, k, v) };
-    addressIdxEntries := [];
-    for ((k, v) in tierGrantEntries.vals())       { Map.add(tierGrants,       Text.compare, k, v) };
-    tierGrantEntries := [];
-    for ((k, v) in transferEntries.vals())        { Map.add(transfers,        Nat.compare,  k, v) };
-    transferEntries := [];
-    for ((k, v) in pendingTransferEntries.vals()) { Map.add(pendingTransfers, Nat.compare,  k, v) };
-    pendingTransferEntries := [];
-    for ((k, v) in roomEntries.vals())            { Map.add(rooms,            Text.compare, k, v) };
-    roomEntries := [];
-  };
 
   // ─── Private Helpers ──────────────────────────────────────────────────────
 

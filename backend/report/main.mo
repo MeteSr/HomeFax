@@ -159,73 +159,6 @@ persistent actor Report {
     isPaused:        Bool;
   };
 
-  // ─── Migration Types ──────────────────────────────────────────────────────────
-  // Each Vn type is the exact shape of ReportSnapshot / ShareLink at the time
-  // the corresponding stable variable was written to disk.  Keeping the same
-  // stable-variable NAME with the Vn type lets the Motoko upgrade runtime
-  // deserialise old on-chain bytes without an M0170 error.
-  // postupgrade() promotes every Vn entry to the current type and clears the var.
-
-  // V0 — deployed before 1.4.7 (no `rooms` field on snapshot, no disclosure flags on link)
-  private type ShareLinkV0 = {
-    token:      Text;
-    snapshotId: Text;
-    propertyId: Text;
-    createdBy:  Principal;
-    expiresAt:  ?Time.Time;
-    visibility: VisibilityLevel;
-    viewCount:  Nat;
-    isActive:   Bool;
-    createdAt:  Time.Time;
-    // NO hideAmounts / hideContractors / hidePermits / hideDescriptions
-  };
-
-  private type ReportSnapshotV0 = {
-    snapshotId:        Text;
-    propertyId:        Text;
-    generatedBy:       Principal;
-    address:           Text;
-    city:              Text;
-    state:             Text;
-    zipCode:           Text;
-    propertyType:      Text;
-    yearBuilt:         Nat;
-    squareFeet:        Nat;
-    verificationLevel: Text;
-    jobs:              [JobInput];
-    recurringServices: [RecurringServiceInput];
-    // NO rooms
-    totalAmountCents:  Nat;
-    verifiedJobCount:  Nat;
-    diyJobCount:       Nat;
-    permitCount:       Nat;
-    generatedAt:       Time.Time;
-  };
-
-  // V1 — written by `snapshotEntriesV2` before 14.4.3 (has `rooms`, no `schemaVersion`)
-  private type ReportSnapshotV1 = {
-    snapshotId:        Text;
-    propertyId:        Text;
-    generatedBy:       Principal;
-    address:           Text;
-    city:              Text;
-    state:             Text;
-    zipCode:           Text;
-    propertyType:      Text;
-    yearBuilt:         Nat;
-    squareFeet:        Nat;
-    verificationLevel: Text;
-    jobs:              [JobInput];
-    recurringServices: [RecurringServiceInput];
-    rooms:             ?[RoomInput];
-    totalAmountCents:  Nat;
-    verifiedJobCount:  Nat;
-    diyJobCount:       Nat;
-    permitCount:       Nat;
-    generatedAt:       Time.Time;
-    // NO schemaVersion
-  };
-
   // ─── Stable State ─────────────────────────────────────────────────────────────
 
   // reportCounter / snapshotSchemaVersion must keep their original names.
@@ -239,135 +172,14 @@ persistent actor Report {
   private var snapshotSchemaVersion : Nat         = 2;   // 14.4.3 — incremented when schema changes; kept as stable var for audit
   private var propCanisterId        : Text        = "";
 
-  // Migration source V0: same names as the deployed stable variables so the
-  // runtime deserialises old on-chain data into them on first upgrade.
-  // Cleared in postupgrade() once data has been moved forward.
-  private var linkEntries     : [(Text, ShareLinkV0)]      = [];
-  private var snapshotEntries : [(Text, ReportSnapshotV0)] = [];
-
-  // Migration source V1: snapshotEntriesV2 keeps its original name so the
-  // runtime can read what was serialised by pre-14.4.3 code.  The type is now
-  // ReportSnapshotV1 (no schemaVersion) — matching the on-disk bytes exactly.
-  // Cleared in postupgrade() after migration to V3.
-  private var linkEntriesV2     : [(Text, ShareLink)]        = [];
-  private var snapshotEntriesV2 : [(Text, ReportSnapshotV1)] = [];
-
-  // Current (V3): used for all new data and normal preupgrade/postupgrade
-  // serialisation from 14.4.3 onwards.
-  private var snapshotEntriesV3 : [(Text, ReportSnapshot)] = [];
-
   // Cert state — new; starts empty so no migration needed.
   private var certCounter  : Nat                 = 0;
-  private var certEntries  : [(Text, CertRecord)] = [];
 
   // ─── Stable State ────────────────────────────────────────────────────────────
-  // Maps are stable directly (mo:core/Map uses a stable B-tree). The V0→V3
-  // migration in postupgrade() runs once, then entries arrays are cleared.
-  // On all subsequent upgrades these maps persist in stable memory as-is.
 
   private let snapshots = Map.empty<Text, ReportSnapshot>();
   private let links     = Map.empty<Text, ShareLink>();
   private let certs     = Map.empty<Text, CertRecord>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    // Suppress M0194: these stable vars must keep their names (renaming drops stable state).
-    ignore reportCounter;
-    ignore snapshotSchemaVersion;
-    // ── One-time V0 migration (upgrade from pre-1.4.7) ────────────────────────
-    // linkEntries / snapshotEntries: old records without rooms / disclosure flags.
-    for ((k, v) in linkEntries.vals()) {
-      Map.add(links, Text.compare, k, {
-        token            = v.token;
-        snapshotId       = v.snapshotId;
-        propertyId       = v.propertyId;
-        createdBy        = v.createdBy;
-        expiresAt        = v.expiresAt;
-        visibility       = v.visibility;
-        viewCount        = v.viewCount;
-        isActive         = v.isActive;
-        createdAt        = v.createdAt;
-        hideAmounts      = null;
-        hideContractors  = null;
-        hidePermits      = null;
-        hideDescriptions = null;
-      });
-    };
-    linkEntries := [];
-
-    for ((k, v) in snapshotEntries.vals()) {
-      Map.add(snapshots, Text.compare, k, {
-        snapshotId        = v.snapshotId;
-        propertyId        = v.propertyId;
-        generatedBy       = v.generatedBy;
-        address           = v.address;
-        city              = v.city;
-        state             = v.state;
-        zipCode           = v.zipCode;
-        propertyType      = v.propertyType;
-        yearBuilt         = v.yearBuilt;
-        squareFeet        = v.squareFeet;
-        verificationLevel = v.verificationLevel;
-        jobs              = v.jobs;
-        recurringServices = v.recurringServices;
-        rooms             = null;   // not present before 1.4.7
-        totalAmountCents  = v.totalAmountCents;
-        verifiedJobCount  = v.verifiedJobCount;
-        diyJobCount       = v.diyJobCount;
-        permitCount       = v.permitCount;
-        generatedAt       = v.generatedAt;
-        schemaVersion     = ?1;   // V0 records migrated from pre-1.4.7
-      });
-    };
-    snapshotEntries := [];
-
-    // ── V1→current migration (upgrade from 1.4.7–14.4.2, i.e. snapshotEntriesV2) ──
-    // These records have `rooms` but no `schemaVersion`.
-    for ((k, v) in snapshotEntriesV2.vals()) {
-      Map.add(snapshots, Text.compare, k, {
-        snapshotId        = v.snapshotId;
-        propertyId        = v.propertyId;
-        generatedBy       = v.generatedBy;
-        address           = v.address;
-        city              = v.city;
-        state             = v.state;
-        zipCode           = v.zipCode;
-        propertyType      = v.propertyType;
-        yearBuilt         = v.yearBuilt;
-        squareFeet        = v.squareFeet;
-        verificationLevel = v.verificationLevel;
-        jobs              = v.jobs;
-        recurringServices = v.recurringServices;
-        rooms             = v.rooms;
-        totalAmountCents  = v.totalAmountCents;
-        verifiedJobCount  = v.verifiedJobCount;
-        diyJobCount       = v.diyJobCount;
-        permitCount       = v.permitCount;
-        generatedAt       = v.generatedAt;
-        schemaVersion     = ?2;   // back-fill: these records are schema-current
-      });
-    };
-    snapshotEntriesV2 := [];
-
-    // ── Links V1 (same type across all versions — no migration needed) ─────────
-    for ((k, v) in linkEntriesV2.vals()) {
-      Map.add(links, Text.compare, k, v);
-    };
-    linkEntriesV2 := [];
-
-    // ── Normal restore from V3 (14.4.3 and later upgrades) ────────────────────
-    for ((k, v) in snapshotEntriesV3.vals()) {
-      Map.add(snapshots, Text.compare, k, v);
-    };
-    snapshotEntriesV3 := [];
-
-    // Restore certs (starts empty on first deploy).
-    for ((k, v) in certEntries.vals()) {
-      Map.add(certs, Text.compare, k, v);
-    };
-    certEntries := [];
-  };
 
   // ─── Private Helpers ──────────────────────────────────────────────────────────
 

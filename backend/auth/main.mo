@@ -85,10 +85,6 @@ persistent actor Auth {
   /// Per-principal update-call rate limiting (cycle-drain protection).
   private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
 
-  /// Migration buffer — populated by the last old-code preupgrade, cleared once.
-  /// After the first upgrade with this code, this array is always [].
-  private var userEntries: [(Principal, UserProfile)] = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   /// Map is stable directly (mo:core/Map uses a stable B-tree internally).
@@ -106,18 +102,6 @@ persistent actor Auth {
     // Empty payload cannot be valid Candid for any method that takes a struct
     // argument — these are probe / garbage calls that waste cycles.
     not Principal.isAnonymous(caller) and arg.size() > 0
-  };
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  /// One-time migration: if userEntries is non-empty (i.e. we are upgrading from
-  /// the old transient-Map pattern), load its contents into the now-stable Map
-  /// and clear the buffer.  On all subsequent upgrades this is a no-op.
-  system func postupgrade() {
-    for ((k, v) in userEntries.vals()) {
-      Map.add(users, Principal.compare, k, v);
-    };
-    userEntries := [];
   };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────

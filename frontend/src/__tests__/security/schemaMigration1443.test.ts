@@ -4,10 +4,9 @@
  * Verifies that:
  *  1. ReportSnapshot in the report canister includes schemaVersion: ?Nat
  *  2. snapshotSchemaVersion stable var exists and is > 1
- *  3. V0 migration in postupgrade() sets schemaVersion for old records
- *  4. applyDisclosure passes schemaVersion through
- *  5. generateReport sets schemaVersion on new snapshots
- *  6. Upgrade runbook exists and contains required sections
+ *  3. applyDisclosure passes schemaVersion through
+ *  4. generateReport sets schemaVersion on new snapshots
+ *  5. Upgrade runbook exists and contains required sections
  */
 
 import { describe, it, expect } from "vitest";
@@ -32,10 +31,6 @@ describe("14.4.3: report canister schema versioning", () => {
     expect(match).not.toBeNull();
     const version = parseInt(match![1], 10);
     expect(version).toBeGreaterThan(1);
-  });
-
-  it("V0 migration in postupgrade sets schemaVersion = ?1 for old records", () => {
-    expect(canister).toMatch(/schemaVersion\s*=\s*\?1/);
   });
 
   it("generateReport sets schemaVersion = ?2 on new snapshots", () => {
