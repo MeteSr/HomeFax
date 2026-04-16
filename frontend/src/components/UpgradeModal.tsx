@@ -8,7 +8,8 @@
 
 import React, { useState } from "react";
 import { Check, X, CreditCard, Coins } from "lucide-react";
-import { PLANS, paymentService, type PlanTier } from "@/services/payment";
+import { PLANS, type PlanTier } from "@/services/planConstants";
+import { paymentService } from "@/services/payment";
 import { COLORS, FONTS, RADIUS } from "@/theme";
 
 export interface UpgradeModalProps {
