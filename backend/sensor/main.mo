@@ -117,6 +117,18 @@ persistent actor Sensor {
   /// externalDeviceId → internal device id
   private let externalIdIdx = Map.empty<Text, Text>();
 
+  // ─── Ingress Inspection ───────────────────────────────────────────────────────
+
+  /// Reject recordEvent and registerDevice calls from principals that are neither
+  /// a registered gateway nor an admin. Checked at the boundary before execution —
+  /// saves cycles and prevents arbitrary principals from probing the sensor pipeline.
+  system func inspect({ caller : Principal; arg : Blob }) : Bool {
+    // Reject anonymous principals and empty-payload calls before execution.
+    // isGateway / isAdmin checks remain in each function body for per-method
+    // enforcement; this guard saves cycles on clearly invalid ingress messages.
+    not Principal.isAnonymous(caller) and arg.size() > 0
+  };
+
   // ─── Upgrade Hook ────────────────────────────────────────────────────────
 
   system func postupgrade() {

@@ -60,6 +60,11 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
     ),
+    recordEvent: IDL.Func(
+      [IDL.Text, SensorEventType, IDL.Float64, IDL.Text, IDL.Text],
+      [IDL.Variant({ ok: SensorEvent, err: Error })],
+      []
+    ),
     getDevicesForProperty: IDL.Func([IDL.Text], [IDL.Vec(SensorDevice)], ["query"]),
     getEventsForProperty:  IDL.Func([IDL.Text, IDL.Nat], [IDL.Vec(SensorEvent)], ["query"]),
     getPendingAlerts:      IDL.Func([IDL.Text], [IDL.Vec(SensorEvent)], ["query"]),
@@ -261,7 +266,20 @@ function createSensorService() {
       }
       return event;
     }
-    throw new Error("ingestReading not implemented for canister path");
+    // Canister path: deviceId is used as externalDeviceId — the IoT gateway
+    // always works with platform-assigned external IDs (Nest/Ecobee/Moen Flo).
+    const a = await getActor();
+    const result = await a.recordEvent(
+      deviceId,
+      { [eventType]: null },
+      value,
+      unit,
+      rawPayload
+    );
+    if ("ok" in result) return fromEvent(result.ok);
+    const key = Object.keys(result.err)[0];
+    const val = result.err[key];
+    throw new Error(typeof val === "string" ? val : key);
   },
 
   /** Ingest multiple readings in one call. */
