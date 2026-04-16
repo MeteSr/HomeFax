@@ -111,7 +111,13 @@ const JPEG_QUALITY  = 0.82;
 async function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
 
-  return new Promise((resolve, reject) => {
+  // Canvas unavailable (jsdom/test/SSR) — skip compression entirely.
+  // We check this before creating an Image so we never hang waiting for
+  // onload/onerror in environments that don't fetch blob URLs.
+  const probe = document.createElement("canvas");
+  if (!probe.getContext("2d")) return file;
+
+  return new Promise((resolve) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
 
