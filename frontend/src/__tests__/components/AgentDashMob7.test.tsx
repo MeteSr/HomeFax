@@ -1,7 +1,7 @@
 /**
  * MOB.7 — AgentDashboardPage + AgentMarketplacePage mobile audit
  */
-import { render } from "@testing-library/react";
+import { render, act } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import React from "react";
 
@@ -28,34 +28,42 @@ beforeAll(async () => {
   AgentMarketplacePage = (await import("@/pages/AgentMarketplacePage")).default;
 });
 
-function renderAgentDash(width: number) {
+async function renderAgentDash(width: number) {
   mockMatchMedia(width);
-  return render(
-    <MemoryRouter initialEntries={["/agent-dashboard"]}>
-      <Routes><Route path="/agent-dashboard" element={<AgentDashboardPage />} /></Routes>
-    </MemoryRouter>
-  );
+  let result!: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(
+      <MemoryRouter initialEntries={["/agent-dashboard"]}>
+        <Routes><Route path="/agent-dashboard" element={<AgentDashboardPage />} /></Routes>
+      </MemoryRouter>
+    );
+  });
+  return result;
 }
 
-function renderMarketplace(width: number) {
+async function renderMarketplace(width: number) {
   mockMatchMedia(width);
-  return render(
-    <MemoryRouter initialEntries={["/agent-marketplace"]}>
-      <Routes><Route path="/agent-marketplace" element={<AgentMarketplacePage />} /></Routes>
-    </MemoryRouter>
-  );
+  let result!: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(
+      <MemoryRouter initialEntries={["/agent-marketplace"]}>
+        <Routes><Route path="/agent-marketplace" element={<AgentMarketplacePage />} /></Routes>
+      </MemoryRouter>
+    );
+  });
+  return result;
 }
 
 // ── Renders without crashing ──────────────────────────────────────────────────
 
 describe("AgentDashboardPage — renders on both viewports", () => {
-  it("renders on desktop", () => {
-    renderAgentDash(1280);
+  it("renders on desktop", async () => {
+    await renderAgentDash(1280);
     expect(document.body).toBeTruthy();
   });
 
-  it("renders on mobile", () => {
-    renderAgentDash(390);
+  it("renders on mobile", async () => {
+    await renderAgentDash(390);
     expect(document.body).toBeTruthy();
   });
 });
@@ -63,8 +71,8 @@ describe("AgentDashboardPage — renders on both viewports", () => {
 // ── KPI row ───────────────────────────────────────────────────────────────────
 
 describe("AgentDashboardPage — KPI row", () => {
-  it("does NOT use repeat(3,1fr) as fixed grid on mobile", () => {
-    const { container } = renderAgentDash(390);
+  it("does NOT use repeat(3,1fr) as fixed grid on mobile", async () => {
+    const { container } = await renderAgentDash(390);
     const allDivs = Array.from(container.querySelectorAll("[style]")) as HTMLElement[];
     const threeCol = allDivs.find((el) =>
       el.style.gridTemplateColumns?.replace(/\s/g, "") === "repeat(3,1fr)"
@@ -72,9 +80,9 @@ describe("AgentDashboardPage — KPI row", () => {
     expect(threeCol).toBeUndefined();
   });
 
-  it("renders without crashing on desktop (loading state)", () => {
+  it("renders without crashing on desktop (loading state)", async () => {
     // Stats grid is gated behind !loading; just verify the page mounts
-    renderAgentDash(1280);
+    await renderAgentDash(1280);
     expect(document.body).toBeTruthy();
   });
 });
@@ -82,8 +90,8 @@ describe("AgentDashboardPage — KPI row", () => {
 // ── Listings table scroll ─────────────────────────────────────────────────────
 
 describe("AgentDashboardPage — listings table", () => {
-  it("listings table header has scroll container on mobile", () => {
-    const { container } = renderAgentDash(390);
+  it("listings table header has scroll container on mobile", async () => {
+    const { container } = await renderAgentDash(390);
     const allDivs = Array.from(container.querySelectorAll("[style]")) as HTMLElement[];
     // Any 6-column grid must be inside an overflow-x:auto parent
     const bareTable = allDivs.find((el) => {
@@ -99,20 +107,20 @@ describe("AgentDashboardPage — listings table", () => {
 // ── AgentMarketplacePage ──────────────────────────────────────────────────────
 
 describe("AgentMarketplacePage — renders on both viewports", () => {
-  it("renders on desktop", () => {
-    renderMarketplace(1280);
+  it("renders on desktop", async () => {
+    await renderMarketplace(1280);
     expect(document.body).toBeTruthy();
   });
 
-  it("renders on mobile", () => {
-    renderMarketplace(390);
+  it("renders on mobile", async () => {
+    await renderMarketplace(390);
     expect(document.body).toBeTruthy();
   });
 });
 
 describe("AgentMarketplacePage — bid table scroll", () => {
-  it("7-column bid table has scroll container on mobile", () => {
-    const { container } = renderMarketplace(390);
+  it("7-column bid table has scroll container on mobile", async () => {
+    const { container } = await renderMarketplace(390);
     const allDivs = Array.from(container.querySelectorAll("[style]")) as HTMLElement[];
     // A grid with "2fr 1fr 1fr 1fr 1fr 1fr auto" must not appear bare
     const bareTable = allDivs.find((el) => {

@@ -118,10 +118,23 @@ async function compressImage(file: File): Promise<File> {
   if (!probe.getContext("2d")) return file;
 
   return new Promise((resolve) => {
+    let settled = false;
+    const settle = (result: File) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
+    // Hard fallback: if neither onload nor onerror fires within 200 ms
+    // (e.g. jsdom with a getContext stub that returns truthy but doesn't
+    // actually load images), resolve with the original file rather than hang.
+    const watchdog = setTimeout(() => settle(file), 200);
+
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
 
     img.onload = () => {
+      clearTimeout(watchdog);
       URL.revokeObjectURL(objectUrl);
 
       let { width, height } = img;
@@ -136,7 +149,7 @@ async function compressImage(file: File): Promise<File> {
       canvas.width  = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) { resolve(file); return; }
+      if (!ctx) { settle(file); return; }
 
       // White background so transparent PNGs don't become black JPEGs
       ctx.fillStyle = "#ffffff";
@@ -145,15 +158,17 @@ async function compressImage(file: File): Promise<File> {
 
       canvas.toBlob(
         (blob) => {
-          if (!blob) { resolve(file); return; }
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+          settle(blob
+            ? new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" })
+            : file
+          );
         },
         "image/jpeg",
         JPEG_QUALITY,
       );
     };
 
-    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.onerror = () => { clearTimeout(watchdog); URL.revokeObjectURL(objectUrl); settle(file); };
     img.src = objectUrl;
   });
 }
