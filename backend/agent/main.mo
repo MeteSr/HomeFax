@@ -103,12 +103,6 @@ persistent actor Agent {
   private var adminInitialized:   Bool        = false;
   private var reviewCounter:      Nat         = 0;
 
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var agentEntries:           [(Principal, AgentProfile)] = [];
-  private var reviewEntries:          [(Text, AgentReview)]       = [];
-  private var reviewKeyEntries:       [(Text, Text)]              = [];
-  private var reviewRateLimitEntries: [(Text, (Nat, Int))]        = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let agents        = Map.empty<Principal, AgentProfile>();
@@ -116,19 +110,6 @@ persistent actor Agent {
   /// compositeKey = "reviewerPrincipal|transactionId" → reviewId
   private let reviewKeys    = Map.empty<Text, Text>();
   private let reviewRateLimits = Map.empty<Text, (Nat, Int)>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in agentEntries.vals())           { Map.add(agents,           Principal.compare, k, v) };
-    agentEntries := [];
-    for ((k, v) in reviewEntries.vals())           { Map.add(reviews,          Text.compare,      k, v) };
-    reviewEntries := [];
-    for ((k, v) in reviewKeyEntries.vals())        { Map.add(reviewKeys,       Text.compare,      k, v) };
-    reviewKeyEntries := [];
-    for ((k, v) in reviewRateLimitEntries.vals())  { Map.add(reviewRateLimits, Text.compare,      k, v) };
-    reviewRateLimitEntries := [];
-  };
 
   // ─── Private Helpers ──────────────────────────────────────────────────────────
 

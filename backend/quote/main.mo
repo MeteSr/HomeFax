@@ -137,15 +137,6 @@ persistent actor Quote {
   /// is a delegated manager, so managers don't need their own subscription.
   private var propCanisterId: Text = "";
 
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var requestEntries:               [(Text, QuoteRequest)]       = [];
-  private var quoteEntries:                 [(Text, Quote)]              = [];
-  private var rateLimitEntries:             [(Principal, (Nat, Int))]    = [];
-  private var tierGrantEntries:             [(Text, SubscriptionTier)]   = [];
-  private var sealedBidEntries:             [(Text, SealedBid)]          = [];
-  private var sealedBidByRequestEntries:    [(Text, [Text])]             = [];
-  private var sealedBidByContractorEntries: [(Text, Text)]               = [];
-  private var revealedBidEntries:           [(Text, [RevealedBid])]      = [];
   private var sealedBidCounter: Nat = 0;
 
   // ─── Stable State ────────────────────────────────────────────────────────────
@@ -158,27 +149,6 @@ persistent actor Quote {
   private let sealedBidsByRequest    = Map.empty<Text, [Text]>();
   private let sealedBidsByContractor = Map.empty<Text, Text>();
   private let revealedBids           = Map.empty<Text, [RevealedBid]>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in requestEntries.vals())               { Map.add(requests,               Text.compare,      k, v) };
-    requestEntries := [];
-    for ((k, v) in quoteEntries.vals())                 { Map.add(quotes,                 Text.compare,      k, v) };
-    quoteEntries := [];
-    for ((k, v) in rateLimitEntries.vals())             { Map.add(contractorRateLimits,   Principal.compare, k, v) };
-    rateLimitEntries := [];
-    for ((k, v) in tierGrantEntries.vals())             { Map.add(tierGrants,             Text.compare,      k, v) };
-    tierGrantEntries := [];
-    for ((k, v) in sealedBidEntries.vals())             { Map.add(sealedBids,             Text.compare,      k, v) };
-    sealedBidEntries := [];
-    for ((k, v) in sealedBidByRequestEntries.vals())    { Map.add(sealedBidsByRequest,    Text.compare,      k, v) };
-    sealedBidByRequestEntries := [];
-    for ((k, v) in sealedBidByContractorEntries.vals()) { Map.add(sealedBidsByContractor, Text.compare,      k, v) };
-    sealedBidByContractorEntries := [];
-    for ((k, v) in revealedBidEntries.vals())           { Map.add(revealedBids,           Text.compare,      k, v) };
-    revealedBidEntries := [];
-  };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 

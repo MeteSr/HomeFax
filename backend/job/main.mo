@@ -115,9 +115,6 @@ persistent actor Job {
   private var adminInitialized:        Bool        = false;
   private var authorizedSensors:       [Principal] = [];
   private var trustedCanisterEntries:  [Principal] = [];
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var jobsEntries: [(Text, Job)] = [];
-  private var inviteTokenEntries: [(Text, InviteToken)] = [];
   /// Contractor canister ID — set post-deploy via setContractorCanisterId().
   /// When set, verifyJob() notifies the contractor canister on full verification.
   private var contrCanisterId:    Text        = "";
@@ -134,19 +131,6 @@ persistent actor Job {
 
   private let jobs        = Map.empty<Text, Job>();
   private let inviteTokens = Map.empty<Text, InviteToken>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in jobsEntries.vals()) {
-      Map.add(jobs, Text.compare, k, v);
-    };
-    jobsEntries := [];
-    for ((k, v) in inviteTokenEntries.vals()) {
-      Map.add(inviteTokens, Text.compare, k, v);
-    };
-    inviteTokenEntries := [];
-  };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 

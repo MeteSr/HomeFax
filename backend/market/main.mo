@@ -182,9 +182,6 @@ persistent actor MarketIntelligence {
   private var isPaused:          Bool = false;
   private var pauseExpiryNs:     ?Int = null;
   private var adminListEntries: [Principal] = [];
-  /// Migration buffer — cleared after first upgrade with this code.
-  private var snapshotEntries: [(Text, MarketSnapshot)] = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let snapshots  = Map.empty<Text, MarketSnapshot>();
@@ -195,15 +192,6 @@ persistent actor MarketIntelligence {
   private let scoreStore = Map.empty<Principal, StoredScore>();
   // zip → [principals] index for O(1) zip lookup during aggregation.
   private let zipIndex   = Map.empty<Text, [Principal]>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in snapshotEntries.vals()) {
-      Map.add(snapshots, Text.compare, k, v);
-    };
-    snapshotEntries := [];
-  };
 
   // ─── Embedded ROI / Lifespan Tables ──────────────────────────────────────────
   //

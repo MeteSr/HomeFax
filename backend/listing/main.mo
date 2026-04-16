@@ -77,23 +77,10 @@ persistent actor Listing {
   private var adminListEntries: [Principal] = [];
   private var adminInitialized: Bool = false;
 
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var requestEntries:  [(Text, ListingBidRequest)] = [];
-  private var proposalEntries: [(Text, ListingProposal)]   = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let requests  = Map.empty<Text, ListingBidRequest>();
   private let proposals = Map.empty<Text, ListingProposal>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in requestEntries.vals())  { Map.add(requests,  Text.compare, k, v) };
-    requestEntries := [];
-    for ((k, v) in proposalEntries.vals()) { Map.add(proposals, Text.compare, k, v) };
-    proposalEntries := [];
-  };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 

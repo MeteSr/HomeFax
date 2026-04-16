@@ -127,21 +127,9 @@ persistent actor Maintenance {
   private var isPaused: Bool = false;
   private var pauseExpiryNs: ?Int = null;
   private var adminListEntries: [Principal] = [];
-  /// Migration buffer — cleared after first upgrade with this code.
-  private var scheduleEntries: [(Text, ScheduleEntry)] = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let schedule = Map.empty<Text, ScheduleEntry>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in scheduleEntries.vals()) {
-      Map.add(schedule, Text.compare, k, v);
-    };
-    scheduleEntries := [];
-  };
 
   // ─── Private Helpers ──────────────────────────────────────────────────────────
 

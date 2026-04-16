@@ -179,27 +179,11 @@ persistent actor Monitoring {
   private var trackedCanisterEntries : [TrackedCanister] = [];
   /// Configurable low-cycle threshold — default 1T cycles (issue #55).
   private var lowCycleThresholdT : Nat = 1_000_000_000_000;
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var metricsEntries:       [(Principal, CanisterMetrics)]  = [];
-  private var alertEntries:         [(Text, Alert)]                 = [];
-  private var cyclesPerCallEntries: [(Text, MethodCyclesSummary)]   = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let canisterMetrics = Map.empty<Principal, CanisterMetrics>();
   private let alerts          = Map.empty<Text, Alert>();
   private let cyclesPerCall   = Map.empty<Text, MethodCyclesSummary>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in metricsEntries.vals())       { Map.add(canisterMetrics, Principal.compare, k, v) };
-    metricsEntries := [];
-    for ((k, v) in alertEntries.vals())         { Map.add(alerts,          Text.compare,      k, v) };
-    alertEntries := [];
-    for ((k, v) in cyclesPerCallEntries.vals()) { Map.add(cyclesPerCall,   Text.compare,      k, v) };
-    cyclesPerCallEntries := [];
-  };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 

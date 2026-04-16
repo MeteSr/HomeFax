@@ -91,12 +91,6 @@ persistent actor Photo {
   /// When set, uploadPhoto() uses the property owner's tier when the caller
   /// is a delegated manager, so managers don't need their own subscription.
   private var propCanisterId: Text = "";
-  /// Migration buffers — cleared after first upgrade with this code.
-  private var photoEntries:          [(Text, Photo)]              = [];
-  private var hashIndexEntries:      [(Text, Text)]               = [];
-  private var tierGrantEntries:      [(Text, SubscriptionTier)]   = [];
-  private var photoRateLimitEntries: [(Text, (Nat, Int))]         = [];
-
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let photos      = Map.empty<Text, Photo>();
@@ -116,19 +110,6 @@ persistent actor Photo {
     // or probe call that would waste cycles. Photo uploads with real data will
     // always exceed this threshold by orders of magnitude.
     not Principal.isAnonymous(caller) and arg.size() > 0
-  };
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in photoEntries.vals())          { Map.add(photos,          Text.compare, k, v) };
-    photoEntries := [];
-    for ((k, v) in hashIndexEntries.vals())      { Map.add(hashIndex,       Text.compare, k, v) };
-    hashIndexEntries := [];
-    for ((k, v) in tierGrantEntries.vals())      { Map.add(tierGrants,      Text.compare, k, v) };
-    tierGrantEntries := [];
-    for ((k, v) in photoRateLimitEntries.vals()) { Map.add(photoRateLimits, Text.compare, k, v) };
-    photoRateLimitEntries := [];
   };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────

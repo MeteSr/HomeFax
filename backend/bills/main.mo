@@ -106,23 +106,11 @@ persistent actor Bills {
   private var pauseExpiryNs    : ?Int                       = null;
   private var adminListEntries : [Principal]                = [];
   private var adminInitialized : Bool                       = false;
-  private var billEntries      : [(Text, BillRecord)]       = [];
   /// Payment canister ID — set post-deploy via setPaymentCanisterId().
   private var payCanisterId    : Text                       = "";
-  /// Fallback tier grants for dev / pre-wiring environments.
-  private var tierGrantEntries : [(Text, SubscriptionTier)] = [];
 
   private let bills      = Map.empty<Text, BillRecord>();
   private let tierGrants = Map.empty<Text, SubscriptionTier>();
-
-  // ─── Upgrade Hook ────────────────────────────────────────────────────────────
-
-  system func postupgrade() {
-    for ((k, v) in billEntries.vals())      { Map.add(bills,      Text.compare, k, v) };
-    billEntries := [];
-    for ((k, v) in tierGrantEntries.vals()) { Map.add(tierGrants, Text.compare, k, v) };
-    tierGrantEntries := [];
-  };
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 
