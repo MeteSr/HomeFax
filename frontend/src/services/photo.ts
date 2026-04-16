@@ -96,11 +96,63 @@ function fromPhoto(raw: any): Photo {
   };
 }
 
-async function computeHash(file: File): Promise<string> {
-  const raw    = await file.arrayBuffer();
-  // Normalise to Uint8Array: jsdom/Node may return a Buffer or other non-ArrayBuffer
-  // subtype that some SubtleCrypto implementations reject with a strict instanceof check.
-  const bytes      = new Uint8Array(raw);
+// Max long-edge dimension before resizing. Keeps file sizes well under the
+// 2 MB ICP ingress limit while retaining enough detail for construction photos.
+const MAX_DIMENSION = 1920;
+const JPEG_QUALITY  = 0.82;
+
+/**
+ * Resize and re-encode an image File using an off-screen canvas.
+ * - Images whose long edge is already ≤ MAX_DIMENSION are only re-encoded
+ *   (format normalised to JPEG, alpha channel dropped).
+ * - Non-image files are returned unchanged.
+ * - Returns a new File so the caller's size/type are always accurate.
+ */
+async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let { width, height } = img;
+      const longEdge = Math.max(width, height);
+      if (longEdge > MAX_DIMENSION) {
+        const scale = MAX_DIMENSION / longEdge;
+        width  = Math.round(width  * scale);
+        height = Math.round(height * scale);
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width  = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+
+      // White background so transparent PNGs don't become black JPEGs
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        JPEG_QUALITY,
+      );
+    };
+
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+}
+
+async function computeHash(bytes: Uint8Array): Promise<string> {
   const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
   const hashArray  = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -128,7 +180,10 @@ function createPhotoService() {
     phase:       string,
     description: string
   ): Promise<Photo> {
-    const hash = await computeHash(file);
+    const compressed = await compressImage(file);
+    const buffer     = await compressed.arrayBuffer();
+    const bytes      = new Uint8Array(buffer);
+    const hash       = await computeHash(bytes);
 
     if (!PHOTO_CANISTER_ID) {
       const photo: Photo = {
@@ -138,8 +193,8 @@ function createPhotoService() {
         phase,
         description,
         hash,
-        url:         URL.createObjectURL(file),
-        size:        file.size,
+        url:         URL.createObjectURL(compressed),
+        size:        compressed.size,
         verified:    false,
         createdAt:   Date.now(),
       };
@@ -147,9 +202,8 @@ function createPhotoService() {
       return photo;
     }
 
-    const a      = await getActor();
-    const buffer = await file.arrayBuffer();
-    const data   = Array.from(new Uint8Array(buffer));
+    const a    = await getActor();
+    const data = Array.from(bytes);
     const result = await a.uploadPhoto(
       jobId,
       propertyId,
