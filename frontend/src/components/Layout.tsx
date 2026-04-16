@@ -19,7 +19,7 @@ import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { jobService, type Job } from "@/services/job";
 import { quoteService, type QuoteRequest } from "@/services/quote";
-import { paymentService } from "@/services/payment";
+import { paymentService, PLANS, type PlanTier } from "@/services/payment";
 import { billService, type BillRecord } from "@/services/billService";
 import { VoiceAgent } from "./VoiceAgent";
 import UpgradeModal from "./UpgradeModal";
@@ -67,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
   const [userMenuOpen,  setUserMenuOpen]  = useState(false);
   const [upgradeOpen,   setUpgradeOpen]   = useState(false);
-  const [userTier,      setUserTier]      = useState<string>("Free");
+  const [userTier,      setUserTier]      = useState<PlanTier>("Free");
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu on outside click
@@ -128,6 +128,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isContractor = profile?.role === "Contractor";
   const isRealtor    = profile?.role === "Realtor";
   const isHomeowner  = !isContractor && !isRealtor;
+
+  const plan             = PLANS.find((p) => p.tier === userTier);
+  const atPropertyLimit  = plan ? properties.length >= plan.propertyLimit : false;
   const dashboardPath = isContractor ? "/contractor-dashboard" : "/dashboard";
 
   const singlePropertyId =
@@ -152,7 +155,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ...(singlePropertyId
           ? [{ to: `/my-listing/${singlePropertyId}`, label: "My Listing", Icon: HomeIcon }]
           : [{ to: "/listing/new", label: "List Home", Icon: HomeIcon }]),
-        { to: "/properties/new", label: "Add Property", Icon: PlusSquare },
+        ...(!atPropertyLimit ? [{ to: "/properties/new", label: "Add Property", Icon: PlusSquare }] : []),
       ];
 
   const isActive = (link: NavLink) => {
@@ -249,7 +252,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }
           {sidebarOpen && (
             <span style={{
-              fontFamily:    FONTS.mono,
+              fontFamily:    FONTS.sans,
               fontSize:      "0.6rem",
               letterSpacing: "0.1em",
               textTransform: "uppercase",
@@ -310,7 +313,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   display:        "flex",
                   alignItems:     "center",
                   justifyContent: "center",
-                  fontFamily:     FONTS.mono,
+                  fontFamily:     FONTS.sans,
                   fontSize:       "0.45rem",
                   color:          COLORS.white,
                   fontWeight:     700,
@@ -355,7 +358,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 display:        "flex",
                 alignItems:     "center",
                 justifyContent: "center",
-                fontFamily:     FONTS.mono,
+                fontFamily:     FONTS.sans,
                 fontSize:       "0.6rem",
                 fontWeight:     700,
                 flexShrink:     0,
@@ -412,7 +415,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 width: "14px", height: "14px",
                 background: COLORS.sage, borderRadius: "50%",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: FONTS.mono, fontSize: "0.45rem", color: COLORS.white, fontWeight: 700,
+                fontFamily: FONTS.sans, fontSize: "0.45rem", color: COLORS.white, fontWeight: 700,
               }}>
                 {unread > 9 ? "9+" : unread}
               </span>

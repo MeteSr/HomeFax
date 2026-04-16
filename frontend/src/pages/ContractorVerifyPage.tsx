@@ -24,7 +24,7 @@ const UI = {
   sage:  COLORS.sage,
   serif: FONTS.serif,
   sans:  FONTS.sans,
-  mono:  FONTS.mono,
+  mono:  FONTS.sans,
 };
 
 type Stage = "loading" | "preview" | "signing" | "success" | "error";

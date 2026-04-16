@@ -13,7 +13,7 @@ export function SettingsTab({ property, currentPrincipal }: { property: Property
     sage:     COLORS.sage,
     paper:    COLORS.white,
     serif:    FONTS.serif,
-    mono:     FONTS.mono,
+    mono:     FONTS.sans,
   };
   const navigate = useNavigate();
 

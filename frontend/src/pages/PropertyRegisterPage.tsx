@@ -24,7 +24,7 @@ const UI = {
   rust:     COLORS.sage,
   inkLight: COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 interface FormData {
@@ -196,7 +196,7 @@ export default function PropertyRegisterPage() {
                     style={form.state.length === 2 && !isValidUsState(form.state) ? { borderColor: COLORS.rust } : undefined}
                   />
                   {form.state.length === 2 && !isValidUsState(form.state) && (
-                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.mono }}>Enter a valid US state abbreviation</p>
+                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>Enter a valid US state abbreviation</p>
                   )}
                 </div>
               </div>
@@ -210,7 +210,7 @@ export default function PropertyRegisterPage() {
                   style={form.zipCode && !isValidZip(form.zipCode) ? { borderColor: COLORS.rust } : undefined}
                 />
                 {form.zipCode && !isValidZip(form.zipCode) && (
-                  <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.mono }}>Enter a 5-digit ZIP code (e.g. 78701)</p>
+                  <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>Enter a 5-digit ZIP code (e.g. 78701)</p>
                 )}
               </div>
               {/* §17.5.5 — permit coverage indicator */}

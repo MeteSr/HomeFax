@@ -32,7 +32,7 @@ export function Badge({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        fontFamily: FONTS.mono,
+        fontFamily: FONTS.sans,
         fontWeight: 500,
         letterSpacing: "0.06em",
         textTransform: "uppercase",

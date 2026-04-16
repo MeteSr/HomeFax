@@ -44,11 +44,11 @@ export function PriceBenchmarkWidget({ serviceType, zipCode }: PriceBenchmarkWid
         <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.1rem", color: COLORS.plum }}>
           {fmt(result.low)}
         </span>
-        <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>–</span>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>–</span>
         <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.1rem", color: COLORS.plum }}>
           {fmt(result.high)}
         </span>
-        <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid, marginLeft: "0.25rem" }}>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid, marginLeft: "0.25rem" }}>
           median {fmt(result.median)}
         </span>
       </div>

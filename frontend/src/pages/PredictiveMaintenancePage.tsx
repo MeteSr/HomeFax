@@ -28,7 +28,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 const URGENCY_RUST: Record<UrgencyLevel, string> = {
@@ -590,7 +590,7 @@ export default function PredictiveMaintenancePage() {
           #hf-print-calendar { display: block !important; }
 
           #hf-print-calendar {
-            font-family: ${FONTS.mono};
+            font-family: ${FONTS.sans};
             color: ${COLORS.plum};
             padding: 2rem;
           }

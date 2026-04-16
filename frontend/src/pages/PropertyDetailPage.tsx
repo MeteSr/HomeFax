@@ -52,7 +52,7 @@ const UI = {
   rust:     COLORS.sage,
   inkLight: COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 type Tab = "timeline" | "jobs" | "rooms" | "documents" | "bills" | "settings";
@@ -234,9 +234,11 @@ export default function PropertyDetailPage() {
             <Badge variant={verificationColor as any}>{property.verificationLevel}</Badge>
             <Button variant="outline" icon={<Wrench size={14} />} onClick={() => setModals((m) => ({ ...m, logJob: true }))}>Log Job</Button>
             <Button variant="outline" icon={<MessageSquare size={14} />} onClick={() => setModals((m) => ({ ...m, quote: true }))}>Request Quote</Button>
-            <Button icon={<Share2 size={14} />} onClick={() => setModals((m) => ({ ...m, report: true }))}>
-              Share HomeGentic Report
-            </Button>
+            {property.verificationLevel !== "Unverified" && (
+              <Button icon={<Share2 size={14} />} onClick={() => setModals((m) => ({ ...m, report: true }))}>
+                Share HomeGentic Report
+              </Button>
+            )}
           </div>
         </div>
 

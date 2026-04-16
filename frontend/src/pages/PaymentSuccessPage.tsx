@@ -109,7 +109,7 @@ export default function PaymentSuccessPage() {
     icon:   { marginBottom: "1.5rem" },
     h1:     { fontFamily: FONTS.serif, fontSize: "clamp(1.75rem, 4vw, 2.25rem)", fontWeight: 900, color: COLORS.plum, letterSpacing: "-0.5px", margin: "0 0 0.75rem" },
     body:   { fontSize: "1rem", color: COLORS.plumMid, lineHeight: 1.7, margin: "0 0 2rem" },
-    token:  { fontFamily: FONTS.mono, fontSize: "0.75rem", background: COLORS.sageLight, color: COLORS.plum, padding: "0.75rem 1rem", margin: "0 0 2rem", wordBreak: "break-all" as const, textAlign: "left" as const },
+    token:  { fontFamily: FONTS.sans, fontSize: "0.75rem", background: COLORS.sageLight, color: COLORS.plum, padding: "0.75rem 1rem", margin: "0 0 2rem", wordBreak: "break-all" as const, textAlign: "left" as const },
     cta:    { display: "inline-block", fontFamily: FONTS.sans, fontWeight: 600, fontSize: "0.9375rem", color: COLORS.white, background: COLORS.plum, textDecoration: "none", padding: "0.75rem 2rem" },
     link:   { display: "block", marginTop: "1rem", fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.plumMid, textDecoration: "none" },
   };
@@ -199,7 +199,7 @@ export default function PaymentSuccessPage() {
             HomeGentic Score and a stronger resale position.
           </p>
           <Link to="/dashboard" style={UI.cta}>Go to Dashboard</Link>
-          <p style={{ ...UI.link, fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase" as const, color: COLORS.plumMid, marginTop: "1rem" }}>
+          <p style={{ ...UI.link, fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase" as const, color: COLORS.plumMid, marginTop: "1rem" }}>
             Redirecting automatically…
           </p>
         </div>

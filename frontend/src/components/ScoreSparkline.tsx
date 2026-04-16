@@ -30,7 +30,7 @@ export function ScoreSparkline({ history, onExpand }: { history: ScoreSnapshot[]
         })}
       </svg>
       {onExpand && (
-        <div style={{ fontFamily: FONTS.mono, fontSize: "0.5rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, marginTop: "0.25rem" }}>
+        <div style={{ fontFamily: FONTS.sans, fontSize: "0.5rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, marginTop: "0.25rem" }}>
           View history ↗
         </div>
       )}

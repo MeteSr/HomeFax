@@ -15,7 +15,7 @@ const UI = {
   ink:      COLORS.plum,
   rule:     COLORS.rule,
   inkLight: COLORS.plumMid,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 export interface ScoreActivityFeedProps {

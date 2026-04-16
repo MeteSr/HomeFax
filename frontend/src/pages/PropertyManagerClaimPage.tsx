@@ -24,7 +24,7 @@ const UI = {
   rule:     COLORS.rule,
   sage:     COLORS.sage,
   inkLight: COLORS.plumMid,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
   serif:    FONTS.serif,
   sans:     FONTS.sans,
 };

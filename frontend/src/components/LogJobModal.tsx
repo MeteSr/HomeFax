@@ -305,7 +305,7 @@ export function LogJobModal({ isOpen, onClose, onSuccess, properties, prefill }:
                     <label className="form-label">Warranty <span style={{ color: COLORS.plumMid, fontWeight: 300 }}>(optional)</span></label>
                     <div style={{ position: "relative" }}>
                       <input className="form-input" type="number" min="0" placeholder="e.g. 12" value={form.warrantyMonths} onChange={(e) => update("warrantyMonths", e.target.value)} style={{ paddingRight: "4.5rem" }} />
-                      <span style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid, pointerEvents: "none" }}>months</span>
+                      <span style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid, pointerEvents: "none" }}>months</span>
                     </div>
                   </div>
                 )}

@@ -31,7 +31,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 function fmtDate(iso: string): string {
@@ -220,14 +220,14 @@ export default function InsuranceDefensePage() {
                   {sensorDevices.length === 0 ? (
                     <p style={{ fontSize: "0.8rem", color: COLORS.plumMid, fontFamily: FONTS.sans }}>
                       No smart devices registered.{" "}
-                      <button onClick={() => navigate("/sensors")} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.sage, fontFamily: FONTS.mono, fontSize: "0.7rem", textDecoration: "underline" }}>
+                      <button onClick={() => navigate("/sensors")} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.sage, fontFamily: FONTS.sans, fontSize: "0.7rem", textDecoration: "underline" }}>
                         Add sensors →
                       </button>
                     </p>
                   ) : (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
                       {sensorDevices.map((d) => (
-                        <span key={d.id} style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", border: `1px solid ${COLORS.sky}`, background: "#D6EBF6", padding: "0.2rem 0.6rem", fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plum }}>
+                        <span key={d.id} style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem", border: `1px solid ${COLORS.sky}`, background: "#D6EBF6", padding: "0.2rem 0.6rem", fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plum }}>
                           <Wifi size={9} /> {d.name}
                         </span>
                       ))}

@@ -28,7 +28,7 @@ const UI = {
   sageMid:   COLORS.sageMid,
   butter:    COLORS.butter,
   serif:     FONTS.serif,
-  mono:      FONTS.mono,
+  mono:      FONTS.sans,
   sans:      FONTS.sans,
 };
 

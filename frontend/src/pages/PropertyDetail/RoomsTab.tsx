@@ -96,7 +96,7 @@ export function RoomsTab({
   };
 
   const labelStyle: React.CSSProperties = {
-    display: "block", fontFamily: FONTS.mono, fontSize: "0.6rem",
+    display: "block", fontFamily: FONTS.sans, fontSize: "0.6rem",
     letterSpacing: "0.08em", textTransform: "uppercase",
     color: COLORS.plumMid, marginBottom: "0.25rem",
   };
@@ -143,7 +143,7 @@ export function RoomsTab({
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                   <div>
                     <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.plum }}>{room.name}</div>
-                    <div style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginTop: "0.2rem" }}>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginTop: "0.2rem" }}>
                       {[room.floorType, room.paintColor && `${room.paintColor}${room.paintCode ? ` (${room.paintCode})` : ""}`]
                         .filter(Boolean).join(" · ") || "No finishes recorded"}
                       {room.fixtures.length > 0 && ` · ${room.fixtures.length} fixture${room.fixtures.length === 1 ? "" : "s"}`}
@@ -153,11 +153,11 @@ export function RoomsTab({
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }} onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => { setEditingRoom(room.id); setEditForm({ name: room.name, floorType: room.floorType, paintColor: room.paintColor, paintBrand: room.paintBrand, paintCode: room.paintCode, notes: room.notes }); setExpandedRoom(room.id); }}
-                    style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
+                    style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
                   >Edit</button>
                   <button
                     onClick={() => { if (window.confirm(`Delete "${room.name}"?`)) handleDeleteRoom(room.id); }}
-                    style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
+                    style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer", padding: "0.25rem 0.5rem" }}
                   >Delete</button>
                   <span style={{ color: COLORS.plumMid, fontSize: "0.75rem" }}>{isExpanded ? "▲" : "▼"}</span>
                 </div>
@@ -224,10 +224,10 @@ export function RoomsTab({
                     return (
                       <div style={{ marginBottom: "1rem" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                          <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
+                          <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
                             Photos{roomPhotos.length > 0 ? ` (${roomPhotos.length})` : ""}
                           </span>
-                          <label style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, cursor: "pointer" }}>
+                          <label style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, cursor: "pointer" }}>
                             {uploadingPhoto === room.id ? "Uploading…" : "+ Add Photo"}
                             <input
                               type="file"
@@ -268,13 +268,13 @@ export function RoomsTab({
                   {/* Fixtures */}
                   <div style={{ marginBottom: "0.75rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-                      <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
+                      <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
                         Appliances & Fixtures
                       </span>
                       {addFixtureRoom !== room.id && (
                         <button
                           onClick={() => { setAddFixtureRoom(room.id); setFixtureForm({ ...EMPTY_FIXTURE_FORM }); }}
-                          style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer" }}
+                          style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer" }}
                         >+ Add Fixture</button>
                       )}
                     </div>
@@ -336,7 +336,7 @@ export function RoomsTab({
                             <div style={{ fontFamily: FONTS.sans, fontWeight: 500, fontSize: "0.825rem", color: COLORS.plum }}>
                               {f.brand} {f.model}
                             </div>
-                            <div style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginTop: "0.2rem" }}>
+                            <div style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginTop: "0.2rem" }}>
                               {f.serialNumber && `S/N ${f.serialNumber}`}
                               {f.installedDate && ` · Installed ${f.installedDate}`}
                               {f.warrantyExpiry && (
@@ -353,7 +353,7 @@ export function RoomsTab({
                           </div>
                           <button
                             onClick={() => handleRemoveFixture(room.id, f.id)}
-                            style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.plumMid, background: "none", border: "none", cursor: "pointer", flexShrink: 0, marginLeft: "1rem" }}
+                            style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.plumMid, background: "none", border: "none", cursor: "pointer", flexShrink: 0, marginLeft: "1rem" }}
                           >Remove</button>
                         </div>
                       );

@@ -108,7 +108,7 @@ export default function LoginPage() {
                   borderRadius: RADIUS.sm,
                   color: COLORS.plumMid,
                   fontSize: "0.65rem",
-                  fontFamily: FONTS.mono,
+                  fontFamily: FONTS.sans,
                   letterSpacing: "0.05em",
                   textTransform: "uppercase",
                   userSelect: "none",

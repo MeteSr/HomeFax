@@ -109,7 +109,7 @@ export default function RegisterPage() {
                   flex: 1,
                   padding: "0.875rem 0",
                   textAlign: "center",
-                  fontFamily: FONTS.mono,
+                  fontFamily: FONTS.sans,
                   fontSize: "0.6rem",
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
@@ -204,7 +204,7 @@ export default function RegisterPage() {
                       onBlur={() => { if (!isValidEmail(email)) setEmailError(email ? "Enter a valid email address" : "Email is required"); }}
                       style={emailError ? { borderColor: COLORS.rust } : undefined}
                     />
-                    {emailError && <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.mono }}>{emailError}</p>}
+                    {emailError && <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>{emailError}</p>}
                   </div>
                   <div>
                     <label className="form-label">Phone number (optional)</label>
@@ -215,7 +215,7 @@ export default function RegisterPage() {
                       onBlur={() => { if (phone && !isValidPhone(phone)) setPhoneError("Enter a valid phone number"); }}
                       style={phoneError ? { borderColor: COLORS.rust } : undefined}
                     />
-                    {phoneError && <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.mono }}>{phoneError}</p>}
+                    {phoneError && <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>{phoneError}</p>}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -265,7 +265,7 @@ export default function RegisterPage() {
                       borderBottom: i < 2 ? `1px solid ${COLORS.rule}` : "none",
                       background: i % 2 === 0 ? COLORS.white : COLORS.sageLight,
                     }}>
-                      <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
+                      <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
                         {row.label}
                       </span>
                       <span style={{ fontSize: "0.875rem", fontWeight: 500, color: COLORS.plum }}>{row.value}</span>

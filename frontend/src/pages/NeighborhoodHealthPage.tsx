@@ -21,7 +21,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   rule:     COLORS.rule,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 export default function NeighborhoodHealthPage() {

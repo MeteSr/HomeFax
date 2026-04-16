@@ -61,7 +61,7 @@ interface BatchFile { name: string; status: BatchFileStatus; error?: string }
 // ─── DocumentsTab ─────────────────────────────────────────────────────────────
 
 export function DocumentsTab({ propertyId }: { propertyId: string }) {
-  const TC = { ink: COLORS.plum, rule: COLORS.rule, inkLight: COLORS.plumMid, rust: COLORS.sage, serif: FONTS.serif, mono: FONTS.mono };
+  const TC = { ink: COLORS.plum, rule: COLORS.rule, inkLight: COLORS.plumMid, rust: COLORS.sage, serif: FONTS.serif, mono: FONTS.sans };
   const DOCS_JOB = `docs_${propertyId}`;
   const inputRef      = React.useRef<HTMLInputElement>(null);
   const permitRef     = React.useRef<HTMLInputElement>(null);

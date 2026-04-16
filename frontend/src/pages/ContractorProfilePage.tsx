@@ -17,7 +17,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 export const ALL_TRADES = [
@@ -299,7 +299,7 @@ export default function ContractorProfilePage() {
                     style={form.email && !isValidEmail(form.email) ? { borderColor: COLORS.rust } : undefined}
                   />
                   {form.email && !isValidEmail(form.email) && (
-                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.mono }}>Enter a valid email address</p>
+                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>Enter a valid email address</p>
                   )}
                 </div>
                 <div>
@@ -313,7 +313,7 @@ export default function ContractorProfilePage() {
                     style={form.phone && !isValidPhone(form.phone) ? { borderColor: COLORS.rust } : undefined}
                   />
                   {form.phone && !isValidPhone(form.phone) && (
-                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.mono }}>Enter a valid phone number</p>
+                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>Enter a valid phone number</p>
                   )}
                 </div>
               </div>

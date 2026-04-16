@@ -33,7 +33,7 @@ const UI = {
   rule:   COLORS.rule,
   rust:   "#C94C2E",
   serif:  FONTS.serif,
-  mono:   FONTS.mono,
+  mono:   FONTS.sans,
   sans:   FONTS.sans,
 };
 

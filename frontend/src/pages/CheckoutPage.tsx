@@ -55,7 +55,7 @@ const stripeAppearance = {
       boxShadow: "none",
     },
     ".Label": {
-      fontFamily:    FONTS.mono,
+      fontFamily:    FONTS.sans,
       fontSize:      "0.65rem",
       fontWeight:    "500",
       textTransform: "uppercase",
@@ -201,7 +201,7 @@ function PaymentForm({ tier, billing, subscriptionId, onError }: PaymentFormProp
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "center",
         gap: "6px", marginTop: "12px",
-        fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid,
+        fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid,
         textTransform: "uppercase", letterSpacing: "0.08em",
       }}>
         <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
@@ -265,7 +265,7 @@ function LoginStep({ onLogin }: { onLogin: () => void }) {
         {loading ? "Opening Internet Identity…" : "Sign in to continue"}
       </button>
       <p style={{
-        fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid,
+        fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid,
         textTransform: "uppercase", letterSpacing: "0.08em", marginTop: "14px",
       }}>
         Your payment details are entered after sign-in
@@ -339,7 +339,7 @@ function IcpPayButton({ tier, billing, onError }: IcpPayButtonProps) {
         {step ? ICP_STEP_LABEL[step] : "Pay with ICP"}
       </button>
       <p style={{
-        fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid,
+        fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid,
         textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center", margin: 0,
       }}>
         No processing fees · Requires ICP tokens in Internet Identity
@@ -431,7 +431,7 @@ export default function CheckoutPage() {
             Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
           </Link>
           <Link to="/pricing" style={{
-            fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.08em",
+            fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.08em",
             textTransform: "uppercase", color: COLORS.plumMid, textDecoration: "none",
           }}>
             ← Change plan
@@ -452,7 +452,7 @@ export default function CheckoutPage() {
             display: "flex", flexDirection: "column",
           }}>
             <div style={{
-              fontFamily: FONTS.mono, fontSize: "0.6rem", fontWeight: 700,
+              fontFamily: FONTS.sans, fontSize: "0.6rem", fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "0.12em",
               color: COLORS.sageLight, marginBottom: "12px",
             }}>
@@ -478,7 +478,7 @@ export default function CheckoutPage() {
               </span>
               {billing === "Yearly" && (
                 <span style={{
-                  fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.sageLight,
+                  fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.sageLight,
                   marginLeft: "8px", letterSpacing: "0.06em",
                 }}>
                   2 months free
@@ -521,7 +521,7 @@ export default function CheckoutPage() {
               {["Cancel anytime", "Blockchain-backed records stay yours", payMethod === "icp" ? "No processing fees" : "Secured by Stripe"].map((t) => (
                 <div key={t} style={{
                   display: "flex", alignItems: "center", gap: "8px",
-                  fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.06em",
+                  fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.06em",
                   color: "rgba(253,252,250,0.4)", textTransform: "uppercase",
                 }}>
                   <span style={{ color: COLORS.sage, fontSize: "0.5rem" }}>✦</span>
@@ -554,7 +554,7 @@ export default function CheckoutPage() {
                   <span style={{ fontSize: "1rem" }}>✓</span>
                   <div>
                     <p style={{
-                      fontFamily: FONTS.mono, fontSize: "0.6rem", fontWeight: 700,
+                      fontFamily: FONTS.sans, fontSize: "0.6rem", fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "0.08em",
                       color: COLORS.sage, margin: 0,
                     }}>
@@ -582,7 +582,7 @@ export default function CheckoutPage() {
                         style={{
                           display: "flex", alignItems: "center", gap: "6px",
                           padding: "8px 16px",
-                          fontFamily: FONTS.mono, fontSize: "0.65rem", fontWeight: 700,
+                          fontFamily: FONTS.sans, fontSize: "0.65rem", fontWeight: 700,
                           textTransform: "uppercase", letterSpacing: "0.08em",
                           border: `1.5px solid ${active ? COLORS.plum : COLORS.rule}`,
                           background: active ? COLORS.plum : "transparent",
@@ -600,7 +600,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <p style={{
-                  fontFamily: FONTS.mono, fontSize: "0.65rem", fontWeight: 500,
+                  fontFamily: FONTS.sans, fontSize: "0.65rem", fontWeight: 500,
                   textTransform: "uppercase", letterSpacing: "0.08em",
                   color: COLORS.plumMid, marginBottom: "20px",
                 }}>

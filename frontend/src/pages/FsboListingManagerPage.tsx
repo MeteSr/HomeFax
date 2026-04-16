@@ -48,7 +48,7 @@ const UI = {
   butter:    COLORS.butter,
   serif:     FONTS.serif,
   sans:      FONTS.sans,
-  mono:      FONTS.mono,
+  mono:      FONTS.sans,
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

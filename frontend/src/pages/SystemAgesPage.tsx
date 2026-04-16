@@ -15,7 +15,7 @@ const UI = {
   rust:     COLORS.sage,
   inkLight: COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 const SYSTEM_DESCRIPTIONS: Record<SystemName, string> = {

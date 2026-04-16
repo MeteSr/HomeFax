@@ -10,7 +10,7 @@ export const voiceAgentFileInputRef: { current: HTMLInputElement | null } = { cu
 function ProposalRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: "flex", gap: "0.5rem", alignItems: "baseline" }}>
-      <span style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, flexShrink: 0, width: "4.5rem" }}>{label}</span>
+      <span style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, flexShrink: 0, width: "4.5rem" }}>{label}</span>
       <span style={{ fontFamily: FONTS.sans, fontSize: "0.72rem", color: COLORS.white, lineHeight: 1.3 }}>{value}</span>
     </div>
   );
@@ -21,7 +21,7 @@ const UI = {
   paper:    COLORS.white,
   rule:     COLORS.rule,
   inkLight: COLORS.plumMid,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 export function VoiceAgent() {

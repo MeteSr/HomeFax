@@ -16,7 +16,7 @@ const UI = {
   blush:     COLORS.blush,
   serif:     FONTS.serif,
   sans:      FONTS.sans,
-  mono:      FONTS.mono,
+  mono:      FONTS.sans,
 };
 
 interface FaqItem { q: string; a: React.ReactNode; }

@@ -79,7 +79,7 @@ export function ActivityFeedDrawer({ events, feedLoaded, lastReadAt, onClose }: 
         ) : events.length === 0 ? (
           <div style={{ padding: "3rem 1.5rem", textAlign: "center" }}>
             <CheckCircle2 size={32} color={COLORS.sageMid} style={{ margin: "0 auto 0.75rem" }} />
-            <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
               Nothing to catch up on.
             </p>
           </div>
@@ -114,7 +114,7 @@ export function ActivityFeedDrawer({ events, feedLoaded, lastReadAt, onClose }: 
                         <span style={{ width: "6px", height: "6px", background: COLORS.sage, borderRadius: "50%", flexShrink: 0 }} />
                       )}
                     </div>
-                    <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.04em", color: COLORS.plumMid, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.04em", color: COLORS.plumMid, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {event.detail}
                     </p>
                   </div>
