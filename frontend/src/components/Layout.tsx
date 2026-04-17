@@ -248,34 +248,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
             </Link>
           )}
-          {isHomeowner && (
-            <button
-              title="Add property"
-              onClick={() => {
-                if (atPropertyLimit && userTier !== "Premium") {
-                  setUpgradeOpen(true);
-                } else {
-                  navigate("/properties/new");
-                }
-              }}
-              style={{
-                display:    "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "none",
-                border:     "none",
-                cursor:     "pointer",
-                color:      COLORS.plumMid,
-                padding:    "0.375rem",
-                borderRadius: "0.25rem",
-                flexShrink: 0,
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plum; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plumMid; }}
-            >
-              <Plus size={18} />
-            </button>
-          )}
           <button
             onClick={toggleSidebar}
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
@@ -298,6 +270,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Nav links */}
         <div style={{ flex: 1, paddingTop: "0.375rem", overflowY: "auto", overflowX: "hidden" }}>
+          {/* Add property button — sits just below the toggle, mirrors Claude's sidebar */}
+          {isHomeowner && (
+            <button
+              title="Add property"
+              onClick={() => {
+                if (atPropertyLimit && userTier !== "Premium") {
+                  setUpgradeOpen(true);
+                } else {
+                  navigate("/properties/new");
+                }
+              }}
+              style={{
+                ...itemBase(),
+                width:   "100%",
+                border:  "none",
+                cursor:  "pointer",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plum; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plumMid; }}
+            >
+              <Plus size={17} style={{ flexShrink: 0 }} />
+              {sidebarOpen && <span style={labelStyle}>Add property</span>}
+            </button>
+          )}
           {navLinks.map((link) => {
             const active = isActive(link);
             return (
