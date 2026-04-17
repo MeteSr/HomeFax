@@ -107,6 +107,9 @@ jobs:
 
   test-frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # allows posting the coverage comment on PRs
     steps:
       - uses: actions/checkout@v4
 
@@ -130,6 +133,13 @@ jobs:
           name: coverage-report
           path: frontend/coverage/
           retention-days: 14
+
+      - name: Post coverage comment on PR
+        if: github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          json-summary-path: frontend/coverage/coverage-summary.json
+          vite-config-path:  frontend/vite.config.ts
 
       - name: Build
         run: cd frontend && npm run build

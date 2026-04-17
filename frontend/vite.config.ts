@@ -115,7 +115,7 @@ export default defineConfig(({ mode }) => {
           "src/services/agentTools.ts",  // Claude API schema definitions — not unit-testable
           "src/services/index.ts",       // Re-export barrel — no logic to test
         ],
-        reporter: ["text", "html", "lcov"],   // terminal summary + browsable HTML + CI/tooling
+        reporter: ["text", "html", "lcov", "json-summary"],   // terminal + browsable HTML + CI/tooling + PR comments
         reportsDirectory: "./coverage",
         thresholds: {
           lines:      60,
