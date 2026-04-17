@@ -1502,6 +1502,7 @@ persistent actor Property {
           owner      = room.owner;
           name       = room.name;
           floorType  = room.floorType;
+          floorName  = room.floorName;
           paintColor = room.paintColor;
           paintBrand = room.paintBrand;
           paintCode  = room.paintCode;
@@ -1556,6 +1557,7 @@ persistent actor Property {
           owner      = room.owner;
           name       = room.name;
           floorType  = room.floorType;
+          floorName  = room.floorName;
           paintColor = room.paintColor;
           paintBrand = room.paintBrand;
           paintCode  = room.paintCode;
@@ -1584,6 +1586,7 @@ persistent actor Property {
           owner      = room.owner;
           name       = room.name;
           floorType  = room.floorType;
+          floorName  = room.floorName;
           paintColor = room.paintColor;
           paintBrand = room.paintBrand;
           paintCode  = room.paintCode;
