@@ -18,8 +18,9 @@ test.describe("SettingsPage — Subscription tab tier-gated UI", () => {
       await goToSubscriptionTab(page);
     });
 
-    test("shows 'You're on the Free plan' callout", async ({ page }) => {
-      await expect(page.getByText(/you're on the free plan/i)).toBeVisible();
+    test("shows unsubscribed state — 'Free' plan name and 'Upgrade to unlock' prompt", async ({ page }) => {
+      await expect(page.getByText("Free")).toBeVisible();
+      await expect(page.getByText(/upgrade to unlock/i)).toBeVisible();
     });
 
     test("shows 'Upgrade to Pro →' button", async ({ page }) => {
@@ -46,8 +47,8 @@ test.describe("SettingsPage — Subscription tab tier-gated UI", () => {
       await goToSubscriptionTab(page);
     });
 
-    test("does NOT show Free plan upgrade callout", async ({ page }) => {
-      await expect(page.getByText(/you're on the free plan/i)).not.toBeVisible();
+    test("does NOT show 'Upgrade to unlock' prompt (already on a paid plan)", async ({ page }) => {
+      await expect(page.getByText(/upgrade to unlock/i)).not.toBeVisible();
     });
 
     test("shows 'Switch Plan' section heading", async ({ page }) => {
