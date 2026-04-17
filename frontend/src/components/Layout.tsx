@@ -19,8 +19,14 @@ import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { jobService, type Job } from "@/services/job";
 import { quoteService, type QuoteRequest } from "@/services/quote";
-import { paymentService, PLANS, type PlanTier } from "@/services/payment";
+import { paymentService, type PlanTier } from "@/services/payment";
 import { billService, type BillRecord } from "@/services/billService";
+
+// Inline tier→property limit so Layout never imports PLANS from payment,
+// keeping the payment mock surface small in tests.
+const TIER_PROPERTY_LIMIT: Partial<Record<PlanTier, number>> = {
+  Free: 1, Basic: 1, Pro: 5, Premium: 20,
+};
 import { VoiceAgent } from "./VoiceAgent";
 import UpgradeModal from "./UpgradeModal";
 import { ActivityFeedDrawer } from "./ActivityFeedDrawer";
@@ -129,8 +135,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isRealtor    = profile?.role === "Realtor";
   const isHomeowner  = !isContractor && !isRealtor;
 
-  const plan             = PLANS.find((p) => p.tier === userTier);
-  const atPropertyLimit  = plan ? properties.length >= plan.propertyLimit : false;
+  const atPropertyLimit  = properties.length >= (TIER_PROPERTY_LIMIT[userTier] ?? Infinity);
   const dashboardPath = isContractor ? "/contractor-dashboard" : "/dashboard";
 
   const singlePropertyId =
