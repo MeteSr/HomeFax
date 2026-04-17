@@ -23,7 +23,7 @@ const UI = {
   sage:     COLORS.sage,
   amber:    COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

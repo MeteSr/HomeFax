@@ -10,7 +10,7 @@ const UI = {
   rule:     COLORS.rule,
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 export interface AlertStackProps {

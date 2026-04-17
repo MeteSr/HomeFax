@@ -8,6 +8,9 @@ import { GenerateReportModal }     from "@/components/GenerateReportModal";
 import { LogJobModal }              from "@/components/LogJobModal";
 import { RequestQuoteModal }        from "@/components/RequestQuoteModal";
 import { InviteContractorModal }    from "@/components/InviteContractorModal";
+import PropertyVerifyModal              from "@/components/PropertyVerifyModal";
+import SystemAgesModal                  from "@/components/SystemAgesModal";
+import RecurringServiceCreateModal      from "@/components/RecurringServiceCreateModal";
 import { type Job, jobService } from "@/services/job";
 import { computeScoreWithDecay, computeBreakdown, getScoreGrade, premiumEstimate, isCertified, scoreDelta } from "@/services/scoreService";
 import { ScoreValueBanner } from "@/components/ScoreValueBanner";
@@ -52,7 +55,7 @@ const UI = {
   rust:     COLORS.sage,
   inkLight: COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 type Tab = "timeline" | "jobs" | "rooms" | "documents" | "bills" | "settings";
@@ -61,6 +64,9 @@ interface ModalState {
   report:        boolean;
   logJob:        boolean;
   quote:         boolean;
+  verify:        boolean;
+  systemAges:    boolean;
+  addService:    boolean;
   inviteJob:     Job | null;
   logJobPrefill: { serviceType?: string; contractorName?: string } | undefined;
 }
@@ -69,6 +75,9 @@ const MODALS_CLOSED: ModalState = {
   report:        false,
   logJob:        false,
   quote:         false,
+  verify:        false,
+  systemAges:    false,
+  addService:    false,
   inviteJob:     null,
   logJobPrefill: undefined,
 };
@@ -234,9 +243,11 @@ export default function PropertyDetailPage() {
             <Badge variant={verificationColor as any}>{property.verificationLevel}</Badge>
             <Button variant="outline" icon={<Wrench size={14} />} onClick={() => setModals((m) => ({ ...m, logJob: true }))}>Log Job</Button>
             <Button variant="outline" icon={<MessageSquare size={14} />} onClick={() => setModals((m) => ({ ...m, quote: true }))}>Request Quote</Button>
-            <Button icon={<Share2 size={14} />} onClick={() => setModals((m) => ({ ...m, report: true }))}>
-              Share HomeGentic Report
-            </Button>
+            {property.verificationLevel !== "Unverified" && (
+              <Button icon={<Share2 size={14} />} onClick={() => setModals((m) => ({ ...m, report: true }))}>
+                Share HomeGentic Report
+              </Button>
+            )}
           </div>
         </div>
 
@@ -256,7 +267,7 @@ export default function PropertyDetailPage() {
                 Upload a utility bill, deed, or tax record to confirm ownership. Unverified properties cannot generate shareable HomeGentic reports.
               </p>
             </div>
-            <Button size="sm" onClick={() => navigate(`/properties/${property.id}/verify`)}>
+            <Button size="sm" onClick={() => setModals((m) => ({ ...m, verify: true }))}>
               Verify Now
             </Button>
           </div>
@@ -430,7 +441,7 @@ export default function PropertyDetailPage() {
               services={recurringServices}
               visitLogMap={visitLogMap}
               userTier={userTier}
-              onAddService={() => navigate("/recurring/new")}
+              onAddService={() => setModals((m) => ({ ...m, addService: true }))}
               onViewService={(svcId) => navigate(`/recurring/${svcId}`)}
             />
           </div>
@@ -498,7 +509,7 @@ export default function PropertyDetailPage() {
         {tab === "rooms"     && <RoomsTab propertyId={id!} rooms={rooms} onRoomsChange={setRooms} photosByJob={photosByJob} onRoomPhotoUpload={(roomId, file) => uploadRoomPhoto(roomId, file, id!)} />}
         {tab === "documents" && <DocumentsTab propertyId={id!} />}
         {tab === "bills"     && <BillsTab propertyId={id!} />}
-        {tab === "settings"  && <SettingsTab property={property} currentPrincipal={principal ?? ""} />}
+        {tab === "settings"  && <SettingsTab property={property} currentPrincipal={principal ?? ""} onVerifyOwnership={() => setModals((m) => ({ ...m, verify: true }))} />}
       </div>
 
       {modals.report && (
@@ -527,6 +538,25 @@ export default function PropertyDetailPage() {
           onClose={() => setModals((m) => ({ ...m, inviteJob: null }))}
         />
       )}
+
+      <PropertyVerifyModal
+        open={modals.verify}
+        onClose={() => setModals((m) => ({ ...m, verify: false }))}
+        propertyId={id ?? ""}
+      />
+
+      <SystemAgesModal
+        open={modals.systemAges}
+        onClose={() => setModals((m) => ({ ...m, systemAges: false }))}
+        propertyId={id ?? ""}
+        yearBuilt={property ? Number(property.yearBuilt) : new Date().getFullYear() - 20}
+      />
+
+      <RecurringServiceCreateModal
+        open={modals.addService}
+        onClose={() => setModals((m) => ({ ...m, addService: false }))}
+        defaultPropertyId={id}
+      />
     </Layout>
   );
 }

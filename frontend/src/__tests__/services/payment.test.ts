@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { paymentService, PLANS, ANNUAL_PLANS } from "@/services/payment";
-import type { PlanTier } from "@/services/payment";
+import { paymentService } from "@/services/payment";
+import { PLANS, ANNUAL_PLANS, type PlanTier } from "@/services/planConstants";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 // Prevent AuthClient / indexedDB access and real canister HTTP calls in unit tests.

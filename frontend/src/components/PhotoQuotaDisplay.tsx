@@ -20,8 +20,8 @@ export function PhotoQuotaDisplay({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-        <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>Photos Used</span>
-        <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", fontWeight: 600, color: pct > 80 ? COLORS.plum : COLORS.sage }}>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>Photos Used</span>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", fontWeight: 600, color: pct > 80 ? COLORS.plum : COLORS.sage }}>
           {used}/{limit}
         </span>
       </div>
@@ -37,7 +37,7 @@ export function PhotoQuotaDisplay({
         />
       </div>
       {pct > 80 && onUpgrade && (
-        <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid }}>
+        <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid }}>
           Running low on photo quota.{" "}
           <button
             onClick={onUpgrade}
@@ -48,7 +48,7 @@ export function PhotoQuotaDisplay({
               border: "none",
               cursor: "pointer",
               padding: 0,
-              fontFamily: FONTS.mono,
+              fontFamily: FONTS.sans,
               fontSize: "0.6rem",
             }}
           >

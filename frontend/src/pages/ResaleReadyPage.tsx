@@ -27,7 +27,7 @@ const UI = {
   sage:     COLORS.sage,
   gold:     COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
   sans:     FONTS.sans,
 };
 
@@ -46,9 +46,9 @@ function ScoreArc({ score }: { score: number }) {
         strokeDasharray={`${filled.toFixed(2)} ${C}`} strokeLinecap="butt" transform={`rotate(-225, ${cx}, ${cy})`} />
       <text x={cx} y={cy - 4} textAnchor="middle" fontFamily={FONTS.serif}
         fontWeight="900" fontSize="30" fill={UI.ink}>{score}</text>
-      <text x={cx} y={cy + 14} textAnchor="middle" fontFamily={FONTS.mono}
+      <text x={cx} y={cy + 14} textAnchor="middle" fontFamily={FONTS.sans}
         fontSize="8" fill={UI.inkLight} letterSpacing="1">/100</text>
-      <text x={cx} y={cy + 28} textAnchor="middle" fontFamily={FONTS.mono}
+      <text x={cx} y={cy + 28} textAnchor="middle" fontFamily={FONTS.sans}
         fontSize="8" fill={color} letterSpacing="2">{grade}</text>
     </svg>
   );

@@ -9,7 +9,7 @@ const UI = {
   paper:    COLORS.white,
   rule:     COLORS.rule,
   inkLight: COLORS.plumMid,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 const STATUS_STYLE: Record<string, { color: string; bg: string }> = {

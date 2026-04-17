@@ -13,7 +13,7 @@ const UI = {
   butter:   COLORS.butter,
   serif:    FONTS.serif,
   sans:     FONTS.sans,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 const EFFECTIVE_DATE = "April 9, 2026";

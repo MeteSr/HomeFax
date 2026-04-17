@@ -30,7 +30,7 @@ export function JobValueDelta({ serviceType, currentScore }: JobValueDeltaProps)
       <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", color: COLORS.sage }}>
         +{fmt(delta)}
       </span>
-      <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
+      <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
         estimated added to your home's documented value
       </span>
     </div>

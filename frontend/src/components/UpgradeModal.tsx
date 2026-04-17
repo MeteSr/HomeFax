@@ -8,8 +8,9 @@
 
 import React, { useState } from "react";
 import { Check, X, CreditCard, Coins } from "lucide-react";
-import { PLANS, paymentService, type PlanTier } from "@/services/payment";
-import { COLORS, FONTS } from "@/theme";
+import { PLANS, type PlanTier } from "@/services/planConstants";
+import { paymentService } from "@/services/payment";
+import { COLORS, FONTS, RADIUS } from "@/theme";
 
 export interface UpgradeModalProps {
   open:    boolean;
@@ -81,12 +82,13 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       }}
     >
       <div style={{
-        background: COLORS.white,
-        border:     `1px solid ${COLORS.rule}`,
-        padding:    "2rem",
-        maxWidth:   "680px",
-        width:      "calc(100% - 2rem)",
-        position:   "relative",
+        background:   COLORS.white,
+        border:       `1px solid ${COLORS.rule}`,
+        borderRadius: RADIUS.card,
+        padding:      "2rem",
+        maxWidth:     "680px",
+        width:        "calc(100% - 2rem)",
+        position:     "relative",
       }}>
         {/* Dismiss */}
         <button
@@ -135,7 +137,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
             );
           })}
           {method === "icp" && (
-            <span style={{ alignSelf: "center", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid, letterSpacing: "0.04em" }}>
+            <span style={{ alignSelf: "center", fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plumMid }}>
               No processing fees · Requires ICP tokens
             </span>
           )}
@@ -148,6 +150,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
               key={plan.tier}
               style={{
                 border:        `1.5px solid ${plan.tier === "Premium" ? COLORS.sage : COLORS.rule}`,
+                borderRadius:  RADIUS.card,
                 padding:       "1.25rem",
                 display:       "flex",
                 flexDirection: "column",
@@ -156,7 +159,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
               }}
             >
               <div>
-                <div style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: COLORS.plumMid, marginBottom: "0.2rem" }}>
+                <div style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: "0.08em", color: COLORS.plumMid, marginBottom: "0.2rem" }}>
                   {plan.tier}
                 </div>
                 <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1.75rem", color: COLORS.plum, lineHeight: 1 }}>

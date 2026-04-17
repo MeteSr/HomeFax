@@ -13,7 +13,7 @@ import type { Quote, QuoteRequest } from "@/services/quote";
 import { COLORS, FONTS } from "@/theme";
 
 const UI = {
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
   serif:    FONTS.serif,
   inkLight: COLORS.plumMid,
   rule:     COLORS.rule,

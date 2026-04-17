@@ -17,7 +17,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 interface Step {
@@ -62,11 +62,11 @@ function StepCard({ step, index, isNext, onClick }: { step: Step; index: number;
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-          <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
             Step {index + 1}
           </span>
           {step.done && (
-            <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}`, padding: "0.1rem 0.5rem", borderRadius: 100 }}>
+            <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}`, padding: "0.1rem 0.5rem", borderRadius: 100 }}>
               Done
             </span>
           )}

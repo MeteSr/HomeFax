@@ -22,7 +22,8 @@ import type { Job } from "../../services/job";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-const ALL_SYSTEMS = ["HVAC", "Roofing", "Water Heater", "Windows", "Electrical", "Plumbing", "Flooring", "Insulation", "Solar Panels"];
+// Solar Panels are opt-in (excluded unless a solar job or systemInstallYears entry exists)
+const ALL_SYSTEMS = ["HVAC", "Roofing", "Water Heater", "Windows", "Electrical", "Plumbing", "Flooring", "Insulation"];
 
 const JOB_SERVICE_TYPES = ALL_SYSTEMS;
 
@@ -53,7 +54,7 @@ function time(fn: () => void): number {
 }
 
 function validateReport(report: MaintenanceReport, yearBuilt: number) {
-  expect(report.systemPredictions).toHaveLength(9);
+  expect(report.systemPredictions).toHaveLength(8);
   expect(report.generatedAt).toBeGreaterThan(0);
   for (const p of report.systemPredictions) {
     expect(p.percentLifeUsed).toBeGreaterThanOrEqual(0);
@@ -165,7 +166,7 @@ describe("13.3.2: predictMaintenance() at scale", () => {
     );
     expect(results).toHaveLength(50);
     for (const r of results) {
-      expect(r.systemPredictions).toHaveLength(9);
+      expect(r.systemPredictions).toHaveLength(8);
     }
   });
 

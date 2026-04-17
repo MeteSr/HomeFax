@@ -12,15 +12,21 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Bell, LogOut,
   LayoutDashboard, TrendingUp, Users, Cpu, Radio, Home as HomeIcon, PlusSquare,
-  Store, ChevronLeft, ChevronRight, Menu, X,
+  Store, PanelLeft, Menu, X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
 import { jobService, type Job } from "@/services/job";
 import { quoteService, type QuoteRequest } from "@/services/quote";
-import { paymentService } from "@/services/payment";
+import { paymentService, type PlanTier } from "@/services/payment";
 import { billService, type BillRecord } from "@/services/billService";
+
+// Inline tier→property limit so Layout never imports PLANS from payment,
+// keeping the payment mock surface small in tests.
+const TIER_PROPERTY_LIMIT: Partial<Record<PlanTier, number>> = {
+  Free: 1, Basic: 1, Pro: 5, Premium: 20,
+};
 import { VoiceAgent } from "./VoiceAgent";
 import UpgradeModal from "./UpgradeModal";
 import { ActivityFeedDrawer } from "./ActivityFeedDrawer";
@@ -67,7 +73,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
   const [userMenuOpen,  setUserMenuOpen]  = useState(false);
   const [upgradeOpen,   setUpgradeOpen]   = useState(false);
-  const [userTier,      setUserTier]      = useState<string>("Free");
+  const [userTier,      setUserTier]      = useState<PlanTier>("Free");
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu on outside click
@@ -128,6 +134,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isContractor = profile?.role === "Contractor";
   const isRealtor    = profile?.role === "Realtor";
   const isHomeowner  = !isContractor && !isRealtor;
+
+  const atPropertyLimit  = properties.length >= (TIER_PROPERTY_LIMIT[userTier] ?? Infinity);
   const dashboardPath = isContractor ? "/contractor-dashboard" : "/dashboard";
 
   const singlePropertyId =
@@ -152,7 +160,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ...(singlePropertyId
           ? [{ to: `/my-listing/${singlePropertyId}`, label: "My Listing", Icon: HomeIcon }]
           : [{ to: "/listing/new", label: "List Home", Icon: HomeIcon }]),
-        { to: "/properties/new", label: "Add Property", Icon: PlusSquare },
+        ...(!atPropertyLimit ? [{ to: "/properties/new", label: "Add Property", Icon: PlusSquare }] : []),
       ];
 
   const isActive = (link: NavLink) => {
@@ -202,62 +210,51 @@ export function Layout({ children }: { children: React.ReactNode }) {
         style={{ width: sidebarW }}
         aria-label="Main navigation"
       >
-        {/* Logo */}
+        {/* Header: branding + toggle */}
         <div style={{
-          height:          "3.5rem",
-          display:         "flex",
-          alignItems:      "center",
-          paddingLeft:     sidebarOpen ? "1.25rem" : 0,
-          justifyContent:  sidebarOpen ? "flex-start" : "center",
-          borderBottom:    `1px solid ${COLORS.rule}`,
-          flexShrink:      0,
+          height:        "3.5rem",
+          display:       "flex",
+          alignItems:    "center",
+          justifyContent: sidebarOpen ? "space-between" : "center",
+          paddingLeft:   sidebarOpen ? "1.25rem" : 0,
+          paddingRight:  sidebarOpen ? "0.75rem" : 0,
+          flexShrink:    0,
         }}>
-          <Link
-            to={dashboardPath}
+          {sidebarOpen && (
+            <Link
+              to={dashboardPath}
+              style={{
+                textDecoration: "none",
+                fontFamily:     FONTS.serif,
+                fontWeight:     900,
+                fontSize:       "1.1rem",
+                letterSpacing:  "-0.5px",
+                color:          COLORS.plum,
+                whiteSpace:     "nowrap",
+              }}
+            >
+              Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
+            </Link>
+          )}
+          <button
+            onClick={toggleSidebar}
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             style={{
-              textDecoration: "none",
-              fontFamily:     FONTS.serif,
-              fontWeight:     900,
-              fontSize:       "1.1rem",
-              letterSpacing:  "-0.5px",
-              color:          COLORS.plum,
-              whiteSpace:     "nowrap",
+              display:    "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "none",
+              border:     "none",
+              cursor:     "pointer",
+              color:      COLORS.plumMid,
+              padding:    "0.375rem",
+              borderRadius: "0.25rem",
+              flexShrink: 0,
             }}
           >
-            {sidebarOpen
-              ? <>Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span></>
-              : <>H<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>G</span></>
-            }
-          </Link>
+            <PanelLeft size={18} />
+          </button>
         </div>
-
-        {/* Collapse / expand toggle */}
-        <button
-          onClick={toggleSidebar}
-          title={sidebarOpen ? "Collapse" : "Expand"}
-          style={{
-            ...itemBase(),
-            width:        "100%",
-            border:       "none",
-            borderBottom: `1px solid ${COLORS.rule}`,
-            cursor:       "pointer",
-          }}
-        >
-          {sidebarOpen
-            ? <ChevronLeft  size={17} style={{ flexShrink: 0 }} />
-            : <ChevronRight size={17} style={{ flexShrink: 0 }} />
-          }
-          {sidebarOpen && (
-            <span style={{
-              fontFamily:    FONTS.mono,
-              fontSize:      "0.6rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-            }}>
-              Collapse
-            </span>
-          )}
-        </button>
 
         {/* Nav links */}
         <div style={{ flex: 1, paddingTop: "0.375rem", overflowY: "auto", overflowX: "hidden" }}>
@@ -310,7 +307,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   display:        "flex",
                   alignItems:     "center",
                   justifyContent: "center",
-                  fontFamily:     FONTS.mono,
+                  fontFamily:     FONTS.sans,
                   fontSize:       "0.45rem",
                   color:          COLORS.white,
                   fontWeight:     700,
@@ -355,7 +352,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 display:        "flex",
                 alignItems:     "center",
                 justifyContent: "center",
-                fontFamily:     FONTS.mono,
+                fontFamily:     FONTS.sans,
                 fontSize:       "0.6rem",
                 fontWeight:     700,
                 flexShrink:     0,
@@ -412,7 +409,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 width: "14px", height: "14px",
                 background: COLORS.sage, borderRadius: "50%",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: FONTS.mono, fontSize: "0.45rem", color: COLORS.white, fontWeight: 700,
+                fontFamily: FONTS.sans, fontSize: "0.45rem", color: COLORS.white, fontWeight: 700,
               }}>
                 {unread > 9 ? "9+" : unread}
               </span>

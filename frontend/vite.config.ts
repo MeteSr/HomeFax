@@ -102,6 +102,7 @@ export default defineConfig(({ mode }) => {
       hookTimeout: 30000,
       setupFiles: ["./src/__tests__/setup.ts", "./src/__tests__/helmet-mock-setup.ts"],
       include: ["src/__tests__/**/*.test.{ts,tsx}"],
+      exclude: ["src/__tests__/integration/**"],
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },

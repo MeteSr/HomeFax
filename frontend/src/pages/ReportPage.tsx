@@ -22,7 +22,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 const VERIFICATION_CONFIG: Record<string, { color: string; bg: string; label: string; description: string }> = {
@@ -76,9 +76,9 @@ function ScoreArc({ score }: { score: number }) {
         strokeDasharray={`${filled.toFixed(2)} ${C}`} strokeLinecap="butt" transform={`rotate(-225, ${cx}, ${cy})`} />
       <text x={cx} y={cy - 3} textAnchor="middle" fontFamily={FONTS.serif}
         fontWeight="900" fontSize="26" fill={COLORS.white}>{score}</text>
-      <text x={cx} y={cy + 13} textAnchor="middle" fontFamily={FONTS.mono}
+      <text x={cx} y={cy + 13} textAnchor="middle" fontFamily={FONTS.sans}
         fontSize="8" fill="rgba(244,241,235,0.40)" letterSpacing="1">/100</text>
-      <text x={cx} y={cy + 26} textAnchor="middle" fontFamily={FONTS.mono}
+      <text x={cx} y={cy + 26} textAnchor="middle" fontFamily={FONTS.sans}
         fontSize="7" fill={color} letterSpacing="2">{grade}</text>
     </svg>
   );

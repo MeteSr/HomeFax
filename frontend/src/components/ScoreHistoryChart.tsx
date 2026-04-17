@@ -36,7 +36,7 @@ export function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
         {yGridLines.map((v) => (
           <g key={v}>
             <line x1={padL} y1={toY(v)} x2={padL + innerW} y2={toY(v)} stroke={COLORS.rule} strokeWidth="0.5" strokeDasharray="3,3" />
-            <text x={padL - 4} y={toY(v)} textAnchor="end" dominantBaseline="middle" fill={COLORS.plumMid} fontSize="9" fontFamily={FONTS.mono}>{v}</text>
+            <text x={padL - 4} y={toY(v)} textAnchor="end" dominantBaseline="middle" fill={COLORS.plumMid} fontSize="9" fontFamily={FONTS.sans}>{v}</text>
           </g>
         ))}
 
@@ -52,7 +52,7 @@ export function ScoreHistoryChart({ history }: { history: ScoreSnapshot[] }) {
           const d   = new Date(s.timestamp);
           const lbl = `${d.getMonth() + 1}/${String(d.getDate()).padStart(2, "0")}`;
           return (
-            <text key={i} x={toX(i)} y={padT + innerH + 14} textAnchor="middle" fill={COLORS.plumMid} fontSize="8" fontFamily={FONTS.mono}>
+            <text key={i} x={toX(i)} y={padT + innerH + 14} textAnchor="middle" fill={COLORS.plumMid} fontSize="8" fontFamily={FONTS.sans}>
               {lbl}
             </text>
           );

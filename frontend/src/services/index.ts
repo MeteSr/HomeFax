@@ -19,8 +19,10 @@ export { propertyService } from "./property";
 export type { JobStatus, Job, JobCreateInput, InvitePreview } from "./job";
 export { jobService, INSURANCE_SERVICE_TYPES, isInsuranceRelevant } from "./job";
 
-export type { PlanTier, Plan } from "./payment";
-export { PLANS, paymentService } from "./payment";
+export type { PlanTier } from "./payment";
+export { PLANS } from "./planConstants";
+export type { Plan } from "./planConstants";
+export { paymentService } from "./payment";
 
 export type { ContractorProfile, JobCredential, RegisterContractorArgs, UpdateContractorArgs } from "./contractor";
 export { contractorService } from "./contractor";

@@ -37,12 +37,12 @@ export function PropertyEstimatedValueInput({ propertyId, onValueChange }: Prope
     <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
       <label
         htmlFor={`est-val-${propertyId}`}
-        style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.plumMid }}
+        style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.plumMid }}
       >
         Estimated Home Value
       </label>
       <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
-        <span style={{ fontFamily: FONTS.mono, fontSize: "0.875rem", color: COLORS.plumMid }}>$</span>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.plumMid }}>$</span>
         <input
           id={`est-val-${propertyId}`}
           aria-label="estimated home value"
@@ -54,14 +54,14 @@ export function PropertyEstimatedValueInput({ propertyId, onValueChange }: Prope
           style={{
             padding:    "0.5rem 0.75rem",
             border:     `1px solid ${COLORS.rule}`,
-            fontFamily: FONTS.mono,
+            fontFamily: FONTS.sans,
             fontSize:   "0.875rem",
             outline:    "none",
             width:      "10rem",
           }}
         />
       </div>
-      <div style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", color: COLORS.plumMid }}>
+      <div style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", color: COLORS.plumMid }}>
         Used to personalize your score-to-value estimate
       </div>
     </div>

@@ -14,7 +14,7 @@ export function SigPill({ signed, label }: { signed: boolean; label: string }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: "0.25rem",
-      fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase",
+      fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase",
       padding: "0.15rem 0.625rem", borderRadius: 100,
       border: `1px solid ${signed ? COLORS.sageMid : COLORS.rule}`,
       color: signed ? COLORS.sage : COLORS.plumMid,
@@ -64,13 +64,13 @@ export function PhotoStrip({ photos, jobId, onUpload }: { photos: Photo[]; jobId
           />
         ))}
         {photos.length > 5 && (
-          <button onClick={() => openLightbox(5)} style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid, background: "none", border: `1px solid ${COLORS.rule}`, padding: "0.2rem 0.5rem", cursor: "pointer" }}>
+          <button onClick={() => openLightbox(5)} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid, background: "none", border: `1px solid ${COLORS.rule}`, padding: "0.2rem 0.5rem", cursor: "pointer" }}>
             +{photos.length - 5} more
           </button>
         )}
         <button
           onClick={() => inputRef.current?.click()}
-          style={{ padding: "0.2rem 0.6rem", fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, background: "none", border: `1px solid ${COLORS.rule}`, cursor: "pointer" }}
+          style={{ padding: "0.2rem 0.6rem", fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, background: "none", border: `1px solid ${COLORS.rule}`, cursor: "pointer" }}
         >
           + Add Photo
         </button>
@@ -83,12 +83,12 @@ export function PhotoStrip({ photos, jobId, onUpload }: { photos: Photo[]; jobId
           <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", flexDirection: "column", alignItems: "center", maxWidth: "80vw", maxHeight: "80vh" }}>
             <img src={activePh.url} alt={activePh.description} style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", border: "1px solid rgba(255,255,255,0.2)" }} />
             <div style={{ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "1rem" }}>
-              <span style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", color: "rgba(255,255,255,0.6)" }}>{activePh.description || "No description"}</span>
-              <span style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.4)" }}>{(lightboxIdx ?? 0) + 1} / {photos.length}</span>
+              <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", color: "rgba(255,255,255,0.6)" }}>{activePh.description || "No description"}</span>
+              <span style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", color: "rgba(255,255,255,0.4)" }}>{(lightboxIdx ?? 0) + 1} / {photos.length}</span>
             </div>
           </div>
           <button onClick={next} disabled={lightboxIdx === photos.length - 1} style={{ position: "absolute", right: "1.5rem", top: "50%", transform: "translateY(-50%)", background: "none", border: `1px solid rgba(255,255,255,0.3)`, color: COLORS.white, padding: "0.75rem", cursor: lightboxIdx === photos.length - 1 ? "default" : "pointer", opacity: lightboxIdx === photos.length - 1 ? 0.3 : 1, fontSize: "1.25rem", lineHeight: 1 }}>›</button>
-          <button onClick={closeLightbox} style={{ position: "absolute", top: "1.25rem", right: "1.25rem", background: "none", border: `1px solid rgba(255,255,255,0.3)`, color: COLORS.white, padding: "0.375rem 0.75rem", fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}>Close</button>
+          <button onClick={closeLightbox} style={{ position: "absolute", top: "1.25rem", right: "1.25rem", background: "none", border: `1px solid rgba(255,255,255,0.3)`, color: COLORS.white, padding: "0.375rem 0.75rem", fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", cursor: "pointer" }}>Close</button>
         </div>
       )}
     </>
@@ -122,7 +122,7 @@ interface TimelineTabProps {
 }
 
 export function TimelineTab({ property, jobs, onVerify, currentPrincipal, photosByJob, onPhotoUpload, onInviteContractor }: TimelineTabProps) {
-  const TC = { ink: COLORS.plum, rule: COLORS.rule, rust: COLORS.sage, inkLight: COLORS.plumMid, sage: COLORS.sage, mono: FONTS.mono, serif: FONTS.serif };
+  const TC = { ink: COLORS.plum, rule: COLORS.rule, rust: COLORS.sage, inkLight: COLORS.plumMid, sage: COLORS.sage, mono: FONTS.sans, serif: FONTS.serif };
   const navigate = useNavigate();
   const [justVerified,        setJustVerified]        = React.useState<string | null>(null);
   const [reviewNudgeJob,      setReviewNudgeJob]      = React.useState<Job | null>(null);

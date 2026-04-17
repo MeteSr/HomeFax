@@ -25,7 +25,7 @@ const UI = {
   sage:     COLORS.sage,
   inkLight: COLORS.plumMid,
   rust:     COLORS.sage,    // primary action colour follows sage in this design
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
   serif:    FONTS.serif,
   sans:     FONTS.sans,
 };

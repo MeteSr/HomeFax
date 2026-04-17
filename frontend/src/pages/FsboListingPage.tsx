@@ -29,7 +29,7 @@ const UI = {
   rule:     COLORS.rule,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
   sans:     FONTS.sans,
 };
 
@@ -116,7 +116,7 @@ export function ShowingRequestForm({ propertyId }: { propertyId: string }) {
             border: `1px solid ${contact && !isValidEmailOrPhone(contact) ? COLORS.rust : UI.rule}` }}
         />
         {contact && !isValidEmailOrPhone(contact) && (
-          <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.mono }}>Enter a valid email or phone number</p>
+          <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>Enter a valid email or phone number</p>
         )}
       </div>
 

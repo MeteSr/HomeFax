@@ -18,7 +18,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 type Tab = "verifications" | "tiers" | "cycles" | "referrals";
@@ -463,13 +463,13 @@ function ReferralPipeline() {
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}>
-        <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
+        <p style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
           Jobs sourced via HomeGentic quote requests. $15 flat fee applies on dual-signature verification.
         </p>
         <button
           onClick={load}
           disabled={loading}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 0.875rem", border: `1px solid ${COLORS.rule}`, background: COLORS.white, fontFamily: FONTS.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", color: COLORS.plumMid }}
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.375rem 0.875rem", border: `1px solid ${COLORS.rule}`, background: COLORS.white, fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", color: COLORS.plumMid }}
         >
           <RefreshCw size={11} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
           Refresh
@@ -484,13 +484,13 @@ function ReferralPipeline() {
           { label: "Fee per job",    value: `$${(referralService.REFERRAL_FEE_CENTS / 100).toFixed(2)}`, count: null, note: "flat rate" },
         ].map((card) => (
           <div key={card.label} style={{ background: COLORS.white, border: `1px solid ${COLORS.rule}`, padding: "1rem 1.25rem" }}>
-            <p style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.375rem" }}>{card.label}</p>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.375rem" }}>{card.label}</p>
             <p style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: COLORS.plum, marginBottom: "0.25rem" }}>{card.value}</p>
             {card.count !== null && (
-              <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid }}>{card.count} {card.note}</p>
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid }}>{card.count} {card.note}</p>
             )}
             {card.count === null && (
-              <p style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.plumMid }}>{card.note}</p>
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.plumMid }}>{card.note}</p>
             )}
           </div>
         ))}
@@ -503,7 +503,7 @@ function ReferralPipeline() {
       ) : jobs === null || jobs.length === 0 ? (
         <div style={{ border: `1px dashed ${COLORS.rule}`, padding: "3rem", textAlign: "center" }}>
           <DollarSign size={32} color={COLORS.rule} style={{ margin: "0 auto 0.75rem" }} />
-          <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
+          <p style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>
             No referral jobs yet. Jobs sourced via quote requests will appear here once contractors receive their first HomeGentic lead.
           </p>
         </div>
@@ -513,23 +513,23 @@ function ReferralPipeline() {
             <thead>
               <tr style={{ background: COLORS.sageLight }}>
                 {["Job ID", "Quote ID", "Service", "Amount", "Status", "Fee"].map((h) => (
-                  <th key={h} style={{ textAlign: "left", padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, borderBottom: `1px solid ${COLORS.rule}` }}>{h}</th>
+                  <th key={h} style={{ textAlign: "left", padding: "0.625rem 1rem", fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, borderBottom: `1px solid ${COLORS.rule}` }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {jobs.map((j, i) => (
                 <tr key={j.id} style={{ borderBottom: i < jobs.length - 1 ? `1px solid ${COLORS.rule}` : "none", background: i % 2 === 0 ? COLORS.white : COLORS.sageLight }}>
-                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plum, fontWeight: 600 }}>{j.id}</td>
-                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>{j.sourceQuoteId ?? "—"}</td>
-                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>{j.serviceType}</td>
-                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>${(j.amount / 100).toFixed(2)}</td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plum, fontWeight: 600 }}>{j.id}</td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>{j.sourceQuoteId ?? "—"}</td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>{j.serviceType}</td>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>${(j.amount / 100).toFixed(2)}</td>
                   <td style={{ padding: "0.625rem 1rem" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontFamily: FONTS.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "2px 8px", background: j.verified ? "#dcfce7" : COLORS.butter, color: j.verified ? "#16a34a" : COLORS.plum }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "2px 8px", background: j.verified ? "#dcfce7" : COLORS.butter, color: j.verified ? "#16a34a" : COLORS.plum }}>
                       {j.verified ? "Verified" : j.status}
                     </span>
                   </td>
-                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.mono, fontSize: "0.65rem", color: j.verified ? "#16a34a" : COLORS.plumMid, fontWeight: j.verified ? 700 : 400 }}>
+                  <td style={{ padding: "0.625rem 1rem", fontFamily: FONTS.sans, fontSize: "0.65rem", color: j.verified ? "#16a34a" : COLORS.plumMid, fontWeight: j.verified ? 700 : 400 }}>
                     {j.verified ? `$${(referralService.REFERRAL_FEE_CENTS / 100).toFixed(2)}` : "Pending"}
                   </td>
                 </tr>

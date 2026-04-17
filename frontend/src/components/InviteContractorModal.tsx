@@ -32,7 +32,7 @@ const UI = {
   rule:  COLORS.rule,
   sage:  COLORS.sage,
   serif: FONTS.serif,
-  mono:  FONTS.mono,
+  mono:  FONTS.sans,
   sans:  FONTS.sans,
 };
 

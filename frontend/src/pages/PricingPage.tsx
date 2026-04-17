@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { CheckCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/Button";
-import { PLANS, ANNUAL_PLANS } from "@/services/payment";
-import type { Plan, PlanTier, BillingCycle } from "@/services/payment";
+import { PLANS, ANNUAL_PLANS, type Plan, type PlanTier, type BillingCycle } from "@/services/planConstants";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthStore } from "@/store/authStore";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
@@ -15,7 +14,7 @@ const UI = {
   rust:     COLORS.sage,
   inkLight: COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 const BILLING_KEY = "homegentic_pricing_billing";
@@ -182,10 +181,10 @@ Upgrade when you're ready. Cancel anytime.
                     {plan.price === 0 ? "Free" : `$${plan.price}`}
                   </span>
                   {plan.price > 0 && (
-                    <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", color: COLORS.plumMid }}>/{plan.period}</span>
+                    <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>/{plan.period}</span>
                   )}
                   {plan.period === "year" && (
-                    <div style={{ fontFamily: FONTS.mono, fontSize: "0.6rem", color: COLORS.sage, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
+                    <div style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.sage, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
                       ${(plan.price / 12).toFixed(2)}/mo billed annually
                     </div>
                   )}
@@ -208,7 +207,7 @@ Upgrade when you're ready. Cancel anytime.
                       borderRadius: RADIUS.sm,
                     }}>
                       <Sparkles size={12} color={COLORS.sage} style={{ flexShrink: 0 }} />
-                      <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.04em", color: isPopular ? COLORS.sageLight : COLORS.sage, fontWeight: 600 }}>
+                      <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.04em", color: isPopular ? COLORS.sageLight : COLORS.sage, fontWeight: 600 }}>
                         {agentCalls} AI agent calls/day · unlimited chat
                       </span>
                     </div>
@@ -248,7 +247,7 @@ Upgrade when you're ready. Cancel anytime.
             borderRadius: RADIUS.card, padding: "32px 40px", marginBottom: "4rem",
           }}>
             <div>
-              <div style={{ fontFamily: FONTS.mono, fontSize: 11, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: 8 }}>For realtors & gift givers</div>
+              <div style={{ fontFamily: FONTS.sans, fontSize: 11, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: 8 }}>For realtors & gift givers</div>
               <h3 style={{ fontFamily: FONTS.serif, fontSize: 22, fontWeight: 900, color: COLORS.plum, margin: "0 0 6px" }}>Gifting for a client?</h3>
               <p style={{ fontFamily: FONTS.sans, fontSize: 14, color: COLORS.plumMid, margin: 0, lineHeight: 1.6 }}>Give your buyer an AI-powered home maintenance platform that tracks repairs, predicts costs, and builds a verified record that makes their home easier to sell — one of the most useful closing gifts you can offer.</p>
             </div>

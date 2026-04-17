@@ -28,10 +28,10 @@ export function PropertyCard({ property, onClick, badge }: { property: Property;
         <h3 style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 600, color: COLORS.plum }}>{property.address}</h3>
         {badge}
       </div>
-      <p style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginBottom: "0.75rem" }}>
+      <p style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.06em", color: COLORS.plumMid, marginBottom: "0.75rem" }}>
         {property.city}, {property.state} {property.zipCode}
       </p>
-      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
         <span style={{ textTransform: "uppercase" }}>{property.propertyType}</span>
         <span style={{ color: COLORS.sage }}>View Details →</span>
       </div>

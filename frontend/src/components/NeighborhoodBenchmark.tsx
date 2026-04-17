@@ -111,8 +111,8 @@ export function NeighborhoodBenchmark({ zipCode, score }: Props) {
           />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", color: COLORS.plumMid }}>0</span>
-          <span style={{ fontFamily: FONTS.mono, fontSize: "0.55rem", color: COLORS.plumMid }}>100</span>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", color: COLORS.plumMid }}>0</span>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", color: COLORS.plumMid }}>100</span>
         </div>
       </div>
 

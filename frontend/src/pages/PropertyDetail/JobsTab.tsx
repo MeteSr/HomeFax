@@ -4,7 +4,7 @@ import { type Job } from "@/services/job";
 import { COLORS, FONTS } from "@/theme";
 
 export function JobsTab({ jobs }: { jobs: Job[] }) {
-  const mono     = FONTS.mono;
+  const mono     = FONTS.sans;
   const rule     = COLORS.rule;
   const inkLight = COLORS.plumMid;
 

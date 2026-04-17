@@ -18,6 +18,7 @@ import { marketService, buildPropertySummary, type ProjectRecommendation } from 
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { paymentService, type PlanTier } from "@/services/payment";
 import { UpgradeGate } from "@/components/UpgradeGate";
+import SystemAgesModal from "@/components/SystemAgesModal";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
 const UI = {
@@ -28,7 +29,7 @@ const UI = {
   inkLight: COLORS.plumMid,
   sage:     COLORS.sage,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 const URGENCY_RUST: Record<UrgencyLevel, string> = {
@@ -468,7 +469,8 @@ export default function PredictiveMaintenancePage() {
   const [searchParams] = useSearchParams();
   const deepLinkSystem = searchParams.get("system");    // e.g. "HVAC"
 
-  const [selectedId, setSelectedId] = useState(String(properties[0]?.id ?? ""));
+  const [selectedId, setSelectedId]         = useState(String(properties[0]?.id ?? ""));
+  const [showSystemAges, setShowSystemAges] = useState(false);
   const [report, setReport]         = useState<MaintenanceReport | null>(null);
   const [activeTab, setActiveTab]   = useState<Tab>(deepLinkSystem ? "systems" : "systems");
   const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
@@ -590,7 +592,7 @@ export default function PredictiveMaintenancePage() {
           #hf-print-calendar { display: block !important; }
 
           #hf-print-calendar {
-            font-family: ${FONTS.mono};
+            font-family: ${FONTS.sans};
             color: ${COLORS.plum};
             padding: 2rem;
           }
@@ -692,7 +694,7 @@ export default function PredictiveMaintenancePage() {
                 ))}
               </select>
               <button
-                onClick={() => navigate(`/properties/${selectedId}/systems`)}
+                onClick={() => setShowSystemAges(true)}
                 style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.5rem 0.875rem", border: `1px solid ${UI.rule}`, background: COLORS.white, fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: UI.inkLight, cursor: "pointer" }}
               >
                 <Settings2 size={12} />
@@ -1007,6 +1009,20 @@ export default function PredictiveMaintenancePage() {
           );
         })()}
       </div>
+
+      <SystemAgesModal
+        open={showSystemAges}
+        onClose={() => setShowSystemAges(false)}
+        propertyId={selectedId}
+        yearBuilt={property ? Number(property.yearBuilt) : new Date().getFullYear() - 20}
+        onSuccess={() => {
+          // Re-run forecast with updated system ages
+          if (property) {
+            const updatedAges = systemAgesService.get(selectedId);
+            setReport(maintenanceService.predict(Number(property.yearBuilt), propJobs, updatedAges, String(property.state)));
+          }
+        }}
+      />
     </Layout>
   );
 }

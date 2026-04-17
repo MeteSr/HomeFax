@@ -8,7 +8,7 @@ const UI = {
   rule:     COLORS.rule,
   rust:     COLORS.sage,
   inkLight: COLORS.plumMid,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
 };
 
 export const DOC_TYPES = [

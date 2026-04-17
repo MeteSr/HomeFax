@@ -35,7 +35,7 @@ const UI = {
   sage:     COLORS.sage,
   inkLight: COLORS.plumMid,
   serif:    FONTS.serif,
-  mono:     FONTS.mono,
+  mono:     FONTS.sans,
   sans:     FONTS.sans,
 };
 

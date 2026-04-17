@@ -29,7 +29,7 @@ export default function PermitCoverageIndicator({ city, state }: Props) {
         padding:       "0.3rem 0.625rem",
         border:        `1px solid ${available ? COLORS.sageMid : COLORS.rule}`,
         background:    available ? COLORS.sageLight : COLORS.white,
-        fontFamily:    FONTS.mono,
+        fontFamily:    FONTS.sans,
         fontSize:      "0.6rem",
         letterSpacing: "0.08em",
         color:         available ? COLORS.sage : COLORS.plumMid,
