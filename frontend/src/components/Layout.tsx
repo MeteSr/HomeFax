@@ -39,41 +39,6 @@ import { COLORS, FONTS } from "@/theme";
 export type { ActivityEvent } from "@/services/activityFeed";
 export { deriveEvents } from "@/services/activityFeed";
 
-// ─── Sidebar tooltip ─────────────────────────────────────────────────────────
-
-function SidebarTooltip({ label, show, children }: { label: string; show: boolean; children: React.ReactNode }) {
-  const [visible, setVisible] = React.useState(false);
-  return (
-    <div
-      style={{ position: "relative" }}
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-    >
-      {children}
-      {show && visible && (
-        <div style={{
-          position:      "absolute",
-          left:          "calc(100% + 10px)",
-          top:           "50%",
-          transform:     "translateY(-50%)",
-          background:    "#000",
-          color:         "#fff",
-          padding:       "4px 10px",
-          borderRadius:  "6px",
-          fontSize:      "0.75rem",
-          fontFamily:    FONTS.sans,
-          fontWeight:    500,
-          whiteSpace:    "nowrap",
-          pointerEvents: "none",
-          zIndex:        200,
-        }}>
-          {label}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Sidebar dimensions ───────────────────────────────────────────────────────
 
 const W_OPEN   = 216;
@@ -307,46 +272,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div style={{ flex: 1, paddingTop: "0.375rem", overflowY: "auto", overflowX: "hidden" }}>
           {/* Add property button — sits just below the toggle, mirrors Claude's sidebar */}
           {isHomeowner && (
-            <SidebarTooltip label="Add property" show={!sidebarOpen}>
-              <button
-                onClick={() => {
-                  if (atPropertyLimit && userTier !== "Premium") {
-                    setUpgradeOpen(true);
-                  } else {
-                    navigate("/properties/new");
-                  }
-                }}
-                style={{ ...itemBase(), width: "100%", border: "none", cursor: "pointer" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plum; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plumMid; }}
-              >
-                <Plus size={17} style={{ flexShrink: 0 }} />
-                {sidebarOpen && <span style={labelStyle}>Add property</span>}
-              </button>
-            </SidebarTooltip>
+            <button
+              title={!sidebarOpen ? "Add property" : undefined}
+              onClick={() => {
+                if (atPropertyLimit && userTier !== "Premium") {
+                  setUpgradeOpen(true);
+                } else {
+                  navigate("/properties/new");
+                }
+              }}
+              style={{ ...itemBase(), width: "100%", border: "none", cursor: "pointer" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plum; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plumMid; }}
+            >
+              <Plus size={17} style={{ flexShrink: 0 }} />
+              {sidebarOpen && <span style={labelStyle}>Add property</span>}
+            </button>
           )}
           {navLinks.map((link) => {
             const active = isActive(link);
             return (
-              <SidebarTooltip key={link.to} label={link.label} show={!sidebarOpen}>
-                <Link
-                  to={link.to}
-                  style={{ ...itemBase(active), textDecoration: "none" }}
-                  onMouseEnter={(e) => {
-                    if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plum;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plumMid;
-                  }}
-                >
-                  <link.Icon size={17} style={{ flexShrink: 0 }} />
-                  {sidebarOpen && (
-                    <span style={{ ...labelStyle, fontWeight: active ? 600 : 500 }}>
-                      {link.label}
-                    </span>
-                  )}
-                </Link>
-              </SidebarTooltip>
+              <Link
+                key={link.to}
+                to={link.to}
+                title={!sidebarOpen ? link.label : undefined}
+                style={{ ...itemBase(active), textDecoration: "none" }}
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plum;
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plumMid;
+                }}
+              >
+                <link.Icon size={17} style={{ flexShrink: 0 }} />
+                {sidebarOpen && (
+                  <span style={{ ...labelStyle, fontWeight: active ? 600 : 500 }}>
+                    {link.label}
+                  </span>
+                )}
+              </Link>
             );
           })}
         </div>
@@ -355,9 +319,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div style={{ borderTop: `1px solid ${COLORS.rule}`, flexShrink: 0 }}>
 
           {/* Activity bell */}
-          <SidebarTooltip label="Activity" show={!sidebarOpen}>
           <button
             onClick={openFeed}
+            title={!sidebarOpen ? "Activity" : undefined}
             style={{ ...itemBase(), width: "100%", border: "none", cursor: "pointer" }}
           >
             <div style={{ position: "relative", flexShrink: 0 }}>
@@ -385,7 +349,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             {sidebarOpen && <span style={labelStyle}>Activity</span>}
           </button>
-          </SidebarTooltip>
 
           {/* User menu anchor */}
           <div ref={userMenuRef} style={{ position: "relative" }}>
@@ -398,10 +361,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {/* Avatar button */}
-            <SidebarTooltip label={displayName} show={!sidebarOpen}>
             <button
               onClick={() => setUserMenuOpen((o) => !o)}
               aria-label={displayName}
+              title={!sidebarOpen ? displayName : undefined}
               style={{
                 ...itemBase(),
                 width:   "100%",
@@ -434,7 +397,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </span>
               )}
             </button>
-            </SidebarTooltip>
           </div>
 
         </div>
