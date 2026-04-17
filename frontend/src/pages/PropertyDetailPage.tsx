@@ -492,28 +492,6 @@ export default function PropertyDetailPage() {
           </div>
         )}
 
-        {/* Upsell card (16.3.3) — multi-property prompt for single-property users */}
-        {storeProperties.length === 1 && !loading && (
-          <div style={{
-            border: `1px solid ${COLORS.rule}`, background: COLORS.white,
-            padding: "1.25rem 1.5rem", marginBottom: "2rem",
-            borderRadius: 0, display: "flex", alignItems: "center",
-            justifyContent: "space-between", gap: "1rem", flexWrap: "wrap",
-          }}>
-            <div>
-              <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.25rem" }}>
-                Own more than one property?
-              </p>
-              <p style={{ fontSize: "0.875rem", fontWeight: 300, color: UI.inkLight }}>
-                Track all your properties in one place — compare scores, share reports, and manage maintenance across your portfolio.
-              </p>
-            </div>
-            <Button variant="outline" onClick={() => navigate("/properties/new")}>
-              Add Another Property →
-            </Button>
-          </div>
-        )}
-
         {/* Tabs */}
         <div style={{ display: "flex", borderBottom: `1px solid ${COLORS.rule}`, marginBottom: "1.5rem" }}>
           {tabs.map((t) => (

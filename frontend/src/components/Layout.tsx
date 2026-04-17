@@ -8,9 +8,9 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Bell, LogOut,
+  Bell, LogOut, Plus,
   LayoutDashboard, TrendingUp, Users, Cpu, Radio, Home as HomeIcon, PlusSquare,
   Store, PanelLeft, Menu, X,
 } from "lucide-react";
@@ -59,6 +59,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { principal, profile } = useAuthStore();
   const { properties }         = usePropertyStore();
   const location               = useLocation();
+  const navigate               = useNavigate();
 
   const [sidebarOpen,  setSidebarOpen]  = useState(() =>
     localStorage.getItem("hf_sidebar") !== "closed"
@@ -172,7 +173,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         ...(singlePropertyId && hasActiveListing
           ? [{ to: `/my-listing/${singlePropertyId}`, label: "My Listing", Icon: HomeIcon }]
           : []),
-        ...(!atPropertyLimit ? [{ to: "/properties/new", label: "Add Property", Icon: PlusSquare }] : []),
       ];
 
   const isActive = (link: NavLink) => {
@@ -222,7 +222,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         style={{ width: sidebarW }}
         aria-label="Main navigation"
       >
-        {/* Header: branding + toggle */}
+        {/* Header: branding + add-property + toggle */}
         <div style={{
           height:        "3.5rem",
           display:       "flex",
@@ -247,6 +247,34 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
             </Link>
+          )}
+          {isHomeowner && (
+            <button
+              title="Add property"
+              onClick={() => {
+                if (atPropertyLimit && userTier !== "Premium") {
+                  setUpgradeOpen(true);
+                } else {
+                  navigate("/properties/new");
+                }
+              }}
+              style={{
+                display:    "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "none",
+                border:     "none",
+                cursor:     "pointer",
+                color:      COLORS.plumMid,
+                padding:    "0.375rem",
+                borderRadius: "0.25rem",
+                flexShrink: 0,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plum; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = COLORS.plumMid; }}
+            >
+              <Plus size={18} />
+            </button>
           )}
           <button
             onClick={toggleSidebar}
