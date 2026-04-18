@@ -93,7 +93,7 @@ vi.mock("@/services/recurringService", () => ({
 
 vi.mock("@/services/payment", () => ({
   paymentService: {
-    getMySubscription: vi.fn(() => Promise.resolve({ tier: "Pro", expiresAt: null })),
+    getMySubscription: vi.fn(() => Promise.resolve({ tier: "Pro", expiresAt: null, cancelledAt: null })),
   },
 }));
 
@@ -367,7 +367,7 @@ describe("13.4.1: Dashboard rendering with large dataset", () => {
     });
     vi.mocked(paymentService.getMySubscription).mockImplementation(() => {
       callOrder.push("payment");
-      return Promise.resolve({ tier: "Pro" as any, expiresAt: null });
+      return Promise.resolve({ tier: "Pro" as any, expiresAt: null, cancelledAt: null });
     });
 
     await act(async () => {

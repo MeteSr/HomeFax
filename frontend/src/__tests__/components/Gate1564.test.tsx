@@ -22,7 +22,7 @@ let mockTier: "Free" | "Pro" | "Premium" | "ContractorPro" = "Pro";
 vi.mock("@/services/payment", () => ({
   paymentService: {
     getMySubscription: vi.fn().mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     ),
   },
 }));
@@ -165,7 +165,7 @@ describe("ListingNewPage — free tier gate (15.6.4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(paymentService.getMySubscription).mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     );
   });
 
@@ -209,7 +209,7 @@ describe("AgentBrowsePage — free tier gate (15.6.4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(paymentService.getMySubscription).mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     );
   });
 
@@ -244,7 +244,7 @@ describe("FsboPanel — free tier gate (15.6.4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(paymentService.getMySubscription).mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     );
   });
 

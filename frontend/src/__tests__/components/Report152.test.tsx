@@ -139,7 +139,7 @@ let mockTier: "Free" | "Pro" | "Premium" | "ContractorPro" = "Free";
 vi.mock("@/services/payment", () => ({
   paymentService: {
     getMySubscription: vi.fn().mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     ),
   },
 }));
@@ -236,13 +236,13 @@ describe("GenerateReportModal — success screen expiry row (15.2.3)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(paymentService.getMySubscription).mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     );
   });
 
   it("free user sees amber expiry row after generating a link", async () => {
     mockTier = "Free";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Free", expiresAt: null });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Free", expiresAt: null, cancelledAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>
@@ -254,7 +254,7 @@ describe("GenerateReportModal — success screen expiry row (15.2.3)", () => {
 
   it("free user sees 'Upgrade to Pro' link in the expiry row", async () => {
     mockTier = "Free";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Free", expiresAt: null });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Free", expiresAt: null, cancelledAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>
@@ -266,7 +266,7 @@ describe("GenerateReportModal — success screen expiry row (15.2.3)", () => {
 
   it("Pro user sees 'this link never expires' confirmation row", async () => {
     mockTier = "Pro";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Pro", expiresAt: null });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Pro", expiresAt: null, cancelledAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>
@@ -277,7 +277,7 @@ describe("GenerateReportModal — success screen expiry row (15.2.3)", () => {
 
   it("Premium user also sees 'this link never expires'", async () => {
     mockTier = "Premium";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Premium", expiresAt: null });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Premium", expiresAt: null, cancelledAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>
