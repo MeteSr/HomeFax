@@ -120,36 +120,61 @@ echo ""
 echo "── [14] getQuoteRequest — status should be Closed ───────────────────────"
 dfx canister call $CANISTER getQuoteRequest "(\"$REQ2_ID\")"
 
-# ─── Tier open-request limit — Free = 3 (12.4.4) ─────────────────────────────
+# ─── Tier open-request limit — Free tier is fully blocked; Basic limit = 3 ───
 echo ""
-echo "── [15] Free tier limit: create 3 requests to hit cap (12.4.4) ──────────"
+echo "── [15] Free tier: createQuoteRequest → expect full rejection ───────────"
+# Free tier has no access at all to quote requests.
+# Use a dedicated identity so the deployer's Pro tier is not affected.
+if ! dfx identity list 2>/dev/null | grep -q "^quote-free-test$"; then
+  dfx identity new quote-free-test --disable-encryption 2>/dev/null || true
+fi
+RESULT=$(dfx canister call $CANISTER createQuoteRequest '(
+  "PROP_LIMIT",
+  variant { Roofing },
+  "Free tier should be rejected entirely.",
+  variant { Low }
+)' --identity quote-free-test 2>&1)
+echo "$RESULT" | grep -qi "subscription\|InvalidInput" \
+  && echo "  ↳ Free tier correctly blocked from creating quote requests — ✓" \
+  || echo "  ↳ ❌ Expected rejection for Free tier"
+
+echo ""
+echo "── [15b] Basic tier: fill 3 open slots then expect LimitReached ─────────"
+# Grant Basic (limit = 3) to the free-test identity.
+if ! dfx identity list 2>/dev/null | grep -q "^quote-basic-test$"; then
+  dfx identity new quote-basic-test --disable-encryption 2>/dev/null || true
+fi
+BASIC_PRINCIPAL=$(dfx identity get-principal --identity quote-basic-test)
+dfx canister call payment grantSubscription "(principal \"$BASIC_PRINCIPAL\", variant { Basic })"
 LIMIT_REQ_IDS=()
 for i in 1 2 3; do
   OUT=$(dfx canister call $CANISTER createQuoteRequest "(
     \"PROP_LIMIT\",
     variant { Roofing },
-    \"Tier limit test request $i — filling open slot.\",
+    \"Basic tier limit test request $i.\",
     variant { Low }
-  )")
-  ID=$(echo "$OUT" | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"')
-  LIMIT_REQ_IDS+=("$ID")
-  echo "  → Request $i created ($ID)"
+  )" --identity quote-basic-test)
+  ID=$(echo "$OUT" | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"' || true)
+  [ -n "$ID" ] && LIMIT_REQ_IDS+=("$ID") && echo "  → Request $i created ($ID)" \
+               || echo "  ↳ ❌ Request $i failed unexpectedly: $OUT"
 done
 
 echo ""
-echo "── [16] 4th request on Free tier → expect open-request limit error ───────"
+echo "── [16] 4th request on Basic tier → expect LimitReached (max 3 open) ────"
 dfx canister call $CANISTER createQuoteRequest '(
   "PROP_LIMIT",
   variant { Roofing },
-  "This 4th request should fail on Free tier limit.",
+  "This 4th request should fail on Basic tier limit.",
   variant { Low }
-)' || echo "  ↳ Expected LimitReached on Free tier (max 3 open) — ✓"
+)' --identity quote-basic-test \
+  && echo "  ↳ ❌ Expected LimitReached for Basic tier" \
+  || echo "  ↳ Basic tier open-request limit correctly enforced (max 3) — ✓"
 
-# Close the 3 limit-test requests so subsequent tests aren't blocked by the cap
+# Close the basic-tier limit-test requests
 echo ""
-echo "── [16-cleanup] Close limit-test requests to restore open slot ──────────"
+echo "── [16-cleanup] Close limit-test requests ────────────────────────────────"
 for ID in "${LIMIT_REQ_IDS[@]}"; do
-  [ -n "$ID" ] && dfx canister call $CANISTER closeQuoteRequest "(\"$ID\")" > /dev/null
+  [ -n "$ID" ] && dfx canister call $CANISTER closeQuoteRequest "(\"$ID\")" --identity quote-basic-test > /dev/null
 done
 echo "  ↳ Limit-test requests closed — ✓"
 

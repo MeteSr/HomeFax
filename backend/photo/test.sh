@@ -47,7 +47,12 @@ if [ -z "$PAYMENT_ID" ]; then
   echo "⚠️  payment canister not deployed — skipping payment-wired tests"
 else
 
-  MY_PRINCIPAL=$(dfx identity get-principal)
+  # Use a dedicated identity for tier-manipulation tests so the deployer's
+  # tier is not mutated while other suites run in parallel.
+  if ! dfx identity list 2>/dev/null | grep -q "^photo-tier-test$"; then
+    dfx identity new photo-tier-test --disable-encryption 2>/dev/null || true
+  fi
+  PHOTO_TIER_PRINCIPAL=$(dfx identity get-principal --identity photo-tier-test)
 
   echo ""
   echo "── [EXP-1] setPaymentCanisterId — wires photo to payment canister ───────"
@@ -55,31 +60,34 @@ else
   echo "  ↳ setPaymentCanisterId succeeded — ✓"
 
   echo ""
-  echo "── [EXP-2] Free tier: uploading 3rd photo on same job → expect LimitReached ──"
-  # Free tier = 2 photos/job. Two already uploaded above (JOB_1).
-  dfx canister call payment grantSubscription "(principal \"$MY_PRINCIPAL\", variant { Free })"
-  dfx canister call photo uploadPhoto '(
+  echo "── [EXP-2] Free tier: upload → expect full rejection (no access) ────────"
+  # Free tier has no photo upload access at all.
+  # photo-tier-test starts with no subscription (defaults to Free).
+  RESULT=$(dfx canister call photo uploadPhoto '(
     "JOB_1",
     "PROP_1",
     variant { Finishing },
-    "Third photo — should fail on Free tier",
+    "Free tier — should be rejected entirely",
     "aaa111bbb222aaa111bbb222aaa111bbb222aaa111bbb222aaa111bbb222aaa1",
     vec { 255 : nat8; 216 : nat8; 255 : nat8 }
-  )' && echo "  ↳ ❌ Expected LimitReached for Free tier via payment canister" \
-       || echo "  ↳ Free tier photo limit enforced via payment canister — ✓"
+  )' --identity photo-tier-test 2>&1)
+  echo "$RESULT" | grep -qi "subscription\|InvalidInput\|blocked" \
+    && echo "  ↳ Free tier correctly blocked from photo upload — ✓" \
+    || echo "  ↳ ❌ Expected rejection for Free tier"
 
   echo ""
-  echo "── [EXP-3] Grant Pro → 3rd photo on same job succeeds ──────────────────"
-  dfx canister call payment grantSubscription "(principal \"$MY_PRINCIPAL\", variant { Pro })"
+  echo "── [EXP-3] Grant Pro → photo upload succeeds ────────────────────────────"
+  dfx canister call payment grantSubscription "(principal \"$PHOTO_TIER_PRINCIPAL\", variant { Pro })"
   dfx canister call photo uploadPhoto '(
-    "JOB_1",
-    "PROP_1",
+    "JOB_TIER_TEST",
+    "PROP_TIER_TEST",
     variant { Finishing },
-    "Third photo — Pro tier allows 10 per job",
+    "Pro tier allows photo upload",
     "bbb222ccc333bbb222ccc333bbb222ccc333bbb222ccc333bbb222ccc333bbb2",
     vec { 255 : nat8; 216 : nat8; 255 : nat8 }
-  )' && echo "  ↳ Pro tier allows 3rd photo via payment canister — ✓" \
-       || echo "  ↳ ❌ Pro tier should allow 3rd photo"
+  )' --identity photo-tier-test \
+    && echo "  ↳ Pro tier allows photo upload via payment canister — ✓" \
+    || echo "  ↳ ❌ Pro tier should allow photo upload"
 
   echo ""
   echo "✅ Photo payment-wired tier enforcement tests complete!"
