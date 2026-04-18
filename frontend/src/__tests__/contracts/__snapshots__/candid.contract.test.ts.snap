@@ -658,13 +658,6 @@ exports[`maintenance IDL factory > full signature snapshot 1`] = `
 
 exports[`payment IDL factory > full signature snapshot 1`] = `
 {
-  "cancelSubscription": {
-    "args": [],
-    "mode": [],
-    "rets": [
-      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}; cancelledAt:opt int}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
-    ],
-  },
   "configureStripe": {
     "args": [
       "record {cancelUrl:text; secretKey:text; priceIds:record {premiumMonthly:text; contractorProYearly:text; contractorProMonthly:text; proMonthly:text; basicYearly:text; basicMonthly:text; proYearly:text; premiumYearly:text}; successUrl:text}",
@@ -700,7 +693,7 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
       "query",
     ],
     "rets": [
-      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}; cancelledAt:opt int}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
   "getPriceQuote": {
@@ -739,7 +732,7 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}; cancelledAt:opt int}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
   "initAdmins": {
@@ -775,7 +768,7 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}; cancelledAt:opt int}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
   "subscribe": {
@@ -784,7 +777,7 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}; cancelledAt:opt int}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
   "verifyStripeSession": {
@@ -793,7 +786,7 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}; cancelledAt:opt int}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+      "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
 }

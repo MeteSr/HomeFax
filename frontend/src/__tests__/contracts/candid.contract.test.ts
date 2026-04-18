@@ -122,7 +122,6 @@ describe("payment IDL factory", () => {
   it("exposes the expected methods", () => {
     const svc = extractService(paymentIdlFactory);
     expect(Object.keys(svc).sort()).toEqual([
-      "cancelSubscription",
       "configureStripe",
       "createStripeCheckoutSession",
       "getAllPricing",

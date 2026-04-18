@@ -279,7 +279,6 @@ function SubscriptionTab({ profile }: { profile: any }) {
   const navigate = useNavigate();
   const [tier,             setTier]             = useState<PlanTier>(profile?.role === "Contractor" ? "ContractorPro" : "Free");
   const [expiresAt,        setExpiresAt]        = useState<number | null>(null);
-  const [cancelledAt,      setCancelledAt]      = useState<number | null>(null);
   const [subLoaded,        setSubLoaded]        = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [cancelStep,       setCancelStep]       = useState<"idle" | "confirm" | "loading" | "done">("idle");
@@ -289,10 +288,6 @@ function SubscriptionTab({ profile }: { profile: any }) {
     paymentService.getMySubscription().then((sub) => {
       setTier(sub.tier);
       setExpiresAt(sub.expiresAt);
-      if (sub.cancelledAt) {
-        setCancelledAt(sub.cancelledAt);
-        setCancelStep("done");
-      }
     }).catch(() => {}).finally(() => setSubLoaded(true));
   }, []);
 
@@ -314,10 +309,11 @@ function SubscriptionTab({ profile }: { profile: any }) {
   const handleCancel = async () => {
     setCancelStep("loading");
     try {
-      const { expiresAt: accessEndsAt } = await paymentService.cancel();
+      await paymentService.cancel();
       paymentService.recordCancellation();
       winBackService.schedule(Date.now());
-      setCancelledAt(accessEndsAt);
+      setTier("Free");
+      setExpiresAt(null);
       setCancelStep("done");
     } catch (err: any) {
       toast.error(err.message || "Cancellation failed");
@@ -365,14 +361,12 @@ function SubscriptionTab({ profile }: { profile: any }) {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
             <Badge variant="info" size="lg">{tier}</Badge>
-            <span style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: expiresAt && expiresAt < Date.now() ? COLORS.rust : cancelledAt ? COLORS.rust : COLORS.plumMid }}>
+            <span style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: expiresAt && expiresAt < Date.now() ? COLORS.rust : COLORS.plumMid }}>
               {expiresAt && expiresAt < Date.now()
                 ? "Expired"
-                : cancelledAt
-                  ? `Cancelled — access ends ${new Date(expiresAt!).toLocaleDateString()}`
-                  : expiresAt
-                    ? `Renews ${new Date(expiresAt).toLocaleDateString()}`
-                    : "Active subscription"}
+                : expiresAt
+                  ? `Renews ${new Date(expiresAt).toLocaleDateString()}`
+                  : "Active subscription"}
             </span>
           </div>
           {expiresAt && expiresAt < Date.now() && (
@@ -476,7 +470,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
               )}
               <div style={{ borderTop: `1px solid ${COLORS.rule}`, paddingTop: "0.875rem" }}>
                 <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.plumMid, fontWeight: 300, lineHeight: 1.6, marginBottom: "0.75rem" }}>
-                  You keep full access until the end of your current billing period{expiresAt ? ` (${new Date(expiresAt).toLocaleDateString()})` : ""}. After that, access to the platform is removed.
+                  Cancelling will immediately downgrade your account to Free. Your records and property history will be preserved.
                 </p>
                 <button
                   onClick={() => setCancelStep("confirm")}
@@ -508,7 +502,7 @@ function SubscriptionTab({ profile }: { profile: any }) {
                 </p>
               </div>
               <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.plumMid }}>
-                Your access continues until{expiresAt ? ` ${new Date(expiresAt).toLocaleDateString()}` : " the end of your billing period"}, then your account is closed. Or pause instead — keeps your account active without billing.
+                Or pause instead — keeps your account active without billing.
               </p>
               <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
                 <button
@@ -555,11 +549,16 @@ function SubscriptionTab({ profile }: { profile: any }) {
                 Subscription cancelled
               </p>
               <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.plumMid }}>
-                {(cancelledAt ?? expiresAt) && expiresAt
-                  ? `You have full access until ${new Date(expiresAt).toLocaleDateString()}. After that, your account will be closed.`
-                  : "Your cancellation has been recorded. All your ICP records remain intact."}
+                Your account has been downgraded to Free. All your records are intact.
               </p>
             </div>
+          </div>
+          <div style={{ padding: "0.875rem 1rem", background: COLORS.sageLight, borderRadius: RADIUS.sm }}>
+            <p style={{ fontFamily: FONTS.sans, fontWeight: 600, fontSize: "0.8125rem", color: COLORS.sage, marginBottom: "0.25rem" }}>Read-only mode</p>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.8125rem", color: COLORS.plumMid, lineHeight: 1.5 }}>
+              Your records are read-only. Your HomeGentic score won't update, and existing reports are static.
+              Reactivate Pro to resume tracking and generate new reports.
+            </p>
           </div>
         </>
       )}

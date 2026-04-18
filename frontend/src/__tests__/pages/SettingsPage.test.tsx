@@ -22,7 +22,7 @@ vi.mock("@/services/payment", async (importOriginal) => {
     paymentService: {
       getMySubscription: vi.fn(),
       initiate:          vi.fn().mockResolvedValue({ url: "/dashboard" }),
-      cancel:            vi.fn().mockResolvedValue({ expiresAt: null }),
+      cancel:            vi.fn().mockResolvedValue(undefined),
       recordCancellation: vi.fn(),
       pause:             vi.fn(),
       resume:            vi.fn(),
