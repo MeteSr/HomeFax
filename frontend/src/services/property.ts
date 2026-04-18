@@ -328,7 +328,7 @@ function unwrap(result: any): Property {
 
 export const propertyService = {
   async registerProperty(args: RegisterPropertyArgs): Promise<Property> {
-    if (import.meta.env.DEV && !PROPERTY_CANISTER_ID) {
+    if (import.meta.env.DEV && !PROPERTY_CANISTER_ID && !process.env.VITEST) {
       const mock: Property = {
         id:                _mockNextId(),
         owner:             "local-dev",
@@ -366,7 +366,7 @@ export const propertyService = {
     if (typeof window !== "undefined" && (window as any).__e2e_properties) {
       return (window as any).__e2e_properties as Property[];
     }
-    if (import.meta.env.DEV && !PROPERTY_CANISTER_ID) return _mockProperties.map((p) => ({ ...p }));
+    if (import.meta.env.DEV && !PROPERTY_CANISTER_ID && !process.env.VITEST) return _mockProperties.map((p) => ({ ...p }));
     const a = await getActor();
     const props = await a.getMyProperties();
     return (props as any[]).map(fromProperty);
@@ -386,12 +386,6 @@ export const propertyService = {
     method: string,
     documentHash: string
   ): Promise<Property> {
-    if (import.meta.env.DEV && !PROPERTY_CANISTER_ID) {
-      const prop = _mockProperties.find((p) => p.id === propertyId);
-      if (!prop) throw new Error("Property not found");
-      prop.verificationLevel = "PendingReview";
-      return { ...prop };
-    }
     const a = await getActor();
     const result = await a.submitVerification(propertyId, method, documentHash);
     return unwrap(result);
