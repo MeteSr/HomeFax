@@ -80,7 +80,7 @@ let mockTier: "Free" | "Pro" | "Premium" | "ContractorPro" = "Free";
 vi.mock("@/services/payment", () => ({
   paymentService: {
     getMySubscription: vi.fn().mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     ),
   },
 }));
@@ -126,7 +126,7 @@ describe("GenerateReportModal — 15.7.3 in-app notification", () => {
     vi.clearAllMocks();
     mockTier = "Free";
     vi.mocked(paymentService.getMySubscription).mockImplementation(() =>
-      Promise.resolve({ tier: mockTier, expiresAt: null })
+      Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     );
   });
 
@@ -161,7 +161,7 @@ describe("GenerateReportModal — 15.7.3 in-app notification", () => {
 
   it("does NOT call notificationService.create for Pro users", async () => {
     mockTier = "Pro";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Pro", expiresAt: null });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Pro", expiresAt: null, cancelledAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>
@@ -172,7 +172,7 @@ describe("GenerateReportModal — 15.7.3 in-app notification", () => {
 
   it("does NOT call notificationService.create for Premium users", async () => {
     mockTier = "Premium";
-    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Premium", expiresAt: null });
+    vi.mocked(paymentService.getMySubscription).mockResolvedValue({ tier: "Premium", expiresAt: null, cancelledAt: null });
     renderModal();
     await clickGenerate();
     await waitFor(() =>
