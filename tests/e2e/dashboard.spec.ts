@@ -141,19 +141,6 @@ test.describe("DashboardPage — /dashboard", () => {
     await expect(page).toHaveURL(/\/properties\/1/);
   });
 
-  // ── Onboarding banner ───────────────────────────────────────────────────────
-
-  test("shows onboarding banner when property is unverified", async ({ page }) => {
-    // The injected property has verificationLevel: "Unverified"
-    await expect(page.getByText(/Verify ownership/i)).toBeVisible();
-  });
-
-  test("dismissing the banner hides it", async ({ page }) => {
-    await expect(page.getByText(/Verify ownership/i)).toBeVisible();
-    await page.getByRole("button", { name: /dismiss banner/i }).click();
-    await expect(page.getByText(/Verify ownership/i)).not.toBeVisible();
-  });
-
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   test("Add Property button navigates to /properties/new", async ({ page }) => {
