@@ -15,18 +15,24 @@ import type { PropertyType } from "@/services/property";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const PROPERTY_TYPES: PropertyType[] = [
   "SingleFamily", "Condo", "Townhouse", "MultiFamily",
 ];
 
 const SYSTEM_LABELS = [
-  { key: "hvac",        label: "HVAC / AC",        placeholder: "2018" },
-  { key: "roof",        label: "Roof",              placeholder: "2015" },
-  { key: "waterHeater", label: "Water Heater",      placeholder: "2020" },
-  { key: "electrical",  label: "Electrical Panel",  placeholder: "2005" },
-  { key: "plumbing",    label: "Plumbing",          placeholder: "1990" },
+  { key: "hvac",        label: "HVAC / AC",        },
+  { key: "roof",        label: "Roof",              },
+  { key: "waterHeater", label: "Water Heater",      },
+  { key: "electrical",  label: "Electrical Panel",  },
+  { key: "plumbing",    label: "Plumbing",          },
+];
+
+const DOC_TYPES = [
+  { value: "DeedRecord",   label: "Deed / Title"  },
+  { value: "UtilityBill",  label: "Utility Bill"  },
+  { value: "TaxRecord",    label: "Tax Record"    },
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,6 +48,12 @@ interface DetailsForm {
   propertyType: PropertyType;
   yearBuilt: string;
   squareFeet: string;
+}
+
+interface VerifyForm {
+  legalName: string;
+  docType:   string;
+  docFile:   File | null;
 }
 
 interface SystemAgesForm {
@@ -118,13 +130,20 @@ export default function OnboardingWizard() {
   // Step 2 — details
   const [details, setDetails] = useState<DetailsForm>({ propertyType: "SingleFamily", yearBuilt: "", squareFeet: "" });
 
-  // Step 3 — documents
-  const [quota, setQuota]   = useState<PhotoQuota>({ used: 0, limit: 10, tier: "Free" });
+  // Registration (happens when leaving step 2)
   const [registeredId, setRegisteredId] = useState<string | null>(null);
   const [registering, setRegistering]   = useState(false);
 
-  // Step 4 — system ages
-  const [ages, setAges] = useState<SystemAgesForm>({});
+  // Step 3 — ownership verification
+  const [verify, setVerify]           = useState<VerifyForm>({ legalName: "", docType: "DeedRecord", docFile: null });
+  const [submittingVerify, setSubmittingVerify] = useState(false);
+
+  // Step 4 — documents
+  const [quota, setQuota] = useState<PhotoQuota>({ used: 0, limit: 10, tier: "Free" });
+
+  // Step 5 — system ages
+  const [ages, setAges]       = useState<SystemAgesForm>({});
+  const [hasSolar, setHasSolar] = useState(false);
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -140,11 +159,14 @@ export default function OnboardingWizard() {
     Number(details.yearBuilt) >= 1900 &&
     Number(details.yearBuilt) <= new Date().getFullYear();
 
+  const step3Valid =
+    verify.legalName.trim().length > 0 &&
+    verify.docFile !== null;
+
   // ── Navigation ──────────────────────────────────────────────────────────────
 
   const handleNext = async () => {
     if (step === 2 && !registeredId) {
-      // Register the property when leaving step 2
       setRegistering(true);
       try {
         const property = await propertyService.registerProperty({
@@ -160,7 +182,6 @@ export default function OnboardingWizard() {
         addProperty(property);
         setProperties([property]);
         setRegisteredId(String(property.id));
-        // Pre-fetch quota for step 3
         photoService.getQuota().then(setQuota).catch(() => {});
         toast.success("Property registered!");
       } catch (err: any) {
@@ -170,14 +191,31 @@ export default function OnboardingWizard() {
       }
       setRegistering(false);
     }
+
+    if (step === 3 && registeredId) {
+      setSubmittingVerify(true);
+      try {
+        const buffer      = await verify.docFile!.arrayBuffer();
+        const hashBuffer  = await crypto.subtle.digest("SHA-256", buffer);
+        const hashHex     = Array.from(new Uint8Array(hashBuffer))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        await propertyService.submitVerification(BigInt(registeredId), verify.docType, hashHex);
+        toast.success("Verification submitted — pending admin review");
+      } catch (err: any) {
+        toast.error(err.message || "Verification submission failed");
+        setSubmittingVerify(false);
+        return;
+      }
+      setSubmittingVerify(false);
+    }
+
     setStep((s) => s + 1);
   };
 
-  const handleBack = () => setStep((s) => s - 1);
-
+  const handleBack   = () => setStep((s) => s - 1);
   const handleFinish = () => navigate("/dashboard");
-
-  const handleSkip = () => navigate("/dashboard");
+  const handleSkip   = () => navigate("/dashboard");
 
   const handleDocUpload = async (file: File, docType: string) => {
     if (!registeredId) return;
@@ -306,6 +344,57 @@ export default function OnboardingWizard() {
       case 3:
         return (
           <div>
+            <StepHeading>Verify Ownership</StepHeading>
+            <StepSubtitle>
+              Provide your legal name and a document proving you own this property.
+              Our admin team will review your submission — this typically takes 1–2 business days.
+            </StepSubtitle>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div>
+                <label className="form-label" htmlFor="wiz-legal-name">Legal Name *</label>
+                <input
+                  id="wiz-legal-name"
+                  className="form-input"
+                  placeholder="Jane Smith"
+                  value={verify.legalName}
+                  onChange={(e) => setVerify((v) => ({ ...v, legalName: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="form-label" htmlFor="wiz-doc-type">Document Type *</label>
+                <select
+                  id="wiz-doc-type"
+                  className="form-input"
+                  value={verify.docType}
+                  onChange={(e) => setVerify((v) => ({ ...v, docType: e.target.value }))}
+                >
+                  {DOC_TYPES.map(({ value, label }) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="form-label" htmlFor="wiz-ownership-doc">Ownership Document *</label>
+                <input
+                  id="wiz-ownership-doc"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => setVerify((v) => ({ ...v, docFile: e.target.files?.[0] ?? null }))}
+                  style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plumMid, display: "block", marginTop: "0.25rem" }}
+                />
+                {verify.docFile && (
+                  <p style={{ color: COLORS.sage, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                    {verify.docFile.name} selected
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div>
             <StepHeading>Import Documents</StepHeading>
             <StepSubtitle>
               Upload existing receipts, permits, and inspection reports. Duplicates are
@@ -319,30 +408,63 @@ export default function OnboardingWizard() {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div>
             <StepHeading>System Ages</StepHeading>
             <StepSubtitle>
-              When were your major systems last replaced? We use this to build accurate
-              maintenance predictions. This step is optional.
+              When were your major systems last replaced? We've pre-filled the year your
+              home was built as a starting point — update any you know. This step is optional.
             </StepSubtitle>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
-              {SYSTEM_LABELS.map(({ key, label, placeholder }) => (
+              {SYSTEM_LABELS.map(({ key, label }) => (
                 <div key={key}>
                   <label className="form-label" htmlFor={`sys-${key}`}>{label}</label>
                   <input
                     id={`sys-${key}`}
                     className="form-input"
                     type="number"
-                    placeholder={placeholder}
                     min="1900"
                     max={new Date().getFullYear()}
-                    value={ages[key] ?? ""}
+                    value={ages[key] ?? details.yearBuilt}
                     onChange={(e) => setAges((a) => ({ ...a, [key]: e.target.value }))}
                   />
                 </div>
               ))}
+
+              {/* Solar panels — optional toggle */}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+                  <input
+                    id="sys-solar-toggle"
+                    type="checkbox"
+                    checked={hasSolar}
+                    onChange={(e) => setHasSolar(e.target.checked)}
+                    style={{ cursor: "pointer", width: "1rem", height: "1rem" }}
+                  />
+                  <label
+                    className="form-label"
+                    htmlFor="sys-solar-toggle"
+                    style={{ margin: 0, cursor: "pointer" }}
+                  >
+                    Solar Panels
+                  </label>
+                </div>
+                {hasSolar && (
+                  <div style={{ marginTop: "0.625rem" }}>
+                    <label className="form-label" htmlFor="sys-solar">Year Installed</label>
+                    <input
+                      id="sys-solar"
+                      className="form-input"
+                      type="number"
+                      min="1990"
+                      max={new Date().getFullYear()}
+                      value={ages["solar"] ?? details.yearBuilt}
+                      onChange={(e) => setAges((a) => ({ ...a, solar: e.target.value }))}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
@@ -356,7 +478,8 @@ export default function OnboardingWizard() {
 
   const isNextDisabled =
     (step === 1 && !step1Valid) ||
-    (step === 2 && (!step2Valid || registering));
+    (step === 2 && (!step2Valid || registering)) ||
+    (step === 3 && (!step3Valid || submittingVerify));
 
   return (
     <div style={{
@@ -405,7 +528,7 @@ export default function OnboardingWizard() {
             <Button
               style={{ flex: 1 }}
               disabled={isNextDisabled}
-              loading={registering}
+              loading={registering || submittingVerify}
               onClick={handleNext}
               iconRight={<ArrowRight size={14} />}
             >
