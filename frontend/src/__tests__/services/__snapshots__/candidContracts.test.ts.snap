@@ -37,7 +37,8 @@ unpause(0) -> (1)"
 `;
 
 exports[`Candid contract snapshots — method arity > auth 1`] = `
-"getMetrics(0) -> (1) [query]
+"completeOnboarding(0) -> (0)
+getMetrics(0) -> (1) [query]
 getProfile(0) -> (1) [query]
 getUserStats(0) -> (1) [query]
 hasRole(1) -> (1) [query]

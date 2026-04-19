@@ -83,6 +83,11 @@ exports[`agent IDL factory > full signature snapshot 1`] = `
 
 exports[`auth IDL factory > full signature snapshot 1`] = `
 {
+  "completeOnboarding": {
+    "args": [],
+    "mode": [],
+    "rets": [],
+  },
   "getMetrics": {
     "args": [],
     "mode": [
@@ -98,7 +103,7 @@ exports[`auth IDL factory > full signature snapshot 1`] = `
       "query",
     ],
     "rets": [
-      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
+      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; onboardingComplete:opt bool; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
     ],
   },
   "getUserStats": {
@@ -132,7 +137,7 @@ exports[`auth IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
+      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; onboardingComplete:opt bool; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
     ],
   },
   "updateProfile": {
@@ -141,7 +146,7 @@ exports[`auth IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
+      "variant {ok:record {principal:principal; createdAt:int; lastLoggedIn:opt int; role:variant {Builder; Homeowner; Realtor; Contractor}; onboardingComplete:opt bool; isActive:bool; email:text; updatedAt:int; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; NotAuthorized; AlreadyExists}}",
     ],
   },
 }
