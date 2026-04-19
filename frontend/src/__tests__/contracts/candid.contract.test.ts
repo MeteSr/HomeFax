@@ -73,6 +73,7 @@ describe("auth IDL factory", () => {
   it("exposes the expected methods", () => {
     const svc = extractService(authIdlFactory);
     expect(Object.keys(svc).sort()).toEqual([
+      "completeOnboarding",
       "getMetrics",
       "getProfile",
       "getUserStats",

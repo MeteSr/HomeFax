@@ -26,14 +26,15 @@ persistent actor Auth {
 
   /// Complete user profile stored on-chain
   public type UserProfile = {
-    principal: Principal;
-    role: UserRole;
-    email: Text;
-    phone: Text;
-    createdAt: Int;
-    updatedAt: Int;
-    isActive: Bool;
-    lastLoggedIn: ?Int;   // null until first recordLogin() call
+    principal:          Principal;
+    role:               UserRole;
+    email:              Text;
+    phone:              Text;
+    createdAt:          Int;
+    updatedAt:          Int;
+    isActive:           Bool;
+    lastLoggedIn:       ?Int;   // null until first recordLogin() call
+    onboardingComplete: ?Bool;  // null = never set (treat as false); upgrade-safe optional
   };
 
   public type RegisterArgs = {
@@ -209,14 +210,15 @@ persistent actor Auth {
 
     let now = Time.now();
     let profile: UserProfile = {
-      principal    = caller;
-      role         = args.role;
-      email        = args.email;
-      phone        = args.phone;
-      createdAt    = now;
-      updatedAt    = now;
-      isActive     = true;
-      lastLoggedIn = null;
+      principal          = caller;
+      role               = args.role;
+      email              = args.email;
+      phone              = args.phone;
+      createdAt          = now;
+      updatedAt          = now;
+      isActive           = true;
+      lastLoggedIn       = null;
+      onboardingComplete = null;
     };
 
     Map.add(users, Principal.compare, caller, profile);
@@ -244,14 +246,15 @@ persistent actor Auth {
           return #err(#InvalidInput("Email must contain @"));
 
         let updated: UserProfile = {
-          principal    = existing.principal;
-          role         = existing.role;
-          email        = args.email;
-          phone        = args.phone;
-          createdAt    = existing.createdAt;
-          updatedAt    = Time.now();
-          isActive     = existing.isActive;
-          lastLoggedIn = existing.lastLoggedIn;
+          principal          = existing.principal;
+          role               = existing.role;
+          email              = args.email;
+          phone              = args.phone;
+          createdAt          = existing.createdAt;
+          updatedAt          = Time.now();
+          isActive           = existing.isActive;
+          lastLoggedIn       = existing.lastLoggedIn;
+          onboardingComplete = existing.onboardingComplete;
         };
         Map.add(users, Principal.compare, msg.caller, updated);
         #ok(updated)
@@ -267,14 +270,37 @@ persistent actor Auth {
       case null {};  // Not registered yet — ignore
       case (?existing) {
         let updated: UserProfile = {
-          principal    = existing.principal;
-          role         = existing.role;
-          email        = existing.email;
-          phone        = existing.phone;
-          createdAt    = existing.createdAt;
-          updatedAt    = existing.updatedAt;
-          isActive     = existing.isActive;
-          lastLoggedIn = ?Time.now();
+          principal          = existing.principal;
+          role               = existing.role;
+          email              = existing.email;
+          phone              = existing.phone;
+          createdAt          = existing.createdAt;
+          updatedAt          = existing.updatedAt;
+          isActive           = existing.isActive;
+          lastLoggedIn       = ?Time.now();
+          onboardingComplete = existing.onboardingComplete;
+        };
+        Map.add(users, Principal.compare, msg.caller, updated);
+      };
+    }
+  };
+
+  /// Mark the caller's onboarding as complete so they are not redirected
+  /// to the wizard on subsequent logins.
+  public shared(msg) func completeOnboarding() : async () {
+    switch (Map.get(users, Principal.compare, msg.caller)) {
+      case null {};  // Not registered yet — ignore
+      case (?existing) {
+        let updated: UserProfile = {
+          principal          = existing.principal;
+          role               = existing.role;
+          email              = existing.email;
+          phone              = existing.phone;
+          createdAt          = existing.createdAt;
+          updatedAt          = existing.updatedAt;
+          isActive           = existing.isActive;
+          lastLoggedIn       = existing.lastLoggedIn;
+          onboardingComplete = ?true;
         };
         Map.add(users, Principal.compare, msg.caller, updated);
       };

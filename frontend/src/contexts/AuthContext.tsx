@@ -24,7 +24,8 @@ const AuthContext = createContext<AuthContextValue>({
   logout: async () => {},
 });
 
-async function homeownerDestination(): Promise<string> {
+async function homeownerDestination(profile: import("@/services/auth").UserProfile): Promise<string> {
+  if (!profile.onboardingComplete) return "/onboarding";
   try {
     const props = await propertyService.getMyProperties();
     if (props.length === 1) return `/properties/${props[0].id}`;
@@ -102,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { tier, billing } = JSON.parse(pending);
           navigate(`/checkout?tier=${tier}&billing=${billing}`);
         } else {
-          navigate(await homeownerDestination());
+          navigate(await homeownerDestination(profile));
         }
       }
     } catch {
@@ -136,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { tier, billing } = JSON.parse(pending);
           navigate(`/checkout?tier=${tier}&billing=${billing}`);
         } else {
-          navigate(await homeownerDestination());
+          navigate(await homeownerDestination(profile));
         }
       }
     } catch {

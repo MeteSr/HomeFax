@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import { propertyService } from "@/services/property";
 import { photoService, type PhotoQuota } from "@/services/photo";
+import { authService } from "@/services/auth";
 import { usePropertyStore } from "@/store/propertyStore";
 import { AddressAutocomplete } from "@/components/AddressAutocomplete";
 import { ConstructionPhotoUpload } from "@/components/ConstructionPhotoUpload";
@@ -214,8 +215,8 @@ export default function OnboardingWizard() {
   };
 
   const handleBack   = () => setStep((s) => s - 1);
-  const handleFinish = () => navigate("/dashboard");
-  const handleSkip   = () => navigate("/dashboard");
+  const handleFinish = () => { authService.completeOnboarding().catch(() => {}); navigate("/dashboard"); };
+  const handleSkip   = () => { authService.completeOnboarding().catch(() => {}); navigate("/dashboard"); };
 
   const handleDocUpload = async (file: File, docType: string) => {
     if (!registeredId) return;

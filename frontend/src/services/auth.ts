@@ -11,14 +11,15 @@ export const idlFactory = ({ IDL }: any) => {
     Builder:    IDL.Null,   // added with Builder role
   });
   const UserProfile = IDL.Record({
-    principal:    IDL.Principal,
-    role:         UserRole,
-    email:        IDL.Text,
-    phone:        IDL.Text,
-    createdAt:    IDL.Int,
-    updatedAt:    IDL.Int,
-    isActive:     IDL.Bool,
-    lastLoggedIn: IDL.Opt(IDL.Int),
+    principal:          IDL.Principal,
+    role:               UserRole,
+    email:              IDL.Text,
+    phone:              IDL.Text,
+    createdAt:          IDL.Int,
+    updatedAt:          IDL.Int,
+    isActive:           IDL.Bool,
+    lastLoggedIn:       IDL.Opt(IDL.Int),
+    onboardingComplete: IDL.Opt(IDL.Bool),
   });
   const RegisterArgs = IDL.Record({
     role:  UserRole,
@@ -48,7 +49,8 @@ export const idlFactory = ({ IDL }: any) => {
     register:      IDL.Func([RegisterArgs], [Result], []),
     getProfile:    IDL.Func([], [Result], ["query"]),
     updateProfile: IDL.Func([UpdateArgs], [Result], []),
-    recordLogin:   IDL.Func([], [], []),
+    recordLogin:        IDL.Func([], [], []),
+    completeOnboarding: IDL.Func([], [], []),
     hasRole:       IDL.Func([UserRole], [IDL.Bool], ["query"]),
     getUserStats:  IDL.Func([], [UserStats], ["query"]),
     getMetrics: IDL.Func(
@@ -69,14 +71,15 @@ export const idlFactory = ({ IDL }: any) => {
 export type UserRole = "Homeowner" | "Contractor" | "Realtor";
 
 export interface UserProfile {
-  principal:    string;
-  role:         UserRole;
-  email:        string;
-  phone:        string;
-  createdAt:    bigint;
-  updatedAt:    bigint;
-  isActive:     boolean;
-  lastLoggedIn: number | null;  // ms timestamp of previous login; null on first login
+  principal:          string;
+  role:               UserRole;
+  email:              string;
+  phone:              string;
+  createdAt:          bigint;
+  updatedAt:          bigint;
+  isActive:           boolean;
+  lastLoggedIn:       number | null;  // ms timestamp of previous login; null on first login
+  onboardingComplete: boolean;
 }
 
 export interface RegisterArgs {
@@ -105,9 +108,10 @@ function fromProfile(raw: any): UserProfile {
     createdAt:    raw.createdAt,
     updatedAt:    raw.updatedAt,
     isActive:     raw.isActive,
-    lastLoggedIn: raw.lastLoggedIn[0] != null
+    lastLoggedIn:       raw.lastLoggedIn[0] != null
       ? Number(raw.lastLoggedIn[0]) / 1_000_000
       : null,
+    onboardingComplete: raw.onboardingComplete?.[0] === true,
   };
 }
 
@@ -122,14 +126,15 @@ export const authService = {
   async register(args: RegisterArgs): Promise<UserProfile> {
     if (!getCanisterId()) {
       _mockProfile = {
-        principal:    "local-dev",
-        role:         args.role,
-        email:        args.email,
-        phone:        args.phone,
-        createdAt:    BigInt(Date.now()),
-        updatedAt:    BigInt(Date.now()),
-        isActive:     true,
-        lastLoggedIn: null,
+        principal:          "local-dev",
+        role:               args.role,
+        email:              args.email,
+        phone:              args.phone,
+        createdAt:          BigInt(Date.now()),
+        updatedAt:          BigInt(Date.now()),
+        isActive:           true,
+        lastLoggedIn:       null,
+        onboardingComplete: false,
       };
       return { ..._mockProfile };
     }
@@ -149,14 +154,15 @@ export const authService = {
         // running replica). Seed a default homeowner so devLogin can navigate to /dashboard
         // instead of falling through to /register.
         _mockProfile = {
-          principal:    "local-dev",
-          role:         "Homeowner",
-          email:        "dev@homegentic.io",
-          phone:        "0000000000",
-          createdAt:    BigInt(0),
-          updatedAt:    BigInt(0),
-          isActive:     true,
-          lastLoggedIn: null,
+          principal:          "local-dev",
+          role:               "Homeowner",
+          email:              "dev@homegentic.io",
+          phone:              "0000000000",
+          createdAt:          BigInt(0),
+          updatedAt:          BigInt(0),
+          isActive:           true,
+          lastLoggedIn:       null,
+          onboardingComplete: false,
         };
       }
       return { ..._mockProfile };
@@ -181,6 +187,15 @@ export const authService = {
     if (!getCanisterId()) return;
     const a = await getActor();
     await a.recordLogin();
+  },
+
+  async completeOnboarding(): Promise<void> {
+    if (!getCanisterId()) {
+      if (_mockProfile) _mockProfile = { ..._mockProfile, onboardingComplete: true };
+      return;
+    }
+    const a = await getActor();
+    await a.completeOnboarding();
   },
 
   async hasRole(role: UserRole): Promise<boolean> {
