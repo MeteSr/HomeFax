@@ -59,6 +59,7 @@ const MOCK_PROFILE = {
   principal: "local-dev", role: "Homeowner" as const,
   email: "test@example.com", phone: "5125550100",
   createdAt: BigInt(0), updatedAt: BigInt(0), isActive: true, lastLoggedIn: null,
+  onboardingComplete: false,
 };
 
 function renderPage() {

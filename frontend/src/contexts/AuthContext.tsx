@@ -50,8 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         phone:        e2eProfile?.phone       ?? "0000000000",
         createdAt:    e2eProfile?.createdAt   ?? BigInt(0),
         updatedAt:    e2eProfile?.updatedAt   ?? BigInt(0),
-        isActive:     e2eProfile?.isActive    ?? true,
-        lastLoggedIn: e2eProfile?.lastLoggedIn ?? null,
+        isActive:           e2eProfile?.isActive            ?? true,
+        lastLoggedIn:       e2eProfile?.lastLoggedIn        ?? null,
+        onboardingComplete: e2eProfile?.onboardingComplete  ?? false,
       });
       setLastLoginAt(null);
       setLoading(false);
