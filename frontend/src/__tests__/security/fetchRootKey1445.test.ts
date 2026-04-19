@@ -69,7 +69,8 @@ describe("14.4.5: fetchRootKey production safety", () => {
   });
 
   it("loginWithLocalIdentity() is hard-blocked in production", () => {
-    expect(actor).toMatch(/if\s*\(!import\.meta\.env\.DEV\)/);
+    // Guard uses IS_LOCAL (DFX_NETWORK-based) rather than import.meta.env.DEV
+    expect(actor).toMatch(/if\s*\(!IS_LOCAL\)/);
     expect(actor).toMatch(/throw new Error/);
   });
 

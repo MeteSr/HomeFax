@@ -146,7 +146,7 @@ function createMonitoringService() {
 
   return {
     async getAllCanisterMetrics(): Promise<CanisterMetrics[]> {
-      if (import.meta.env.DEV && !MONITORING_CANISTER_ID) return [];
+      if (!MONITORING_CANISTER_ID) return [];
       const a = await getActor();
       const raw = await a.getAllCanisterMetrics() as any[];
       return raw.map((r: any) => ({
@@ -163,7 +163,7 @@ function createMonitoringService() {
     },
 
     async checkCycleLevels(): Promise<CycleLevelResult[]> {
-      if (import.meta.env.DEV && !MONITORING_CANISTER_ID) return [];
+      if (!MONITORING_CANISTER_ID) return [];
       const a = await getActor();
       const raw = await a.checkCycleLevels() as any[];
       return raw.map((r: any) => ({
@@ -176,14 +176,14 @@ function createMonitoringService() {
     },
 
     async getTrackedCanisters(): Promise<TrackedCanister[]> {
-      if (import.meta.env.DEV && !MONITORING_CANISTER_ID) return [];
+      if (!MONITORING_CANISTER_ID) return [];
       const a = await getActor();
       const raw = await a.getTrackedCanisters() as any[];
       return raw.map((r: any) => ({ id: r.id.toText(), name: r.name }));
     },
 
     async getMetrics(): Promise<MonitoringMetrics> {
-      if (import.meta.env.DEV && !MONITORING_CANISTER_ID) {
+      if (!MONITORING_CANISTER_ID) {
         return {
           totalCanisters: 13,
           activeAlerts:   0,

@@ -252,7 +252,7 @@ function createRecurringService() {
   let _actor: any = null;
   // Seed from Playwright test globals if present (window.__e2e_recurring set by addInitScript)
   const mockServices: RecurringService[] =
-    import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_recurring
+    typeof window !== "undefined" && (window as any).__e2e_recurring
       ? [...(window as any).__e2e_recurring]
       : [];
   const mockVisits: VisitLog[] = [];
@@ -267,7 +267,7 @@ function createRecurringService() {
 
   return {
   async getById(serviceId: string): Promise<RecurringService | null> {
-    if (import.meta.env.DEV && !RECURRING_CANISTER_ID) {
+    if (!RECURRING_CANISTER_ID) {
       return mockServices.find((s) => s.id === serviceId) ?? null;
     }
     const a = await getActor();
@@ -277,7 +277,7 @@ function createRecurringService() {
   },
 
   async getByProperty(propertyId: string): Promise<RecurringService[]> {
-    if (import.meta.env.DEV && !RECURRING_CANISTER_ID) {
+    if (!RECURRING_CANISTER_ID) {
       return mockServices.filter((s) => s.propertyId === propertyId);
     }
     const a = await getActor();
@@ -285,11 +285,11 @@ function createRecurringService() {
   },
 
   async create(input: CreateRecurringServiceInput): Promise<RecurringService> {
-    if (import.meta.env.DEV && !RECURRING_CANISTER_ID) {
+    if (!RECURRING_CANISTER_ID) {
       const svc: RecurringService = {
         ...input,
         id:        `REC_${Date.now()}`,
-        homeowner: (import.meta.env.DEV && typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-principal",
+        homeowner: (typeof window !== "undefined" && (window as any).__e2e_principal) || "mock-principal",
         status:    "Active",
         createdAt: Date.now(),
       };
@@ -312,7 +312,7 @@ function createRecurringService() {
   },
 
   async updateStatus(serviceId: string, status: ServiceStatus): Promise<RecurringService> {
-    if (import.meta.env.DEV && !RECURRING_CANISTER_ID) {
+    if (!RECURRING_CANISTER_ID) {
       const idx = mockServices.findIndex((s) => s.id === serviceId);
       if (idx === -1) throw new Error("Service not found");
       mockServices[idx] = { ...mockServices[idx], status };
@@ -324,7 +324,7 @@ function createRecurringService() {
   },
 
   async attachContractDoc(serviceId: string, photoId: string): Promise<RecurringService> {
-    if (import.meta.env.DEV && !RECURRING_CANISTER_ID) {
+    if (!RECURRING_CANISTER_ID) {
       const idx = mockServices.findIndex((s) => s.id === serviceId);
       if (idx === -1) throw new Error("Service not found");
       mockServices[idx] = { ...mockServices[idx], contractDocPhotoId: photoId };
@@ -336,7 +336,7 @@ function createRecurringService() {
   },
 
   async addVisitLog(serviceId: string, visitDate: string, note?: string): Promise<VisitLog> {
-    if (import.meta.env.DEV && !RECURRING_CANISTER_ID) {
+    if (!RECURRING_CANISTER_ID) {
       const svc = mockServices.find((s) => s.id === serviceId);
       if (!svc) throw new Error("Service not found");
       const entry: VisitLog = {
@@ -356,7 +356,7 @@ function createRecurringService() {
   },
 
   async getVisitLogs(serviceId: string): Promise<VisitLog[]> {
-    if (import.meta.env.DEV && !RECURRING_CANISTER_ID) {
+    if (!RECURRING_CANISTER_ID) {
       return mockVisits
         .filter((v) => v.serviceId === serviceId)
         .sort((a, b) => b.visitDate.localeCompare(a.visitDate));

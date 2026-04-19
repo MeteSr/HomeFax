@@ -201,7 +201,7 @@ function createRoomService() {
 
   return {
   async getRoomsByProperty(propertyId: string): Promise<Room[]> {
-    if (import.meta.env.DEV && !ROOM_CANISTER_ID) {
+    if (!ROOM_CANISTER_ID) {
       return mockRooms.filter((r) => r.propertyId === propertyId);
     }
     const actor = await getActor();
@@ -210,7 +210,7 @@ function createRoomService() {
   },
 
   async createRoom(args: CreateRoomArgs): Promise<Room> {
-    if (import.meta.env.DEV && !ROOM_CANISTER_ID) {
+    if (!ROOM_CANISTER_ID) {
       const room: Room = {
         ...args,
         id:        `ROOM_${mockRooms.length + 1}`,
@@ -227,7 +227,7 @@ function createRoomService() {
   },
 
   async updateRoom(id: string, args: UpdateRoomArgs): Promise<Room> {
-    if (import.meta.env.DEV && !ROOM_CANISTER_ID) {
+    if (!ROOM_CANISTER_ID) {
       mockRooms = mockRooms.map((r) =>
         r.id !== id ? r : { ...r, ...args, updatedAt: BigInt(Date.now()) * BigInt(1_000_000) }
       );
@@ -238,7 +238,7 @@ function createRoomService() {
   },
 
   async deleteRoom(id: string): Promise<void> {
-    if (import.meta.env.DEV && !ROOM_CANISTER_ID) {
+    if (!ROOM_CANISTER_ID) {
       mockRooms = mockRooms.filter((r) => r.id !== id);
       return;
     }
@@ -247,7 +247,7 @@ function createRoomService() {
   },
 
   async addFixture(roomId: string, args: AddFixtureArgs): Promise<Room> {
-    if (import.meta.env.DEV && !ROOM_CANISTER_ID) {
+    if (!ROOM_CANISTER_ID) {
       const fixture: Fixture = {
         id: `FIX_${++mockFixtureCounter}`,
         ...args,
@@ -262,7 +262,7 @@ function createRoomService() {
   },
 
   async updateFixture(roomId: string, fixtureId: string, args: AddFixtureArgs): Promise<Room> {
-    if (import.meta.env.DEV && !ROOM_CANISTER_ID) {
+    if (!ROOM_CANISTER_ID) {
       mockRooms = mockRooms.map((r) =>
         r.id !== roomId ? r : {
           ...r,
@@ -282,7 +282,7 @@ function createRoomService() {
   },
 
   async removeFixture(roomId: string, fixtureId: string): Promise<Room> {
-    if (import.meta.env.DEV && !ROOM_CANISTER_ID) {
+    if (!ROOM_CANISTER_ID) {
       mockRooms = mockRooms.map((r) =>
         r.id !== roomId ? r : { ...r, fixtures: r.fixtures.filter((f) => f.id !== fixtureId) }
       );

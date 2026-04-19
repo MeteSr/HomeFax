@@ -53,8 +53,8 @@ export function setAgentForTesting(agent: HttpAgent): void {
  * Returns the principal text so callers can update auth state.
  */
 export async function loginWithLocalIdentity(): Promise<string> {
-  // 14.2.2 — hard-block in production builds; Vite dead-code-eliminates this
-  if (!import.meta.env.DEV) {
+  // Hard-block on IC mainnet — this function is only valid on a local replica
+  if (!IS_LOCAL) {
     throw new Error("loginWithLocalIdentity() must not be called in production");
   }
   // Fixed seed → same principal every time, survives hot-reload

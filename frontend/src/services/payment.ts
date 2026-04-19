@@ -3,9 +3,10 @@ import { getAgent, getPrincipal } from "./actor";
 
 const PAYMENT_CANISTER_ID = (process.env as any).PAYMENT_CANISTER_ID || "";
 const VOICE_AGENT_URL     = (import.meta as any).env?.VITE_VOICE_AGENT_URL ?? "http://localhost:3001";
-// Local dfx replica doesn't forward custom HTTP headers in outcalls correctly.
-// In dev, route Stripe checkout through the Express voice server instead.
-const USE_EXPRESS_CHECKOUT = (import.meta as any).env?.DEV === true;
+// Local dfx replica doesn't forward custom HTTP headers in outcalls correctly,
+// so Stripe checkout is routed through the Express voice server on non-IC networks.
+const DFX_NETWORK         = (process.env as any).DFX_NETWORK || "local";
+const USE_EXPRESS_CHECKOUT = DFX_NETWORK !== "ic";
 
 // ─── IDL ──────────────────────────────────────────────────────────────────────
 
@@ -205,7 +206,7 @@ export const paymentService = {
     tier: PlanTier,
     onStep?: (step: "quoting" | "approving" | "confirming") => void,
   ): Promise<void> {
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) return;
+    if (!PAYMENT_CANISTER_ID) return;
     const a = await getActor();
 
     if (tier !== "Free") {
@@ -235,10 +236,10 @@ export const paymentService = {
   },
 
   async getMySubscription(): Promise<{ tier: PlanTier; expiresAt: number | null; cancelledAt: number | null }> {
-    if (import.meta.env.DEV && (window as any).__e2e_subscription) {
+    if ((window as any).__e2e_subscription) {
       return { cancelledAt: null, ...(window as any).__e2e_subscription };
     }
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) return { tier: "Free", expiresAt: null, cancelledAt: null };
+    if (!PAYMENT_CANISTER_ID) return { tier: "Free", expiresAt: null, cancelledAt: null };
     const a = await getActor();
     const result = await a.getMySubscription();
     if ("err" in result) return { tier: "Free", expiresAt: null, cancelledAt: null };
@@ -267,12 +268,12 @@ export const paymentService = {
     tier: "Pro" | "Premium",
     onStep?: (step: "quoting" | "approving" | "confirming") => void,
   ): Promise<void> {
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) return;
+    if (!PAYMENT_CANISTER_ID) return;
     return this.subscribe(tier, onStep);
   },
 
   async cancel(): Promise<{ expiresAt: number | null }> {
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) return { expiresAt: null };
+    if (!PAYMENT_CANISTER_ID) return { expiresAt: null };
     const a = await getActor();
     const result = await a.cancelSubscription();
     if ("err" in result) {
@@ -327,7 +328,7 @@ export const paymentService = {
   },
 
   async getPricing(tier: PlanTier): Promise<{ priceUSD: number; periodDays: number; propertyLimit: number; photosPerJob: number; quoteRequestsPerMonth: number } | null> {
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) return null;
+    if (!PAYMENT_CANISTER_ID) return null;
     const a = await getActor();
     const result = await a.getPricing({ [tier]: null });
     return {
@@ -340,7 +341,7 @@ export const paymentService = {
   },
 
   async getAllPricing(): Promise<Array<{ tier: PlanTier; priceUSD: number; periodDays: number; propertyLimit: number; photosPerJob: number; quoteRequestsPerMonth: number }>> {
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) return [];
+    if (!PAYMENT_CANISTER_ID) return [];
     const a = await getActor();
     const results = await a.getAllPricing();
     return (results as any[]).map((r) => ({
@@ -387,7 +388,7 @@ export const paymentService = {
     }
 
     // Prod: canister makes the Stripe HTTP outcall directly.
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) throw new Error("Payment canister not deployed");
+    if (!PAYMENT_CANISTER_ID) throw new Error("Payment canister not deployed");
     const a = await getActor();
     const giftArg = gift
       ? [{ recipientEmail: gift.recipientEmail, recipientName: gift.recipientName,
@@ -423,7 +424,7 @@ export const paymentService = {
       return data as { type: "subscription"; tier?: string; billing?: string } | { type: "gift"; giftToken: string };
     }
 
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) throw new Error("Payment canister not deployed");
+    if (!PAYMENT_CANISTER_ID) throw new Error("Payment canister not deployed");
     const a = await getActor();
     const result = await a.verifyStripeSession(sessionId);
 
@@ -438,7 +439,7 @@ export const paymentService = {
 
   /** Redeem a pending gift using the token emailed to the recipient. */
   async redeemGift(giftToken: string): Promise<void> {
-    if (import.meta.env.DEV && !PAYMENT_CANISTER_ID) throw new Error("Payment canister not deployed");
+    if (!PAYMENT_CANISTER_ID) throw new Error("Payment canister not deployed");
     const a = await getActor();
     const result = await a.redeemGift(giftToken);
     if ("err" in result) {
