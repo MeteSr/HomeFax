@@ -208,7 +208,7 @@ function createPhotoService() {
     const bytes      = new Uint8Array(buffer);
     const hash       = await computeHash(buffer);
 
-    if (import.meta.env.DEV && !PHOTO_CANISTER_ID) {
+    if (!PHOTO_CANISTER_ID) {
       const photo: Photo = {
         id:          String(Date.now()),
         jobId,
@@ -242,19 +242,19 @@ function createPhotoService() {
   },
 
   async getByJob(jobId: string): Promise<Photo[]> {
-    if (import.meta.env.DEV && !PHOTO_CANISTER_ID) return store.filter((p) => p.jobId === jobId);
+    if (!PHOTO_CANISTER_ID) return store.filter((p) => p.jobId === jobId);
     const a = await getActor();
     return (await a.getPhotosByJob(jobId) as any[]).map(fromPhoto);
   },
 
   async getByProperty(propertyId: string): Promise<Photo[]> {
-    if (import.meta.env.DEV && !PHOTO_CANISTER_ID) return store.filter((p) => p.propertyId === propertyId);
+    if (!PHOTO_CANISTER_ID) return store.filter((p) => p.propertyId === propertyId);
     const a = await getActor();
     return (await a.getPhotosByProperty(propertyId) as any[]).map(fromPhoto);
   },
 
   async getByRoom(roomId: string): Promise<Photo[]> {
-    if (import.meta.env.DEV && !PHOTO_CANISTER_ID) return store.filter((p) => p.jobId === `ROOM_${roomId}`);
+    if (!PHOTO_CANISTER_ID) return store.filter((p) => p.jobId === `ROOM_${roomId}`);
     const a = await getActor();
     return (await a.getPhotosByRoom(roomId) as any[]).map(fromPhoto);
   },
@@ -271,7 +271,7 @@ function createPhotoService() {
   },
 
   async deletePhoto(photoId: string): Promise<void> {
-    if (import.meta.env.DEV && !PHOTO_CANISTER_ID) return;
+    if (!PHOTO_CANISTER_ID) return;
     const a = await getActor();
     const result = await a.deletePhoto(photoId);
     if ("err" in result) {
