@@ -102,6 +102,18 @@ vi.mock("react-hot-toast", () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
 
+// Stub crypto.subtle.digest — jsdom doesn't guarantee SubtleCrypto availability
+// in all CI environments; the wizard uses it to hash ownership documents.
+Object.defineProperty(globalThis, "crypto", {
+  value: {
+    subtle: {
+      digest: vi.fn().mockResolvedValue(new Uint8Array(32).buffer),
+    },
+  },
+  writable: true,
+  configurable: true,
+});
+
 // ─── Import under test ────────────────────────────────────────────────────────
 
 import OnboardingWizard from "@/pages/OnboardingWizard";
