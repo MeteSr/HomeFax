@@ -192,24 +192,6 @@ function createQuoteService() {
     req: Omit<QuoteRequest, "id" | "createdAt" | "status" | "homeowner">,
     tier?: string
   ): Promise<QuoteRequest> {
-    if (!QUOTE_CANISTER_ID) {
-      if (tier) {
-        const quota = this.getQuotaForTier(tier);
-        if (quota > 0) {
-          const openCount = mockRequests.filter((r) => r.status === "open").length;
-          if (openCount >= quota) throw new Error(`Open quote limit reached for ${tier} tier (${openCount}/${quota}). Close an existing request or upgrade your plan.`);
-        }
-      }
-      const r: QuoteRequest = {
-        ...req,
-        homeowner: "local",
-        id:        String(Date.now()),
-        status:    "open",
-        createdAt: Date.now(),
-      };
-      mockRequests.push(r);
-      return r;
-    }
     const a = await getActor();
     // Capitalize first letter to match the canister variant (Low, Medium, High, Emergency)
     const urgencyKey = req.urgency.charAt(0).toUpperCase() + req.urgency.slice(1);
@@ -223,17 +205,11 @@ function createQuoteService() {
   },
 
   async getRequests(): Promise<QuoteRequest[]> {
-    if (!QUOTE_CANISTER_ID) {
-      // E2E: use Playwright-injected fixture requests when available
-      const e2e = typeof window !== "undefined" && (window as any).__e2e_quote_requests;
-      return e2e ? (e2e as QuoteRequest[]) : [...mockRequests];
-    }
     const a = await getActor();
     return (await a.getMyQuoteRequests() as any[]).map(fromRequest);
   },
 
   async getOpenRequests(): Promise<QuoteRequest[]> {
-    if (!QUOTE_CANISTER_ID) return [...mockOpenRequests];
     const a = await getActor();
     return (await a.getOpenRequests() as any[]).map(fromRequest);
   },
@@ -244,18 +220,6 @@ function createQuoteService() {
     timelineDays: number,
     validUntilMs: number
   ): Promise<Quote> {
-    if (!QUOTE_CANISTER_ID) {
-      const q: Quote = {
-        id: `QUOTE_${Date.now()}`, requestId,
-        contractor: "local",
-        amount: amountCents, timeline: timelineDays,
-        validUntil: validUntilMs, status: "pending", createdAt: Date.now(),
-      };
-      const existing = mockQuotesByRequest.get(requestId) ?? [];
-      mockQuotesByRequest.set(requestId, [...existing, q]);
-      mockMyBids.push(q);
-      return q;
-    }
     const a = await getActor();
     const result = await a.submitQuote(
       requestId,
@@ -270,13 +234,6 @@ function createQuoteService() {
   },
 
   async getRequest(id: string): Promise<QuoteRequest | undefined> {
-    if (!QUOTE_CANISTER_ID) {
-      const fromSeed = mockRequests.find((r) => r.id === id);
-      if (fromSeed) return fromSeed;
-      // Playwright e2e injection
-      const e2eRequests = typeof window !== "undefined" && (window as any).__e2e_quote_requests;
-      return e2eRequests ? (e2eRequests as QuoteRequest[]).find((r) => r.id === id) : undefined;
-    }
     const a = await getActor();
     const result = await a.getQuoteRequest(id);
     if ("err" in result) return undefined;
@@ -284,19 +241,6 @@ function createQuoteService() {
   },
 
   async getBidCountMap(requestIds: string[]): Promise<Record<string, number>> {
-    if (!QUOTE_CANISTER_ID) {
-      const map: Record<string, number> = {};
-      for (const id of requestIds) {
-        const stored = mockQuotesByRequest.get(id);
-        if (stored) {
-          map[id] = stored.length;
-        } else {
-          const req = mockRequests.find((r) => r.id === id);
-          map[id] = req?.status === "accepted" ? 3 : req?.status === "quoted" ? 2 : 0;
-        }
-      }
-      return map;
-    }
     const results = await Promise.allSettled(
       requestIds.map((id) => this.getQuotesForRequest(id).then((qs) => [id, qs.length] as [string, number]))
     );
@@ -308,21 +252,11 @@ function createQuoteService() {
   },
 
   async getMyBids(): Promise<Quote[]> {
-    if (!QUOTE_CANISTER_ID) return [...mockMyBids];
     // No dedicated canister endpoint yet — return empty; canister can add getMyQuotes later
     return [];
   },
 
   async getQuotesForRequest(requestId: string): Promise<Quote[]> {
-    if (!QUOTE_CANISTER_ID) {
-      const fromMap = mockQuotesByRequest.get(requestId) ?? [];
-      // Playwright e2e injection
-      const e2eQuotes = typeof window !== "undefined" && (window as any).__e2e_quotes;
-      const fromWindow = e2eQuotes
-        ? (e2eQuotes as Quote[]).filter((q) => q.requestId === requestId)
-        : [];
-      return [...fromMap, ...fromWindow];
-    }
     const a = await getActor();
     const result = await a.getQuotesForRequest(requestId);
     if ("err" in result) return [];
@@ -330,7 +264,6 @@ function createQuoteService() {
   },
 
   async accept(quoteId: string): Promise<void> {
-    if (!QUOTE_CANISTER_ID) return;
     const a = await getActor();
     const result = await a.acceptQuote(quoteId);
     if ("err" in result) {
@@ -340,7 +273,6 @@ function createQuoteService() {
   },
 
   async close(requestId: string): Promise<void> {
-    if (!QUOTE_CANISTER_ID) return;
     const a = await getActor();
     const result = await a.closeQuoteRequest(requestId);
     if ("err" in result) {
@@ -350,11 +282,6 @@ function createQuoteService() {
   },
 
   async cancel(requestId: string): Promise<void> {
-    if (!QUOTE_CANISTER_ID) {
-      const req = mockRequests.find((r) => r.id === requestId);
-      if (req) req.status = "cancelled";
-      return;
-    }
     const a = await getActor();
     const result = await a.cancelQuoteRequest(requestId);
     if ("err" in result) {
