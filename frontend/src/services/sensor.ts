@@ -228,7 +228,14 @@ function createSensorService() {
       unit,
       rawPayload
     );
-    if ("ok" in result) return fromEvent(result.ok);
+    if ("ok" in result) {
+      const event = fromEvent(result.ok);
+      // Use the explicit propertyId (real canister resolves via device registry;
+      // IoT gateway always provides it at ingestion time).
+      const resolved: SensorEvent = event.propertyId ? event : { ...event, propertyId };
+      if (resolved.severity === "Critical" && criticalHandler) criticalHandler(resolved);
+      return resolved;
+    }
     const key = Object.keys(result.err)[0];
     const val = result.err[key];
     throw new Error(typeof val === "string" ? val : key);
