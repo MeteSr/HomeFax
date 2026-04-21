@@ -217,6 +217,10 @@ function createContractorService() {
   },
 
   async getMyProfile(): Promise<ContractorProfile | null> {
+    if (typeof window !== "undefined" && (window as any).__e2e_contractors) {
+      const all = (window as any).__e2e_contractors as ContractorProfile[];
+      return all.length > 0 ? all[0] : null;
+    }
     const a = await getActor();
     const result = await a.getMyProfile();
     if ("err" in result) return null;

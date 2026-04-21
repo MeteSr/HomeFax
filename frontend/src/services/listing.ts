@@ -601,6 +601,10 @@ function createListingService() {
 
   /** Returns the ordered photo IDs for a listing (first = cover image). */
   async getListingPhotos(propertyId: string): Promise<string[]> {
+    if (typeof window !== "undefined" && (window as any).__e2e_listing_photo_order) {
+      const orderMap = (window as any).__e2e_listing_photo_order as Record<string, string[]>;
+      return orderMap[propertyId] ?? [];
+    }
     const actor = await getActor();
     return await actor.getListingPhotos(propertyId) as string[];
   },

@@ -192,6 +192,18 @@ function createQuoteService() {
     req: Omit<QuoteRequest, "id" | "createdAt" | "status" | "homeowner">,
     tier?: string
   ): Promise<QuoteRequest> {
+    // E2E bypass: when running in Playwright tests, create an in-memory mock request
+    if (typeof window !== "undefined" && (window as any).__e2e_properties) {
+      const newReq: QuoteRequest = {
+        id: String(Date.now()),
+        ...req,
+        homeowner: "test-e2e-principal",
+        status: "open",
+        createdAt: Date.now(),
+      };
+      mockRequests.push(newReq);
+      return newReq;
+    }
     const a = await getActor();
     // Capitalize first letter to match the canister variant (Low, Medium, High, Emergency)
     const urgencyKey = req.urgency.charAt(0).toUpperCase() + req.urgency.slice(1);
@@ -205,6 +217,10 @@ function createQuoteService() {
   },
 
   async getRequests(): Promise<QuoteRequest[]> {
+    if (typeof window !== "undefined" && (window as any).__e2e_quote_requests) {
+      return [...(window as any).__e2e_quote_requests as QuoteRequest[], ...mockRequests];
+    }
+    if (mockRequests.length > 0) return mockRequests;
     const a = await getActor();
     return (await a.getMyQuoteRequests() as any[]).map(fromRequest);
   },
@@ -234,6 +250,12 @@ function createQuoteService() {
   },
 
   async getRequest(id: string): Promise<QuoteRequest | undefined> {
+    if (typeof window !== "undefined" && (window as any).__e2e_quote_requests) {
+      const reqs = (window as any).__e2e_quote_requests as QuoteRequest[];
+      return reqs.find((r) => r.id === id) ?? mockRequests.find((r) => r.id === id);
+    }
+    const fromMock = mockRequests.find((r) => r.id === id);
+    if (fromMock) return fromMock;
     const a = await getActor();
     const result = await a.getQuoteRequest(id);
     if ("err" in result) return undefined;
@@ -257,6 +279,10 @@ function createQuoteService() {
   },
 
   async getQuotesForRequest(requestId: string): Promise<Quote[]> {
+    if (typeof window !== "undefined" && (window as any).__e2e_quotes) {
+      const quotes = (window as any).__e2e_quotes as Quote[];
+      return quotes.filter((q) => q.requestId === requestId);
+    }
     const a = await getActor();
     const result = await a.getQuotesForRequest(requestId);
     if ("err" in result) return [];
@@ -264,6 +290,9 @@ function createQuoteService() {
   },
 
   async accept(quoteId: string): Promise<void> {
+    if (typeof window !== "undefined" && (window as any).__e2e_quotes) {
+      return; // E2E mode: no-op — UI applies optimistic status update
+    }
     const a = await getActor();
     const result = await a.acceptQuote(quoteId);
     if ("err" in result) {
