@@ -159,7 +159,8 @@ test.describe("DashboardPage — /dashboard", () => {
 
   test.describe("baseline prompt — zero photos", () => {
     test.beforeEach(async ({ page }) => {
-      // No __e2e_baseline_photos injected → getByJob returns [] for all properties
+      // Inject empty arrays so getByJob returns [] without hitting the canister
+      await injectBaselinePhotos(page, { "1": [], "2": [] });
       await setup(page);
       await page.goto("/dashboard");
       await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
