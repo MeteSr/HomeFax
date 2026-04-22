@@ -68,6 +68,11 @@ persistent actor Payment {
     redeemedBy     : ?Principal;
   };
 
+  public type AgentCreditBalance = {
+    balance:   Nat;
+    expiresAt: Int;  // nanoseconds; 0 = never expires
+  };
+
   public type SubscriptionStats = {
     total: Nat;
     free: Nat;
@@ -206,7 +211,8 @@ persistent actor Payment {
 
   // ─── State ───────────────────────────────────────────────────────────────────
 
-  private let subscriptions = Map.empty<Principal, Subscription>();
+  private let subscriptions        = Map.empty<Principal, Subscription>();
+  private let agentCreditBalances  = Map.empty<Principal, AgentCreditBalance>();
 
   // Admin
   private var adminEntries     : [Principal] = [];
@@ -932,6 +938,67 @@ persistent actor Payment {
       case (?s)  {
         if (s.expiresAt > 0 and s.expiresAt <= Time.now()) { #Free }
         else { s.tier }
+      };
+    }
+  };
+
+  // ─── Agent Credit Top-Ups (#89) ──────────────────────────────────────────────
+
+  /// Returns the caller's remaining agent credit balance.
+  /// Returns 0 if no credits exist or all credits have expired.
+  public query(msg) func getMyAgentCredits() : async Nat {
+    let now = Time.now();
+    switch (Map.get(agentCreditBalances, Principal.compare, msg.caller)) {
+      case null  { 0 };
+      case (?b)  {
+        if (b.expiresAt > 0 and b.expiresAt <= now) { 0 }
+        else { b.balance }
+      };
+    }
+  };
+
+  /// Admin: grant agent credits to a principal after a verified Stripe payment.
+  /// If the principal already has an active balance the new amount is added;
+  /// expiry is extended to 12 months from now if that is later than the current expiry.
+  public shared(msg) func adminGrantAgentCredits(
+    user   : Principal,
+    amount : Nat,
+  ) : async Result.Result<Nat, Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    if (amount == 0)             return #err(#InvalidInput("amount must be > 0"));
+    let now          = Time.now();
+    let twelveMonths : Int = 365 * 24 * 60 * 60 * 1_000_000_000;
+    let newExpiry    = now + twelveMonths;
+    let existing     = switch (Map.get(agentCreditBalances, Principal.compare, user)) {
+      case null  { { balance = 0; expiresAt = 0 } };
+      case (?b)  {
+        if (b.expiresAt > 0 and b.expiresAt <= now) { { balance = 0; expiresAt = 0 } }
+        else { b }
+      };
+    };
+    let updated : AgentCreditBalance = {
+      balance   = existing.balance + amount;
+      expiresAt = if (existing.expiresAt > newExpiry) existing.expiresAt else newExpiry;
+    };
+    Map.add(agentCreditBalances, Principal.compare, user, updated);
+    #ok(updated.balance)
+  };
+
+  /// Admin: atomically decrement 1 agent credit for a user.
+  /// Called by the voice server when the tier quota is exhausted but the user has
+  /// purchased top-up credits.  Returns the remaining balance after decrement.
+  /// Returns #err(#NotFound) when the user has no credits or all credits have expired.
+  public shared(msg) func consumeAgentCredit(user: Principal) : async Result.Result<Nat, Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    let now = Time.now();
+    switch (Map.get(agentCreditBalances, Principal.compare, user)) {
+      case null  { #err(#NotFound) };
+      case (?b)  {
+        if (b.expiresAt > 0 and b.expiresAt <= now) return #err(#NotFound);
+        if (b.balance == 0)                          return #err(#NotFound);
+        let updated : AgentCreditBalance = { balance = b.balance - 1; expiresAt = b.expiresAt };
+        Map.add(agentCreditBalances, Principal.compare, user, updated);
+        #ok(updated.balance)
       };
     }
   };

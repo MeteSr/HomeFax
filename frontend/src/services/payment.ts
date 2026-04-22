@@ -166,6 +166,17 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
     ),
+    // ── Agent credit top-ups (#89) ──
+    getMyAgentCredits: IDL.Func(
+      [],
+      [IDL.Nat],
+      ["query"]
+    ),
+    adminGrantAgentCredits: IDL.Func(
+      [IDL.Principal, IDL.Nat],
+      [IDL.Variant({ ok: IDL.Nat, err: Error })],
+      []
+    ),
   });
 };
 
@@ -443,5 +454,36 @@ export const paymentService = {
       const detail = (result.err as any)[key];
       throw new Error(typeof detail === "string" ? detail : key);
     }
+  },
+
+  // ── Agent credit top-ups (#89) ────────────────────────────────────────────────
+
+  /** Returns the caller's remaining agent credit balance (0 if none or expired). */
+  async getMyAgentCredits(): Promise<number> {
+    if ((window as any).__e2e_agent_credits != null) {
+      return Number((window as any).__e2e_agent_credits);
+    }
+    const a = await getActor();
+    const result = await a.getMyAgentCredits();
+    return Number(result);
+  },
+
+  /**
+   * Start a Stripe Checkout session to purchase an agent credit pack.
+   * Redirects the browser to the Stripe-hosted payment page on success.
+   * `packSize` must be 25 or 100.
+   */
+  async startCreditPackCheckout(packSize: 25 | 100): Promise<void> {
+    const principal  = await getPrincipal().catch(() => "");
+    const successUrl = `${window.location.origin}/payment-success?credit_session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl  = `${window.location.origin}/payment-failure`;
+    const resp = await fetch(`${VOICE_AGENT_URL}/api/stripe/create-credit-checkout`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ packSize, principal, successUrl, cancelUrl }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error ?? "Checkout failed");
+    window.location.href = data.url;
   },
 };

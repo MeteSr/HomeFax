@@ -65,6 +65,7 @@ export interface UseVoiceAgentReturn {
   history:            AgentAction[];
   pendingImage:       { base64: string; mimeType: string } | null;
   pendingProposal:    PendingProposal | null;
+  creditBalance:      number | null;
   clearHistory:       () => void;
   startListening:     () => void;
   stopListening:      () => void;
@@ -74,6 +75,7 @@ export interface UseVoiceAgentReturn {
   sendImageToAgent:   (userText: string) => void;
   confirmProposal:    () => Promise<void>;
   dismissProposal:    () => void;
+  buyCredits:         (packSize: 25 | 100) => Promise<void>;
 }
 
 // ── Config ─────────────────────────────────────────────────────────────────────
@@ -104,6 +106,13 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
   const [alerts,          setAlerts]         = useState<ProactiveAlert[]>([]);
   const [pendingImage,    setPendingImage]   = useState<{ base64: string; mimeType: string } | null>(null);
   const [pendingProposal, setPendingProposal] = useState<PendingProposal | null>(null);
+  const [creditBalance,   setCreditBalance]  = useState<number | null>(null);
+
+  useEffect(() => {
+    paymentService.getMyAgentCredits()
+      .then(setCreditBalance)
+      .catch(() => setCreditBalance(0));
+  }, []);
 
   const recognitionRef     = useRef<any>(null);
   const finalTranscriptRef = useRef("");
@@ -395,8 +404,11 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
           const resetTime = resetsAt
             ? new Date(resetsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
             : "midnight UTC";
+          // Refresh credit balance after a quota-exhausted response.
+          paymentService.getMyAgentCredits().then(setCreditBalance).catch(() => {});
           throw new Error(
-            `You've used your ${body.limit ?? ""} AI assistant calls for today. Resets at ${resetTime} — or upgrade for more.`
+            `You've used your ${body.limit ?? ""} AI assistant calls for today. Resets at ${resetTime}.` +
+            ` Buy a credit pack for instant top-up, or upgrade your plan for a higher daily limit.`
           );
         }
 
@@ -594,12 +606,16 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
     setResponse("No problem — proposal discarded.");
   }, []);
 
+  const buyCredits = useCallback(async (packSize: 25 | 100) => {
+    await paymentService.startCreditPackCheckout(packSize);
+  }, []);
+
   return {
     state, transcript, response, error, isSupported,
     alerts, history, clearHistory, pendingImage,
-    pendingProposal,
+    pendingProposal, creditBalance,
     startListening, stopListening, reset,
     attachImage, clearImage, sendImageToAgent,
-    confirmProposal, dismissProposal,
+    confirmProposal, dismissProposal, buyCredits,
   };
 }
