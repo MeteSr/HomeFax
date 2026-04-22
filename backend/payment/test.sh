@@ -200,6 +200,8 @@ dfx canister call payment configureStripe '(record {
     premiumYearly        = "price_premium_yearly_test";
     contractorProMonthly = "price_cpro_monthly_test";
     contractorProYearly  = "price_cpro_yearly_test";
+    realtorProMonthly    = "price_rpro_monthly_test";
+    realtorProYearly     = "price_rpro_yearly_test";
   }
 })'
 echo "  ↳ configureStripe succeeded — ✓"
@@ -224,6 +226,7 @@ RESULT=$(dfx canister call payment configureStripe '(record {
     basicMonthly = "x"; basicYearly = "x";
     proMonthly = "x"; proYearly = "x"; premiumMonthly = "x";
     premiumYearly = "x"; contractorProMonthly = "x"; contractorProYearly = "x";
+    realtorProMonthly = "x"; realtorProYearly = "x";
   }
 })' --identity stripe-nonadmin-test 2>&1)
 echo "$RESULT" | grep -q "NotAuthorized" \
