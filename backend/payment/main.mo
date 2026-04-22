@@ -237,6 +237,27 @@ persistent actor Payment {
   private let ONE_MINUTE_NS           : Int = 60_000_000_000;
   private var trustedCanisterEntries  : [Principal] = [];
 
+  // ─── Tier Propagation ────────────────────────────────────────────────────────
+
+  /// Canister IDs for tier propagation — set by admin via setTierCanisterIds().
+  /// Propagation is best-effort: errors are swallowed so a downstream canister
+  /// failure cannot prevent the payment record from being written.
+  private var propertyCanisterId : ?Principal = null;
+  private var quoteCanisterId    : ?Principal = null;
+  private var photoCanisterId    : ?Principal = null;
+
+  // Remote error types for setTier cross-canister calls.
+  // Declared as supertypes of what setTier can actually return so Candid
+  // decoding never traps on an unexpected variant tag.
+  type PropertySetTierErr = {
+    #NotFound; #NotAuthorized; #Paused; #LimitReached;
+    #InvalidInput : Text; #DuplicateAddress; #AddressConflict : Int;
+  };
+  type QuoteSetTierErr = { #NotFound; #Unauthorized; #InvalidInput : Text };
+  type PhotoSetTierErr = {
+    #NotFound; #Unauthorized; #QuotaExceeded : Text; #Duplicate : Text; #InvalidInput : Text;
+  };
+
   private func isTrustedCanister(p: Principal) : Bool {
     Option.isSome(Array.find<Principal>(trustedCanisterEntries, func(t) { t == p }))
   };
@@ -293,6 +314,53 @@ persistent actor Payment {
 
   public query func isAdminPrincipal(p: Principal) : async Bool {
     isAdmin(p)
+  };
+
+  /// Configure the canister IDs that receive setTier calls when a subscription
+  /// changes. Must be called once after deploy; subsequent calls update all three.
+  public shared(msg) func setTierCanisterIds(
+    property : Principal,
+    quote    : Principal,
+    photo    : Principal,
+  ) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    propertyCanisterId := ?property;
+    quoteCanisterId    := ?quote;
+    photoCanisterId    := ?photo;
+    #ok(())
+  };
+
+  /// Push the new tier to the property, quote, and photo canisters.
+  /// Calls are made sequentially; errors are swallowed so a downstream failure
+  /// cannot prevent the subscription record from being written.
+  private func propagateTier(user: Principal, tier: Tier) : async () {
+    switch (propertyCanisterId) {
+      case (?pid) {
+        let a : actor {
+          setTier : (Principal, Tier) -> async Result.Result<(), PropertySetTierErr>
+        } = actor(Principal.toText(pid));
+        try { ignore await a.setTier(user, tier) } catch _ {};
+      };
+      case null {};
+    };
+    switch (quoteCanisterId) {
+      case (?pid) {
+        let a : actor {
+          setTier : (Principal, Tier) -> async Result.Result<(), QuoteSetTierErr>
+        } = actor(Principal.toText(pid));
+        try { ignore await a.setTier(user, tier) } catch _ {};
+      };
+      case null {};
+    };
+    switch (photoCanisterId) {
+      case (?pid) {
+        let a : actor {
+          setTier : (Principal, Tier) -> async Result.Result<(), PhotoSetTierErr>
+        } = actor(Principal.toText(pid));
+        try { ignore await a.setTier(user, tier) } catch _ {};
+      };
+      case null {};
+    };
   };
 
   // ─── Stripe helpers ──────────────────────────────────────────────────────────
@@ -549,6 +617,7 @@ persistent actor Payment {
           cancelledAt = null;
         };
         Map.add(subscriptions, Principal.compare, msg.caller, sub);
+        await propagateTier(msg.caller, tier);
         #ok(sub)
       }
     } catch (_e) {
@@ -574,6 +643,7 @@ persistent actor Payment {
           cancelledAt = null;
         };
         Map.add(subscriptions, Principal.compare, msg.caller, sub);
+        await propagateTier(msg.caller, gift.tier);
         let updated : PendingGift = {
           giftToken      = gift.giftToken;
           tier           = gift.tier;
@@ -710,7 +780,8 @@ persistent actor Payment {
       cancelledAt = null;
     };
     Map.add(subscriptions, Principal.compare, msg.caller, sub);
-    Map.remove(activeSubscribers, Text.compare, callerKey);
+    Map.remove(activeSubscribers, Text.compare, callerKey);  // release lock before cross-canister calls
+    await propagateTier(msg.caller, sub.tier);
     #ok(sub)
   };
 
@@ -733,6 +804,7 @@ persistent actor Payment {
       cancelledAt = null;
     };
     Map.add(subscriptions, Principal.compare, userPrincipal, sub);
+    await propagateTier(userPrincipal, tier);
     #ok(sub)
   };
 
@@ -753,6 +825,7 @@ persistent actor Payment {
       cancelledAt = null;
     };
     Map.add(subscriptions, Principal.compare, principal, sub);
+    await propagateTier(principal, tier);
     #ok(sub)
   };
 
@@ -785,6 +858,7 @@ persistent actor Payment {
           cancelledAt = ?now;
         };
         Map.add(subscriptions, Principal.compare, msg.caller, updated);
+        await propagateTier(msg.caller, #Free);  // revoke limits immediately on cancellation
         #ok(updated)
       };
     }

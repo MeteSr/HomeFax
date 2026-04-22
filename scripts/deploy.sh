@@ -406,15 +406,41 @@ if [ -n "$JOB_ID" ]      && [ -n "$PAYMENT_ID" ];    then
 fi
 if [ -n "$PROPERTY_ID" ] && [ -n "$PAYMENT_ID" ];    then
   echo "  Wiring payment -> property..."
-  dfx canister call property setPaymentCanisterId    "(principal \"$PAYMENT_ID\")" --network "$NETWORK" &
+  dfx canister call property setPaymentCanisterId    "(principal \"$PAYMENT_ID\")" --network "$NETWORK" 2>/dev/null &
 fi
 if [ -n "$PHOTO_ID" ]    && [ -n "$PAYMENT_ID" ];    then
   echo "  Wiring payment -> photo..."
-  dfx canister call photo    setPaymentCanisterId    "(principal \"$PAYMENT_ID\")" --network "$NETWORK" &
+  dfx canister call photo    setPaymentCanisterId    "(principal \"$PAYMENT_ID\")" --network "$NETWORK" 2>/dev/null &
 fi
 if [ -n "$QUOTE_ID" ]    && [ -n "$PAYMENT_ID" ];    then
   echo "  Wiring payment -> quote..."
-  dfx canister call quote    setPaymentCanisterId    "(principal \"$PAYMENT_ID\")" --network "$NETWORK" &
+  dfx canister call quote    setPaymentCanisterId    "(principal \"$PAYMENT_ID\")" --network "$NETWORK" 2>/dev/null &
+fi
+
+# ── Tier propagation admin grants ─────────────────────────────────────────────
+# payment must be an admin in property/quote/photo to call setTier() cross-canister.
+# Without this, all propagateTier() calls return #NotAuthorized and tier limits
+# in those canisters silently remain at #Free for everyone (#139).
+if [ -n "$PAYMENT_ID" ] && [ -n "$PROPERTY_ID" ]; then
+  echo "  property: adding payment as admin (for tier propagation)..."
+  dfx canister call property addAdmin "(principal \"$PAYMENT_ID\")" --network "$NETWORK" 2>/dev/null &
+fi
+if [ -n "$PAYMENT_ID" ] && [ -n "$QUOTE_ID" ]; then
+  echo "  quote: adding payment as admin (for tier propagation)..."
+  dfx canister call quote addAdmin "(principal \"$PAYMENT_ID\")" --network "$NETWORK" 2>/dev/null &
+fi
+if [ -n "$PAYMENT_ID" ] && [ -n "$PHOTO_ID" ]; then
+  echo "  photo: adding payment as admin (for tier propagation)..."
+  dfx canister call photo addAdmin "(principal \"$PAYMENT_ID\")" --network "$NETWORK" 2>/dev/null &
+fi
+
+# ── Tier propagation canister ID wiring ────────────────────────────────────────
+# Tells payment which canister IDs to call setTier() on when a subscription changes.
+if [ -n "$PAYMENT_ID" ] && [ -n "$PROPERTY_ID" ] && [ -n "$QUOTE_ID" ] && [ -n "$PHOTO_ID" ]; then
+  echo "  Wiring tier propagation: payment -> property, quote, photo..."
+  dfx canister call payment setTierCanisterIds \
+    "(principal \"$PROPERTY_ID\", principal \"$QUOTE_ID\", principal \"$PHOTO_ID\")" \
+    --network "$NETWORK" 2>/dev/null &
 fi
 if [ -n "$BILLS_ID" ]    && [ -n "$PAYMENT_ID" ];    then
   echo "  Wiring payment -> bills..."

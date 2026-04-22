@@ -824,6 +824,17 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
       "variant {ok:record {expiresAt:int; owner:principal; createdAt:int; tier:variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}; cancelledAt:opt int}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
+  "setTierCanisterIds": {
+    "args": [
+      "principal",
+      "principal",
+      "principal",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+    ],
+  },
   "subscribe": {
     "args": [
       "variant {Pro; Premium; Free; Basic; ContractorPro; ContractorFree}",

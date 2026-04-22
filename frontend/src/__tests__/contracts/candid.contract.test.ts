@@ -136,6 +136,7 @@ describe("payment IDL factory", () => {
       "isStripeConfigured",
       "listPendingGifts",
       "redeemGift",
+      "setTierCanisterIds",
       "subscribe",
       "verifyStripeSession",
     ]);
