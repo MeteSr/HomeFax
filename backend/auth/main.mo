@@ -12,7 +12,7 @@ import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Array "mo:core/Array";
 
-persistent actor Auth {
+persistent actor class Auth(initDeployer : Principal) {
 
   // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -80,8 +80,9 @@ persistent actor Auth {
 
   private var isPaused: Bool = false;
   private var pauseExpiryNs: ?Int = null;
-  private var admins: [Principal] = [];
-  private var adminInitialized: Bool = false;
+  // initDeployer is set atomically at install time — no open window for a
+  // first-caller race. On upgrade, stable storage restores the existing value.
+  private var admins: [Principal] = [initDeployer];
 
   /// Per-principal update-call rate limiting (cycle-drain protection).
   private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
@@ -166,11 +167,12 @@ persistent actor Auth {
     #ok(())
   };
 
-  /// Add a new admin principal
+  /// Add a new admin principal (existing admin only — bootstrap is closed at install time)
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
-    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
-    admins := Array.concat(admins, [newAdmin]);
-    adminInitialized := true;
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    if (not isAdmin(newAdmin)) {
+      admins := Array.concat(admins, [newAdmin]);
+    };
     #ok(())
   };
 

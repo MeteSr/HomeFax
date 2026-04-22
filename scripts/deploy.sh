@@ -82,12 +82,67 @@ if [ "$NETWORK" != "local" ]; then
     echo "  ✓ VITE_VOICE_AGENT_API_KEY is set"
   fi
 
+  # PROD.4 — STRIPE_SECRET_KEY must be set; without it payment processing fails
+  # silently and subscriptions cannot be created.
+  if [ -z "${STRIPE_SECRET_KEY:-}" ]; then
+    echo "  ✗ STRIPE_SECRET_KEY is not set — payment processing will fail"
+    PREFLIGHT_FAILED=1
+  else
+    echo "  ✓ STRIPE_SECRET_KEY is set"
+  fi
+
+  # PROD.5 — VITE_STRIPE_PUBLISHABLE_KEY must be set; Stripe.js cannot initialize
+  # without it and the frontend payment flow breaks entirely.
+  if [ -z "${VITE_STRIPE_PUBLISHABLE_KEY:-}" ]; then
+    echo "  ✗ VITE_STRIPE_PUBLISHABLE_KEY is not set — Stripe.js will fail to initialize"
+    PREFLIGHT_FAILED=1
+  else
+    echo "  ✓ VITE_STRIPE_PUBLISHABLE_KEY is set"
+  fi
+
+  # PROD.6 — Reject test Stripe key on mainnet. A sk_test_* key on the ic network
+  # means real-money subscriptions are silently processed against Stripe's test mode.
+  if [ "$NETWORK" = "ic" ] && [[ "${STRIPE_SECRET_KEY:-}" == sk_test_* ]]; then
+    echo "  ✗ Test Stripe key (sk_test_*) used on mainnet — use a live key for ic deploys"
+    PREFLIGHT_FAILED=1
+  fi
+
+  # PROD.7 — DFX identity must not be anonymous; an anonymous deploy means no one
+  # owns the canisters and they cannot be upgraded or managed after deployment.
+  CURRENT_IDENTITY=$(dfx identity whoami 2>/dev/null || echo "anonymous")
+  if [ "$CURRENT_IDENTITY" = "anonymous" ]; then
+    echo "  ✗ DFX identity is 'anonymous' — switch with: dfx identity use <name>"
+    PREFLIGHT_FAILED=1
+  else
+    echo "  ✓ DFX identity: $CURRENT_IDENTITY"
+  fi
+
+  # PROD.8 — ICP network must be reachable before we spend time building canisters.
+  echo -n "  Checking network reachability ($NETWORK)... "
+  if dfx ping --network "$NETWORK" >/dev/null 2>&1; then
+    echo "✓"
+  else
+    echo "✗"
+    echo "  ✗ ICP network '$NETWORK' is not reachable — check your connection or dfx config"
+    PREFLIGHT_FAILED=1
+  fi
+
   if [ "$PREFLIGHT_FAILED" -ne 0 ]; then
     echo ""
     echo "❌ Pre-flight failed. Set the missing secrets and retry."
     exit 1
   fi
   echo ""
+fi
+
+# ── DRY_RUN short-circuit ────────────────────────────────────────────────────
+# DRY_RUN=1 bash scripts/deploy.sh <network>
+# Runs all preflight checks above and exits without deploying anything.
+# Useful in CI to validate secrets are wired up correctly before a real deploy.
+if [ "${DRY_RUN:-0}" = "1" ]; then
+  echo ""
+  echo "✅ DRY_RUN=1 — env and network validation passed. Exiting without deploying."
+  exit 0
 fi
 
 # ── Bootstrap management canister IDL ───────────────────────────────────────────
@@ -141,13 +196,25 @@ echo "▶ Creating canister IDs (phase 1/2)..."
 dfx canister create --all --network "$NETWORK" 2>/dev/null || true
 
 # Phase 2: build + install every canister in parallel
+# auth canister takes an init arg (deployer principal) so it is bootstrapped
+# atomically — no window exists for a first-caller race after deploy.
 echo "▶ Building and installing ${#CANISTERS[@]} canisters in parallel (phase 2/2)..."
+DEPLOY_PRINCIPAL=$(dfx identity get-principal)
 PIDS=()
 for canister in "${CANISTERS[@]}"; do
-  (
-    dfx build "$canister" --network "$NETWORK" 2>&1 && \
-    dfx canister install "$canister" --mode install --network "$NETWORK" 2>&1
-  ) >"$LOG_DIR/$canister.log" 2>&1 &
+  if [ "$canister" = "auth" ]; then
+    (
+      dfx build auth --network "$NETWORK" 2>&1 && \
+      dfx canister install auth --mode install \
+        --argument "(principal \"$DEPLOY_PRINCIPAL\")" \
+        --network "$NETWORK" 2>&1
+    ) >"$LOG_DIR/auth.log" 2>&1 &
+  else
+    (
+      dfx build "$canister" --network "$NETWORK" 2>&1 && \
+      dfx canister install "$canister" --mode install --network "$NETWORK" 2>&1
+    ) >"$LOG_DIR/$canister.log" 2>&1 &
+  fi
   PIDS+=($!)
 done
 
@@ -185,6 +252,42 @@ for canister in "${CANISTERS[@]}"; do
   ID=$(dfx canister id "$canister" --network "$NETWORK" 2>/dev/null || echo "not deployed")
   echo "  $canister: $ID"
 done
+
+echo ""
+echo "============================================"
+echo "  Validating Canister IDs"
+echo "============================================"
+# PROD.9 — Every canister must have a non-empty ID after the deploy step.
+# An empty ID means the canister failed to create or install silently, which
+# can cause the frontend to fall back to mock data (see #138).
+CANISTER_ID_FAILED=0
+for canister in "${CANISTERS[@]}"; do
+  ID=$(dfx canister id "$canister" --network "$NETWORK" 2>/dev/null || echo "")
+  if [ -z "$ID" ]; then
+    echo "  ✗ $canister: no canister ID — deploy may be incomplete"
+    CANISTER_ID_FAILED=1
+  else
+    echo "  ✓ $canister: $ID"
+  fi
+done
+
+if [ "$CANISTER_ID_FAILED" -ne 0 ]; then
+  echo ""
+  echo "❌ One or more canister IDs are missing. Re-run deploy or check logs above."
+  exit 1
+fi
+
+# PROD.10 — canister_ids.json must exist on non-local deploys.
+# This file is the source of truth for CI and upgrade scripts; a missing file
+# means the deploy wrote IDs only to ephemeral dfx state.
+if [ "$NETWORK" != "local" ]; then
+  REPO_ROOT_CID="$(cd "$(dirname "$0")/.." && pwd)/canister_ids.json"
+  if [ -f "$REPO_ROOT_CID" ]; then
+    echo "  ✓ canister_ids.json present"
+  else
+    echo "  ⚠️  canister_ids.json not found at $REPO_ROOT_CID — IDs may not persist across dfx restarts"
+  fi
+fi
 
 echo ""
 echo "============================================"
@@ -251,8 +354,9 @@ echo "============================================"
 DEPLOYER=$(dfx identity get-principal)
 echo "  Deployer principal: $DEPLOYER"
 
-# All canisters that expose addAdmin, excluding ai_proxy (handled separately).
-ADMIN_CANISTERS=(auth property job contractor quote photo report maintenance market sensor listing agent recurring bills monitoring)
+# All canisters that expose addAdmin, excluding auth (bootstrapped via init arg)
+# and ai_proxy (handled separately below).
+ADMIN_CANISTERS=(property job contractor quote photo report maintenance market sensor listing agent recurring bills monitoring)
 
 # Fire all addAdmin calls in parallel — each targets a different canister so
 # there is no shared state and no ordering requirement between them.
