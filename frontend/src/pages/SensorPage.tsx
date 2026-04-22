@@ -7,6 +7,7 @@ import { Badge } from "@/components/Badge";
 import { RegisterDeviceModal } from "@/components/RegisterDeviceModal";
 import { usePropertyStore } from "@/store/propertyStore";
 import { sensorService, SensorDevice, SensorEvent } from "@/services/sensor";
+import { propertyService } from "@/services/property";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
@@ -43,12 +44,21 @@ const SOURCES: { value: string; label: string }[] = [
 
 export default function SensorPage() {
   const navigate = useNavigate();
-  const { properties } = usePropertyStore();
+  const { properties, setProperties } = usePropertyStore();
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
   const [devices,       setDevices]       = useState<SensorDevice[]>([]);
   const [alerts,        setAlerts]        = useState<SensorEvent[]>([]);
   const [loading,       setLoading]       = useState(false);
   const [modalOpen,     setModalOpen]     = useState(false);
+
+  // Seed the property store when navigating directly to this page
+  useEffect(() => {
+    if (properties.length === 0) {
+      propertyService.getMyProperties()
+        .then((list) => { if (list.length > 0) setProperties(list); })
+        .catch((e) => console.error("[SensorPage] property load failed:", e));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pick the first property by default
   useEffect(() => {

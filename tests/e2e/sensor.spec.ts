@@ -29,7 +29,7 @@ test.describe("SensorPage — /sensor", () => {
   // ── Page structure ───────────────────────────────────────────────────────────
 
   test("shows 'IoT Gateway' eyebrow label", async ({ page }) => {
-    await expect(page.getByText("IoT Gateway")).toBeVisible();
+    await expect(page.getByText("IoT Gateway", { exact: true })).toBeVisible();
   });
 
   test("shows 'Register Device' button", async ({ page }) => {
@@ -131,33 +131,33 @@ test.describe("SensorPage — /sensor", () => {
       await expect(page.getByText("Front Door Sensor")).toBeVisible();
     });
 
-    test("shows 'Ring Alarm' label for RingAlarm source", async ({ page }) => {
-      await expect(page.getByText(/ring alarm/i).first()).toBeVisible();
+    test("shows 'Ring Alarm' source label for RingAlarm device", async ({ page }) => {
+      // Source label rendered as "Ring Alarm · RING-001"
+      await expect(page.getByText(/ring alarm.*ring-001/i)).toBeVisible();
     });
 
     test("shows device name for HoneywellHome device", async ({ page }) => {
       await expect(page.getByText("Thermostat")).toBeVisible();
     });
 
-    test("shows 'Honeywell Home' label for HoneywellHome source", async ({ page }) => {
-      await expect(page.getByText(/honeywell home/i).first()).toBeVisible();
+    test("shows 'Honeywell Home' source label for HoneywellHome device", async ({ page }) => {
+      await expect(page.getByText(/honeywell home.*hw-002/i)).toBeVisible();
     });
 
     test("shows device name for HomeAssistant device", async ({ page }) => {
       await expect(page.getByText("Hub")).toBeVisible();
     });
 
-    test("shows 'Home Assistant' label for HomeAssistant source", async ({ page }) => {
-      await expect(page.getByText(/home assistant/i).first()).toBeVisible();
+    test("shows 'Home Assistant' source label for HomeAssistant device", async ({ page }) => {
+      await expect(page.getByText(/home assistant.*ha-003/i)).toBeVisible();
     });
 
-    test("shows Active badge for active device", async ({ page }) => {
-      // At least one Active badge rendered for the two active devices
+    test("shows Active badge for active devices", async ({ page }) => {
       await expect(page.getByText("Active").first()).toBeVisible();
     });
 
     test("shows Inactive badge for deactivated device", async ({ page }) => {
-      await expect(page.getByText("Inactive").first()).toBeVisible();
+      await expect(page.getByText("Inactive")).toBeVisible();
     });
   });
 });

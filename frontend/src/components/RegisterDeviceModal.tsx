@@ -125,8 +125,8 @@ export function RegisterDeviceModal({ isOpen, onClose, onSuccess, propertyId }: 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {/* Source */}
           <div>
-            <label style={labelStyle}>Device Type</label>
-            <select value={form.source} onChange={set("source")} style={inputStyle}>
+            <label htmlFor="register-device-source" style={labelStyle}>Device Type</label>
+            <select id="register-device-source" value={form.source} onChange={set("source")} style={inputStyle}>
               {SOURCES.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
