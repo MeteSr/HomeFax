@@ -136,6 +136,7 @@ initAdmins(1) -> (1)
 isStripeConfigured(0) -> (1) [query]
 listPendingGifts(0) -> (1) [query]
 redeemGift(1) -> (1)
+setTierCanisterIds(3) -> (1)
 subscribe(1) -> (1)
 verifyStripeSession(1) -> (1)"
 `;
