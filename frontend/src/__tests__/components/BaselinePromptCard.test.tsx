@@ -15,6 +15,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { Property } from "@/services/property";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -44,13 +45,13 @@ const FAKE_PHOTO = (description: string) => ({
   verified: false, createdAt: Date.now(),
 });
 
-const PROPERTY = {
+const PROPERTY: Property = {
   id: BigInt(1), owner: "test",
   address: "123 Maple Street", city: "Austin", state: "TX", zipCode: "78701",
-  propertyType: "SingleFamily" as const,
+  propertyType: "SingleFamily",
   yearBuilt: BigInt(2001), squareFeet: BigInt(2400),
-  verificationLevel: "Unverified" as const,
-  tier: "Free" as const,
+  verificationLevel: "Unverified",
+  tier: "Free",
   createdAt: BigInt(0), updatedAt: BigInt(0), isActive: true,
 };
 
