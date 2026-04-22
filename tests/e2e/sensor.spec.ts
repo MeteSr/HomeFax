@@ -22,7 +22,7 @@ test.describe("SensorPage — /sensor", () => {
   test.beforeEach(async ({ page }) => {
     await injectSensorDevices(page, { "1": [] });
     await setup(page);
-    await page.goto("/sensor");
+    await page.goto("/sensors");
     await expect(page.getByRole("heading", { name: /smart home sensors/i })).toBeVisible();
   });
 
@@ -123,7 +123,7 @@ test.describe("SensorPage — /sensor", () => {
         ],
       });
       await setup(page);
-      await page.goto("/sensor");
+      await page.goto("/sensors");
       await expect(page.getByRole("heading", { name: /smart home sensors/i })).toBeVisible();
     });
 
