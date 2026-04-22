@@ -197,9 +197,14 @@ Upgrade when you're ready. Cancel anytime.
                     </div>
                   )}
                 </div>
-                {(plan.tier === "ContractorFree" || plan.tier === "RealtorFree") && (
+                {plan.tier === "ContractorFree" && (
                   <div style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 300, color: COLORS.plumMid, marginBottom: "1.25rem", padding: "0.5rem 0.75rem", background: COLORS.sageLight, borderRadius: RADIUS.sm, lineHeight: 1.5 }}>
                     $15 flat fee per verified referral job
+                  </div>
+                )}
+                {plan.tier === "RealtorFree" && (
+                  <div style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 300, color: COLORS.plumMid, marginBottom: "1.25rem", padding: "0.5rem 0.75rem", background: COLORS.sageLight, borderRadius: RADIUS.sm, lineHeight: 1.5 }}>
+                    $100 per won bid — no monthly fee
                   </div>
                 )}
 
