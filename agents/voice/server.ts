@@ -189,8 +189,23 @@ app.post("/api/agent", async (req: Request, res: Response): Promise<void> => {
   const { allowed, count, limit, resetsAt } = checkAndRecord(principal, tier);
 
   if (!allowed) {
-    res.status(429).json({ error: "daily_agent_limit_reached", limit, count, resetsAt });
-    return;
+    // Tier quota exhausted — try to draw from one-time credit balance (#89).
+    let creditFallback = false;
+    if (principal !== "anon") {
+      try {
+        await consumeAgentCredit(principal);
+        creditFallback = true;
+        process.stdout.write(JSON.stringify({
+          ts: new Date().toISOString(), event: "agent_credit_used", principal, tier,
+        }) + "\n");
+      } catch {
+        // No credits, expired, or canister unreachable — fall through to 429.
+      }
+    }
+    if (!creditFallback) {
+      res.status(429).json({ error: "daily_agent_limit_reached", limit, count, resetsAt, creditsAvailable: false });
+      return;
+    }
   }
 
   // ── respond with remaining quota header so the UI can update the counter ──
@@ -1060,6 +1075,48 @@ async function activateInCanister(principal: string, tier: string, months: numbe
   }
 }
 
+// ── Credit top-up helpers (#89) ───────────────────────────────────────────────
+
+/** Valid top-up pack sizes and their Stripe price-ID env vars. */
+export const CREDIT_PACKS: Record<number, { envVar: string; label: string }> = {
+  25:  { envVar: "STRIPE_PRICE_CREDITS_25",  label: "25 credits" },
+  100: { envVar: "STRIPE_PRICE_CREDITS_100", label: "100 credits" },
+};
+
+/**
+ * Atomically decrement 1 agent credit for `principal` in the payment canister.
+ * Throws if the canister returns an error (no credits, expired, or unavailable).
+ */
+async function consumeAgentCredit(principal: string): Promise<void> {
+  if (!/^[a-z0-9]([a-z0-9-]{0,60}[a-z0-9])?$/.test(principal)) {
+    throw new Error("Invalid principal format");
+  }
+  const { exec }      = await import("child_process");
+  const { promisify } = await import("util");
+  const execAsync = promisify(exec);
+  const cmd = `dfx canister call payment consumeAgentCredit '(principal "${principal}")'`;
+  const { stdout, stderr } = await execAsync(cmd);
+  if (stderr && /error/i.test(stderr)) throw new Error(`Credit consume failed: ${stderr.trim()}`);
+  if (/\berr\b/i.test(stdout))         throw new Error("No agent credits available");
+}
+
+/**
+ * Grant agent credits to `principal` in the payment canister.
+ * Called by the voice server after Stripe confirms a one-time credit pack purchase.
+ */
+async function grantAgentCredits(principal: string, amount: number): Promise<void> {
+  if (!/^[a-z0-9]([a-z0-9-]{0,60}[a-z0-9])?$/.test(principal)) {
+    throw new Error("Invalid principal format");
+  }
+  if (!Number.isInteger(amount) || amount <= 0) throw new Error("Invalid credit amount");
+  const { exec }      = await import("child_process");
+  const { promisify } = await import("util");
+  const execAsync = promisify(exec);
+  const cmd = `dfx canister call payment adminGrantAgentCredits '(principal "${principal}", ${amount} : nat)'`;
+  const { stderr } = await execAsync(cmd);
+  if (stderr && /error/i.test(stderr)) throw new Error(`Credit grant failed: ${stderr.trim()}`);
+}
+
 app.post("/api/stripe/verify-session", async (req: Request, res: Response) => {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeSecretKey) { res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" }); return; }
@@ -1166,6 +1223,92 @@ app.post("/api/stripe/verify-subscription", async (req: Request, res: Response) 
     }
 
     res.json({ type: "subscription", tier, billing });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : "Stripe error" });
+  }
+});
+
+// ── POST /api/stripe/create-credit-checkout ──────────────────────────────────
+// Creates a Stripe Checkout Session in one-time payment mode for an agent credit
+// pack (25 or 100 credits).  On success the browser is redirected to Stripe;
+// the verify-credit-purchase route tops up the balance after payment.
+app.post("/api/stripe/create-credit-checkout", async (req: Request, res: Response) => {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) { res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" }); return; }
+
+  const { packSize, principal, successUrl, cancelUrl } = req.body as {
+    packSize: number; principal: string; successUrl: string; cancelUrl: string;
+  };
+
+  const pack = CREDIT_PACKS[packSize];
+  if (!pack) {
+    res.status(400).json({ error: `Unknown pack size: ${packSize}. Valid sizes: ${Object.keys(CREDIT_PACKS).join(", ")}` });
+    return;
+  }
+
+  const priceId = process.env[pack.envVar]?.trim();
+  if (!priceId) {
+    res.status(500).json({ error: `${pack.envVar} is not configured` });
+    return;
+  }
+
+  if (!/^[a-z0-9]([a-z0-9-]{0,60}[a-z0-9])?$/.test(principal ?? "")) {
+    res.status(400).json({ error: "Invalid principal" }); return;
+  }
+
+  try {
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(stripeSecretKey);
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: successUrl,
+      cancel_url:  cancelUrl,
+      metadata: { principal, pack_size: String(packSize), type: "agent_credits" },
+    });
+    res.json({ url: session.url });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : "Stripe error" });
+  }
+});
+
+// ── POST /api/stripe/verify-credit-purchase ───────────────────────────────────
+// Called from the payment success page after a credit pack checkout completes.
+// Verifies the Stripe session, then calls adminGrantAgentCredits on the canister.
+app.post("/api/stripe/verify-credit-purchase", async (req: Request, res: Response) => {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) { res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" }); return; }
+
+  const { sessionId } = req.body as { sessionId: string };
+  if (!sessionId) { res.status(400).json({ error: "sessionId required" }); return; }
+
+  try {
+    const Stripe = (await import("stripe")).default;
+    const stripe  = new Stripe(stripeSecretKey);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      res.status(400).json({ error: `Payment not confirmed — status: ${session.payment_status}` }); return;
+    }
+    if (session.metadata?.type !== "agent_credits") {
+      res.status(400).json({ error: "Session is not a credit pack purchase" }); return;
+    }
+
+    const principal = session.metadata?.principal ?? "";
+    const packSize  = Number(session.metadata?.pack_size ?? 0);
+
+    if (!principal || !CREDIT_PACKS[packSize]) {
+      res.status(400).json({ error: "Missing or invalid metadata in session" }); return;
+    }
+
+    try {
+      await grantAgentCredits(principal, packSize);
+      console.log(`[stripe] granted ${packSize} agent credits to ${principal}`);
+    } catch (e) {
+      console.warn(`[stripe] credit grant skipped: ${(e as Error).message}`);
+    }
+
+    res.json({ type: "agent_credits", packSize, principal });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : "Stripe error" });
   }
