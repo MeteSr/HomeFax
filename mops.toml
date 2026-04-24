@@ -3,7 +3,7 @@ name = "homegentic"
 version = "0.1.0"
 
 [toolchain]
-moc = "0.13.5"
+moc = "1.3.0"
 
 [dependencies]
 core = "2.3.1"
