@@ -4,8 +4,12 @@ import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 
 const DFX_NETWORK = (process.env as any).DFX_NETWORK || "local";
 const IS_LOCAL = DFX_NETWORK !== "ic";
+// II canister ID is written to .env by deploy.sh (CANISTER_ID_INTERNET_IDENTITY).
+// Defaults to the well-known mainnet ID, which deploy.sh also uses as the target
+// for local deploys — so the value is stable across local restarts when possible.
+const II_CANISTER_ID = (process.env as any).INTERNET_IDENTITY_CANISTER_ID || "rdmx6-jaaaa-aaaaa-aaadq-cai";
 export const II_URL = IS_LOCAL
-  ? "http://rdmx6-jaaaa-aaaaa-aaadq-cai.localhost:4943/"
+  ? `http://${II_CANISTER_ID}.localhost:4943/`
   : "https://id.ai";
 
 let _authClient: AuthClient | null = null;
