@@ -7,8 +7,9 @@ echo "============================================"
 echo "  HomeGentic — Deployment ($ENV)"
 echo "============================================"
 
-# ── Load ICP identity from CI secret (non-local deploys only) ─────────────────
+# ── Identity setup ────────────────────────────────────────────────────────────
 if [ "$ENV" != "local" ] && [ -n "${DFX_IDENTITY_PEM:-}" ]; then
+  # CI / non-local: load identity from secret
   echo "▶ Loading ICP identity from DFX_IDENTITY_PEM secret..."
   IDENTITY_FILE=$(mktemp /tmp/icp-identity-XXXXXX.pem)
   printf '%s' "$DFX_IDENTITY_PEM" > "$IDENTITY_FILE"
@@ -16,6 +17,17 @@ if [ "$ENV" != "local" ] && [ -n "${DFX_IDENTITY_PEM:-}" ]; then
   icp identity default ci-deploy
   rm -f "$IDENTITY_FILE"
   echo "  ✓ Identity loaded"
+else
+  # Local: icp-cli has no auto-created default identity like dfx does.
+  # If the current identity is anonymous (2vxsx-fae), create a persistent
+  # local identity so admin/wiring calls are not rejected by inspect_message.
+  _PRINCIPAL=$(icp identity principal 2>/dev/null || echo "2vxsx-fae")
+  if [ "$_PRINCIPAL" = "2vxsx-fae" ]; then
+    echo "▶ Creating local deploy identity (homegentic-local)..."
+    icp identity new homegentic-local 2>/dev/null || true
+    icp identity default homegentic-local
+    echo "  ✓ Identity: $(icp identity principal)"
+  fi
 fi
 
 # ── Ensure mops toolchain (moc) is initialized ───────────────────────────────
@@ -477,25 +489,29 @@ if [ -n "$AI_PROXY_ID" ]; then
   echo "============================================"
 
   echo "  ai_proxy: adding deployer ($DEPLOYER) as admin..."
-  icp canister call ai_proxy addAdmin "(principal \"$DEPLOYER\")" -e "$ENV"
+  icp canister call ai_proxy addAdmin "(principal \"$DEPLOYER\")" -e "$ENV" \
+    2>/dev/null || echo "  ⚠️  ai_proxy addAdmin failed (may already be initialized)"
 
   if [ -n "${RESEND_API_KEY:-}" ]; then
     echo "  ai_proxy: setting Resend API key..."
-    icp canister call ai_proxy setResendApiKey "(\"$RESEND_API_KEY\")" -e "$ENV"
+    icp canister call ai_proxy setResendApiKey "(\"$RESEND_API_KEY\")" -e "$ENV" \
+      2>/dev/null || echo "  ⚠️  setResendApiKey failed"
   else
     echo "  ⚠️  RESEND_API_KEY not set — email sending will be disabled"
   fi
 
   if [ -n "${OPEN_PERMIT_API_KEY:-}" ]; then
     echo "  ai_proxy: setting OpenPermit API key..."
-    icp canister call ai_proxy setOpenPermitApiKey "(\"$OPEN_PERMIT_API_KEY\")" -e "$ENV"
+    icp canister call ai_proxy setOpenPermitApiKey "(\"$OPEN_PERMIT_API_KEY\")" -e "$ENV" \
+      2>/dev/null || echo "  ⚠️  setOpenPermitApiKey failed"
   else
     echo "  ⚠️  OPEN_PERMIT_API_KEY not set — OpenPermit lookups will be disabled"
   fi
 
   if [ -n "${RESEND_FROM_ADDRESS:-}" ]; then
     echo "  ai_proxy: setting Resend from address..."
-    icp canister call ai_proxy setResendFromAddress "(\"$RESEND_FROM_ADDRESS\")" -e "$ENV"
+    icp canister call ai_proxy setResendFromAddress "(\"$RESEND_FROM_ADDRESS\")" -e "$ENV" \
+      2>/dev/null || echo "  ⚠️  setResendFromAddress failed"
   fi
 fi
 
