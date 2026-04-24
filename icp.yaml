@@ -123,6 +123,7 @@ canisters:
   # On testnet/ic the well-known II canister (rdmx6-jaaaa-aaaaa-aaadq-cai) is used directly
   # without deploying anything — the frontend reads CANISTER_ID_INTERNET_IDENTITY from .env.
   - name: internet_identity
+    init_args: "(null)"
     recipe:
       type: "@dfinity/prebuilt@v2.0.0"
       configuration:
