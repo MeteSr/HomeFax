@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+DEPLOY_SCRIPT_VERSION="1.0.0"
 ENV=${1:-local}
 
 echo "============================================"
-echo "  HomeGentic — Deployment ($ENV)"
+echo "  HomeGentic — Deployment ($ENV) v${DEPLOY_SCRIPT_VERSION}"
 echo "============================================"
 
 # ── Identity setup ────────────────────────────────────────────────────────────
