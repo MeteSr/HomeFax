@@ -16,16 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Cache DFX binary
-        uses: actions/cache@v5
+      - uses: actions/setup-node@v6
         with:
-          path: ~/.cache/dfinity
-          key: dfx-${{ runner.os }}-${{ hashFiles('dfx.json') }}
+          node-version: '20'
 
-      - name: Install DFX
-        uses: dfinity/setup-dfx@main
-        with:
-          dfx_version: "0.31.0"
+      - name: Install icp-cli
+        run: npm install -g @icp-sdk/icp-cli
 
       - name: Cache mops packages
         uses: actions/cache@v5
@@ -39,30 +35,18 @@ jobs:
       - name: Install Motoko dependencies
         run: mops install
 
-      - name: Start replica (needed for canister create)
-        run: dfx start --background --clean
-
-      - name: Create canister stubs
-        # Registers canister IDs in local state so dfx build can resolve them.
-        # Does not deploy Wasm — just allocates IDs.
-        run: dfx canister create --all
-
-      - name: Seed management canister IDL
-        # caffeineai-http-outcalls imports ic:aaaaa-aa (the IC management canister).
-        # moc looks for aaaaa-aa.did in .dfx/local/canisters/idl/ but dfx canister create
-        # does not generate it. The minimal IDL is committed at .github/candid/aaaaa-aa.did.
-        run: |
-          mkdir -p .dfx/local/canisters/idl
-          cp .github/candid/aaaaa-aa.did .dfx/local/canisters/idl/aaaaa-aa.did
+      - name: Start local network (needed for canister ID allocation)
+        run: icp network start -d
 
       - name: Compile all Motoko canisters
-        # Build every canister whose type is not "assets" (i.e. all Motoko
-        # canisters). The frontend asset canister is excluded — its TypeScript
-        # build is already verified in the test-frontend job.
-        # jq is pre-installed on all GitHub-hosted runners.
+        # Build every canister except the frontend asset canister.
+        # icp.yaml canister names are parsed from the "  - name: <name>" lines.
         run: |
-          jq -r '.canisters | to_entries[] | select(.value.type != "assets" and .value.type != "pull") | .key' dfx.json | \
-          while read -r canister; do dfx build "$canister" || exit 1; done
+          grep "^  - name:" icp.yaml | awk '{print $3}' | grep -v "^frontend$" | \
+          while read -r canister; do
+            echo "=== $canister ==="
+            icp build "$canister" || exit 1
+          done
 
   test-backend:
     runs-on: ubuntu-latest
@@ -79,17 +63,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Cache DFX binary
-        id: cache-dfx
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/dfinity
-          key: dfx-${{ runner.os }}-${{ hashFiles('dfx.json') }}
-
-      - name: Install DFX
-        uses: dfinity/setup-dfx@main
-        with:
-          dfx_version: "0.31.0"
+      - name: Install icp-cli
+        run: npm install -g @icp-sdk/icp-cli
 
       - name: Cache mops packages
         uses: actions/cache@v5
@@ -100,8 +75,8 @@ jobs:
       - name: Install mops
         run: npm install -g ic-mops
 
-      - name: Start replica
-        run: dfx start --background --clean
+      - name: Start local network
+        run: icp network start -d
 
       - name: Deploy canisters
         run: bash scripts/deploy.sh
@@ -169,7 +144,7 @@ jobs:
 
   test-e2e:
     runs-on: ubuntu-latest
-    # No DFX/replica needed: tests run in mock mode (no .env → no canister IDs →
+    # No replica needed: tests run in mock mode (no .env → no canister IDs →
     # all service calls fall back to in-memory mocks). loginWithLocalIdentity()
     # now silently skips fetchRootKey when the replica is absent.
     needs: [test-frontend]

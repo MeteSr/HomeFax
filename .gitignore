@@ -1,6 +1,9 @@
-# DFX artifacts
+# DFX artifacts (kept during icp-cli transition)
 .dfx/
 canister_ids.json
+
+# icp-cli cache (ephemeral local state — do NOT gitignore .icp/data/ which holds mainnet canister IDs)
+.icp/cache/
 
 # Node
 node_modules/

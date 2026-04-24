@@ -1,0 +1,138 @@
+canisters:
+  - name: ai_proxy
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/ai_proxy/main.mo
+
+  - name: auth
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/auth/main.mo
+
+  - name: property
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/property/main.mo
+
+  - name: job
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/job/main.mo
+
+  - name: contractor
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/contractor/main.mo
+
+  - name: quote
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/quote/main.mo
+
+  - name: payment
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/payment/main.mo
+
+  - name: photo
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/photo/main.mo
+
+  - name: monitoring
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/monitoring/main.mo
+
+  - name: market
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/market/main.mo
+
+  - name: report
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/report/main.mo
+
+  - name: maintenance
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/maintenance/main.mo
+
+  - name: sensor
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/sensor/main.mo
+
+  - name: listing
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/listing/main.mo
+
+  - name: agent
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/agent/main.mo
+
+  - name: bills
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/bills/main.mo
+
+  - name: recurring
+    recipe:
+      type: "@dfinity/motoko@v4.0.0"
+      configuration:
+        main: backend/recurring/main.mo
+
+  # Frontend asset canister — dist/ is built by deploy.sh before icp deploy frontend
+  - name: frontend
+    recipe:
+      type: "@dfinity/asset-canister@v2.1.0"
+      configuration:
+        dir: frontend/dist
+
+  # internet_identity is a system canister provided automatically by the local
+  # managed network (icp network start -d). For mainnet it lives at the well-known
+  # canister ID rdmx6-jaaaa-aaaaa-aaadq-cai. No explicit entry needed here.
+
+networks:
+  - name: local
+    mode: managed
+    gateway:
+      bind: 127.0.0.1
+      port: 4943
+
+  - name: testnet
+    mode: connected
+    url: https://ic0.app
+
+  - name: ic
+    mode: connected
+    url: https://icp-api.io
+
+environments:
+  - name: local
+    network: local
+
+  - name: testnet
+    network: testnet
+
+  - name: ic
+    network: ic
