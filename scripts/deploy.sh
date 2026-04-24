@@ -24,8 +24,21 @@ else
   _PRINCIPAL=$(icp identity principal 2>/dev/null || echo "2vxsx-fae")
   if [ "$_PRINCIPAL" = "2vxsx-fae" ]; then
     echo "▶ Creating local deploy identity (homegentic-local)..."
-    icp identity new homegentic-local 2>/dev/null || true
-    icp identity default homegentic-local
+    # --storage plaintext is required on headless Linux (no keyring daemon).
+    # Fall back to openssl PEM import if `new` is not supported by this build.
+    if ! icp identity new homegentic-local --storage plaintext 2>/dev/null && \
+       ! icp identity new homegentic-local 2>/dev/null; then
+      _ID_PEM=$(mktemp /tmp/hg-deploy-XXXXXX.pem)
+      openssl genpkey -algorithm Ed25519 -out "$_ID_PEM" 2>/dev/null
+      icp identity import homegentic-local --from-pem "$_ID_PEM" --storage plaintext \
+        2>/dev/null || true
+      rm -f "$_ID_PEM"
+    fi
+    if ! icp identity default homegentic-local 2>/dev/null; then
+      echo "  ERROR: failed to create or activate identity 'homegentic-local'"
+      echo "  Fix: icp identity new homegentic-local --storage plaintext"
+      exit 1
+    fi
     echo "  ✓ Identity: $(icp identity principal)"
   fi
 fi
