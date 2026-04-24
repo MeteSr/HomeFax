@@ -67,7 +67,7 @@ jobs:
         # Build every canister except the frontend asset canister.
         # icp.yaml canister names are parsed from the "  - name: <name>" lines.
         run: |
-          grep "^  - name:" icp.yaml | awk '{print $3}' | grep -v "^frontend$" | \
+          grep "^  - name:" icp.yaml | awk '{print $3}' | grep -v "^frontend$" | grep -v "^internet_identity$" | \
           while read -r canister; do
             echo "=== $canister ==="
             icp build "$canister" || exit 1

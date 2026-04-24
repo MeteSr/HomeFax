@@ -552,47 +552,38 @@ echo ""
 echo "============================================"
 echo "  Deploying Internet Identity (local only)"
 echo "============================================"
-# dfx deployed II via `dfx deps pull && dfx deps deploy` using the "pull" canister type.
-# icp-cli has no built-in deps mechanism, so we manage it explicitly.
+# dfx deployed II via `dfx deps pull && dfx deps deploy`.
+# icp-cli uses a @dfinity/prebuilt recipe in icp.yaml pointing to .cache/ii/
+# (gitignored). download the wasm here so the path exists when icp deploy runs.
 if [ "$ENV" = "local" ]; then
-  _II_TARGET="rdmx6-jaaaa-aaaaa-aaadq-cai"
-  _II_CACHE="$HOME/.cache/homegentic/ii"
-  _II_WASM="$_II_CACHE/internet_identity_dev.wasm.gz"
+  _II_WASM=".cache/ii/internet_identity_dev.wasm.gz"
 
-  # Cache the wasm so re-deploys don't re-download
   if [ ! -f "$_II_WASM" ]; then
     echo "  Downloading Internet Identity dev wasm..."
-    mkdir -p "$_II_CACHE"
+    mkdir -p ".cache/ii"
     curl -sSfL \
       "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz" \
       -o "$_II_WASM"
     echo "  ✓ Downloaded internet_identity_dev.wasm.gz"
   fi
 
-  # Skip if canister already exists on the running network
-  if ! icp canister status "$_II_TARGET" -e local >/dev/null 2>&1; then
-    echo "  Creating II canister at $_II_TARGET..."
-    # PocketIC supports creating canisters at specified IDs (same as dfx deps deploy)
-    icp canister create --specified-id "$_II_TARGET" -e local 2>/dev/null \
-    || icp canister create -e local 2>/dev/null \
-    || true
-
-    echo "  Installing II wasm..."
-    icp canister install "$_II_TARGET" \
-      --wasm "$_II_WASM" --argument '(null)' \
-      -e local 2>/dev/null \
-    || echo "  ⚠️  II wasm install failed — II login may not work"
+  # icp deploy handles create+install; skip if already deployed
+  if ! icp canister status internet-identity -e local >/dev/null 2>&1; then
+    echo "  Deploying Internet Identity canister..."
+    icp deploy internet-identity -e local 2>/dev/null \
+      || echo "  ⚠️  II deploy failed — II login may not work locally"
   fi
 
-  _II_ID=$(icp canister status "$_II_TARGET" -e local --id-only 2>/dev/null \
-            || echo "$_II_TARGET")
-  echo "  ✓ Internet Identity: $_II_ID"
-
-  # Write to .env so Vite bakes the correct II URL into the frontend bundle
-  if grep -q "^CANISTER_ID_INTERNET_IDENTITY=" .env 2>/dev/null; then
-    sed -i "s|^CANISTER_ID_INTERNET_IDENTITY=.*|CANISTER_ID_INTERNET_IDENTITY=$_II_ID|" .env
+  _II_ID=$(icp canister status internet-identity -e local --id-only 2>/dev/null || echo "")
+  if [ -n "$_II_ID" ]; then
+    echo "  ✓ Internet Identity: $_II_ID"
+    if grep -q "^CANISTER_ID_INTERNET_IDENTITY=" .env 2>/dev/null; then
+      sed -i "s|^CANISTER_ID_INTERNET_IDENTITY=.*|CANISTER_ID_INTERNET_IDENTITY=$_II_ID|" .env
+    else
+      echo "CANISTER_ID_INTERNET_IDENTITY=$_II_ID" >> .env
+    fi
   else
-    echo "CANISTER_ID_INTERNET_IDENTITY=$_II_ID" >> .env
+    echo "  ⚠️  Could not determine II canister ID — II login may not work"
   fi
 else
   echo "  (skipped — $ENV uses https://id.ai)"
