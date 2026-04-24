@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.0.0"
+DEPLOY_SCRIPT_VERSION="1.0.1"
 ENV=${1:-local}
 
 echo "============================================"
@@ -571,7 +571,7 @@ if [ "$ENV" = "local" ]; then
   # icp deploy handles create+install; skip if already deployed
   if ! icp canister status internet-identity -e local >/dev/null 2>&1; then
     echo "  Deploying Internet Identity canister..."
-    icp deploy internet-identity -e local 2>/dev/null \
+    icp deploy internet-identity -e local \
       || echo "  ⚠️  II deploy failed — II login may not work locally"
   fi
 
