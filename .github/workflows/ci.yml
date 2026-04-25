@@ -112,7 +112,7 @@ jobs:
         run: mops install
 
       - name: Start local replica
-        run: dfx start --clean -d
+        run: dfx start --clean --background
 
       - name: Deploy canisters
         run: |
