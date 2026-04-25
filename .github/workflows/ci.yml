@@ -65,13 +65,15 @@ jobs:
 
       - name: Compile all Motoko canisters
         # Build every canister except the frontend asset canister.
-        # icp.yaml canister names are parsed from the "  - name: <name>" lines.
+        # Parse only the canisters: block — networks:/environments: also have
+        # "  - name:" entries (e.g. "local", "testnet") which are not canisters.
         run: |
-          grep "^  - name:" icp.yaml | awk '{print $3}' | grep -v "^frontend$" | grep -v "^internet_identity$" | \
-          while read -r canister; do
-            echo "=== $canister ==="
-            icp build "$canister" || exit 1
-          done
+          awk '/^canisters:/{p=1;next} /^[a-z]/{p=0} p && /^  - name:/{print $3}' icp.yaml \
+            | grep -v "^frontend$" | grep -v "^internet_identity$" \
+            | while read -r canister; do
+              echo "=== $canister ==="
+              icp build "$canister" || exit 1
+            done
 
   test-backend:
     runs-on: ubuntu-latest
