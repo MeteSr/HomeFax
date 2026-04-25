@@ -117,6 +117,11 @@ jobs:
       - name: Deploy canisters
         run: |
           DEPLOYER=$(dfx identity get-principal)
+          # moc needs aaaaa-aa.did to compile canisters that import ic:aaaaa-aa
+          # (caffeineai-http-outcalls uses this). dfx bundles the file in its
+          # version cache but doesn't write it to the IDL dir on --clean start.
+          mkdir -p .dfx/local/canisters/idl/
+          cp "$(dfx cache show)/aaaaa-aa.did" .dfx/local/canisters/idl/
           dfx deploy auth --argument "(principal \"$DEPLOYER\")"
           dfx deploy
 
