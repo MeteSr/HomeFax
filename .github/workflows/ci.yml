@@ -123,6 +123,17 @@ jobs:
           fi
           "$MOC_BIN" --version
 
+      - name: Debug moc-wrapper and aaaaa-aa.did location
+        run: |
+          echo "=== dfx cache dir ==="
+          ls "$(dfx cache show)/"
+          echo "=== moc-wrapper ==="
+          cat "$(dfx cache show)/moc-wrapper" 2>/dev/null || echo "(binary or missing)"
+          echo "=== mops toolchain bin moc ==="
+          mops toolchain bin moc 2>/dev/null || echo "not found"
+          echo "=== find aaaaa-aa.did ==="
+          find /home/runner -name "aaaaa-aa.did" 2>/dev/null || echo "not found anywhere"
+
       - name: Start local replica
         run: dfx start --clean --background
 
