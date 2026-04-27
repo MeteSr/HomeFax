@@ -55,7 +55,6 @@ export default function JobCreatePage() {
   const [loading, setLoading] = useState(false);
   const [quota, setQuota] = useState<PhotoQuota>({ used: 0, limit: 10, tier: "Free" });
   const [userTier, setUserTier] = useState<PlanTier>("Free");
-  const [jobCount, setJobCount] = useState<number | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<{ file: File; phase: string }[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loggedServiceType, setLoggedServiceType] = useState("");
@@ -83,7 +82,6 @@ export default function JobCreatePage() {
   useEffect(() => {
     photoService.getQuota().then(setQuota);
     paymentService.getMySubscription().then((s) => setUserTier(s.tier)).catch((e) => console.error("[JobCreate] subscription load failed:", e));
-    jobService.getAll().then((js) => setJobCount(js.length)).catch((e) => console.error("[JobCreate] job count load failed:", e));
     if (!editJob && properties.length > 0) setForm((f) => ({ ...f, propertyId: String(properties[0].id) }));
   }, [properties]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -124,8 +122,9 @@ export default function JobCreatePage() {
           warrantyMonths: form.warrantyMonths ? parseInt(form.warrantyMonths, 10) : undefined,
         });
         setLoggedServiceType(form.serviceType);
-        // Snapshot score for job-value delta display
-        jobService.getAll().then((js) => setScoreAtSubmit(computeScore(js, []))).catch(() => {}); // score delta is display-only; failure does not affect job creation
+        // Snapshot score for job-value delta display — use getByProperty so the
+        // newly created job is included in the score (getAll was always returning []).
+        jobService.getByProperty(form.propertyId).then((js) => setScoreAtSubmit(computeScore(js, []))).catch(() => {}); // score delta is display-only; failure does not affect job creation
         setSubmitted(true);
         return; // don't navigate — show success state
       }

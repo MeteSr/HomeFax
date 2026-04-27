@@ -26,7 +26,7 @@ export function useJobSummary(properties: Property[], propLoading: boolean): Job
         propList.map((p) => jobService.getByProperty(String(p.id)).catch(() => [] as Job[]))
       );
       const merged = perProp.flat();
-      setAllJobs(merged.length > 0 ? merged : await jobService.getAll().catch(() => []));
+      setAllJobs(merged);
     } catch { /* canister not deployed */ }
   }, []);
 

@@ -198,6 +198,7 @@ vi.mock("@icp-sdk/core/principal", () => ({
 
 import { jobService, isInsuranceRelevant, INSURANCE_SERVICE_TYPES } from "@/services/job";
 import { jobToInput } from "@/services/report";
+import { computeScore } from "@/services/scoreService";
 import type { Job } from "@/services/job";
 
 // Ensure Date.now() always increments so consecutive create() calls get unique IDs.
@@ -293,28 +294,54 @@ describe("jobService.isDiy", () => {
   });
 });
 
-// ─── mock data integrity ─────────────────────────────────────────────────────
+// ─── score delta path (regression: #181 — getAll always returned []) ─────────
+// JobCreatePage now calls getByProperty(propertyId) after a successful create.
+// These tests verify that path produces a real score, not the old always-0 result.
 
-describe("mock data", () => {
-  it("all amounts are in cents (≥ 1000)", async () => {
-    const jobs = await jobService.getAll();
-    jobs.forEach((j) => {
-      expect(j.amount).toBeGreaterThanOrEqual(1_000);
+describe("score delta — getByProperty feeds computeScore", () => {
+  beforeEach(() => jobService.reset());
+
+  it("computeScore returns > 0 after creating a valued job", async () => {
+    await jobService.create({
+      propertyId:  "score-delta-prop",
+      serviceType: "HVAC",
+      amount:      500_000,   // $5,000
+      date:        "2024-01-01",
+      description: "New HVAC unit",
+      isDiy:       false,
     });
+    const jobs = await jobService.getByProperty("score-delta-prop");
+    expect(jobs).toHaveLength(1);
+    expect(computeScore(jobs, [])).toBeGreaterThan(0);
   });
 
-  it("all jobs have an isDiy field", async () => {
-    const jobs = await jobService.getAll();
-    jobs.forEach((j) => {
-      expect(typeof j.isDiy).toBe("boolean");
-    });
+  it("computeScore returns 0 for a property with no jobs", async () => {
+    const jobs = await jobService.getByProperty("score-delta-empty");
+    expect(jobs).toHaveLength(0);
+    expect(computeScore(jobs, [])).toBe(0);
   });
 
-  it("DIY jobs have no contractorName", async () => {
-    const jobs = await jobService.getAll();
-    jobs.filter((j) => j.isDiy).forEach((j) => {
-      expect(j.contractorName).toBeUndefined();
-    });
+  it("score increases as more jobs are added to a property", async () => {
+    await jobService.create({ propertyId: "score-grow", serviceType: "HVAC",    amount: 250_000, date: "2024-01-01", description: "d", isDiy: false });
+    const after1 = computeScore(await jobService.getByProperty("score-grow"), []);
+
+    await jobService.create({ propertyId: "score-grow", serviceType: "Roofing", amount: 500_000, date: "2024-02-01", description: "d", isDiy: false });
+    const after2 = computeScore(await jobService.getByProperty("score-grow"), []);
+
+    expect(after2).toBeGreaterThan(after1);
+  });
+
+  it("jobs for a different property do not affect the score", async () => {
+    await jobService.create({ propertyId: "score-iso-A", serviceType: "HVAC", amount: 500_000, date: "2024-01-01", description: "d", isDiy: false });
+    await jobService.create({ propertyId: "score-iso-B", serviceType: "HVAC", amount: 500_000, date: "2024-01-01", description: "d", isDiy: false });
+
+    const scoreA = computeScore(await jobService.getByProperty("score-iso-A"), []);
+    const scoreB = computeScore(await jobService.getByProperty("score-iso-B"), []);
+    const scoreEmpty = computeScore(await jobService.getByProperty("score-iso-none"), []);
+
+    expect(scoreA).toBeGreaterThan(0);
+    expect(scoreB).toBeGreaterThan(0);
+    expect(scoreEmpty).toBe(0);
   });
 });
 
