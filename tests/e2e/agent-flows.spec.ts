@@ -95,6 +95,7 @@ test.describe("AF.4 — /agents (Basic tier)", () => {
 
 test.describe("AF.5 — /agent/:id (no canister)", () => {
   test("renders without crashing (shows loading or not-found)", async ({ page }) => {
+    await injectTestAuth(page);
     await page.goto("/agent/some-agent-id");
     // Page either stays on loading or resolves to not-found — no JS crash
     const loading = page.getByText(/loading/i);

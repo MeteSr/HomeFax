@@ -49,6 +49,6 @@ test.describe("PropertyVerifyPage — /properties/1/verify", () => {
   });
 
   test("PV.2 Ownership eyebrow label is visible", async ({ page }) => {
-    await expect(page.getByText("Ownership")).toBeVisible();
+    await expect(page.getByText("Ownership").first()).toBeVisible();
   });
 });

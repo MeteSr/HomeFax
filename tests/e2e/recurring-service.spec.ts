@@ -31,7 +31,7 @@ test.describe("RS — /recurring/new", () => {
   });
 
   test("RS.1 shows Provider Name field", async ({ page }) => {
-    await expect(page.getByText(/provider name/i)).toBeVisible();
+    await expect(page.getByText(/provider.*name/i).first()).toBeVisible();
   });
 
   test("RS.2 shows Save Service button", async ({ page }) => {

@@ -41,7 +41,8 @@ test.describe("WW.2 — /warranties (Basic, with warranty jobs)", () => {
     await injectWarrantyJobs(page);
     await injectSubscription(page, "Basic");
     await page.goto("/warranties");
-    await expect(page.getByRole("heading", { name: /your warranties/i })).toBeVisible();
+    // Wait for async job data to resolve — sections only appear once warrantyJobs > 0
+    await expect(page.getByText("Expiring Soon")).toBeVisible({ timeout: 10_000 });
   });
 
   test("WW.2 shows 'Your Warranties' heading", async ({ page }) => {
@@ -57,7 +58,7 @@ test.describe("WW.2 — /warranties (Basic, with warranty jobs)", () => {
   });
 
   test("WW.2 shows Active section", async ({ page }) => {
-    await expect(page.getByText("Active")).toBeVisible();
+    await expect(page.getByText("Active").first()).toBeVisible();
   });
 
   test("WW.2 shows Expired section", async ({ page }) => {
@@ -65,7 +66,6 @@ test.describe("WW.2 — /warranties (Basic, with warranty jobs)", () => {
   });
 
   test("WW.3 shows scan document panel upload button", async ({ page }) => {
-    // ScanDocumentPanel renders an upload trigger
-    await expect(page.getByText(/upload.*warranty|scan.*document|save to wallet/i)).toBeVisible();
+    await expect(page.getByText(/save to wallet/i)).toBeVisible();
   });
 });

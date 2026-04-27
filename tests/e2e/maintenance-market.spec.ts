@@ -41,7 +41,7 @@ test.describe("MM.2 — /maintenance (with property)", () => {
   });
 
   test("shows 'Maintenance' eyebrow label", async ({ page }) => {
-    await expect(page.getByText("Maintenance")).toBeVisible();
+    await expect(page.getByText("Maintenance").first()).toBeVisible();
   });
 
   test("shows system health description", async ({ page }) => {
@@ -65,7 +65,7 @@ test.describe("MM.3 — /market (Basic tier)", () => {
   });
 
   test("shows 'Intelligence' eyebrow label", async ({ page }) => {
-    await expect(page.getByText("Intelligence")).toBeVisible();
+    await expect(page.getByText("Intelligence").first()).toBeVisible();
   });
 
   test("shows competitive analysis description", async ({ page }) => {
