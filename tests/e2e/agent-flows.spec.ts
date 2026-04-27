@@ -5,9 +5,8 @@
  * AF.1  /agent-dashboard with Realtor role → "Agent Dashboard" heading
  * AF.2  /agent/marketplace → "Agent Marketplace" heading + description
  * AF.3  /agent/profile → "Agent Profile" heading + form fields
- * AF.4  /agents with Free tier → UpgradeGate
- * AF.5  /agents with Pro tier → "Find an Agent" heading + search input
- * AF.6  /agent/:id with no canister → loading or not-found state (no crash)
+ * AF.4  /agents with Basic tier → "Find an Agent" heading + search input
+ * AF.5  /agent/:id with no canister → loading or not-found state (no crash)
  */
 
 import { test, expect } from "@playwright/test";
@@ -69,23 +68,12 @@ test.describe("AF.3 — /agent/profile", () => {
   });
 });
 
-// ── AF.4 — Agent Browse (Free tier gate) ─────────────────────────────────────
+// ── AF.4 — Agent Browse ───────────────────────────────────────────────────────
 
-test.describe("AF.4 — /agents (Free tier)", () => {
-  test("shows UpgradeGate for Free tier", async ({ page }) => {
-    await injectTestAuth(page);
-    await injectSubscription(page, "Free");
-    await page.goto("/agents");
-    await expect(page.getByText(/Agent Marketplace.*FSBO|upgrade/i)).toBeVisible();
-  });
-});
-
-// ── AF.5 — Agent Browse (Pro tier) ────────────────────────────────────────────
-
-test.describe("AF.5 — /agents (Pro tier)", () => {
+test.describe("AF.4 — /agents (Basic tier)", () => {
   test.beforeEach(async ({ page }) => {
     await injectTestAuth(page);
-    await injectSubscription(page, "Pro");
+    await injectSubscription(page, "Basic");
     await page.goto("/agents");
     await expect(page.getByRole("heading", { name: /find an agent/i })).toBeVisible();
   });
@@ -103,9 +91,9 @@ test.describe("AF.5 — /agents (Pro tier)", () => {
   });
 });
 
-// ── AF.6 — Agent public profile (/agent/:id) ──────────────────────────────────
+// ── AF.5 — Agent public profile (/agent/:id) ──────────────────────────────────
 
-test.describe("AF.6 — /agent/:id (no canister)", () => {
+test.describe("AF.5 — /agent/:id (no canister)", () => {
   test("renders without crashing (shows loading or not-found)", async ({ page }) => {
     await page.goto("/agent/some-agent-id");
     // Page either stays on loading or resolves to not-found — no JS crash

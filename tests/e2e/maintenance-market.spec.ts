@@ -3,11 +3,9 @@
  *
  * MM.1  /maintenance with no properties → "Add a property" prompt
  * MM.2  /maintenance with properties → "Predictive Maintenance" heading
- * MM.3  /market with Free tier → UpgradeGate "Market Intelligence"
- * MM.4  /market with Pro tier + properties → "Market Intelligence" heading
- * MM.5  /resale-ready with properties → page renders (hero heading)
- * MM.6  /insurance-defense with Free tier → UpgradeGate
- * MM.7  /insurance-defense with Pro tier + properties → defense content
+ * MM.3  /market with Basic tier + properties → "Market Intelligence" heading
+ * MM.4  /resale-ready with properties → page renders (hero heading)
+ * MM.5  /insurance-defense with Basic tier + properties → defense content
  */
 
 import { test, expect } from "@playwright/test";
@@ -51,23 +49,13 @@ test.describe("MM.2 — /maintenance (with property)", () => {
   });
 });
 
-// ── MM.3 / MM.4 — Market Intelligence ────────────────────────────────────────
+// ── MM.3 — Market Intelligence ────────────────────────────────────────────────
 
-test.describe("MM.3 — /market (Free tier)", () => {
-  test("shows UpgradeGate for Free tier", async ({ page }) => {
-    await injectTestAuth(page);
-    await injectTestProperties(page);
-    await injectSubscription(page, "Free");
-    await page.goto("/market");
-    await expect(page.getByText(/Market Intelligence/i)).toBeVisible();
-  });
-});
-
-test.describe("MM.4 — /market (Pro tier)", () => {
+test.describe("MM.3 — /market (Basic tier)", () => {
   test.beforeEach(async ({ page }) => {
     await injectTestAuth(page);
     await injectTestProperties(page);
-    await injectSubscription(page, "Pro");
+    await injectSubscription(page, "Basic");
     await page.goto("/market");
     await expect(page.getByRole("heading", { name: /market intelligence/i })).toBeVisible();
   });
@@ -85,13 +73,13 @@ test.describe("MM.4 — /market (Pro tier)", () => {
   });
 });
 
-// ── MM.5 — Resale Ready ───────────────────────────────────────────────────────
+// ── MM.4 — Resale Ready ───────────────────────────────────────────────────────
 
-test.describe("MM.5 — /resale-ready", () => {
+test.describe("MM.4 — /resale-ready", () => {
   test.beforeEach(async ({ page }) => {
     await injectTestAuth(page);
     await injectTestProperties(page);
-    await injectSubscription(page, "Pro");
+    await injectSubscription(page, "Basic");
     await page.goto("/resale-ready");
   });
 
@@ -104,23 +92,13 @@ test.describe("MM.5 — /resale-ready", () => {
   });
 });
 
-// ── MM.6 / MM.7 — Insurance Defense ──────────────────────────────────────────
+// ── MM.5 — Insurance Defense ──────────────────────────────────────────────────
 
-test.describe("MM.6 — /insurance-defense (Free tier)", () => {
-  test("shows UpgradeGate for Free tier", async ({ page }) => {
-    await injectTestAuth(page);
-    await injectTestProperties(page);
-    await injectSubscription(page, "Free");
-    await page.goto("/insurance-defense");
-    await expect(page.getByText(/Insurance Defense Mode/i)).toBeVisible();
-  });
-});
-
-test.describe("MM.7 — /insurance-defense (Pro tier)", () => {
+test.describe("MM.5 — /insurance-defense (Basic tier)", () => {
   test.beforeEach(async ({ page }) => {
     await injectTestAuth(page);
     await injectTestProperties(page);
-    await injectSubscription(page, "Pro");
+    await injectSubscription(page, "Basic");
     await page.goto("/insurance-defense");
     // Page renders (may show loading briefly)
     await page.waitForLoadState("domcontentloaded");

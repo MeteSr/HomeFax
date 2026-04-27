@@ -1,35 +1,22 @@
 /**
  * Warranty Wallet E2E — /warranties    (#180)
  *
- * WW.1  Free tier → UpgradeGate "Warranty Wallet"
- * WW.2  Pro tier with no warranty jobs → empty state
- * WW.3  Pro tier with warranty jobs → heading + all three sections
- * WW.4  Pro tier → scan-document panel visible
+ * WW.1  Basic tier with no warranty jobs → empty state
+ * WW.2  Basic tier with warranty jobs → heading + all three sections
+ * WW.3  Basic tier → scan-document panel visible
  */
 
 import { test, expect } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
 import { injectTestProperties, injectSubscription, injectWarrantyJobs } from "./helpers/testData";
 
-// ── WW.1 — Free tier gate ─────────────────────────────────────────────────────
+// ── WW.1 — No jobs empty state ────────────────────────────────────────────────
 
-test.describe("WW.1 — /warranties (Free tier)", () => {
-  test("shows UpgradeGate for Free tier", async ({ page }) => {
-    await injectTestAuth(page);
-    await injectTestProperties(page);
-    await injectSubscription(page, "Free");
-    await page.goto("/warranties");
-    await expect(page.getByText(/Warranty Wallet/i)).toBeVisible();
-  });
-});
-
-// ── WW.2 — Pro tier, no jobs ──────────────────────────────────────────────────
-
-test.describe("WW.2 — /warranties (Pro, no warranties)", () => {
+test.describe("WW.1 — /warranties (Basic, no warranties)", () => {
   test("shows empty state when no warranty jobs exist", async ({ page }) => {
     await injectTestAuth(page);
     await page.addInitScript(() => {
-      (window as any).__e2e_subscription = { tier: "Pro", expiresAt: null };
+      (window as any).__e2e_subscription = { tier: "Basic", expiresAt: null };
       (window as any).__e2e_properties = [
         {
           id: 1, owner: "test-e2e-principal",
@@ -46,38 +33,38 @@ test.describe("WW.2 — /warranties (Pro, no warranties)", () => {
   });
 });
 
-// ── WW.3 / WW.4 — Pro tier with warranty jobs ─────────────────────────────────
+// ── WW.2 / WW.3 — With warranty jobs ─────────────────────────────────────────
 
-test.describe("WW.3 — /warranties (Pro, with warranty jobs)", () => {
+test.describe("WW.2 — /warranties (Basic, with warranty jobs)", () => {
   test.beforeEach(async ({ page }) => {
     await injectTestAuth(page);
     await injectWarrantyJobs(page);
-    await injectSubscription(page, "Pro");
+    await injectSubscription(page, "Basic");
     await page.goto("/warranties");
     await expect(page.getByRole("heading", { name: /your warranties/i })).toBeVisible();
   });
 
-  test("WW.3 shows 'Your Warranties' heading", async ({ page }) => {
+  test("WW.2 shows 'Your Warranties' heading", async ({ page }) => {
     await expect(page.getByRole("heading", { name: /your warranties/i })).toBeVisible();
   });
 
-  test("WW.3 shows 'Warranty Wallet' eyebrow label", async ({ page }) => {
+  test("WW.2 shows 'Warranty Wallet' eyebrow label", async ({ page }) => {
     await expect(page.getByText("Warranty Wallet")).toBeVisible();
   });
 
-  test("WW.3 shows Expiring Soon section", async ({ page }) => {
+  test("WW.2 shows Expiring Soon section", async ({ page }) => {
     await expect(page.getByText("Expiring Soon")).toBeVisible();
   });
 
-  test("WW.3 shows Active section", async ({ page }) => {
+  test("WW.2 shows Active section", async ({ page }) => {
     await expect(page.getByText("Active")).toBeVisible();
   });
 
-  test("WW.3 shows Expired section", async ({ page }) => {
+  test("WW.2 shows Expired section", async ({ page }) => {
     await expect(page.getByText("Expired")).toBeVisible();
   });
 
-  test("WW.4 shows scan document panel upload button", async ({ page }) => {
+  test("WW.3 shows scan document panel upload button", async ({ page }) => {
     // ScanDocumentPanel renders an upload trigger
     await expect(page.getByText(/upload.*warranty|scan.*document|save to wallet/i)).toBeVisible();
   });
