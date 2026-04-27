@@ -364,8 +364,22 @@ describe("jobService.create", () => {
     expect(job.status).toBe("pending");
     expect(job.verified).toBe(false);
     expect(job.homeownerSigned).toBe(false);
-    expect(job.photos).toEqual([]);
     expect(typeof job.id).toBe("string");
+  });
+
+  it("job.photos is always [] — photos live in the photo canister, fetch via photoService.getByJob", async () => {
+    // The job canister stores only job metadata; photo bytes are stored separately.
+    // This test documents the data model: job.photos is structurally [] right after
+    // creation. Callers that need photos must call photoService.getByJob(job.id).
+    const job = await jobService.create({
+      propertyId:  "create-prop-photos",
+      serviceType: "Roofing",
+      amount:      80_000,
+      date:        "2024-05-01",
+      description: "New roof",
+      isDiy:       false,
+    });
+    expect(job.photos).toEqual([]);
   });
 
   it("sets contractorSigned=true for DIY jobs", async () => {

@@ -113,7 +113,7 @@ export default function JobCreatePage() {
         });
         toast.success("Job updated!");
       } else {
-        await jobService.create({
+        const newJob = await jobService.create({
           propertyId: form.propertyId, serviceType: form.serviceType,
           contractorName: form.isDiy ? undefined : form.contractorName.trim(),
           amount: Math.round(parseFloat(form.amount) * 100),
@@ -121,6 +121,17 @@ export default function JobCreatePage() {
           permitNumber: form.permitNumber.trim() || undefined,
           warrantyMonths: form.warrantyMonths ? parseInt(form.warrantyMonths, 10) : undefined,
         });
+        // Upload attached photos after the job ID is known. allSettled so one
+        // failure doesn't block the success screen or other uploads.
+        if (uploadedFiles.length > 0) {
+          const results = await Promise.allSettled(
+            uploadedFiles.map(({ file, phase }) =>
+              photoService.upload(file, newJob.id, form.propertyId, phase, "")
+            )
+          );
+          const failed = results.filter((r) => r.status === "rejected").length;
+          if (failed > 0) toast.error(`${failed} photo(s) failed to upload — job was saved.`);
+        }
         setLoggedServiceType(form.serviceType);
         // Snapshot score for job-value delta display — use getByProperty so the
         // newly created job is included in the score (getAll was always returning []).
