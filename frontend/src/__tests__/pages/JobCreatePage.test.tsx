@@ -10,13 +10,28 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
+import JobCreatePage from "@/pages/JobCreatePage";
+
+// ─── Hoisted mock functions ───────────────────────────────────────────────────
+// vi.hoisted() ensures these are initialised before vi.mock() factories run,
+// avoiding the TDZ "Cannot access before initialization" error that occurs when
+// vi.mock() (which is hoisted) tries to reference a module-level const.
+
+const mockNavigate  = vi.hoisted(() => vi.fn());
+const mockCreate    = vi.hoisted(() => vi.fn());
+const mockUpload    = vi.hoisted(() => vi.fn());
+const mockToastErr  = vi.hoisted(() => vi.fn());
+
+// ─── Layout mock ──────────────────────────────────────────────────────────────
+// Prevents loading VoiceAgent / quoteService / billService / fsboService /
+// AuthContext — all of which touch @icp-sdk/auth → IndexedDB and hang jsdom.
+// Pattern matches WarrantyOcr.test.tsx and ListingPages.test.tsx.
+
+vi.mock("@/components/Layout", () => ({
+  Layout: ({ children }: any) => <div>{children}</div>,
+}));
 
 // ─── Service / store mocks ────────────────────────────────────────────────────
-
-const mockNavigate  = vi.fn();
-const mockCreate    = vi.fn();
-const mockUpload    = vi.fn();
-const mockToastErr  = vi.fn();
 
 vi.mock("react-router-dom", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-router-dom")>();
@@ -100,15 +115,8 @@ function fillRequiredFields() {
   });
 }
 
-// ─── Lazy import (after mocks are registered) ─────────────────────────────────
-
-let JobCreatePage: React.ComponentType;
-
-beforeEach(async () => {
+beforeEach(() => {
   vi.clearAllMocks();
-  if (!JobCreatePage) {
-    JobCreatePage = (await import("@/pages/JobCreatePage")).default;
-  }
 });
 
 // ─── JC.1 — Submit passes correct args to jobService.create ──────────────────
