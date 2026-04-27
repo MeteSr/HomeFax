@@ -11,7 +11,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 
-// ─── Service mocks ────────────────────────────────────────────────────────────
+// ─── Mocks ────────────────────────────────────────────────────────────────────
+
+vi.mock("@/components/Layout", () => ({
+  Layout: ({ children }: any) => <>{children}</>,
+}));
 
 import { PLANS } from "@/services/planConstants";
 

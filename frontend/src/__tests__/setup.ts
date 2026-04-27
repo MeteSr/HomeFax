@@ -13,26 +13,15 @@ if (!("indexedDB" in window)) {
     writable: true,
     configurable: true,
     value: {
-      open(_name: string, _version?: number) {
-        const handlers: Record<string, Function[]> = {};
-        const req: any = {
-          result: null,
-          error: new DOMException("Not available in jsdom", "UnknownError"),
-          addEventListener(type: string, fn: Function) {
-            (handlers[type] ??= []).push(fn);
-          },
-          removeEventListener(type: string, fn: Function) {
-            handlers[type] = (handlers[type] ?? []).filter((f) => f !== fn);
-          },
-          dispatchEvent: () => false,
-        };
-        Promise.resolve().then(() => {
-          (handlers["error"] ?? []).forEach((fn) => fn({ target: req }));
-        });
-        return req;
+      // Throw synchronously so idb's wrap() — which does `instanceof IDBRequest`
+      // and throws ReferenceError when IDBRequest is undefined — is never reached.
+      // The throw is caught by the async _openDbStore wrapper → rejected Promise
+      // → .catch(()=>null) → IdbStorage resolves to null → anonymous identity.
+      open(_name: string, _version?: number): never {
+        throw new DOMException("Not available in jsdom", "UnknownError");
       },
-      deleteDatabase() {
-        return { addEventListener: () => {}, removeEventListener: () => {} };
+      deleteDatabase(): never {
+        throw new DOMException("Not available in jsdom", "UnknownError");
       },
       cmp: () => 0,
     },

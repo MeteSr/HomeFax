@@ -12,6 +12,10 @@ import React from "react";
 import { existsSync } from "fs";
 import { resolve } from "path";
 
+vi.mock("@/components/Layout", () => ({
+  Layout: ({ children }: any) => <>{children}</>,
+}));
+
 (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => { cb(0); return 0; };
 (globalThis as any).cancelAnimationFrame = () => {};
 
