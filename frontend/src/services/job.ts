@@ -309,8 +309,24 @@ function createJobService() {
     if (typeof window !== "undefined" && (window as any).__e2e_jobs) {
       return (window as any).__e2e_jobs as Job[];
     }
-    // No canister equivalent for getAll — callers should use getByProperty
-    return [];
+    // Aggregate across all properties the authenticated user owns.
+    // Dynamic import avoids a circular dependency (property.ts ← job.ts).
+    try {
+      const { propertyService } = await import("./property");
+      const properties = await propertyService.getMyProperties();
+      if (properties.length === 0) return [];
+      const results = await Promise.all(
+        properties.map(async (p) => {
+          const a = await getActor();
+          const result = await a.getJobsForProperty(String(p.id));
+          if ("ok" in result) return (result.ok as any[]).map(fromJob);
+          return [] as Job[];
+        })
+      );
+      return results.flat();
+    } catch {
+      return [];
+    }
   },
 
   async create(job: Omit<Job, "id" | "createdAt" | "status" | "photos" | "verified" | "homeownerSigned" | "contractorSigned" | "homeowner" | "contractor">): Promise<Job> {
