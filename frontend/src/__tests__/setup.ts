@@ -33,6 +33,13 @@ if (typeof window.matchMedia !== "function") {
   });
 }
 
+// HTMLCanvasElement.getContext() stub — jsdom doesn't implement canvas rendering.
+// Without this, any component that touches <canvas> (e.g. QR-code libraries,
+// chart renderers) floods stderr with "Not implemented" warnings.
+if (typeof HTMLCanvasElement !== "undefined") {
+  HTMLCanvasElement.prototype.getContext = () => null;
+}
+
 // Default requestAnimationFrame stub — react-helmet-async defers DOM writes
 // via RAF; this makes those writes synchronous in tests.
 if (typeof (globalThis as any).requestAnimationFrame !== "function") {
