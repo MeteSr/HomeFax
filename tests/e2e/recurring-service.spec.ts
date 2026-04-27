@@ -1,0 +1,85 @@
+/**
+ * Recurring Service E2E — /recurring/new, /recurring/:id    (#180)
+ *
+ * RS.1  /recurring/new with Free tier → UpgradeGate
+ * RS.2  /recurring/new with Pro tier → "Add a Service" heading + form fields
+ * RS.3  /recurring/new form has Save Service button
+ * RS.4  /recurring/:id with injected data → service name as heading
+ * RS.5  /recurring/:id service details are visible
+ */
+
+import { test, expect } from "@playwright/test";
+import { injectTestAuth } from "./helpers/auth";
+import { injectTestProperties, injectSubscription, injectRecurringServices } from "./helpers/testData";
+
+// ── RS.1 / RS.2 / RS.3 — Create page ─────────────────────────────────────────
+
+test.describe("RS — /recurring/new (Free tier)", () => {
+  test("RS.1 shows UpgradeGate for Free tier", async ({ page }) => {
+    await injectTestAuth(page);
+    await injectTestProperties(page);
+    await injectSubscription(page, "Free");
+    await page.goto("/recurring/new");
+    await expect(page.getByText(/Recurring Services/i)).toBeVisible();
+  });
+});
+
+test.describe("RS — /recurring/new (Pro tier)", () => {
+  test.beforeEach(async ({ page }) => {
+    await injectTestAuth(page);
+    await injectTestProperties(page);
+    await injectSubscription(page, "Pro");
+    await page.goto("/recurring/new");
+    await expect(page.getByRole("heading", { name: /add a service/i })).toBeVisible();
+  });
+
+  test("RS.2 shows 'Add a Service' heading", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: /add a service/i })).toBeVisible();
+  });
+
+  test("RS.2 shows Service Type label", async ({ page }) => {
+    await expect(page.getByText(/service type/i).first()).toBeVisible();
+  });
+
+  test("RS.2 shows Provider Name field", async ({ page }) => {
+    await expect(page.getByText(/provider name/i)).toBeVisible();
+  });
+
+  test("RS.3 shows Save Service button", async ({ page }) => {
+    await expect(page.getByRole("button", { name: /save service/i })).toBeVisible();
+  });
+
+  test("RS.2 shows Recurring Services eyebrow label", async ({ page }) => {
+    await expect(page.getByText("Recurring Services")).toBeVisible();
+  });
+});
+
+// ── RS.4 / RS.5 — Detail page ─────────────────────────────────────────────────
+
+test.describe("RS — /recurring/:id (injected data)", () => {
+  test.beforeEach(async ({ page }) => {
+    await injectTestAuth(page);
+    await injectTestProperties(page);
+    await injectRecurringServices(page);
+    // rs1 = LawnCare service ("Lawn Care" after label mapping)
+    await page.goto("/recurring/rs1");
+    await expect(page.getByText(/Recurring Service/i)).toBeVisible();
+  });
+
+  test("RS.4 shows service type as heading", async ({ page }) => {
+    // SERVICE_TYPE_LABELS["LawnCare"] = "Lawn Care" in the app
+    await expect(page.getByRole("heading", { name: /lawn care/i })).toBeVisible();
+  });
+
+  test("RS.5 shows provider name", async ({ page }) => {
+    await expect(page.getByText("Green Thumb Lawns")).toBeVisible();
+  });
+
+  test("RS.5 shows Active status badge", async ({ page }) => {
+    await expect(page.getByText("Active").first()).toBeVisible();
+  });
+
+  test("RS.5 shows Recurring Service eyebrow label", async ({ page }) => {
+    await expect(page.getByText("Recurring Service")).toBeVisible();
+  });
+});
