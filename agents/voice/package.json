@@ -24,7 +24,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.1",
     "resend": "^6.10.0",
-    "stripe": "^22.0.1"
+    "stripe": "^22.1.0"
   },
   "overrides": {
     "uuid": "^14.0.0"
