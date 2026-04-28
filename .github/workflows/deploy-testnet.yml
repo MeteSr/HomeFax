@@ -41,3 +41,4 @@ jobs:
         run: bash scripts/deploy.sh testnet
         env:
           DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+          BACKUP_CONTROLLER_PRINCIPAL: ${{ secrets.BACKUP_CONTROLLER_PRINCIPAL }}
