@@ -21,7 +21,7 @@ import type { SubscriptionTier } from "./agentLimiter";
 // This relay handles only the 6 Claude AI endpoints.
 
 const app = express();
-const port = Number(process.env.VOICE_AGENT_PORT) || 3001;
+const port = Number(process.env.VOICE_AGENT_PORT) || Number(process.env.PORT) || 3001;
 
 // 14.4.6 — fail-secure: ANTHROPIC_API_KEY must never be a VITE_ var or hardcoded literal.
 // It is read server-side only, here and in anthropicProvider.ts.
