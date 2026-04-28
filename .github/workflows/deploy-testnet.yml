@@ -58,6 +58,7 @@ jobs:
         run: bash scripts/deploy.sh testnet
         env:
           DFX_IDENTITY_PEM: ${{ secrets.DFX_IDENTITY_PEM }}
+          DFX_WALLET_ID: ${{ secrets.DFX_WALLET_ID }}
           BACKUP_CONTROLLER_PRINCIPAL: ${{ secrets.BACKUP_CONTROLLER_PRINCIPAL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           VOICE_AGENT_API_KEY: ${{ secrets.VOICE_AGENT_API_KEY }}
