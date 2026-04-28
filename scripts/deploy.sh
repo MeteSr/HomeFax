@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.4.7"
+DEPLOY_SCRIPT_VERSION="1.4.8"
 ENV=${1:-local}
 
 echo "============================================"
@@ -206,6 +206,37 @@ CANISTERS=(auth property job contractor quote payment photo report maintenance m
 LOG_DIR=$(mktemp -d /tmp/icp-deploy-XXXXXX)
 trap 'rm -rf "$LOG_DIR"' EXIT
 DEPLOY_PRINCIPAL=$(icp identity principal)
+
+# ── Fund cycles ledger from dfx wallet (non-local first deploy) ───────────────
+# icp canister create draws cycles from the identity's cycles ledger account.
+# Cycles live in the dfx wallet canister (h4jao-bqaaa-aaaao-ba3lq-cai), not
+# the ledger. Bridge them by depositing into the IC cycles ledger canister
+# before Phase 1 so canister slots can be created.
+if [ "$ENV" != "local" ] && [ -n "${DFX_WALLET_ID:-}" ] && [ -n "${DFX_IDENTITY_PEM:-}" ]; then
+  echo "▶ Configuring dfx wallet for cycles-funded canister creation..."
+  _DFX_PEM=$(mktemp /tmp/dfx-pem-XXXXXX.pem)
+  printf '%s' "$DFX_IDENTITY_PEM" > "$_DFX_PEM"
+  dfx identity import --storage-mode=plaintext ci-deploy "$_DFX_PEM" 2>/dev/null || true
+  dfx identity use ci-deploy
+  dfx identity set-wallet "$DFX_WALLET_ID" --network ic
+  rm -f "$_DFX_PEM"
+  echo "  ✓ dfx wallet: $DFX_WALLET_ID"
+
+  # 18 canisters × 2T each = 36T minimum; use 40T to include overhead.
+  # Wallet must hold ≥ 40T cycles — top up at https://nns.ic0.app if needed.
+  _FUND=40000000000000
+  echo "▶ Depositing ${_FUND} cycles from wallet to cycles ledger for $DEPLOY_PRINCIPAL..."
+  if dfx canister call um5iw-rqaaa-aaaaq-qaaba-cai deposit_cycles \
+    "(record { to = record { owner = principal \"$DEPLOY_PRINCIPAL\"; subaccount = null } })" \
+    --with-cycles "$_FUND" \
+    --network ic; then
+    echo "  ✓ Cycles ledger funded"
+  else
+    echo "  ⚠️  Cycles ledger deposit failed."
+    echo "     Ensure wallet $DFX_WALLET_ID has ≥ 40T cycles before a fresh deploy."
+    echo "     Upgrade deploys (canisters already exist) do not need this step."
+  fi
+fi
 
 if [ "$ENV" = "local" ]; then
   # PocketIC starts with 0 cycles — mint enough for all 18 canisters (2T each)
