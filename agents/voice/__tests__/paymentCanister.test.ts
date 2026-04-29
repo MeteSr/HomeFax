@@ -8,13 +8,17 @@
  * CANISTER.5  grantAgentCredits  — rejects non-integer amount
  * CANISTER.6  grantAgentCredits  — rejects zero or negative amount
  * CANISTER.7  VALID_TIERS        — contains all expected tier names
+ * CANISTER.8  identityFromPem    — parses a valid Ed25519 PEM deterministically
+ * CANISTER.9  identityFromPem    — rejects a non-Ed25519 PEM with a clear error
+ * CANISTER.10 identityFromPem    — same PEM always produces the same principal
  *
- * All tests exercise guard clauses that throw before any network call is made,
- * so no @dfinity/agent mock is needed.
+ * CANISTER.1–7: guard clauses throw before any network call — no mock needed.
+ * CANISTER.8–10: pure Node crypto + @dfinity/identity, no IC connection needed.
  */
 
-import { describe, it, expect } from "@jest/globals";
-import { activateInCanister, consumeAgentCredit, grantAgentCredits, VALID_TIERS } from "../paymentCanister";
+import { describe, it, expect, afterEach } from "@jest/globals";
+import crypto from "node:crypto";
+import { activateInCanister, consumeAgentCredit, grantAgentCredits, VALID_TIERS, identityFromPem } from "../paymentCanister";
 
 // ── CANISTER.7 — VALID_TIERS ──────────────────────────────────────────────────
 
@@ -98,5 +102,58 @@ describe("CANISTER.6 — grantAgentCredits rejects zero or negative amount", () 
 
   it("throws on a negative integer", async () => {
     await expect(grantAgentCredits("aaaaa-aa", -5)).rejects.toThrow("Invalid credit amount");
+  });
+});
+
+// ── CANISTER.8 — identityFromPem parses a valid Ed25519 PEM ──────────────────
+
+describe("CANISTER.8 — identityFromPem parses a valid Ed25519 PKCS8 PEM", () => {
+  it("returns an identity without throwing", () => {
+    const { privateKey } = crypto.generateKeyPairSync("ed25519");
+    const pem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+    expect(() => identityFromPem(pem)).not.toThrow();
+  });
+
+  it("returns an object with a getPrincipal method", () => {
+    const { privateKey } = crypto.generateKeyPairSync("ed25519");
+    const pem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+    const identity = identityFromPem(pem);
+    expect(typeof identity.getPrincipal).toBe("function");
+  });
+});
+
+// ── CANISTER.9 — identityFromPem rejects non-Ed25519 keys ────────────────────
+
+describe("CANISTER.9 — identityFromPem rejects non-Ed25519 PEM", () => {
+  it("throws a clear error for an RSA key", () => {
+    const { privateKey } = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
+    const pem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+    expect(() => identityFromPem(pem)).toThrow("DFX_IDENTITY_PEM must be an Ed25519 key");
+  });
+
+  it("error message includes the actual curve name for debugging", () => {
+    const { privateKey } = crypto.generateKeyPairSync("ec", { namedCurve: "P-256" });
+    const pem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+    expect(() => identityFromPem(pem)).toThrow(/crv=P-256/);
+  });
+});
+
+// ── CANISTER.10 — identityFromPem is deterministic ───────────────────────────
+
+describe("CANISTER.10 — identityFromPem is deterministic", () => {
+  it("produces the same principal for the same PEM", () => {
+    const { privateKey } = crypto.generateKeyPairSync("ed25519");
+    const pem = privateKey.export({ type: "pkcs8", format: "pem" }) as string;
+    const id1 = identityFromPem(pem);
+    const id2 = identityFromPem(pem);
+    expect(id1.getPrincipal().toText()).toBe(id2.getPrincipal().toText());
+  });
+
+  it("produces different principals for different keys", () => {
+    const pem1 = (crypto.generateKeyPairSync("ed25519").privateKey).export({ type: "pkcs8", format: "pem" }) as string;
+    const pem2 = (crypto.generateKeyPairSync("ed25519").privateKey).export({ type: "pkcs8", format: "pem" }) as string;
+    const p1 = identityFromPem(pem1).getPrincipal().toText();
+    const p2 = identityFromPem(pem2).getPrincipal().toText();
+    expect(p1).not.toBe(p2);
   });
 });
