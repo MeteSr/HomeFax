@@ -18,8 +18,8 @@
 
 import dotenv from "dotenv";
 import path from "path";
-// Load root-level .env (two directories up from __tests__/)
-dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+// Load agents/voice/.env (one directory up from __tests__/)
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 import Stripe from "stripe";
 
