@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { Request, Response } from "express";
+import { activateInCanister, consumeAgentCredit, grantAgentCredits } from "./paymentCanister";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { buildSystemPrompt } from "./prompts";
@@ -1096,33 +1097,6 @@ app.post("/api/stripe/create-subscription-intent", async (req: Request, res: Res
 // by calling adminActivateStripeSubscription via dfx CLI (local dev only).
 // Returns { type, tier?, billing? } so the frontend can refresh the subscription state.
 
-const VALID_TIERS = new Set(["Free", "Pro", "Premium", "ContractorFree", "ContractorPro"]);
-
-async function activateInCanister(principal: string, tier: string, months: number): Promise<void> {
-  // Validate inputs before passing to shell
-  if (!VALID_TIERS.has(tier)) throw new Error(`Invalid tier: ${tier}`);
-  // ICP principals: base32 segments separated by hyphens, or short text form
-  if (!/^[a-z0-9]([a-z0-9-]{0,60}[a-z0-9])?$/.test(principal)) {
-    throw new Error(`Invalid principal format`);
-  }
-  const { exec }     = await import("child_process");
-  const { promisify } = await import("util");
-  const execAsync = promisify(exec);
-  const cmd = `dfx canister call payment adminActivateStripeSubscription '(principal "${principal}", variant { ${tier} }, ${months})'`;
-  const { stderr } = await execAsync(cmd);
-  if (stderr && /error/i.test(stderr)) {
-    throw new Error(`Canister activation failed: ${stderr.trim()}`);
-  }
-}
-
-/**
- * Revert a user's subscription tier to Free in the payment canister.
- * Called by the webhook handler on subscription cancellation or payment failure.
- */
-async function revertPrincipalToFree(principal: string): Promise<void> {
-  await activateInCanister(principal, "Free", 0);
-}
-
 // ── Credit top-up helpers (#89) ───────────────────────────────────────────────
 
 /** Valid top-up pack sizes and their Stripe price-ID env vars. */
@@ -1131,38 +1105,8 @@ export const CREDIT_PACKS: Record<number, { envVar: string; label: string }> = {
   100: { envVar: "STRIPE_PRICE_CREDITS_100", label: "100 credits" },
 };
 
-/**
- * Atomically decrement 1 agent credit for `principal` in the payment canister.
- * Throws if the canister returns an error (no credits, expired, or unavailable).
- */
-async function consumeAgentCredit(principal: string): Promise<void> {
-  if (!/^[a-z0-9]([a-z0-9-]{0,60}[a-z0-9])?$/.test(principal)) {
-    throw new Error("Invalid principal format");
-  }
-  const { exec }      = await import("child_process");
-  const { promisify } = await import("util");
-  const execAsync = promisify(exec);
-  const cmd = `dfx canister call payment consumeAgentCredit '(principal "${principal}")'`;
-  const { stdout, stderr } = await execAsync(cmd);
-  if (stderr && /error/i.test(stderr)) throw new Error(`Credit consume failed: ${stderr.trim()}`);
-  if (/\berr\b/i.test(stdout))         throw new Error("No agent credits available");
-}
-
-/**
- * Grant agent credits to `principal` in the payment canister.
- * Called by the voice server after Stripe confirms a one-time credit pack purchase.
- */
-async function grantAgentCredits(principal: string, amount: number): Promise<void> {
-  if (!/^[a-z0-9]([a-z0-9-]{0,60}[a-z0-9])?$/.test(principal)) {
-    throw new Error("Invalid principal format");
-  }
-  if (!Number.isInteger(amount) || amount <= 0) throw new Error("Invalid credit amount");
-  const { exec }      = await import("child_process");
-  const { promisify } = await import("util");
-  const execAsync = promisify(exec);
-  const cmd = `dfx canister call payment adminGrantAgentCredits '(principal "${principal}", ${amount} : nat)'`;
-  const { stderr } = await execAsync(cmd);
-  if (stderr && /error/i.test(stderr)) throw new Error(`Credit grant failed: ${stderr.trim()}`);
+async function revertPrincipalToFree(principal: string): Promise<void> {
+  await activateInCanister(principal, "Free", 0);
 }
 
 app.post("/api/stripe/verify-session", async (req: Request, res: Response) => {
