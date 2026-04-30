@@ -36,6 +36,16 @@ if [ -n "$JOB_ID" ]; then
   dfx canister call job addSensorCanister "(principal \"$CANISTER\")" \
     && echo "  ↳ Sensor authorized in job canister — ✓" \
     || echo "  ↳ Already authorized or admin required"
+
+  echo ""
+  echo "── [0c] Clear property-ownership check in job (test uses fake property IDs)"
+  # createSensorJob skips ownership verification when propCanisterId is empty.
+  # Tests use a fake propertyId ("PROP_1") that doesn't exist in the property
+  # canister, so we must clear it — we restore it in [16] after tests complete.
+  PROP_CANISTER_ID=$(dfx canister id property 2>/dev/null || echo "")
+  dfx canister call job setPropertyCanisterId '("")' \
+    && echo "  ↳ Property canister cleared for test isolation — ✓" \
+    || echo "  ↳ Could not clear propCanisterId — jobId assertions may fail"
 fi
 
 # ─── Initial state ────────────────────────────────────────────────────────────
@@ -168,6 +178,15 @@ if [ -n "$JOB_ID" ]; then
     || (echo "  ↳ ❌ Expected jobsCreated > 0 after Critical events"; exit 1)
 else
   echo "  ↳ SKIP jobsCreated assertion — job canister not deployed"
+fi
+
+# ─── Restore property canister in job ────────────────────────────────────────
+if [ -n "$JOB_ID" ] && [ -n "${PROP_CANISTER_ID:-}" ]; then
+  echo ""
+  echo "── [16] Restore property canister in job ────────────────────────────────"
+  dfx canister call job setPropertyCanisterId "(\"$PROP_CANISTER_ID\")" \
+    && echo "  ↳ Restored — ✓" \
+    || echo "  ↳ Restore failed — run: dfx canister call job setPropertyCanisterId"
 fi
 
 echo ""
