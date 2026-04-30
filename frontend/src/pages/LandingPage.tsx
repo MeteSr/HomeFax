@@ -614,8 +614,8 @@ export default function LandingPage() {
           <div className="hfl-pricing-inner">
             <div className="hfl-pricing-header">
               <div className="hfl-kicker">✦ Simple Pricing</div>
-              <h2>No free tier.<br /><em>Serious homeowners only.</em></h2>
-              <p className="hfl-sec-sub">Your home is worth hundreds of thousands. Start protecting its history for less than a coffee a day.</p>
+              <h2>Start for $10/mo.<br /><em>Your home earns it back.</em></h2>
+              <p className="hfl-sec-sub">A verified maintenance record pays for itself the first time a buyer negotiates — or doesn't. Pick the plan that fits your homeownership stage.</p>
             </div>
             <div className="hfl-pricing-grid">
               {([
