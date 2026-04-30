@@ -76,7 +76,7 @@ vi.mock("react-hot-toast", () => ({
 }));
 
 // paymentService mock is set per-test
-let mockTier: "Free" | "Pro" | "Premium" | "ContractorPro" = "Free";
+let mockTier: "Free" | "Basic" | "Pro" | "Premium" | "ContractorPro" = "Basic";
 vi.mock("@/services/payment", () => ({
   paymentService: {
     getMyAgentCredits: vi.fn(() => Promise.resolve(0)),
@@ -122,42 +122,25 @@ async function clickGenerate() {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe("GenerateReportModal — 15.7.3 in-app notification", () => {
+// Free-tier homeowners are blocked at the route level (PaidHomeownerRoute →
+// /pricing), so the ReportExpiry notification path was removed entirely.
+// These tests verify notificationService.create is never called regardless of tier.
+describe("GenerateReportModal — report generation never fires in-app notifications", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockTier = "Free";
+    mockTier = "Basic";
     vi.mocked(paymentService.getMySubscription).mockImplementation(() =>
       Promise.resolve({ tier: mockTier, expiresAt: null, cancelledAt: null })
     );
   });
 
-  it("calls notificationService.create with ReportExpiry type when free user generates", async () => {
+  it("does NOT call notificationService.create for Basic users", async () => {
     renderModal();
     await clickGenerate();
     await waitFor(() =>
-      expect(vi.mocked(notificationService.create)).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "ReportExpiry" })
-      )
+      expect(screen.getByText(/link ready to share/i)).toBeInTheDocument()
     );
-  });
-
-  it("notification message mentions 7 days and upgrade to Pro", async () => {
-    renderModal();
-    await clickGenerate();
-    await waitFor(() => {
-      const call = vi.mocked(notificationService.create).mock.calls[0][0];
-      expect(call.message).toMatch(/7 days/i);
-      expect(call.message).toMatch(/pro/i);
-    });
-  });
-
-  it("notification includes the correct propertyId", async () => {
-    renderModal();
-    await clickGenerate();
-    await waitFor(() => {
-      const call = vi.mocked(notificationService.create).mock.calls[0][0];
-      expect(call.propertyId).toBe("42");
-    });
+    expect(vi.mocked(notificationService.create)).not.toHaveBeenCalled();
   });
 
   it("does NOT call notificationService.create for Pro users", async () => {
