@@ -145,9 +145,10 @@ export const CSS = `
     66%{border-radius:52% 48% 42% 58%/48% 58% 42% 52%}
   }
   .hfl-dash-card {
-    position: relative; z-index: 2; background: white; border-radius: 22px; width: 340px;
+    position: relative; z-index: 2; background: white; width: 340px;
     box-shadow: 0 32px 80px rgba(46,37,64,0.2); overflow: hidden;
     animation: hfl-float 5s ease-in-out infinite;
+    border: 1px solid var(--rule);
   }
   @keyframes hfl-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
   .hfl-dc-header { background: var(--plum); padding: 20px 24px; }
@@ -179,10 +180,10 @@ export const CSS = `
   .hfl-dc-ver-text { font-size: 11px; line-height: 1.4; color: var(--plum-mid); }
   .hfl-dc-ver-text strong { color: var(--plum); }
   .hfl-badge {
-    position: absolute; z-index: 3; background: white; border-radius: 14px;
+    position: absolute; z-index: 3; background: white;
     box-shadow: 0 8px 28px rgba(46,37,64,0.14); padding: 11px 16px;
     display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--plum);
-    white-space: nowrap;
+    white-space: nowrap; border: 1px solid var(--rule);
   }
   .hfl-badge-1 { top: 8%; right: -20px; animation: hfl-float 4s ease-in-out infinite; }
   .hfl-badge-2 { bottom: 12%; left: -24px; animation: hfl-float 4s 1.5s ease-in-out infinite; }
@@ -303,8 +304,9 @@ export const CSS = `
 
   /* Feature visual panels */
   .hfl-feat-panel {
-    background: white; border-radius: 24px; overflow: hidden;
+    background: white; overflow: hidden;
     box-shadow: 0 32px 80px rgba(46,37,64,0.14);
+    border: 1px solid var(--rule);
   }
   .hfl-feat-2 .hfl-feat-panel {
     background: rgba(253,252,250,0.06); border: 1px solid rgba(253,252,250,0.12);
@@ -386,9 +388,7 @@ export const CSS = `
 
   /* ── REPORT CTA ───────────────────────────────────────────────────────── */
   .hfl-report {
-    margin: 0 56px 100px;
-    background: linear-gradient(135deg, var(--blush), var(--butter));
-    border-radius: 28px; padding: 72px 80px;
+    padding: 0 56px 100px;
     display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
   }
   .hfl-rc-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--plum); margin-bottom: 18px; }
@@ -408,7 +408,7 @@ export const CSS = `
     font-family: 'Plus Jakarta Sans', sans-serif; transition: background .2s;
   }
   .hfl-rc-ghost:hover { background: rgba(46,37,64,0.14); }
-  .hfl-report-mock { background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 60px rgba(46,37,64,0.18); }
+  .hfl-report-mock { background: white; overflow: hidden; box-shadow: 0 20px 60px rgba(46,37,64,0.18); border: 1px solid var(--rule); }
   .hfl-mock-top { background: var(--plum); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
   .hfl-mock-addr { font-family: 'Fraunces', serif; font-size: 15px; color: white; font-weight: 700; }
   .hfl-mock-badge { background: var(--sage); color: var(--plum); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 100px; letter-spacing: 1px; }
@@ -430,7 +430,6 @@ export const CSS = `
   .hfl-fdd { padding: 0 56px 100px; }
   .hfl-fdd-inner {
     background: var(--plum);
-    border-radius: 8px 40px 40px 40px;
     border: 1px solid rgba(122,175,118,0.15);
     padding: 64px 72px;
     position: relative; overflow: hidden;
@@ -490,8 +489,9 @@ export const CSS = `
   .hfl-testimonials-header h2 { margin-bottom: 12px; }
   .hfl-testimonials-header p { font-size: 17px; color: var(--plum-mid); }
   .hfl-featured-quote {
-    background: linear-gradient(135deg, var(--blush), var(--butter)); border-radius: 24px; padding: 52px 60px;
+    background: linear-gradient(135deg, var(--blush), var(--butter)); padding: 52px 60px;
     margin-bottom: 22px; position: relative; overflow: hidden;
+    border: 1px solid rgba(46,37,64,0.1);
   }
   .hfl-featured-quote-text {
     font-family: 'Fraunces', serif; font-size: clamp(20px, 2.5vw, 28px);
@@ -515,7 +515,7 @@ export const CSS = `
   .hfl-featured-result-lbl { font-size: 12px; color: var(--plum-mid); }
   .hfl-test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .hfl-test-card {
-    background: white; border-radius: 20px; padding: 30px;
+    background: white; padding: 30px;
     border: 1.5px solid rgba(122,175,118,0.2); transition: border-color .2s, box-shadow .2s;
   }
   .hfl-test-card:hover { border-color: var(--sage); box-shadow: 0 8px 32px rgba(122,175,118,0.15); }
@@ -557,7 +557,7 @@ export const CSS = `
   /* ── DATA SECTION ─────────────────────────────────────────────────────── */
   .hfl-data { padding: 0 56px 100px; }
   .hfl-data-inner {
-    background: var(--plum); border-radius: 8px 40px 40px 40px;
+    background: var(--plum);
     border: 1px solid rgba(122,175,118,0.15);
     padding: 72px 80px;
     display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
@@ -575,7 +575,7 @@ export const CSS = `
   .hfl-data-cards { display: flex; flex-direction: column; gap: 14px; }
   .hfl-data-card {
     background: rgba(253,252,250,0.06); border: 1px solid rgba(253,252,250,0.1);
-    border-radius: 16px; padding: 22px 24px; display: flex; gap: 18px; align-items: flex-start;
+    padding: 22px 24px; display: flex; gap: 18px; align-items: flex-start;
     transition: background .2s, border-color .2s;
   }
   .hfl-data-card:hover { background: rgba(253,252,250,0.1); border-color: rgba(122,175,118,0.4); }
@@ -591,7 +591,7 @@ export const CSS = `
   /* ── FREE TOOLS ───────────────────────────────────────────────────────── */
   .hfl-tools { padding: 0 56px 100px; }
   .hfl-tools-inner {
-    background: var(--sage-light); border-radius: 28px; padding: 64px 72px;
+    background: var(--sage-light); padding: 64px 72px;
     border: 2px solid var(--sage-mid); position: relative; overflow: hidden;
   }
   .hfl-tools-header { text-align: center; margin-bottom: 48px; }
@@ -605,7 +605,7 @@ export const CSS = `
   .hfl-tools-sub { font-size: 16px; color: var(--plum-mid); margin-top: 12px; line-height: 1.7; }
   .hfl-tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; position: relative; z-index: 1; }
   .hfl-tool-card {
-    background: white; border-radius: 20px; padding: 28px 24px;
+    background: white; padding: 28px 24px;
     display: flex; flex-direction: column; gap: 12px;
     border: 1.5px solid var(--sage-mid); cursor: pointer;
     transition: transform .2s, box-shadow .2s; text-decoration: none; color: inherit;
@@ -622,7 +622,6 @@ export const CSS = `
   .hfl-showcase-header { max-width: 540px; margin-bottom: 40px; }
   .hfl-showcase-inner {
     background: var(--plum);
-    border-radius: 8px 40px 40px 40px;
     display: flex; overflow: hidden; min-height: 560px;
     border: 1px solid rgba(122,175,118,0.15);
   }
@@ -711,13 +710,14 @@ export const CSS = `
   @keyframes hfl-sc-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   /* Visual column */
   .hfl-sc-visual {
-    border-radius: 16px; overflow: hidden;
+    overflow: hidden;
     box-shadow: 0 20px 60px rgba(0,0,0,0.35); flex-shrink: 0;
+    border: 1px solid rgba(253,252,250,0.08);
   }
   /* Mobile showcase */
   @media (max-width: 900px) {
     .hfl-showcase { padding: 0 24px 64px; }
-    .hfl-showcase-inner { flex-direction: column; border-radius: 8px 20px 20px 20px; min-height: auto; }
+    .hfl-showcase-inner { flex-direction: column; min-height: auto; }
     .hfl-sc-nav { width: 100%; flex-direction: row; gap: 6px; overflow-x: auto; padding: 16px; border-right: none; border-bottom: 1px solid rgba(253,252,250,0.08); }
     .hfl-sc-nav-label { display: none; }
     .hfl-sc-tab { padding: 10px 14px; white-space: nowrap; flex-shrink: 0; width: auto; }
@@ -808,12 +808,12 @@ export const CSS = `
     .hfl-feat-2 .hfl-feat-text { order: 0; }
     .hfl-feat-2 .hfl-feat-visual { order: 0; }
 
-    .hfl-report { margin: 0 24px 64px; padding: 40px 28px; grid-template-columns: 1fr; gap: 36px; }
+    .hfl-report { padding: 0 24px 64px; grid-template-columns: 1fr; gap: 36px; }
     .hfl-report h2 { font-size: 32px; }
     .hfl-report > div:last-child { display: none; }
 
     .hfl-fdd { padding: 0 24px 64px; }
-    .hfl-fdd-inner { padding: 40px 28px; border-radius: 8px 20px 20px 20px; grid-template-columns: 1fr; gap: 36px; }
+    .hfl-fdd-inner { padding: 40px 28px; grid-template-columns: 1fr; gap: 36px; }
     .hfl-fdd-row:last-child { border-bottom: 1px solid rgba(253,252,250,0.08); }
     .hfl-testimonials { padding: 0 24px 64px; }
     .hfl-featured-quote { padding: 36px 28px; }
@@ -828,11 +828,11 @@ export const CSS = `
     .hfl-personas > *:last-child:nth-child(odd) { grid-column: span 2; max-width: 340px; margin: 0 auto; }
 
     .hfl-data { padding: 0 24px 64px; }
-    .hfl-data-inner { grid-template-columns: 1fr; padding: 40px 28px; gap: 48px; border-radius: 8px 20px 20px 20px; }
+    .hfl-data-inner { grid-template-columns: 1fr; padding: 40px 28px; gap: 48px; }
     .hfl-data h2 { font-size: 34px; }
 
     .hfl-tools { padding: 0 24px 64px; }
-    .hfl-tools-inner { padding: 40px 28px; border-radius: 20px; }
+    .hfl-tools-inner { padding: 40px 28px; }
     .hfl-tools-grid { grid-template-columns: 1fr 1fr; }
 
     .hfl-footer { padding: 48px 24px 28px; }
@@ -865,7 +865,7 @@ export const CSS = `
     .hfl-metrics { padding: 56px 32px; }
     .hfl-how { padding: 80px 32px; }
     .hfl-feat { padding: 72px 32px; gap: 48px; }
-    .hfl-report { margin-left: 32px; margin-right: 32px; padding: 56px 48px; }
+    .hfl-report { padding: 0 32px 80px; }
     .hfl-fdd { padding: 0 32px 80px; }
     .hfl-fdd-inner { padding: 56px 48px; grid-template-columns: 1fr; gap: 40px; }
     .hfl-testimonials { padding-left: 32px; padding-right: 32px; }
