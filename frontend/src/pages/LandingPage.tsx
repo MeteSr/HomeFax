@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ShieldCheck, TrendingUp, CalendarDays, Archive, RefreshCw } from "lucide-react";
+import { TrendingUp, CalendarDays, Archive, RefreshCw } from "lucide-react";
 import { CSS } from "./landingStyles";
 
 
@@ -283,10 +283,6 @@ export default function LandingPage() {
 
         {/* ── Feature Showcase ────────────────────────────────────────────── */}
         <section id="hfl-sell" className="hfl-showcase">
-          <div className="hfl-showcase-header">
-            <div className="hfl-kicker">✦ Everything You Need</div>
-            <h2>Built for the entire<br /><em>homeownership journey</em></h2>
-          </div>
           <div
             className="hfl-showcase-inner"
             onMouseEnter={() => setShowcasePaused(true)}
@@ -317,7 +313,6 @@ export default function LandingPage() {
             {/* Content */}
             <div className="hfl-sc-content">
               <div className="hfl-sc-slide" key={activeFeature}>
-                <div className="hfl-sc-kicker">{FEATURES[activeFeature].kicker}</div>
                 <div className="hfl-sc-heading">{FEATURES[activeFeature].heading}</div>
                 <p className="hfl-sc-desc">{FEATURES[activeFeature].desc}</p>
                 <ul className="hfl-sc-bullets">
@@ -529,7 +524,6 @@ export default function LandingPage() {
             </div>
             <div className="hfl-fdd-cols">
               {([
-                { icon: ShieldCheck,  title: "Insurance Defense Mode",      tagline: "Fight a rate hike or claim denial with a single report.",        desc: "Generates a print-ready document of every insurance-relevant job — roof, HVAC, electrical, plumbing — sorted by system and dated, ready to hand to your insurer." },
                 { icon: TrendingUp,   title: "Market Intelligence",         tagline: "Know which renovations actually pay off in your zip code.",       desc: "Uses remodeling data to rank projects by ROI for your area. Compares your score to similar nearby properties so you see exactly where you stand." },
                   { icon: CalendarDays, title: "5-Year Maintenance Calendar", tagline: "Budget for the future instead of being blindsided.",             desc: "Based on your home's system ages and service history, HomeGentic generates a personalized 5-year schedule with projected costs for every task." },
                 { icon: Archive,      title: "Warranty Wallet",             tagline: "Every warranty, receipt, and manual — attached to your home.",   desc: "Store appliance warranties, installation receipts, and product manuals tied to the exact job they belong to. Linked to your blockchain record, not buried in your email." },
@@ -555,12 +549,6 @@ export default function LandingPage() {
 
         {/* ── Testimonials ────────────────────────────────────────────────── */}
         <section className="hfl-testimonials">
-          <div className="hfl-testimonials-header">
-            <div className="hfl-kicker">★ Homeowner Stories</div>
-            <h2>Homeowners Love Home<em>Gentic</em></h2>
-            <p>Real results from real people who took control of their home's story.</p>
-          </div>
-
           <div className="hfl-featured-quote">
             <p className="hfl-featured-quote-text">
               "We got <em>$28k over asking</em>. Our buyers said the HomeGentic Report was
@@ -682,57 +670,6 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* ── Free Tools ──────────────────────────────────────────────────── */}
-        <section id="hfl-tools" className="hfl-tools">
-          <div className="hfl-tools-inner">
-            <div className="hfl-cta-blob1" />
-            <div className="hfl-cta-blob2" />
-          <div className="hfl-tools-header">
-            <h2>Free tools</h2>
-            <p className="hfl-tools-sub">Try these before you sign up — no login, no credit card.</p>
-          </div>
-          <div className="hfl-tools-grid">
-            {[
-              {
-                icon: "🔍", label: "Buyer tool", title: "HomeGentic Report Lookup",
-                desc: "Enter any address to see if the owner has a verified HomeGentic maintenance report ready to share.",
-                cta: "Check an address", href: "/check",
-              },
-              {
-                icon: "📅", label: "Planning tool", title: "Instant System Forecast",
-                desc: "Enter your home's year built and get a 10-year cost forecast for HVAC, roof, plumbing, electrical, and more.",
-                cta: "Get my forecast", href: "/instant-forecast",
-              },
-              {
-                icon: "💰", label: "Pricing tool", title: "Contractor Price Lookup",
-                desc: "See what homeowners in your area actually pay for roofing, HVAC, plumbing, flooring, and other common jobs.",
-                cta: "Look up prices", href: "/prices",
-              },
-              {
-                icon: "⚙️", label: "Estimator", title: "Home Systems Estimator",
-                desc: "Get lifespan estimates and replacement cost ranges for every major system in your home based on install year.",
-                cta: "Estimate my systems", href: "/home-systems",
-              },
-              {
-                icon: "🔎", label: "Buyer tool", title: "Buyer's Truth Kit",
-                desc: "Enter any address and what the seller is claiming. Get permit records, credibility flags, and the exact questions to ask before you close.",
-                cta: "Build my kit", href: "/truth-kit",
-              },
-            ].map((tool) => (
-              <a key={tool.href} href={tool.href} className="hfl-tool-card">
-                <div className="hfl-tool-icon">{tool.icon}</div>
-                <div>
-                  <div className="hfl-tool-label">{tool.label}</div>
-                  <div className="hfl-tool-title">{tool.title}</div>
-                </div>
-                <p className="hfl-tool-desc">{tool.desc}</p>
-                <span className="hfl-tool-cta">{tool.cta}</span>
-              </a>
-            ))}
-          </div>
           </div>
         </section>
 

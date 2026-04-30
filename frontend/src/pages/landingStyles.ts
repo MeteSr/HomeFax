@@ -557,8 +557,8 @@ export const CSS = `
   /* ── DATA SECTION ─────────────────────────────────────────────────────── */
   .hfl-data { padding: 0 56px 100px; }
   .hfl-data-inner {
-    background: var(--plum);
-    border: 1px solid rgba(122,175,118,0.15);
+    background: var(--white);
+    border: 1px solid var(--rule);
     padding: 72px 80px;
     display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
   }
@@ -569,19 +569,19 @@ export const CSS = `
     font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     margin-bottom: 24px;
   }
-  .hfl-data h2 { color: white; letter-spacing: -1px; margin-bottom: 20px; }
+  .hfl-data h2 { color: var(--plum); letter-spacing: -1px; margin-bottom: 20px; }
   .hfl-data h2 em { color: var(--sage); }
-  .hfl-data-lead { font-size: 17px; color: rgba(253,252,250,0.7); line-height: 1.7; margin-bottom: 36px; }
+  .hfl-data-lead { font-size: 17px; color: var(--plum-mid); line-height: 1.7; margin-bottom: 36px; }
   .hfl-data-cards { display: flex; flex-direction: column; gap: 14px; }
   .hfl-data-card {
-    background: rgba(253,252,250,0.06); border: 1px solid rgba(253,252,250,0.1);
+    background: var(--sage-light); border: 1px solid var(--sage-mid);
     padding: 22px 24px; display: flex; gap: 18px; align-items: flex-start;
     transition: background .2s, border-color .2s;
   }
-  .hfl-data-card:hover { background: rgba(253,252,250,0.1); border-color: rgba(122,175,118,0.4); }
+  .hfl-data-card:hover { background: var(--sage-mid); border-color: var(--sage); }
   .hfl-data-card-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
-  .hfl-data-card-title { font-weight: 700; color: white; font-size: 15px; margin-bottom: 4px; }
-  .hfl-data-card-body { font-size: 13px; color: rgba(253,252,250,0.6); line-height: 1.6; }
+  .hfl-data-card-title { font-weight: 700; color: var(--plum); font-size: 15px; margin-bottom: 4px; }
+  .hfl-data-card-body { font-size: 13px; color: var(--plum-mid); line-height: 1.6; }
   .hfl-data-note {
     margin-top: 28px; font-size: 12px; color: rgba(253,252,250,0.35);
     display: flex; align-items: center; gap: 8px;
@@ -622,7 +622,7 @@ export const CSS = `
   .hfl-showcase-header { max-width: 540px; margin-bottom: 40px; }
   .hfl-showcase-inner {
     background: var(--plum);
-    display: flex; overflow: hidden; min-height: 560px;
+    display: flex; overflow: hidden;
     border: 1px solid rgba(122,175,118,0.15);
   }
   /* Left nav */
@@ -662,8 +662,8 @@ export const CSS = `
   @keyframes hfl-sc-fill { from { width: 0 } to { width: 100% } }
   /* Content panel */
   .hfl-sc-content {
-    flex: 1; min-width: 0; padding: 48px 52px;
-    display: grid; grid-template-columns: 1fr 320px; gap: 44px; align-items: start;
+    flex: 1; min-width: 0; padding: 48px 52px 56px;
+    display: grid; grid-template-columns: 1fr 280px; gap: 44px; align-items: start;
     position: relative; overflow: hidden;
   }
   .hfl-sc-content::before {
@@ -710,7 +710,7 @@ export const CSS = `
   @keyframes hfl-sc-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   /* Visual column */
   .hfl-sc-visual {
-    overflow: hidden;
+    overflow: hidden; max-height: 340px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.35); flex-shrink: 0;
     border: 1px solid rgba(253,252,250,0.08);
   }
