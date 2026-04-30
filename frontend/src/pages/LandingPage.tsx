@@ -10,6 +10,13 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [activeFeature, setActiveFeature] = React.useState(0);
   const [showcasePaused, setShowcasePaused] = React.useState(false);
+  const [heroPhase, setHeroPhase] = React.useState(0);
+
+  const HERO_PHASES = [
+    { icon: "📋", label: "14 records verified", detail: "Share link ready" },
+    { icon: "📊", label: "Score updated", detail: "88 → 91 ↑" },
+    { icon: "📤", label: "Share link copied", detail: "Sent to buyer" },
+  ];
 
   const FEATURES = [
     {
@@ -74,6 +81,11 @@ export default function LandingPage() {
     return () => clearInterval(t);
   }, [showcasePaused, FEATURES.length]);
 
+  useEffect(() => {
+    const t = setInterval(() => setHeroPhase((p) => (p + 1) % 3), 4000);
+    return () => clearInterval(t);
+  }, []);
+
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
@@ -83,7 +95,7 @@ export default function LandingPage() {
         <title>HomeGentic — Verified Home Maintenance Records</title>
         <meta name="description" content="HomeGentic gives homeowners a verified, blockchain-backed record of every repair, upgrade, and inspection — boosting home value and buyer confidence." />
         <meta property="og:title" content="HomeGentic — Verified Home Maintenance Records" />
-        <meta property="og:description" content="Prove your home's history. Verified maintenance records for homeowners, contractors, and buyers." />
+        <meta property="og:description" content="Homes with a verified HomeGentic record sell faster and command a premium. Build your home's complete repair, permit, and service history — shareable in one click." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://homegentic.app/" />
         <meta property="og:image" content="https://homegentic.app/og-default.png" />
@@ -127,24 +139,38 @@ export default function LandingPage() {
           </div>
         </nav>
 
+        {/* ── Social Proof Bar ────────────────────────────────────────────── */}
+        <div className="hfl-proof-bar">
+          <span className="hfl-proof-stars">★★★★★</span>
+          <span className="hfl-proof-sep">·</span>
+          <span className="hfl-proof-quote">"Finally, a Carfax for homes"</span>
+          <span className="hfl-proof-sep">·</span>
+          <span className="hfl-proof-stat">Trusted by 3,400+ homeowners</span>
+        </div>
+
         {/* ── Hero ────────────────────────────────────────────────────────── */}
         <section className="hfl-hero">
           <div className="hfl-hero-left">
-            <h1>Own It.<br /><em>Prove It.</em><br />Sell It.</h1>
-            <p className="hfl-sub">
-              HomeGentic tracks every repair, reminds you before things break, and builds
-              the complete maintenance record your home deserves — so when it's time to sell,
-              you're ready to command a premium.
-            </p>
+            <h1>Your home's<br /><em>complete record</em></h1>
+            <ul className="hfl-hero-bullets">
+              <li><span className="hfl-hb-dot">✓</span>Every repair, logged and signed on the blockchain</li>
+              <li><span className="hfl-hb-dot">✓</span>AI reminders before things break</li>
+              <li><span className="hfl-hb-dot">✓</span>Share your full record with buyers in one click</li>
+            </ul>
             <div className="hfl-actions">
-              <button className="hfl-btn-main" onClick={() => navigate("/login")}>Get Started</button>
-              <button className="hfl-btn-soft" onClick={() => navigate("/login")}>See a HomeGentic Report</button>
+              <button className="hfl-btn-main" onClick={() => navigate("/login")}>Start my home's record</button>
+              <span className="hfl-price-anchor">From $10/mo</span>
             </div>
+            <a className="hfl-demo-link" onClick={(e) => { e.preventDefault(); navigate("/demo"); }}>
+              See a sample report →
+            </a>
             <div className="hfl-hero-trust">
-              <span className="hfl-hero-trust-lbl">Trusted by homeowners in</span>
-              {["Austin, TX", "Denver, CO", "Seattle, WA", "Tampa, FL"].map((c) => (
-                <span key={c} className="hfl-hero-city">📍 {c}</span>
-              ))}
+              <span className="hfl-stat-chip">3,400+ homeowners · 42,000 records verified</span>
+            </div>
+            <div className="hfl-hero-micro-quote">
+              <span className="hfl-hmq-stars">★★★★★</span>
+              <span className="hfl-hmq-text">"Sold $28k over asking — buyers waived the inspection after seeing our HomeGentic Report."</span>
+              <span className="hfl-hmq-attr">— Sarah M. · Austin, TX</span>
             </div>
           </div>
 
@@ -184,11 +210,16 @@ export default function LandingPage() {
                       <span className="hfl-status-due">Due Nov 10</span>
                     </div>
                   </div>
-                  <div className="hfl-dc-ver-row">
-                    <span style={{ fontSize: 18 }}>📋</span>
+                  <div className="hfl-dc-ver-row" key={heroPhase}>
+                    <span style={{ fontSize: 18 }}>{HERO_PHASES[heroPhase].icon}</span>
                     <span className="hfl-dc-ver-text">
-                      <strong>HomeGentic Report Ready</strong> — 14 records verified, share in one click
+                      <strong>{HERO_PHASES[heroPhase].label}</strong> — {HERO_PHASES[heroPhase].detail}
                     </span>
+                  </div>
+                  <div className="hfl-dc-phase-dots">
+                    {HERO_PHASES.map((_, i) => (
+                      <span key={i} className={`hfl-dc-phase-dot${i === heroPhase ? " hfl-dc-phase-dot-active" : ""}`} />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -202,6 +233,30 @@ export default function LandingPage() {
           </div>
         </section>
 
+
+        {/* ── Problem ─────────────────────────────────────────────────────── */}
+        <section className="hfl-problem">
+          <div className="hfl-problem-inner">
+            <div className="hfl-problem-text">
+              <div className="hfl-kicker" style={{ color: "#C94C2E" }}>✦ The Problem</div>
+              <h2>Your home's history is<br /><em>scattered and disappearing</em></h2>
+              <p className="hfl-sec-sub">Repair receipts in email. Warranties in a drawer. Permit records at the county office. When it's time to sell — or file an insurance claim — that scattered history costs you thousands.</p>
+            </div>
+            <div className="hfl-problem-cards">
+              {[
+                { icon: "📧", title: "Records everywhere", desc: "Invoices in email, permits at city hall, warranties in a junk drawer. No single source of truth." },
+                { icon: "💸", title: "Buyers discount the unknown", desc: "Without documented proof of maintenance, buyers assume the worst and negotiate down — hard." },
+                { icon: "⏳", title: "History lost at every sale", desc: "The next owner starts from zero. Your 12 years of careful maintenance become completely invisible." },
+              ].map((p) => (
+                <div key={p.title} className="hfl-problem-card">
+                  <div className="hfl-problem-icon">{p.icon}</div>
+                  <div className="hfl-problem-card-title">{p.title}</div>
+                  <div className="hfl-problem-card-desc">{p.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* ── How It Works ────────────────────────────────────────────────── */}
         <section id="hfl-features" className="hfl-how">
@@ -554,64 +609,49 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── Persona CTA ─────────────────────────────────────────────────── */}
-        <section className="hfl-cta">
-          <div className="hfl-cta-inner">
-            <div className="hfl-cta-blob1" />
-            <div className="hfl-cta-blob2" />
-            <h2>How do you want to start?</h2>
-            <p className="hfl-cta-sub">HomeGentic works for every stage of homeownership. Pick what fits you now.</p>
-            <div className="hfl-personas">
-              {[
-                {
-                  icon: "🏠", role: "Homeowner", title: "Build My HomeGentic",
-                  desc: "Log services, track maintenance, grow your property score, and be ready to sell on your terms.",
-                  cta: "Get started",
-                },
-                {
-                  icon: "👷", role: "Contractor", title: "Join the Network",
-                  desc: "Get verified, receive job requests, and have your work permanently credited on homeowner records.",
-                  cta: "Apply to join",
-                },
-                {
-                  icon: "🏡", role: "Real Estate Agent", title: "Win More Listings",
-                  desc: "Submit proposals on active listing intents, showcase your track record, and earn verified reviews directly on HomeGentic.",
-                  cta: "Join as an agent",
-                  giftCta: true,
-                },
-                {
-                  icon: "🏆", role: "Ready to Sell", title: "Make Agents Compete for Your Listing",
-                  desc: "Post your listing intent, collect competing agent proposals, or go FSBO with our full seller toolkit.",
-                  cta: "Start selling smarter",
-                },
-              ].map((p) => (
-                <div key={p.role} className="hfl-persona" onClick={() => navigate("/login")}>
-                  <div className="hfl-persona-icon">{p.icon}</div>
-                  <div className="hfl-persona-role">{p.role}</div>
-                  <div className="hfl-persona-title">{p.title}</div>
-                  <div className="hfl-persona-desc">{p.desc}</div>
-                  <div className="hfl-persona-cta">
-                    {p.cta}
-                  </div>
-                  {(p as any).giftCta && (
-                    <a
-                      href="/gift"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        display: "inline-block", marginTop: 12,
-                        fontFamily: "var(--sans)", fontSize: 13, fontWeight: 600,
-                        color: "var(--sage)", textDecoration: "none",
-                        borderBottom: "1px solid transparent",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.borderBottomColor = "var(--sage)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.borderBottomColor = "transparent")}
-                    >
-                      🎁 Gift a subscription to a buyer
-                    </a>
-                  )}
+        {/* ── Pricing ─────────────────────────────────────────────────────── */}
+        <section className="hfl-pricing">
+          <div className="hfl-pricing-inner">
+            <div className="hfl-pricing-header">
+              <div className="hfl-kicker">✦ Simple Pricing</div>
+              <h2>No free tier.<br /><em>Serious homeowners only.</em></h2>
+              <p className="hfl-sec-sub">Your home is worth hundreds of thousands. Start protecting its history for less than a coffee a day.</p>
+            </div>
+            <div className="hfl-pricing-grid">
+              {([
+                { tier: "Basic",   price: "$10", tag: null as string | null, properties: "1 property",  photos: "5 photos/job",  quotes: "3 open quotes" },
+                { tier: "Pro",     price: "$20", tag: "Most Popular",         properties: "5 properties", photos: "10 photos/job", quotes: "10 open quotes" },
+                { tier: "Premium", price: "$40", tag: null as string | null, properties: "20 properties", photos: "30 photos/job", quotes: "Unlimited quotes" },
+              ]).map((plan) => (
+                <div key={plan.tier} className={`hfl-plan-card${plan.tag ? " hfl-plan-featured" : ""}`}>
+                  {plan.tag && <div className="hfl-plan-badge">{plan.tag}</div>}
+                  <div className="hfl-plan-tier">{plan.tier}</div>
+                  <div className="hfl-plan-price">{plan.price}<span className="hfl-plan-period">/mo</span></div>
+                  <ul className="hfl-plan-features">
+                    <li>✓ {plan.properties}</li>
+                    <li>✓ {plan.photos}</li>
+                    <li>✓ {plan.quotes}</li>
+                    <li>✓ Verified maintenance record</li>
+                    <li>✓ AI home intelligence</li>
+                  </ul>
+                  <button className="hfl-plan-cta" onClick={() => navigate("/login")}>Get started</button>
                 </div>
               ))}
             </div>
+            <div className="hfl-pricing-note">
+              Contractor and Realtor plans available — <a onClick={(e) => { e.preventDefault(); navigate("/pricing"); }} style={{ cursor: "pointer" }}>see full pricing →</a>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Final CTA ───────────────────────────────────────────────────── */}
+        <section className="hfl-final-cta">
+          <div className="hfl-final-cta-inner">
+            <div className="hfl-kicker" style={{ color: "rgba(253,252,250,0.45)" }}>✦ Start Today</div>
+            <h2>Your home's history is being<br /><em>lost every day it goes unrecorded.</em></h2>
+            <p className="hfl-final-cta-sub">3,400+ homeowners have already started building their record. The best time to start was the day you moved in. The second best time is now.</p>
+            <button className="hfl-final-cta-btn" onClick={() => navigate("/login")}>Start my home's record</button>
+            <div className="hfl-final-cta-fine">From $10/mo · Cancel anytime · Your records live on the blockchain forever</div>
           </div>
         </section>
 

@@ -858,7 +858,7 @@ export const CSS = `
 
   @media (min-width: 901px) and (max-width: 1100px) {
     .hfl-nav { padding: 0 32px; }
-    .hfl-hero { padding: 70px 32px 0; gap: 32px; }
+    .hfl-hero { padding: 20px 32px 0; gap: 32px; }
     .hfl-blob-wrap { width: 360px; height: 420px; }
     .hfl-dash-card { width: 290px; }
     .hfl-trust-strip { padding: 18px 32px; }
@@ -868,11 +868,187 @@ export const CSS = `
     .hfl-report { margin-left: 32px; margin-right: 32px; padding: 56px 48px; }
     .hfl-fdd { padding: 0 32px 80px; }
     .hfl-fdd-inner { padding: 56px 48px; grid-template-columns: 1fr; gap: 40px; }
-    .hfl-testimonials, .hfl-cta { padding-left: 32px; padding-right: 32px; }
+    .hfl-testimonials { padding-left: 32px; padding-right: 32px; }
     .hfl-tools { padding: 0 32px 80px; }
     .hfl-tools-inner { padding: 52px 48px; }
     .hfl-data { padding: 0 32px 80px; }
     .hfl-data-inner { padding: 56px 48px; }
     .hfl-footer { padding: 52px 32px 28px; }
+    .hfl-problem { padding: 0 32px 80px; }
+    .hfl-problem-inner { padding: 56px 48px; }
+    .hfl-pricing { padding: 0 32px 80px; }
+    .hfl-pricing-inner { padding: 56px 48px; }
+    .hfl-final-cta { padding: 0 32px 80px; }
+    .hfl-final-cta-inner { padding: 72px 48px; }
+  }
+
+  /* ── SOCIAL PROOF BAR ────────────────────────────────────────────────── */
+  .hfl-proof-bar {
+    margin-top: 70px;
+    background: var(--butter); border-bottom: 1px solid rgba(46,37,64,0.1);
+    padding: 10px 56px; display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-size: 13px; font-weight: 500; color: var(--plum);
+  }
+  .hfl-proof-stars { color: #F4B942; letter-spacing: 1px; }
+  .hfl-proof-sep { color: var(--plum-mid); opacity: 0.4; }
+  .hfl-proof-quote { font-style: italic; color: var(--plum); }
+  .hfl-proof-stat { font-weight: 700; color: var(--plum); }
+
+  /* ── HERO — updated padding + new elements ───────────────────────────── */
+  .hfl-hero { padding: 20px 56px 0; }
+  .hfl-hero-bullets {
+    list-style: none; display: flex; flex-direction: column; gap: 14px;
+    margin-bottom: 40px; max-width: 480px;
+    animation: hfl-fadeUp .5s .2s ease both;
+  }
+  .hfl-hero-bullets li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 17px; color: var(--plum); font-weight: 500; line-height: 1.5;
+  }
+  .hfl-hb-dot {
+    width: 22px; height: 22px; background: var(--sage-light); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--sage); flex-shrink: 0; margin-top: 2px; font-weight: 800;
+  }
+  .hfl-price-anchor {
+    font-size: 13px; font-weight: 700; color: var(--plum-mid);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding: 8px 16px; background: rgba(46,37,64,0.06); border-radius: 100px;
+    border: 1px solid rgba(46,37,64,0.1); white-space: nowrap;
+  }
+  .hfl-demo-link {
+    display: inline-block; font-size: 15px; font-weight: 600; color: var(--plum-mid);
+    text-decoration: none; cursor: pointer; margin-bottom: 32px; margin-top: 4px;
+    border-bottom: 1px solid rgba(46,37,64,0.2);
+    transition: color .15s, border-color .15s;
+    animation: hfl-fadeUp .5s .35s ease both;
+  }
+  .hfl-demo-link:hover { color: var(--plum); border-color: var(--plum); }
+  .hfl-stat-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--sage-light); border: 1px solid var(--sage-mid); border-radius: 100px;
+    padding: 6px 16px; font-size: 13px; font-weight: 700; color: var(--plum);
+  }
+  .hfl-hero-micro-quote {
+    margin-top: 16px; display: flex; flex-direction: column; gap: 4px;
+    max-width: 420px; animation: hfl-fadeUp .5s .45s ease both;
+  }
+  .hfl-hmq-stars { color: #F4B942; font-size: 13px; letter-spacing: 1px; }
+  .hfl-hmq-text { font-size: 13px; color: var(--plum-mid); line-height: 1.55; font-style: italic; }
+  .hfl-hmq-attr { font-size: 12px; font-weight: 700; color: var(--plum); }
+  /* Hero card phase indicator */
+  .hfl-dc-phase-dots { display: flex; justify-content: center; gap: 6px; padding: 10px 0 4px; }
+  .hfl-dc-phase-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(46,37,64,0.12); transition: background .3s; }
+  .hfl-dc-phase-dot-active { background: var(--sage); }
+
+  /* ── PROBLEM SECTION ─────────────────────────────────────────────────── */
+  .hfl-problem { padding: 0 56px 100px; }
+  .hfl-problem-inner { background: #FDF3E3; padding: 72px 80px; border: 1px solid rgba(201,76,46,0.12); }
+  .hfl-problem-text { max-width: 640px; margin-bottom: 56px; }
+  .hfl-problem-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .hfl-problem-card {
+    background: white; padding: 32px 28px;
+    border: 1px solid rgba(201,76,46,0.1);
+    transition: box-shadow .2s;
+  }
+  .hfl-problem-card:hover { box-shadow: 0 8px 32px rgba(201,76,46,0.1); }
+  .hfl-problem-icon { font-size: 32px; margin-bottom: 16px; }
+  .hfl-problem-card-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--plum); margin-bottom: 8px; }
+  .hfl-problem-card-desc { font-size: 14px; color: var(--plum-mid); line-height: 1.65; }
+
+  /* ── PRICING SECTION ─────────────────────────────────────────────────── */
+  .hfl-pricing { padding: 0 56px 100px; }
+  .hfl-pricing-inner { background: #FAF7F2; padding: 72px 80px; border: 1px solid var(--rule); }
+  .hfl-pricing-header { max-width: 540px; margin-bottom: 56px; }
+  .hfl-pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 36px; }
+  .hfl-plan-card {
+    background: white; padding: 36px 32px;
+    border: 1.5px solid var(--rule); position: relative;
+    display: flex; flex-direction: column;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .hfl-plan-card:hover { border-color: var(--sage); box-shadow: 0 8px 32px rgba(122,175,118,0.12); }
+  .hfl-plan-featured { border-color: var(--plum); border-width: 2px; }
+  .hfl-plan-featured:hover { border-color: var(--plum); box-shadow: 0 8px 32px rgba(46,37,64,0.18); }
+  .hfl-plan-badge {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: var(--plum); color: white; font-size: 10px; font-weight: 800;
+    letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 16px; border-radius: 100px;
+    white-space: nowrap;
+  }
+  .hfl-plan-tier { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--plum-mid); margin-bottom: 12px; }
+  .hfl-plan-price { font-family: 'Fraunces', serif; font-size: 52px; font-weight: 900; color: var(--plum); line-height: 1; margin-bottom: 28px; }
+  .hfl-plan-period { font-size: 18px; font-weight: 400; color: var(--plum-mid); }
+  .hfl-plan-features {
+    list-style: none; display: flex; flex-direction: column; gap: 10px;
+    font-size: 14px; line-height: 1.5; flex: 1; margin-bottom: 28px;
+  }
+  .hfl-plan-features li { display: flex; gap: 8px; color: var(--plum); }
+  .hfl-plan-cta {
+    width: 100%; padding: 14px 0; background: var(--sage-light);
+    border: 1.5px solid var(--sage-mid); border-radius: 0; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+    color: var(--plum); transition: background .2s, border-color .2s;
+  }
+  .hfl-plan-cta:hover { background: var(--sage-mid); border-color: var(--sage); }
+  .hfl-plan-featured .hfl-plan-cta { background: var(--plum); color: white; border-color: var(--plum); }
+  .hfl-plan-featured .hfl-plan-cta:hover { background: var(--plum-light); }
+  .hfl-pricing-note { text-align: center; font-size: 14px; color: var(--plum-mid); font-weight: 500; }
+  .hfl-pricing-note a { color: var(--plum); font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(46,37,64,0.3); }
+  .hfl-pricing-note a:hover { border-color: var(--plum); }
+
+  /* ── FINAL CTA ───────────────────────────────────────────────────────── */
+  .hfl-final-cta { padding: 0 56px 100px; }
+  .hfl-final-cta-inner {
+    background: var(--plum); padding: 96px 80px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .hfl-final-cta-inner::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 400px; height: 400px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,76,46,0.25), transparent 70%);
+    pointer-events: none;
+  }
+  .hfl-final-cta-inner::after {
+    content: ''; position: absolute; bottom: -80px; left: -80px;
+    width: 360px; height: 360px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(122,175,118,0.12), transparent 70%);
+    pointer-events: none;
+  }
+  .hfl-final-cta .hfl-kicker { position: relative; }
+  .hfl-final-cta h2 { color: white; margin-bottom: 20px; max-width: 620px; margin-left: auto; margin-right: auto; position: relative; }
+  .hfl-final-cta h2 em { color: var(--sage); }
+  .hfl-final-cta-sub { font-size: 17px; color: rgba(253,252,250,0.65); line-height: 1.7; max-width: 520px; margin: 0 auto 44px; position: relative; }
+  .hfl-final-cta-btn {
+    background: #C94C2E; color: white; padding: 20px 52px; border-radius: 0;
+    font-size: 17px; font-weight: 700; border: none; cursor: pointer;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: background .2s, box-shadow .2s; position: relative;
+  }
+  .hfl-final-cta-btn:hover { background: #B54228; box-shadow: 0 12px 36px rgba(201,76,46,0.4); }
+  .hfl-final-cta-fine { margin-top: 20px; font-size: 12px; color: rgba(253,252,250,0.35); position: relative; }
+
+  /* ── MOBILE — new elements ───────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .hfl-proof-bar { padding: 8px 24px; gap: 8px; flex-wrap: wrap; justify-content: center; font-size: 12px; }
+    .hfl-hero { padding: 16px 24px 48px; }
+    .hfl-hero-bullets li { font-size: 15px; }
+    .hfl-hero-micro-quote { display: none; }
+    .hfl-problem { padding: 0 24px 64px; }
+    .hfl-problem-inner { padding: 40px 28px; }
+    .hfl-problem-cards { grid-template-columns: 1fr; gap: 16px; }
+    .hfl-pricing { padding: 0 24px 64px; }
+    .hfl-pricing-inner { padding: 40px 28px; }
+    .hfl-pricing-grid { grid-template-columns: 1fr; gap: 32px; }
+    .hfl-plan-card { padding: 28px 24px; }
+    .hfl-final-cta { padding: 0 24px 64px; }
+    .hfl-final-cta-inner { padding: 60px 28px; }
+    .hfl-final-cta h2 { font-size: 28px; }
+    .hfl-final-cta-sub { font-size: 15px; }
+    .hfl-final-cta-btn { padding: 16px 32px; font-size: 15px; width: 100%; }
+  }
+  @media (max-width: 480px) {
+    .hfl-proof-bar { font-size: 11px; padding: 8px 16px; }
+    .hfl-proof-quote { display: none; }
   }
 `;
