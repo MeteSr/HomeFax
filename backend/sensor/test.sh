@@ -100,13 +100,21 @@ dfx canister call sensor recordEvent '(
 # ─── Critical events — auto job creation ──────────────────────────────────────
 echo ""
 echo "── [7] recordEvent — water leak CRITICAL (should auto-create pending job) "
-dfx canister call sensor recordEvent '(
+LEAK_EVENT=$(dfx canister call sensor recordEvent '(
   "moen-flo-xyz789",
   variant { WaterLeak },
   8.3,
   "L/min",
   "{\"flowRate\":8.3,\"shutoff\":true}"
-)'
+)')
+echo "$LEAK_EVENT"
+if [ -n "$JOB_ID" ]; then
+  echo "$LEAK_EVENT" | grep -q "jobId = opt" \
+    && echo "  ↳ jobId auto-created for WaterLeak — ✓" \
+    || (echo "  ↳ ❌ Expected jobId to be set for WaterLeak; got: $LEAK_EVENT"; exit 1)
+else
+  echo "  ↳ SKIP jobId assertion — job canister not deployed"
+fi
 
 echo ""
 echo "── [8] recordEvent — low temperature CRITICAL (pipe freeze risk) ────────"
@@ -130,13 +138,21 @@ dfx canister call sensor getPendingAlerts '("PROP_1")'
 # ─── Boundary values ──────────────────────────────────────────────────────────
 echo ""
 echo "── [11] recordEvent — HVAC alert (Critical) ─────────────────────────────"
-dfx canister call sensor recordEvent '(
+HVAC_EVENT=$(dfx canister call sensor recordEvent '(
   "nest-abc123",
   variant { HvacAlert },
   0.0,
   "",
   "{\"code\":\"E4\",\"description\":\"Compressor fault\"}"
-)'
+)')
+echo "$HVAC_EVENT"
+if [ -n "$JOB_ID" ]; then
+  echo "$HVAC_EVENT" | grep -q "jobId = opt" \
+    && echo "  ↳ jobId auto-created for HvacAlert — ✓" \
+    || (echo "  ↳ ❌ Expected jobId to be set for HvacAlert; got: $HVAC_EVENT"; exit 1)
+else
+  echo "  ↳ SKIP jobId assertion — job canister not deployed"
+fi
 
 echo ""
 echo "── [12] getEventsForProperty — limit 5 (pagination) ────────────────────"
