@@ -47,11 +47,6 @@ describe("LandingPage — key sections render", () => {
     expect(steps.length).toBe(4);
   });
 
-  it("renders 4 persona cards", () => {
-    const { container } = renderLanding();
-    const personas = container.querySelectorAll(".hfl-persona");
-    expect(personas.length).toBe(4);
-  });
 });
 
 describe("LandingPage — mobile CSS classes present", () => {

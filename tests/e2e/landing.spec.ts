@@ -14,9 +14,7 @@ test.describe("LandingPage — /", () => {
   });
 
   test("shows current nav links including Pricing", async ({ page }) => {
-    // Nav was redesigned (PR #62): links are now For Homeowners, Service Network,
-    // Report, Sell Smarter, Free Tools, Demo, Pricing
-    await expect(page.locator("nav li a", { hasText: /For Homeowners/i })).toBeVisible();
+    await expect(page.locator("nav li a", { hasText: "Demo" })).toBeVisible();
     await expect(page.locator("nav li a", { hasText: "Pricing" })).toBeVisible();
   });
 
