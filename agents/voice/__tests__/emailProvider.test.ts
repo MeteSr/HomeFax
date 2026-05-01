@@ -310,11 +310,12 @@ describe("RateLimitedEmailProvider — monthly limit (3,000/month)", () => {
       }
     }
 
-    jest.useRealTimers();
-
+    // Stay in the same month so tick() doesn't reset the monthly counter
     await expect(
       limited.send({ to: "u@h.com", subject: "S", html: "<p/>" })
     ).rejects.toBeInstanceOf(EmailRateLimitError);
+
+    jest.useRealTimers();
   });
 
   it("logs a console.warn with upgrade hint when monthly limit is hit", async () => {
