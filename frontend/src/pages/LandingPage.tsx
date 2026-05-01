@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { TrendingUp, CalendarDays, Archive, RefreshCw } from "lucide-react";
+import { TrendingUp, CalendarDays, Archive, Home, Download, Link as LinkIcon, Lock } from "lucide-react";
 import { CSS } from "./landingStyles";
 
 
@@ -120,8 +120,6 @@ export default function LandingPage() {
         <nav className="hfl-nav">
           <a href="/" className="hfl-logo">Home<span>Gentic</span></a>
           <ul className={`hfl-nav-links${menuOpen ? " hfl-menu-open" : ""}`}>
-            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); scrollTo("hfl-features"); }}>For Homeowners</a></li>
-            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); scrollTo("hfl-sell"); }}>Sell Smarter</a></li>
             <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/demo"); }}>Demo</a></li>
             <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/pricing"); }}>Pricing</a></li>
           </ul>
@@ -159,77 +157,12 @@ export default function LandingPage() {
             </ul>
             <div className="hfl-actions">
               <button className="hfl-btn-main" onClick={() => navigate("/login")}>Start my home's record</button>
-              <span className="hfl-price-anchor">From $10/mo</span>
-            </div>
-            <a className="hfl-demo-link" onClick={(e) => { e.preventDefault(); navigate("/demo"); }}>
-              See a sample report →
-            </a>
-            <div className="hfl-hero-trust">
-              <span className="hfl-stat-chip">3,400+ homeowners · 42,000 records verified</span>
-            </div>
-            <div className="hfl-hero-micro-quote">
-              <span className="hfl-hmq-stars">★★★★★</span>
-              <span className="hfl-hmq-text">"Sold $28k over asking — buyers waived the inspection after seeing our HomeGentic Report."</span>
-              <span className="hfl-hmq-attr">— Sarah M. · Austin, TX</span>
+              <button className="hfl-btn-soft" onClick={() => window.open("/sample-report", "_blank", "noopener,noreferrer")}>View Sample Report</button>
             </div>
           </div>
 
           <div className="hfl-hero-right">
-            <div className="hfl-blob-wrap">
-              <div className="hfl-blob-bg" />
-              <div className="hfl-dash-card">
-                <div className="hfl-dc-header">
-                  <div className="hfl-dc-top">
-                    <span className="hfl-dc-title">My Home Dashboard</span>
-                    <span className="hfl-dc-ver">✓ Verified</span>
-                  </div>
-                  <div className="hfl-dc-addr">327 Keech Street, Daytona Beach FL</div>
-                  <div className="hfl-dc-score-row">
-                    <div>
-                      <div className="hfl-dc-score-lbl">HomeGentic Score</div>
-                      <div className="hfl-dc-num">91</div>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div className="hfl-dc-bar-wrap"><div className="hfl-dc-bar" /></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="hfl-dc-body">
-                  <div className="hfl-dc-sec-lbl">Maintenance &amp; Services</div>
-                  <div className="hfl-dc-items">
-                    <div className="hfl-dc-item">
-                      <span className="hfl-dc-item-l"><span>❄️</span> HVAC Service</span>
-                      <span className="hfl-status-done">✓ Logged</span>
-                    </div>
-                    <div className="hfl-dc-item">
-                      <span className="hfl-dc-item-l"><span>🔌</span> Electrical Panel</span>
-                      <span className="hfl-status-ok">✓ Verified</span>
-                    </div>
-                    <div className="hfl-dc-item">
-                      <span className="hfl-dc-item-l"><span>🌿</span> Landscaping</span>
-                      <span className="hfl-status-due">Due Nov 10</span>
-                    </div>
-                  </div>
-                  <div className="hfl-dc-ver-row" key={heroPhase}>
-                    <span style={{ fontSize: 18 }}>{HERO_PHASES[heroPhase].icon}</span>
-                    <span className="hfl-dc-ver-text">
-                      <strong>{HERO_PHASES[heroPhase].label}</strong> — {HERO_PHASES[heroPhase].detail}
-                    </span>
-                  </div>
-                  <div className="hfl-dc-phase-dots">
-                    {HERO_PHASES.map((_, i) => (
-                      <span key={i} className={`hfl-dc-phase-dot${i === heroPhase ? " hfl-dc-phase-dot-active" : ""}`} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="hfl-badge hfl-badge-1">
-                <span className="hfl-badge-icon">🏆</span> Score: 91 · Top 8%
-              </div>
-              <div className="hfl-badge hfl-badge-2">
-                <span className="hfl-badge-icon">⚡</span> 3 agents competing
-              </div>
-            </div>
+            <img src="/hero_home.png" alt="HomeGentic home dashboard" className="hfl-hero-img" />
           </div>
         </section>
 
@@ -238,18 +171,20 @@ export default function LandingPage() {
         <section className="hfl-problem">
           <div className="hfl-problem-inner">
             <div className="hfl-problem-text">
-              <div className="hfl-kicker" style={{ color: "#C94C2E" }}>✦ The Problem</div>
               <h2>Your home's history is<br /><em>scattered and disappearing</em></h2>
               <p className="hfl-sec-sub">Repair receipts in email. Warranties in a drawer. Permit records at the county office. When it's time to sell — or file an insurance claim — that scattered history costs you thousands.</p>
             </div>
             <div className="hfl-problem-cards">
               {[
-                { icon: "📧", title: "Records everywhere", desc: "Invoices in email, permits at city hall, warranties in a junk drawer. No single source of truth." },
-                { icon: "💸", title: "Buyers discount the unknown", desc: "Without documented proof of maintenance, buyers assume the worst and negotiate down — hard." },
-                { icon: "⏳", title: "History lost at every sale", desc: "The next owner starts from zero. Your 12 years of careful maintenance become completely invisible." },
+                { icon: null, img: "/records_everywhere.png", title: "Records everywhere", desc: "Invoices in email, permits at city hall, warranties in a junk drawer. No single source of truth." },
+                { icon: null, img: "/buyers_fear_unknown.png", title: "Buyers discount the unknown", desc: "Without documented proof of maintenance, buyers assume the worst and negotiate down." },
+                { icon: null, img: "/lost_history.png", title: "History lost at every sale", desc: "The next owner starts from zero. Your 12 years of careful maintenance become completely invisible." },
               ].map((p) => (
                 <div key={p.title} className="hfl-problem-card">
-                  <div className="hfl-problem-icon">{p.icon}</div>
+                  {p.img
+                    ? <div className="hfl-problem-icon hfl-problem-icon-img"><img src={p.img} alt={p.title} /></div>
+                    : <div className="hfl-problem-icon">{p.icon}</div>
+                  }
                   <div className="hfl-problem-card-title">{p.title}</div>
                   <div className="hfl-problem-card-desc">{p.desc}</div>
                 </div>
@@ -262,18 +197,19 @@ export default function LandingPage() {
         <section id="hfl-features" className="hfl-how">
           <div className="hfl-section-header">
             <h2>How It Works</h2>
-            <p className="hfl-sec-sub">HomeGentic works across the entire homeownership lifecycle — from move-in to sale day.</p>
           </div>
           <div className="hfl-flow">
             {[
-              { icon: "🏠", num: "01", title: "Set Up Your Home", desc: "Add your property and import existing records. AI agents begin organizing your home's history automatically." },
-              { icon: "🔧", num: "02", title: "Manage & Maintain", desc: "Schedule services with verified providers. Every job is logged, receipted, and stored on your permanent record." },
-              { icon: "📋", num: "03", title: "Generate Your Report", desc: "Your HomeGentic Report is a tamper-proof property biography. Share it with buyers or attach it to any listing." },
-              { icon: "🏆", num: "04", title: "Sell With Confidence", desc: "List with the agent who wins your bid — or go FSBO with our full suite of seller tools. Your home, your terms." },
+              { img: "/setup_your_home.png",        num: "1", title: "Set Up Your Home",       desc: "Add your property and import existing records. AI agents begin organizing your home's history automatically." },
+              { img: "/manage_and_maintain.png",    num: "2", title: "Manage & Maintain",       desc: "Schedule services with verified providers. Every job is logged, receipted, and stored on your permanent record." },
+              { img: "/generate_your_report.png",   num: "3", title: "Generate Your Report",    desc: "Your HomeGentic Report is a tamper-proof property biography. Share it with buyers or attach it to any listing." },
+              { img: "/sell_with_confidence.png",   num: "4", title: "Sell With Confidence",    desc: "List with the agent who wins your bid — or go FSBO with our full suite of seller tools. Your home, your terms." },
             ].map((s) => (
               <div key={s.title} className="hfl-step">
                 <div className="hfl-step-num">{s.num}</div>
-                <div className="hfl-step-icon">{s.icon}</div>
+                <div className="hfl-step-icon">
+                  <img src={s.img} alt={s.title} />
+                </div>
                 <h3>{s.title}</h3>
                 <p>{s.desc}</p>
               </div>
@@ -298,7 +234,6 @@ export default function LandingPage() {
                   onClick={() => setActiveFeature(i)}
                 >
                   <div className="hfl-sc-tab-row">
-                    <span className="hfl-sc-tab-icon">{f.icon}</span>
                     <span className="hfl-sc-tab-title">{f.kicker}</span>
                   </div>
                   {activeFeature === i && (
@@ -327,6 +262,7 @@ export default function LandingPage() {
 
               {/* Visual panel */}
               <div className="hfl-sc-visual" key={`v-${activeFeature}`}>
+                <div className="hfl-sc-vis-inner">
                 {activeFeature === 0 && (
                   <div className="hfl-rec-hdr" style={{ borderRadius: 0 }}>
                     <div className="hfl-rec-hdr-top">
@@ -365,7 +301,8 @@ export default function LandingPage() {
                   </div>
                 )}
 
-                {activeFeature === 1 && (<>
+                {activeFeature === 1 && (
+                  <div style={{ background: "var(--plum)" }}>
                   <div className="hfl-ai-panel-hdr">
                     <div className="hfl-ai-panel-hdr-l">
                       <span style={{ fontSize: 16 }}>🏠</span>
@@ -392,7 +329,8 @@ export default function LandingPage() {
                     <div className="hfl-ai-mic">🎤</div>
                     <span className="hfl-ai-mic-hint">Tap to ask anything…</span>
                   </div>
-                </>)}
+                  </div>
+                )}
 
                 {activeFeature === 2 && (<>
                   <div className="hfl-compete-hdr">
@@ -401,12 +339,14 @@ export default function LandingPage() {
                   </div>
                   <div className="hfl-compete-body">
                     {[
-                      { avi: "👩", name: "Lisa Chen · Keller Williams", detail: "2.4% · Est. net $487k · 18 days", comm: "2.4%", best: true },
-                      { avi: "👨", name: "Marcus Rivera · RE/MAX",      detail: "2.8% · Est. net $481k · 22 days", comm: "2.8%", best: false },
-                      { avi: "👩", name: "Priya Nair · Compass",        detail: "3.0% · Est. net $479k · 25 days", comm: "3.0%", best: false },
+                      { avi: "/female_agent.png",  name: "Lisa Chen · Keller Williams", detail: "2.4% · Est. net $487k · 18 days", comm: "2.4%", best: true },
+                      { avi: "/male_agent.png",    name: "Marcus Rivera · RE/MAX",      detail: "2.8% · Est. net $481k · 22 days", comm: "2.8%", best: false },
+                      { avi: "/male_agent_2.png",  name: "Priya Nair · Compass",        detail: "3.0% · Est. net $479k · 25 days", comm: "3.0%", best: false },
                     ].map((a, i) => (
                       <div key={i} className={`hfl-compete-agent${a.best ? " hfl-compete-agent-featured" : ""}`}>
-                        <div className="hfl-compete-avi">{a.avi}</div>
+                        <div className="hfl-compete-avi">
+                          <img src={a.avi} alt={a.name} />
+                        </div>
                         <div className="hfl-compete-info">
                           <div className="hfl-compete-name">{a.name}</div>
                           <div className="hfl-compete-detail">{a.detail}</div>
@@ -461,6 +401,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </>)}
+                </div>
 
               </div>
             </div>
@@ -479,7 +420,7 @@ export default function LandingPage() {
             </p>
             <div className="hfl-rc-actions">
               <button className="hfl-rc-btn" onClick={() => navigate("/login")}>Generate My HomeGentic</button>
-              <button className="hfl-rc-ghost" onClick={() => window.open("/sample-report", "_blank", "noopener,noreferrer")}>View Sample Report</button>
+              <button className="hfl-btn-soft" onClick={() => window.open("/sample-report", "_blank", "noopener,noreferrer")}>View Sample Report</button>
             </div>
           </div>
           <div>
@@ -518,7 +459,6 @@ export default function LandingPage() {
         <section className="hfl-fdd">
           <div className="hfl-fdd-inner">
             <div className="hfl-fdd-header">
-              <div className="hfl-kicker">✦ Feature Deep Dive</div>
               <h2>Built for the moments<br /><em>that actually matter</em></h2>
               <p>Most home apps give you a checklist. HomeGentic gives you documentation that works for you at resale, during insurance claims, and before emergencies happen.</p>
             </div>
@@ -527,13 +467,12 @@ export default function LandingPage() {
                 { icon: TrendingUp,   title: "Market Intelligence",         tagline: "Know which renovations actually pay off in your zip code.",       desc: "Uses remodeling data to rank projects by ROI for your area. Compares your score to similar nearby properties so you see exactly where you stand." },
                   { icon: CalendarDays, title: "5-Year Maintenance Calendar", tagline: "Budget for the future instead of being blindsided.",             desc: "Based on your home's system ages and service history, HomeGentic generates a personalized 5-year schedule with projected costs for every task." },
                 { icon: Archive,      title: "Warranty Wallet",             tagline: "Every warranty, receipt, and manual — attached to your home.",   desc: "Store appliance warranties, installation receipts, and product manuals tied to the exact job they belong to. Linked to your blockchain record, not buried in your email." },
-                { icon: RefreshCw,    title: "Recurring Services",          tagline: "Never miss the HVAC tune-up that prevents a $12k failure.",      desc: "Log ongoing service contracts — HVAC, pest control, landscaping — and HomeGentic tracks every visit, sends reminders, and builds a documented history automatically." },
               ] as const).map((f) => {
                 const Icon = f.icon;
                 return (
                   <div key={f.title} className="hfl-fdd-row">
                     <div className="hfl-fdd-icon-wrap">
-                      <Icon size={18} color="var(--sage)" />
+                      <Icon size={18} color="white" />
                     </div>
                     <div className="hfl-fdd-text">
                       <div className="hfl-fdd-title">{f.title}</div>
@@ -549,51 +488,17 @@ export default function LandingPage() {
 
         {/* ── Testimonials ────────────────────────────────────────────────── */}
         <section className="hfl-testimonials">
-          <div className="hfl-featured-quote">
-            <p className="hfl-featured-quote-text">
-              "We got <em>$28k over asking</em>. Our buyers said the HomeGentic Report was
-              the reason they felt comfortable waiving the inspection contingency. It's a game changer."
-            </p>
-            <div className="hfl-featured-author">
-              <div className="hfl-featured-avi">👩</div>
-              <div>
-                <div className="hfl-featured-name">Sarah M.</div>
-                <div className="hfl-featured-role">Seller · Austin, TX</div>
-              </div>
-              <div className="hfl-featured-result">
-                <div className="hfl-featured-result-num">+$28k</div>
-                <div className="hfl-featured-result-lbl">over asking price</div>
-              </div>
+          <div className="hfl-test-layout">
+            <div className="hfl-test-img">
+              <img src="/couple_receiving_report_animated.jpg" alt="Couple reviewing their HomeGentic report" />
             </div>
-          </div>
-
-          <div className="hfl-test-grid">
-            {[
-              {
-                quote: "I posted my listing intent and got five agent proposals in 48 hours. Ended up saving $11k in commission compared to what I would have paid without negotiating.",
-                name: "Marcus T.", role: "Seller · Denver, CO", avi: "hfl-avi-2", emoji: "👨",
-              },
-              {
-                quote: "The AI agent reminded me my HVAC was overdue, booked a verified tech, and logged it to my HomeGentic automatically. When I sold six months later, it was right there in the report.",
-                name: "Priya K.", role: "Homeowner · Seattle, WA", avi: "hfl-avi-3", emoji: "👩",
-              },
-              {
-                quote: "Our inspector said our HomeGentic Score was the highest he'd seen. Buyers skipped the inspection entirely. Closed in 11 days.",
-                name: "James L.", role: "Seller · Tampa, FL", avi: "hfl-avi-1", emoji: "👨",
-              },
-            ].map((t) => (
-              <div key={t.name} className="hfl-test-card">
-                <div className="hfl-stars">★★★★★</div>
-                <blockquote>"{t.quote}"</blockquote>
-                <div className="hfl-test-author">
-                  <div className={`hfl-avi ${t.avi}`}>{t.emoji}</div>
-                  <div>
-                    <div className="hfl-test-name">{t.name}</div>
-                    <div className="hfl-test-role">{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div className="hfl-test-content">
+              <p className="hfl-featured-quote-text">
+                "We got <em>$28k over asking</em>. Our buyers said the HomeGentic Report was
+                the reason they felt comfortable waiving the inspection contingency. It's a game changer."
+              </p>
+              <img src="/joy_laurelle_sig.png" alt="Signature" className="hfl-test-sig" />
+            </div>
           </div>
         </section>
 
@@ -603,7 +508,7 @@ export default function LandingPage() {
             <div className="hfl-pricing-header">
               <div className="hfl-kicker">✦ Simple Pricing</div>
               <h2>Start for $10/mo.<br /><em>Your home earns it back.</em></h2>
-              <p className="hfl-sec-sub">A verified maintenance record pays for itself the first time a buyer negotiates — or doesn't. Pick the plan that fits your homeownership stage.</p>
+              <p className="hfl-sec-sub">A verified maintenance record pays for itself the first time a buyer negotiates. Pick the plan that fits your homeownership stage.</p>
             </div>
             <div className="hfl-pricing-grid">
               {([
@@ -656,13 +561,13 @@ export default function LandingPage() {
             </div>
             <div className="hfl-data-cards">
               {[
-                { icon: "🏠", title: "Your home, your history", body: "Every repair, permit, and inspection you log is yours to keep — whether you stay with HomeGentic for one year or ten." },
-                { icon: "📥", title: "Download anytime",        body: "Export your full record as a PDF or raw data file whenever you want. No hoops, no waiting, no fees." },
-                { icon: "🔗", title: "Survives us",             body: "Even if HomeGentic ever closed tomorrow, your records would still be readable by anyone with the address. That's the promise." },
-                { icon: "🔐", title: "Private by default",      body: "Only you decide who sees what. Sharing a HomeGentic Report with a buyer is your choice — nothing is public until you say so." },
+                { Icon: Home,     title: "Your home, your history", body: "Every repair, permit, and inspection you log is yours to keep — whether you stay with HomeGentic for one year or ten." },
+                { Icon: Download, title: "Download anytime",        body: "Export your full record as a PDF or raw data file whenever you want. No hoops, no waiting, no fees." },
+                { Icon: LinkIcon,  title: "Survives us",             body: "Even if HomeGentic ever closed tomorrow, your records would still be readable by anyone with the address. That's the promise." },
+                { Icon: Lock,     title: "Private by default",      body: "Only you decide who sees what. Sharing a HomeGentic Report with a buyer is your choice — nothing is public until you say so." },
               ].map((card) => (
                 <div key={card.title} className="hfl-data-card">
-                  <div className="hfl-data-card-icon">{card.icon}</div>
+                  <div className="hfl-data-card-icon"><card.Icon size={22} strokeWidth={1.5} /></div>
                   <div>
                     <div className="hfl-data-card-title">{card.title}</div>
                     <div className="hfl-data-card-body">{card.body}</div>
