@@ -82,9 +82,9 @@ test.describe("DashboardPage — /dashboard", () => {
   });
 
   test("shows Verified Jobs stat equal to 3", async ({ page }) => {
-    // isAllView (2 properties) → aggregate midsection uses "Total Verified Jobs"
-    // 3 of the 4 injected jobs are verified (all on property 1)
-    await expect(page.getByText("Total Verified Jobs").locator("..").getByText("3")).toBeVisible();
+    // propertyInitialized auto-selects property 1 → isAllView=false → single-property stats render.
+    // exact:true avoids a strict-mode violation from the "↑ 3 this month" sub-label.
+    await expect(page.getByText("Verified Jobs").locator("..").getByText("3", { exact: true })).toBeVisible();
   });
 
   test("shows Total Value stat", async ({ page }) => {
