@@ -88,12 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const principal = await getPrincipal();
     setAuthenticated(principal);
+    paymentService.getMySubscription().then((sub) => setTier(sub.tier)).catch((e) => console.error("[AuthContext] subscription fetch failed:", e));
     try {
       const profile = await authService.getProfile();
       setLastLoginAt(profile.lastLoggedIn);
       setProfile(profile);
       authService.recordLogin().catch((err) => console.error("[AuthContext] recordLogin failed:", err));
-      paymentService.getMySubscription().then((sub) => setTier(sub.tier)).catch((e) => console.error("[AuthContext] subscription fetch failed:", e)); // fire-and-forget; tier stays null until resolved
       if (profile.role === "Contractor") {
         navigate("/contractor-dashboard");
       } else {
@@ -130,12 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const devLogin = async () => {
     const principal = await loginWithLocalIdentity();
     setAuthenticated(principal);
+    paymentService.getMySubscription().then((sub) => setTier(sub.tier)).catch((e) => console.error("[AuthContext] subscription fetch failed:", e));
     try {
       const profile = await authService.getProfile();
       setLastLoginAt(profile.lastLoggedIn);
       setProfile(profile);
       authService.recordLogin().catch((err) => console.error("[AuthContext] recordLogin failed:", err));
-      paymentService.getMySubscription().then((sub) => setTier(sub.tier)).catch((e) => console.error("[AuthContext] subscription fetch failed:", e)); // fire-and-forget; tier stays null until resolved
       if (profile.role === "Contractor") {
         navigate("/contractor-dashboard");
       } else {

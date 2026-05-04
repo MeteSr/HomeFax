@@ -20,13 +20,13 @@ export default defineConfig({
   ],
 
   // Start the Vite dev server before the tests run.
-  // In CI, Playwright owns the server lifecycle — reuseExistingServer: true
-  // prevents the port-already-in-use error when the workflow previously had
-  // a manual `npm run dev &` step. Locally, false forces a fresh server.
+  // Locally: reuse whatever is already running (make frontend in another terminal).
+  //   Attempting to start a second server on port 3000 causes EADDRINUSE → all tests fail.
+  // CI: always start fresh — no prior server is running.
   webServer: {
     command: "npm run frontend",
     url: "http://localhost:3000",
-    reuseExistingServer: !!process.env.CI,
+    reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },
 });

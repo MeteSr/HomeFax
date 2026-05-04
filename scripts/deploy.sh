@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.4.15"
+DEPLOY_SCRIPT_VERSION="1.4.16"
 ENV=${1:-local}
 
 echo "============================================"
@@ -277,20 +277,24 @@ if [ "$ENV" = "local" ]; then
   # PocketIC starts with 0 cycles — mint enough for all 18 canisters (2T each)
   # plus generous headroom for storage and inter-canister calls.
   echo "▶ Minting local cycles..."
-  icp cycles mint 100000000000000 -e local >/dev/null 2>&1 || true
-  echo "  ✓ Cycles minted (100T)"
+  icp cycles mint 500000000000000 -e local >/dev/null 2>&1 || true
+  echo "  ✓ Cycles minted (500T)"
 
   # ── Local: all-in-one icp deploy ────────────────────────────────────────────
   echo ""
   echo "▶ Deploying all canisters (local)..."
+  _DEPLOY_TOTAL_START=$(date +%s)
+  declare -A _DEPLOY_TIMES
   for canister in "${CANISTERS[@]}"; do
     echo -n "  $canister... "
+    _T0=$(date +%s)
     if [ "$canister" = "auth" ]; then
       if icp deploy auth \
           --args "(principal \"$DEPLOY_PRINCIPAL\")" \
           -e "$ENV" \
           >"$LOG_DIR/auth.deploy.log" 2>&1; then
-        echo "✓"
+        _DEPLOY_TIMES[$canister]=$(( $(date +%s) - _T0 ))
+        echo "✓ (${_DEPLOY_TIMES[$canister]}s)"
       else
         echo "FAILED"
         echo ""
@@ -301,7 +305,8 @@ if [ "$ENV" = "local" ]; then
       fi
     else
       if icp deploy "$canister" -e "$ENV" >"$LOG_DIR/$canister.deploy.log" 2>&1; then
-        echo "✓"
+        _DEPLOY_TIMES[$canister]=$(( $(date +%s) - _T0 ))
+        echo "✓ (${_DEPLOY_TIMES[$canister]}s)"
       else
         echo "FAILED"
         echo ""
@@ -312,6 +317,10 @@ if [ "$ENV" = "local" ]; then
       fi
     fi
   done
+  _DEPLOY_TOTAL=$(( $(date +%s) - _DEPLOY_TOTAL_START ))
+  echo ""
+  echo "  Slowest: $(for c in "${!_DEPLOY_TIMES[@]}"; do echo "${_DEPLOY_TIMES[$c]} $c"; done | sort -rn | head -3 | awk '{print $2 "(" $1 "s)"}'| tr '\n' '  ')"
+  echo "  Total deploy time: ${_DEPLOY_TOTAL}s"
 
 else
   # ── Non-local: three-phase deploy (create → build → install) ────────────────

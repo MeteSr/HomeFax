@@ -83,14 +83,15 @@ describe("DashboardPage — KPI stats grid", () => {
     expect(fiveCol).toBeUndefined();
   });
 
-  it("uses full 5-column grid on desktop", async () => {
+  it("uses the score-gauge/stats 2-column grid on desktop", async () => {
     const { container } = await renderDashboard(1280);
     const allDivs = Array.from(container.querySelectorAll("[style]")) as HTMLElement[];
     expect(allDivs.length).toBeGreaterThan(0);
-    const fiveCol = allDivs.find((el) =>
-      el.style.gridTemplateColumns?.replace(/\s/g, "").includes("repeat(5,1fr)")
+    // Midsection redesign: gauge column (200px) + stats column (1fr)
+    const twoCol = allDivs.find((el) =>
+      el.style.gridTemplateColumns?.replace(/\s/g, "").includes("200px1fr")
     );
-    expect(fiveCol).toBeDefined();
+    expect(twoCol).toBeDefined();
   });
 });
 

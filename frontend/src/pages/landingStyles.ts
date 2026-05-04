@@ -215,9 +215,9 @@ export const CSS = `
   .hfl-trust-stars { color: #F4B942; letter-spacing: 1px; }
 
   /* ── HOW IT WORKS ─────────────────────────────────────────────────────── */
-  .hfl-how { padding: 56px 56px 100px; }
+  .hfl-how { padding: 9px 56px 100px; display: flex; flex-direction: column; align-items: center; }
   .hfl-section-header { max-width: 600px; margin-bottom: 72px; }
-  .hfl-how > .hfl-section-header { padding-left: 80px; }
+  .hfl-how > .hfl-section-header { padding-left: 0; text-align: center; margin-left: auto; margin-right: auto; }
   .hfl-kicker {
     font-size: 12px; font-weight: 700; color: var(--sage);
     letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
@@ -229,15 +229,20 @@ export const CSS = `
   }
   .hfl h2 em { font-style: italic; font-weight: 300; color: var(--sage); }
   .hfl-sec-sub { font-size: 17px; color: var(--plum-mid); line-height: 1.7; }
-  .hfl-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
-  .hfl-step { text-align: center; position: relative; z-index: 1; padding: 0 20px; }
+  .hfl-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 24px; position: relative; width: 100%; }
+  .hfl-flow::before {
+    content: ''; position: absolute;
+    top: 110px; left: 12.5%; right: 12.5%;
+    height: 2px; background: var(--sage); z-index: 0;
+  }
+  .hfl-step { text-align: center; position: relative; z-index: 1; padding: 0 8px; }
   .hfl-step-num {
-    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-    font-size: 10px; font-weight: 800; letter-spacing: 1px; color: white;
-    background: var(--sage); border-radius: 100px; padding: 2px 8px; z-index: 2;
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; font-weight: 800; letter-spacing: 1px; color: white;
+    background: var(--sage); border-radius: 100px; padding: 4px 12px; z-index: 2;
   }
   .hfl-step-icon {
-    width: 140px; height: 140px; margin: 0 auto 24px;
+    width: 220px; height: 220px; margin: 0 auto 20px;
     position: relative; z-index: 1;
   }
   .hfl-step-icon img {
@@ -483,27 +488,35 @@ export const CSS = `
 
   /* ── TESTIMONIALS ─────────────────────────────────────────────────────── */
   .hfl-testimonials { padding: 0 56px 100px; }
-  .hfl-testimonials-header { text-align: center; margin-bottom: 48px; }
-  .hfl-testimonials-header h2 { margin-bottom: 12px; }
-  .hfl-testimonials-header p { font-size: 17px; color: var(--plum-mid); }
-  .hfl-test-layout {
-    display: grid; grid-template-columns: 520px 1fr; gap: 72px; align-items: center;
+  .hfl-tcard {
+    display: flex; align-items: stretch; min-height: 480px;
+    border: 1px solid var(--rule); overflow: hidden; background: white;
   }
-  .hfl-test-img {
-    overflow: hidden; border: 1px solid var(--rule);
+  .hfl-tcard-img { flex: 0 0 60%; }
+  .hfl-tcard-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hfl-tcard-body {
+    flex: 1; padding: 52px 48px; display: flex; flex-direction: column; justify-content: center;
   }
-  .hfl-test-img img {
-    width: 100%; height: auto; display: block; max-height: 520px; object-fit: cover;
+  .hfl-tcard-openquote {
+    font-family: 'Fraunces', serif; font-size: 88px; line-height: 0.65;
+    color: var(--sage-mid); margin-bottom: 20px; font-weight: 900;
   }
-  .hfl-test-content {
-    display: flex; flex-direction: column; justify-content: center;
-    position: relative;
+  .hfl-tcard-headline {
+    font-family: 'Fraunces', serif; font-size: clamp(26px, 2.8vw, 36px); font-weight: 900;
+    color: var(--plum); line-height: 1.15; margin-bottom: 18px;
   }
-  .hfl-test-content .hfl-featured-quote-text { position: relative; }
-  .hfl-test-sig {
-    display: block; width: 100%; max-width: 420px; margin-top: 24px;
-    opacity: 0.85;
+  .hfl-tcard-green { color: var(--sage); }
+  .hfl-tcard-text { font-size: 15px; color: var(--plum-mid); line-height: 1.75; margin-bottom: 28px; }
+  .hfl-tcard-meta { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .hfl-tcard-stars { color: #F4B942; font-size: 17px; letter-spacing: 2px; }
+  .hfl-tcard-verified {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--sage); border: 1px solid var(--sage-mid); padding: 3px 9px;
   }
+  .hfl-tcard-author { display: flex; align-items: center; gap: 12px; }
+  .hfl-tcard-name { font-size: 14px; font-weight: 700; color: var(--plum); }
+  .hfl-tcard-divider { width: 1px; height: 14px; background: var(--rule); flex-shrink: 0; }
+  .hfl-tcard-location { font-size: 13px; color: var(--plum-mid); }
   .hfl-featured-quote {
     background: linear-gradient(135deg, var(--blush), var(--butter)); padding: 52px 60px;
     margin-bottom: 22px; position: relative; overflow: hidden;
@@ -651,7 +664,7 @@ export const CSS = `
   }
   .hfl-sc-nav-label {
     font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
-    color: rgba(253,252,250,0.25); padding: 0 12px; margin-bottom: 12px;
+    color: var(--sage); padding: 0 12px; margin-bottom: 12px;
   }
   .hfl-sc-tab {
     width: 100%; background: none; border: none; cursor: pointer; text-align: left;
@@ -723,6 +736,14 @@ export const CSS = `
   .hfl-sc-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(122,175,118,0.3); }
   /* Slide-in animation */
   .hfl-sc-slide { animation: hfl-sc-in .35s ease both; }
+  .hfl-sc-ai-row {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 28px;
+  }
+  .hfl-sc-ai-row .hfl-sc-bullets { margin-bottom: 0; flex: 1; }
+  .hfl-sc-ai-buddy {
+    width: 130px; height: auto; flex-shrink: 0;
+    mix-blend-mode: lighten; opacity: 0.9;
+  }
   @keyframes hfl-sc-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   /* Visual column */
   .hfl-sc-visual {
@@ -820,11 +841,10 @@ export const CSS = `
     .hfl-metrics { grid-template-columns: 1fr 1fr; padding: 44px 24px; gap: 16px; }
     .hfl-metric-num { font-size: 38px; }
 
-    .hfl-how { padding: 64px 24px; }
+    .hfl-how { padding: 32px 24px 64px; }
     .hfl-section-header { margin-bottom: 48px; }
-    .hfl-flow { grid-template-columns: 1fr 1fr; gap: 36px; }
     .hfl-flow::before { display: none; }
-    .hfl-step-icon { width: 80px; height: 80px; font-size: 28px; }
+    .hfl-step-icon { width: 160px; height: 160px; font-size: 28px; }
 
     .hfl-feat { grid-template-columns: 1fr; padding: 64px 24px; gap: 40px; }
     .hfl-feat-2 .hfl-feat-text { order: 0; }
@@ -838,7 +858,9 @@ export const CSS = `
     .hfl-fdd-inner { padding: 40px 28px; grid-template-columns: 1fr; gap: 36px; }
     .hfl-fdd-row:last-child { border-bottom: 1px solid rgba(253,252,250,0.08); }
     .hfl-testimonials { padding: 0 24px 64px; }
-    .hfl-test-layout { grid-template-columns: 1fr; gap: 32px; }
+    .hfl-tcard { flex-direction: column; }
+    .hfl-tcard-img { flex: none; width: 100%; max-height: 320px; }
+    .hfl-tcard-body { padding: 36px 28px; }
     .hfl-featured-quote { padding: 36px 28px; }
     .hfl-featured-result { display: none; }
     .hfl-test-grid { grid-template-columns: 1fr; }
@@ -886,19 +908,21 @@ export const CSS = `
     .hfl-dash-card { width: 290px; }
     .hfl-trust-strip { padding: 18px 32px; }
     .hfl-metrics { padding: 56px 32px; }
-    .hfl-how { padding: 80px 32px; }
+    .hfl-how { padding: 40px 32px 80px; }
     .hfl-feat { padding: 72px 32px; gap: 48px; }
     .hfl-report { padding: 0 32px 80px; }
     .hfl-fdd { padding: 0 32px 80px; }
     .hfl-fdd-inner { padding: 56px 48px; grid-template-columns: 1fr; gap: 40px; }
     .hfl-testimonials { padding-left: 32px; padding-right: 32px; }
+    .hfl-tcard-img { flex: 0 0 50%; }
     .hfl-tools { padding: 0 32px 80px; }
     .hfl-tools-inner { padding: 52px 48px; }
     .hfl-data { padding: 0 32px 80px; }
     .hfl-data-inner { padding: 56px 48px; }
     .hfl-footer { padding: 52px 32px 28px; }
     .hfl-problem { padding: 0 32px 80px; }
-    .hfl-problem-inner { padding: 56px 48px; }
+    .hfl-problem-img { flex: 0 0 44%; }
+    .hfl-problem-text { padding: 48px 40px; }
     .hfl-pricing { padding: 0 32px 80px; }
     .hfl-pricing-inner { padding: 56px 48px; }
     .hfl-final-cta { padding: 0 32px 80px; }
@@ -965,21 +989,11 @@ export const CSS = `
   .hfl-dc-phase-dot-active { background: var(--sage); }
 
   /* ── PROBLEM SECTION ─────────────────────────────────────────────────── */
-  .hfl-problem { padding: 0 56px 100px; }
-  .hfl-problem-inner { background: #FAF7F2; padding: 72px 80px; border: 1px solid var(--rule); }
-  .hfl-problem-text { max-width: 640px; margin-bottom: 56px; }
-  .hfl-problem-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-  .hfl-problem-card {
-    background: white; padding: 32px 28px;
-    border: 1px solid rgba(201,76,46,0.1);
-    transition: box-shadow .2s;
-  }
-  .hfl-problem-card:hover { box-shadow: 0 8px 32px rgba(201,76,46,0.1); }
-  .hfl-problem-icon { font-size: 32px; margin-bottom: 16px; }
-  .hfl-problem-icon-img { width: 100%; margin-bottom: 16px; }
-  .hfl-problem-icon-img img { width: 100%; height: auto; display: block; }
-  .hfl-problem-card-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--plum); margin-bottom: 8px; }
-  .hfl-problem-card-desc { font-size: 14px; color: var(--plum-mid); line-height: 1.65; }
+  .hfl-problem { padding: 0 56px 48px; }
+  .hfl-problem-inner { background: white; border: 1px solid var(--rule); overflow: hidden; display: flex; align-items: stretch; min-height: 480px; }
+  .hfl-problem-img { flex: 0 0 40%; overflow: hidden; }
+  .hfl-problem-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hfl-problem-text { flex: 1; padding: 52px 48px; display: flex; flex-direction: column; justify-content: center; }
 
   /* ── PRICING SECTION ─────────────────────────────────────────────────── */
   .hfl-pricing { padding: 0 56px 100px; }
@@ -1060,8 +1074,9 @@ export const CSS = `
     .hfl-hero-bullets li { font-size: 15px; }
     .hfl-hero-micro-quote { display: none; }
     .hfl-problem { padding: 0 24px 64px; }
-    .hfl-problem-inner { padding: 40px 28px; }
-    .hfl-problem-cards { grid-template-columns: 1fr; gap: 16px; }
+    .hfl-problem-inner { flex-direction: column; }
+    .hfl-problem-img { flex: none; width: 100%; max-height: 320px; }
+    .hfl-problem-text { padding: 36px 28px; }
     .hfl-pricing { padding: 0 24px 64px; }
     .hfl-pricing-inner { padding: 40px 28px; }
     .hfl-pricing-grid { grid-template-columns: 1fr; gap: 32px; }

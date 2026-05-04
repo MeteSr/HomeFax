@@ -9,7 +9,6 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [activeFeature, setActiveFeature] = React.useState(0);
-  const [showcasePaused, setShowcasePaused] = React.useState(false);
   const [heroPhase, setHeroPhase] = React.useState(0);
 
   const HERO_PHASES = [
@@ -74,12 +73,6 @@ export default function LandingPage() {
       document.getElementById("hf-landing-fonts")?.remove();
     };
   }, []);
-
-  useEffect(() => {
-    if (showcasePaused) return;
-    const t = setInterval(() => setActiveFeature((p) => (p + 1) % FEATURES.length), 8000);
-    return () => clearInterval(t);
-  }, [showcasePaused, FEATURES.length]);
 
   useEffect(() => {
     const t = setInterval(() => setHeroPhase((p) => (p + 1) % 3), 4000);
@@ -170,25 +163,12 @@ export default function LandingPage() {
         {/* ── Problem ─────────────────────────────────────────────────────── */}
         <section className="hfl-problem">
           <div className="hfl-problem-inner">
+            <div className="hfl-problem-img">
+              <img src="/records_everywhere.png" alt="Records scattered everywhere" />
+            </div>
             <div className="hfl-problem-text">
               <h2>Your home's history is<br /><em>scattered and disappearing</em></h2>
               <p className="hfl-sec-sub">Repair receipts in email. Warranties in a drawer. Permit records at the county office. When it's time to sell — or file an insurance claim — that scattered history costs you thousands.</p>
-            </div>
-            <div className="hfl-problem-cards">
-              {[
-                { icon: null, img: "/records_everywhere.png", title: "Records everywhere", desc: "Invoices in email, permits at city hall, warranties in a junk drawer. No single source of truth." },
-                { icon: null, img: "/buyers_fear_unknown.png", title: "Buyers discount the unknown", desc: "Without documented proof of maintenance, buyers assume the worst and negotiate down." },
-                { icon: null, img: "/lost_history.png", title: "History lost at every sale", desc: "The next owner starts from zero. Your 12 years of careful maintenance become completely invisible." },
-              ].map((p) => (
-                <div key={p.title} className="hfl-problem-card">
-                  {p.img
-                    ? <div className="hfl-problem-icon hfl-problem-icon-img"><img src={p.img} alt={p.title} /></div>
-                    : <div className="hfl-problem-icon">{p.icon}</div>
-                  }
-                  <div className="hfl-problem-card-title">{p.title}</div>
-                  <div className="hfl-problem-card-desc">{p.desc}</div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
@@ -219,11 +199,7 @@ export default function LandingPage() {
 
         {/* ── Feature Showcase ────────────────────────────────────────────── */}
         <section id="hfl-sell" className="hfl-showcase">
-          <div
-            className="hfl-showcase-inner"
-            onMouseEnter={() => setShowcasePaused(true)}
-            onMouseLeave={() => setShowcasePaused(false)}
-          >
+          <div className="hfl-showcase-inner">
             {/* Tab nav */}
             <div className="hfl-sc-nav">
               <div className="hfl-sc-nav-label">Features</div>
@@ -236,11 +212,6 @@ export default function LandingPage() {
                   <div className="hfl-sc-tab-row">
                     <span className="hfl-sc-tab-title">{f.kicker}</span>
                   </div>
-                  {activeFeature === i && (
-                    <div className="hfl-sc-progress-track">
-                      <div className="hfl-sc-progress-bar" key={`${i}-${showcasePaused}`} style={{ animationPlayState: showcasePaused ? "paused" : "running" }} />
-                    </div>
-                  )}
                 </button>
               ))}
             </div>
@@ -250,11 +221,22 @@ export default function LandingPage() {
               <div className="hfl-sc-slide" key={activeFeature}>
                 <div className="hfl-sc-heading">{FEATURES[activeFeature].heading}</div>
                 <p className="hfl-sc-desc">{FEATURES[activeFeature].desc}</p>
-                <ul className="hfl-sc-bullets">
-                  {FEATURES[activeFeature].bullets.map((b) => (
-                    <li key={b}><span className="hfl-sc-bullet-dot">✓</span>{b}</li>
-                  ))}
-                </ul>
+                {activeFeature === 1 ? (
+                  <div className="hfl-sc-ai-row">
+                    <ul className="hfl-sc-bullets">
+                      {FEATURES[activeFeature].bullets.map((b) => (
+                        <li key={b}><span className="hfl-sc-bullet-dot">✓</span>{b}</li>
+                      ))}
+                    </ul>
+                    <img src="/ai_buddy.png" alt="HomeGentic AI" className="hfl-sc-ai-buddy" />
+                  </div>
+                ) : (
+                  <ul className="hfl-sc-bullets">
+                    {FEATURES[activeFeature].bullets.map((b) => (
+                      <li key={b}><span className="hfl-sc-bullet-dot">✓</span>{b}</li>
+                    ))}
+                  </ul>
+                )}
                 <button className="hfl-sc-cta" onClick={() => navigate("/login")}>
                   {FEATURES[activeFeature].cta}
                 </button>
@@ -476,7 +458,6 @@ export default function LandingPage() {
                     </div>
                     <div className="hfl-fdd-text">
                       <div className="hfl-fdd-title">{f.title}</div>
-                      <div className="hfl-fdd-tagline">{f.tagline}</div>
                       <div className="hfl-fdd-desc">{f.desc}</div>
                     </div>
                   </div>
@@ -488,16 +469,23 @@ export default function LandingPage() {
 
         {/* ── Testimonials ────────────────────────────────────────────────── */}
         <section className="hfl-testimonials">
-          <div className="hfl-test-layout">
-            <div className="hfl-test-img">
-              <img src="/couple_receiving_report_animated.jpg" alt="Couple reviewing their HomeGentic report" />
+          <div className="hfl-tcard">
+            <div className="hfl-tcard-img">
+              <img src="/testimonial_image.png" alt="Homeowners celebrating their sale" />
             </div>
-            <div className="hfl-test-content">
-              <p className="hfl-featured-quote-text">
-                "We got <em>$28k over asking</em>. Our buyers said the HomeGentic Report was
-                the reason they felt comfortable waiving the inspection contingency. It's a game changer."
-              </p>
-              <img src="/joy_laurelle_sig.png" alt="Signature" className="hfl-test-sig" />
+            <div className="hfl-tcard-body">
+              <div className="hfl-tcard-openquote">"</div>
+              <div className="hfl-tcard-headline">We got <span className="hfl-tcard-green">$7K</span><br />over asking.</div>
+              <p className="hfl-tcard-text">Our buyers said the HomeGentic Report was the reason they felt comfortable waiving the inspection contingency. It's a game changer."</p>
+              <div className="hfl-tcard-meta">
+                <span className="hfl-tcard-stars">★★★★★</span>
+                <span className="hfl-tcard-verified">✓ VERIFIED SELLER</span>
+              </div>
+              <div className="hfl-tcard-author">
+                <span className="hfl-tcard-name">Micah R.</span>
+                <span className="hfl-tcard-divider" />
+                <span className="hfl-tcard-location">Winter Park, FL</span>
+              </div>
             </div>
           </div>
         </section>
@@ -506,8 +494,7 @@ export default function LandingPage() {
         <section className="hfl-pricing">
           <div className="hfl-pricing-inner">
             <div className="hfl-pricing-header">
-              <div className="hfl-kicker">✦ Simple Pricing</div>
-              <h2>Start for $10/mo.<br /><em>Your home earns it back.</em></h2>
+<h2>Start for $10/mo.<br /><em>Your home earns it back.</em></h2>
               <p className="hfl-sec-sub">A verified maintenance record pays for itself the first time a buyer negotiates. Pick the plan that fits your homeownership stage.</p>
             </div>
             <div className="hfl-pricing-grid">

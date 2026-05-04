@@ -89,9 +89,6 @@ export default function PricingPage() {
 
         {/* Title */}
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: COLORS.butter, color: COLORS.plum, padding: "5px 16px", borderRadius: 100, fontSize: "0.75rem", fontWeight: 600, marginBottom: "1rem", border: `1px solid rgba(46,37,64,0.1)` }}>
-            Pricing
-          </div>
           <h1 style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3rem)", lineHeight: 1, color: UI.ink, marginBottom: "1rem" }}>
             Simple, transparent pricing
           </h1>
