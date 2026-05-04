@@ -100,8 +100,17 @@ function fromPhoto(raw: any): Photo {
 
 // Max long-edge dimension before resizing. Keeps file sizes well under the
 // 2 MB ICP ingress limit while retaining enough detail for construction photos.
-const MAX_DIMENSION = 1920;
-const JPEG_QUALITY  = 0.82;
+const MAX_DIMENSION  = 1920;
+const JPEG_QUALITY   = 0.82;
+const QUALITY_FLOOR  = 0.70;  // minimum quality for second-pass re-encode
+const MAX_BYTES      = 200_000; // 200 KB ceiling for standard photos
+const MAX_BYTES_CONSTRUCTION = 300_000; // 300 KB for construction-phase shots
+
+const CONSTRUCTION_PHASES = new Set([
+  "PreConstruction", "Foundation", "Framing", "Electrical",
+  "Plumbing", "HVAC", "Insulation", "Drywall", "Finishing",
+  "PostConstruction", "Warranty",
+]);
 
 /**
  * Resize and re-encode an image File using an off-screen canvas.
@@ -110,7 +119,8 @@ const JPEG_QUALITY  = 0.82;
  * - Non-image files are returned unchanged.
  * - Returns a new File so the caller's size/type are always accurate.
  */
-async function compressImage(file: File): Promise<File> {
+async function compressImage(file: File, phase?: string): Promise<File> {
+  const maxBytes = phase && CONSTRUCTION_PHASES.has(phase) ? MAX_BYTES_CONSTRUCTION : MAX_BYTES;
   if (!file.type.startsWith("image/")) return file;
 
   // Canvas unavailable (jsdom/test/SSR) — skip compression entirely.
@@ -158,11 +168,23 @@ async function compressImage(file: File): Promise<File> {
       ctx.fillRect(0, 0, width, height);
       ctx.drawImage(img, 0, 0, width, height);
 
+      const name = file.name.replace(/\.[^.]+$/, ".jpg");
       canvas.toBlob(
         (blob) => {
-          settle(blob
-            ? new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" })
-            : file
+          if (!blob) { settle(file); return; }
+          if (blob.size <= maxBytes) {
+            settle(new File([blob], name, { type: "image/jpeg" }));
+            return;
+          }
+          // Second pass at lower quality to hit the size target.
+          canvas.toBlob(
+            (blob2) => settle(
+              blob2
+                ? new File([blob2], name, { type: "image/jpeg" })
+                : new File([blob],  name, { type: "image/jpeg" })
+            ),
+            "image/jpeg",
+            QUALITY_FLOOR,
           );
         },
         "image/jpeg",
@@ -205,7 +227,7 @@ function createPhotoService() {
     phase:       string,
     description: string
   ): Promise<Photo> {
-    const compressed = await compressImage(file);
+    const compressed = await compressImage(file, phase);
     const buffer     = await compressed.arrayBuffer() as ArrayBuffer;
     const bytes      = new Uint8Array(buffer);
     const hash       = await computeHash(buffer);
