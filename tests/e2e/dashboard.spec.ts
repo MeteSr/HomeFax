@@ -82,8 +82,9 @@ test.describe("DashboardPage — /dashboard", () => {
   });
 
   test("shows Verified Jobs stat equal to 3", async ({ page }) => {
-    // 3 of the 4 injected jobs are verified
-    await expect(page.getByText("Verified Jobs").locator("..").getByText("3")).toBeVisible();
+    // isAllView (2 properties) → aggregate midsection uses "Total Verified Jobs"
+    // 3 of the 4 injected jobs are verified (all on property 1)
+    await expect(page.getByText("Total Verified Jobs").locator("..").getByText("3")).toBeVisible();
   });
 
   test("shows Total Value stat", async ({ page }) => {
