@@ -260,8 +260,21 @@ export const paymentService = {
     if ((window as any).__e2e_subscription) {
       return { cancelledAt: null, ...(window as any).__e2e_subscription };
     }
-    const a = await getActor();
-    const result = await a.getMySubscription();
+    if (!PAYMENT_CANISTER_ID) return { tier: "Basic", expiresAt: null, cancelledAt: null };
+    let result: any;
+    try {
+      const a = await getActor();
+      result = await a.getMySubscription();
+    } catch (e: any) {
+      // IC0301: canister exists in .env but not on the network (stale ID after
+      // a local network reset). Treat identically to "not deployed" — only on
+      // non-production networks where this is expected.
+      const isStale = String(e).includes("IC0301") || String(e).includes("not found");
+      if (isStale && (process.env as any).DFX_NETWORK !== "ic") {
+        return { tier: "Basic", expiresAt: null, cancelledAt: null };
+      }
+      throw e;
+    }
     if ("err" in result) {
       // NotFound = no subscription record yet (e.g. mid-checkout).
       // Any other error (Unauthorized, Paused, etc.) is a real failure: throw

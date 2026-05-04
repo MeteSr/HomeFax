@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Home, Plus, Wrench, MessageSquare, Sparkles, ArrowRight, X, ShieldCheck, Calendar, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { Home, Plus, Wrench, MessageSquare, Sparkles, ArrowRight, X, ShieldCheck, Calendar, AlertTriangle, CheckCircle, XCircle, Mic, MicOff, Loader2, Volume2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
@@ -37,10 +37,11 @@ import { useMaintenanceSchedule } from "@/hooks/useMaintenanceSchedule";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useScoreTracking } from "@/hooks/useScoreTracking";
 import { useDashboardDismissals } from "@/hooks/useDashboardDismissals";
+import { useVoiceAgent } from "@/hooks/useVoiceAgent";
 
 const UI = {
   ink:      COLORS.plum,
-  paper:    COLORS.white,
+  paper:    "#ffffff",
   rule:     COLORS.rule,
   rust:     COLORS.sage,       // primary accent: sage replaces rust
   inkLight: COLORS.plumMid,
@@ -69,6 +70,298 @@ const MODAL_INITIAL: ModalState = {
   showScoreBreakdown: false,
   showScoreChart: false,
 };
+
+// ─── AI Hero Bar ─────────────────────────────────────────────────────────────
+
+function AIHeroBar() {
+  const {
+    state, transcript, response, error, isSupported,
+    startListening, stopListening, reset, sendChat,
+    fallbackNotice, quotaExhausted,
+    pendingProposal, confirmProposal, dismissProposal,
+  } = useVoiceAgent();
+  const { profile } = useAuthStore();
+  const [inputText, setInputText] = React.useState("");
+
+  const EXAMPLE_PROMPTS = [
+    "What's my HomeGentic Score?",
+    "Which jobs should I verify next?",
+    "Log an HVAC service",
+    "What's the ROI on a kitchen remodel?",
+    "Show upcoming maintenance tasks",
+  ];
+  const [promptIdx, setPromptIdx] = React.useState(0);
+  const [typedText, setTypedText] = React.useState("");
+
+  React.useEffect(() => {
+    if (state !== "idle") return;
+    const id = setInterval(() => setPromptIdx((i) => (i + 1) % EXAMPLE_PROMPTS.length), 4000);
+    return () => clearInterval(id);
+  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  React.useEffect(() => {
+    const target = EXAMPLE_PROMPTS[promptIdx];
+    setTypedText("");
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setTypedText(target.slice(0, i));
+      if (i >= target.length) clearInterval(id);
+    }, 38);
+    return () => clearInterval(id);
+  }, [promptIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = profile?.email
+    ? profile.email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).split(" ")[0]
+    : "";
+
+  const isListening  = state === "listening";
+  const isProcessing = state === "processing";
+  const isSpeaking   = state === "speaking";
+  const isIdle       = state === "idle" || state === "error";
+
+  return (
+    <div style={{ marginBottom: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      {/* Greeting */}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        gap: "0.625rem", marginBottom: "1.25rem",
+      }}>
+        <Sparkles size={28} color={COLORS.sage} strokeWidth={1.5} />
+        <h1 style={{
+          fontFamily: FONTS.serif, fontWeight: 700, fontSize: "2rem",
+          color: COLORS.plum, lineHeight: 1, margin: 0,
+        }}>
+          {greeting}{firstName ? `, ${firstName}` : ""}
+        </h1>
+      </div>
+
+      {/* Card */}
+      <div style={{
+        width: "100%", maxWidth: "680px",
+        background: "#ffffff",
+        border: "1px solid #e5e5e5",
+        borderRadius: "1rem",
+        padding: "1rem 1.25rem 0.75rem",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+      }}>
+        {/* Response / transcript area */}
+        {(transcript || response || error || (isProcessing && !response)) && (
+          <div style={{ marginBottom: "0.75rem" }}>
+            {fallbackNotice && (
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", color: "#aaa", margin: "0 0 0.375rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <span style={{ fontSize: "0.65rem" }}>ⓘ</span> Agent limit reached — answering via chat
+              </p>
+            )}
+            {transcript && (
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: "#666", fontStyle: "italic", margin: 0, marginBottom: response ? "0.375rem" : 0 }}>
+                "{transcript}"
+              </p>
+            )}
+            {isProcessing && !response && (
+              <span style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: "#999" }}>Thinking…</span>
+            )}
+            {response && (
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.9rem", color: COLORS.plum, lineHeight: 1.6, margin: 0 }}>{response}</p>
+            )}
+            {error && (
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.rust, margin: 0 }}>{error}</p>
+            )}
+          </div>
+        )}
+
+        {/* Text input */}
+        <textarea
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              const text = inputText.trim();
+              if (!text || isProcessing) return;
+              setInputText("");
+              sendChat(text);
+            }
+          }}
+          placeholder={isIdle && !transcript && !response ? (typedText || "Ask HomeGentic AI…") : "Ask a follow-up…"}
+          disabled={isProcessing || isListening}
+          rows={1}
+          style={{
+            width: "100%", resize: "none", border: "none", outline: "none",
+            fontFamily: FONTS.sans, fontSize: "0.9rem", color: COLORS.plum,
+            background: "transparent", padding: 0, marginBottom: "0.625rem",
+            lineHeight: 1.5, boxSizing: "border-box",
+          }}
+        />
+
+        {/* Bottom bar */}
+        <div style={{
+          borderTop: "1px solid #f0f0f0", paddingTop: "0.625rem",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", letterSpacing: "0.04em", color: "#bbb", fontWeight: 400 }}>
+            {quotaExhausted ? "Chat mode" : "HomeGentic AI"}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            {(transcript || response || error) && (
+              <button onClick={reset} style={{ background: "none", border: "none", cursor: "pointer", color: "#bbb", display: "flex", padding: 0 }} aria-label="Dismiss">
+                <X size={14} />
+              </button>
+            )}
+            {/* Send button — visible when there's typed text */}
+            {inputText.trim() && (
+              <button
+                onClick={() => { const t = inputText.trim(); if (t) { setInputText(""); sendChat(t); } }}
+                disabled={isProcessing}
+                aria-label="Send"
+                style={{
+                  background: COLORS.plum, border: "none", borderRadius: "0.375rem",
+                  padding: "0.25rem 0.625rem", cursor: isProcessing ? "not-allowed" : "pointer",
+                  fontFamily: FONTS.sans, fontSize: "0.7rem", color: "#fff",
+                  display: "flex", alignItems: "center",
+                }}
+              >
+                Send
+              </button>
+            )}
+            {isSupported && (
+              <button
+                onClick={isListening ? stopListening : isIdle ? startListening : undefined}
+                disabled={isProcessing || isSpeaking}
+                aria-label={isListening ? "Stop listening" : "Use voice mode"}
+                style={{
+                  background: "none", border: "none", padding: "0.25rem",
+                  cursor: isProcessing || isSpeaking ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", color: isListening ? COLORS.rust : "#888",
+                  transition: "color 0.15s",
+                }}
+              >
+                {isListening  && <MicOff  size={18} />}
+                {isProcessing && <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />}
+                {isSpeaking   && <Volume2 size={18} />}
+                {isIdle       && <Mic     size={18} />}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Proposal strip */}
+        {pendingProposal && (
+          <div style={{
+            marginTop: "0.5rem", borderTop: "1px solid #f0f0f0", paddingTop: "0.625rem",
+            display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap",
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#aaa", marginRight: "0.5rem" }}>Proposal</span>
+              <span style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plum }}>
+                {pendingProposal.serviceType} · {pendingProposal.propertyAddress} · ${(pendingProposal.amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "0.375rem" }}>
+              <button onClick={confirmProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: COLORS.sage, border: "none", color: "#fff", cursor: "pointer", borderRadius: "0.25rem" }}>
+                Confirm
+              </button>
+              <button onClick={dismissProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: "none", border: "1px solid #ddd", color: "#888", cursor: "pointer", borderRadius: "0.25rem" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Quick-action chips */}
+      {isIdle && !transcript && !response && (
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", justifyContent: "center", marginTop: "0.875rem" }}>
+          {[
+            { label: "My score",        prompt: "What's my HomeGentic Score and how can I improve it?" },
+            { label: "Log a job",       prompt: "I want to log a maintenance job" },
+            { label: "Upcoming tasks",  prompt: "Show my upcoming maintenance tasks" },
+            { label: "Best ROI project",prompt: "What home improvement has the best ROI for my property?" },
+          ].map(({ label, prompt }) => (
+            <button
+              key={label}
+              onClick={() => sendChat(prompt)}
+              style={{
+                fontFamily: FONTS.sans, fontSize: "0.78rem", color: "#555",
+                background: "#fff", border: "1px solid #e0e0e0",
+                borderRadius: "2rem", padding: "0.375rem 0.875rem",
+                cursor: "pointer", transition: "border-color 0.15s, color 0.15s",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#bbb"; (e.currentTarget as HTMLButtonElement).style.color = "#222"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e0e0e0"; (e.currentTarget as HTMLButtonElement).style.color = "#555"; }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Insights Strip ───────────────────────────────────────────────────────────
+
+interface InsightItem {
+  id:          string;
+  content:     React.ReactNode;
+  canDismiss:  boolean;
+  onDismiss?:  () => void;
+  bg:          string;
+  borderColor: string;
+}
+
+function InsightsStrip({ items }: { items: InsightItem[] }) {
+  const [idx, setIdx] = React.useState(0);
+  if (items.length === 0) return null;
+  const safeIdx = Math.min(idx, items.length - 1);
+  const item    = items[safeIdx];
+
+  const handleDismiss = () => {
+    item.onDismiss?.();
+    setIdx((i) => Math.max(0, i - 1));
+  };
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: "0.625rem",
+      padding: "0.75rem 1rem", marginBottom: "1.5rem",
+      background: item.bg, border: `1px solid ${item.borderColor}`,
+      borderRadius: RADIUS.sm,
+    }}>
+      {items.length > 1 && (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.2rem", flexShrink: 0 }}>
+          <button
+            onClick={() => setIdx((i) => Math.max(0, i - 1))}
+            disabled={safeIdx === 0}
+            style={{ background: "none", border: "none", cursor: safeIdx === 0 ? "default" : "pointer", opacity: safeIdx === 0 ? 0.3 : 1, display: "flex", padding: "0.1rem" }}
+          >
+            <ChevronLeft size={12} />
+          </button>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.plumMid, minWidth: "2rem", textAlign: "center" }}>
+            {safeIdx + 1} / {items.length}
+          </span>
+          <button
+            onClick={() => setIdx((i) => Math.min(items.length - 1, i + 1))}
+            disabled={safeIdx === items.length - 1}
+            style={{ background: "none", border: "none", cursor: safeIdx === items.length - 1 ? "default" : "pointer", opacity: safeIdx === items.length - 1 ? 0.3 : 1, display: "flex", padding: "0.1rem" }}
+          >
+            <ChevronRight size={12} />
+          </button>
+        </div>
+      )}
+
+      <div style={{ flex: 1, minWidth: 0 }}>{item.content}</div>
+
+      {item.canDismiss && item.onDismiss && (
+        <button onClick={handleDismiss} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, flexShrink: 0, display: "flex" }} aria-label="Dismiss insight">
+          <X size={13} />
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -239,11 +532,9 @@ export default function DashboardPage() {
   }, [jobs]);
 
   const accountAgeMs  = profile?.createdAt ? Date.now() - Number(profile.createdAt) / 1_000_000 : 0;
-  const milestoneKey  = "homegentic_milestone_dismissed";
   const showMilestone = !loading && hasJob && !d.milestoneDismissed
     && accountAgeMs >= 11 * 30 * 24 * 60 * 60 * 1000;
 
-  const pulseKey     = `homegentic_pulse_${new Date().toISOString().slice(0, 7)}`;
   const pulseEnabled = localStorage.getItem("homegentic_pulse_enabled") !== "false";
   const pulseTip     = React.useMemo(() => getWeeklyPulse(properties, jobs), [properties, jobs]);
   const showPulse    = !loading && hasProperty && !!pulseTip && !d.pulseDismissed && pulseEnabled;
@@ -305,152 +596,100 @@ export default function DashboardPage() {
     return <Badge variant="default">Unverified</Badge>;
   };
 
+  // ─── Insights for strip ─────────────────────────────────────────────────────
+  const insightItems: InsightItem[] = [];
+
+  if (showMilestone) {
+    insightItems.push({
+      id: "milestone",
+      content: (
+        <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: "#F4F1EB", fontWeight: 300 }}>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: UI.rust, marginRight: "0.5rem" }}>One Year</span>
+          <strong style={{ fontWeight: 600 }}>${(totalValue / 100).toLocaleString()} in documented improvements</strong> — real value for your next sale.{" "}
+          <button onClick={() => navigate("/resale-ready")} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.3rem 0.75rem", border: `1px solid ${UI.rust}`, background: "none", color: UI.rust, cursor: "pointer", borderRadius: RADIUS.sm, marginLeft: "0.5rem" }}>
+            Resale Summary →
+          </button>
+        </p>
+      ),
+      canDismiss: true,
+      onDismiss: d.dismissMilestone,
+      bg: UI.ink,
+      borderColor: UI.rust,
+    });
+  }
+
+  if (!loading && verifiedCount >= 3 && !d.milestone3Dismissed) {
+    insightItems.push({
+      id: "milestone3",
+      content: (
+        <p style={{ fontSize: "0.875rem", fontWeight: 300 }}>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: UI.sage, marginRight: "0.5rem" }}>Milestone</span>
+          <strong style={{ fontWeight: 600 }}>{verifiedCount} verified records</strong> on the blockchain. Buyers can now see a real maintenance history.
+        </p>
+      ),
+      canDismiss: true,
+      onDismiss: d.dismissMilestone3,
+      bg: COLORS.sageLight,
+      borderColor: COLORS.sageMid,
+    });
+  }
+
+  if (showPulse && pulseTip) {
+    insightItems.push({
+      id: "pulse",
+      content: (
+        <div>
+          <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.rust, marginBottom: "0.125rem" }}>
+            Home Pulse · <span style={{ opacity: 0.7 }}>{pulseTip.category}</span>
+          </p>
+          <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.1rem" }}>{pulseTip.headline}</p>
+          <p style={{ fontSize: "0.78rem", color: UI.inkLight, fontWeight: 300 }}>{pulseTip.detail}</p>
+        </div>
+      ),
+      canDismiss: true,
+      onDismiss: d.dismissPulse,
+      bg: "#fff",
+      borderColor: UI.rule,
+    });
+  }
+
+  if (!loading && scoreStagnant) {
+    insightItems.push({
+      id: "stagnant",
+      content: (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+          <div>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.125rem" }}>
+              Score Hasn't Moved in 30 Days
+            </p>
+            <p style={{ fontSize: "0.8rem", fontWeight: 300, color: UI.inkLight }}>
+              Log a recent job or verify a property to keep your HomeGentic Score growing.
+            </p>
+          </div>
+          <button
+            onClick={() => openLogJob(undefined)}
+            style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.5rem 1rem", background: UI.ink, color: UI.paper, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.375rem", flexShrink: 0, borderRadius: RADIUS.pill }}
+          >
+            Log a Job <ArrowRight size={12} />
+          </button>
+        </div>
+      ),
+      canDismiss: false,
+      bg: "#fff",
+      borderColor: UI.rule,
+    });
+  }
+
   return (
     <Layout>
       <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "2rem 1.5rem" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "2rem" }}>
-          <div>
-            <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: UI.rust, marginBottom: "0.5rem" }}>
-              Overview
-            </div>
-            <h1 style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "2rem", lineHeight: 1 }}>
-              Dashboard
-            </h1>
-            {profile?.email && (
-              <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: UI.inkLight, marginTop: "0.375rem" }}>
-                {profile.email}
-              </p>
-            )}
-          </div>
-          <Button onClick={() => navigate("/properties/new")} icon={<Plus size={14} />}>
-            Add Property
-          </Button>
-        </div>
+        {/* AI Hero Bar */}
+        <AIHeroBar />
 
+        {/* Insights Strip — consolidates milestone, verified milestone, pulse, stagnant */}
+        <InsightsStrip items={insightItems} />
 
-
-        {/* Annual milestone banner */}
-        {showMilestone && (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
-            border: `1px solid ${UI.rust}`, padding: "1rem 1.25rem", marginBottom: "2rem",
-            background: UI.ink, flexWrap: "wrap", borderRadius: RADIUS.sm,
-          }}>
-            <div>
-              <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: UI.rust, marginBottom: "0.25rem" }}>
-                One Year of HomeGentic
-              </p>
-              <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: UI.paper, fontWeight: 300 }}>
-                You've been building your verified home history for nearly a year.{" "}
-                <strong style={{ fontWeight: 600 }}>${(totalValue / 100).toLocaleString()} in documented improvements</strong> — that's real value for your next sale.
-              </p>
-              <button
-                onClick={() => navigate("/resale-ready")}
-                style={{ marginTop: "0.5rem", fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", padding: "0.4rem 1rem", border: `1px solid ${UI.rust}`, background: "none", color: UI.rust, cursor: "pointer", borderRadius: RADIUS.sm }}
-              >
-                View Resale Summary →
-              </button>
-            </div>
-            <button
-              onClick={d.dismissMilestone}
-              style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, flexShrink: 0 }}
-            >
-              <X size={15} />
-            </button>
-          </div>
-        )}
-
-        {/* 3-verified-jobs milestone */}
-        {!loading && verifiedCount >= 3 && !d.milestone3Dismissed && (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
-            border: `1px solid ${UI.sage}`, padding: "1rem 1.25rem", marginBottom: "2rem",
-            background: COLORS.sageLight, flexWrap: "wrap", borderRadius: RADIUS.sm,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-              <div style={{ width: "2rem", height: "2rem", border: `2px solid ${UI.sage}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: UI.sage, borderRadius: RADIUS.sm }}>
-                <span style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "0.875rem" }}>3</span>
-              </div>
-              <div>
-                <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.14em", textTransform: "uppercase", color: UI.sage, marginBottom: "0.2rem" }}>
-                  Milestone — Your Home History Is Taking Shape
-                </p>
-                <p style={{ fontSize: "0.875rem", fontWeight: 300, color: UI.ink }}>
-                  <strong style={{ fontWeight: 600 }}>{verifiedCount} verified records</strong> on the blockchain. Buyers can now see a real maintenance history.
-                </p>
-              </div>
-            </div>
-            <button onClick={d.dismissMilestone3} style={{ background: "none", border: "none", cursor: "pointer", color: UI.sage, flexShrink: 0 }}>
-              <X size={15} />
-            </button>
-          </div>
-        )}
-
-        {/* Home Pulse tip */}
-        {showPulse && pulseTip && (
-          <div style={{
-            display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem",
-            border: `1px solid ${UI.rule}`, padding: "1rem 1.25rem", marginBottom: "2rem",
-            background: "#fff", flexWrap: "wrap", borderRadius: RADIUS.sm,
-          }}>
-            <div style={{ display: "flex", gap: "0.875rem", flex: 1 }}>
-              <div style={{ width: "2rem", height: "2rem", border: `1px solid ${UI.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "0.125rem", borderRadius: RADIUS.sm }}>
-                <Sparkles size={13} color={UI.rust} />
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-                  <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.rust }}>
-                    Home Pulse
-                  </p>
-                  <span style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: UI.inkLight, border: `1px solid ${UI.rule}`, padding: "0.05rem 0.375rem", borderRadius: 100 }}>
-                    {pulseTip.category}
-                  </span>
-                </div>
-                <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.25rem" }}>{pulseTip.headline}</p>
-                <p style={{ fontSize: "0.8rem", color: UI.inkLight, fontWeight: 300 }}>{pulseTip.detail}</p>
-              </div>
-            </div>
-            <button onClick={d.dismissPulse} style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, flexShrink: 0 }}>
-              <X size={15} />
-            </button>
-          </div>
-        )}
-
-        {/* Score stagnation nudge */}
-        {!loading && scoreStagnant && (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem",
-            border: `1px solid ${UI.rule}`, padding: "1rem 1.25rem", marginBottom: "2rem",
-            background: "#fff", flexWrap: "wrap", borderRadius: RADIUS.sm,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <div style={{ width: "2rem", height: "2rem", border: `1px solid ${UI.rule}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, borderRadius: RADIUS.sm }}>
-                <Sparkles size={13} color={UI.inkLight} />
-              </div>
-              <div>
-                <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.2rem" }}>
-                  Score Hasn't Moved in 30 Days
-                </p>
-                <p style={{ fontSize: "0.8rem", fontWeight: 300, color: UI.inkLight }}>
-                  Log a recent job or verify a property to keep your HomeGentic Score growing.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => openLogJob(undefined)}
-              style={{
-                fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase",
-                padding: "0.5rem 1rem", background: UI.ink, color: UI.paper,
-                border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.375rem", flexShrink: 0,
-                borderRadius: RADIUS.pill,
-              }}
-            >
-              Log a Job <ArrowRight size={12} />
-            </button>
-          </div>
-        )}
 
         {/* Score at Risk warning (8.7.7) */}
         {!loading && atRiskWarnings.length > 0 && (
@@ -507,39 +746,71 @@ export default function DashboardPage() {
         {!isAllView && (
           <>
 
-        {/* Stats */}
-        <ResponsiveGrid cols={{ mobile: 2, tablet: 3, desktop: 5 }} gap="1rem" style={{ marginBottom: "2.5rem" }}>
-          {[
-            { label: "Verified Jobs",    value: String(verifiedCount) },
-            { label: "Total Value",      value: `$${(totalValue / 100).toLocaleString()}` },
-            { label: "HomeGentic Premium™", value: `$${Math.round((totalValue / 100) * 0.03).toLocaleString()}` },
-          ].map((stat) => (
-            <div key={stat.label} style={{ padding: "1.25rem 1.5rem", borderRadius: RADIUS.card, background: COLORS.white, border: `1px solid ${COLORS.rule}`, boxShadow: SHADOWS.card }}>
-              <div style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.625rem" }}>
-                {stat.label}
+        {/* Midsection: Score | Stats */}
+        {(() => {
+          const r = 46, cx = 60, cy = 60;
+          const circ = 2 * Math.PI * r;
+          const arcLen = circ * 0.75;
+          const fill = arcLen * (homegenticScore / 100);
+          const textGrade = homegenticScore >= 88 ? "Excellent" : homegenticScore >= 75 ? "Great" : homegenticScore >= 60 ? "Good" : "Fair";
+          const stats = [
+            { label: "Total Value",         value: `$${(totalValue / 100).toLocaleString()}`,                             sub: scoreValueChange ? `↑ $${scoreValueChange.toLocaleString()} this month` : null, icon: <CheckCircle size={18} strokeWidth={1.5} /> },
+            { label: "Verified Jobs",        value: String(verifiedCount),                                                 sub: verifiedCount > 0 ? `↑ ${verifiedCount} this month` : null,                      icon: <CheckCircle size={18} strokeWidth={1.5} /> },
+            { label: "HomeGentic Premium™",  value: `$${Math.round((totalValue / 100) * 0.03).toLocaleString()}`,          sub: "Active",                                                                         icon: <CheckCircle size={18} strokeWidth={1.5} /> },
+          ];
+          return (
+            <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", width: "100%", maxWidth: "680px", margin: "0 auto 2.5rem", border: `1px solid ${COLORS.rule}`, borderRadius: "1rem", overflow: "hidden", alignItems: "stretch" }}>
+
+              {/* Score gauge */}
+              <div style={{ background: COLORS.plum, padding: "1.75rem 1.25rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: `1px solid rgba(122,175,118,0.15)` }}>
+                <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "0.875rem" }}>
+                  HomeGentic Score
+                </div>
+                <div style={{ position: "relative", width: 120, height: 120 }}>
+                  <svg viewBox="0 0 120 120" width="120" height="120">
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${arcLen} ${circ - arcLen}`} transform={`rotate(135 ${cx} ${cy})`} />
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke={COLORS.sage} strokeWidth="10" strokeLinecap="round" strokeDasharray={`${fill} ${circ - fill}`} transform={`rotate(135 ${cx} ${cy})`} />
+                  </svg>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingBottom: "8px" }}>
+                    <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2rem", color: "white", lineHeight: 1 }}>{homegenticScore}</span>
+                    <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
+                  </div>
+                </div>
+                <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>
+                  {textGrade}
+                </div>
+                {delta !== 0 && (
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: delta > 0 ? COLORS.sage : COLORS.blush, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
+                    {delta > 0 ? "↑" : "↓"} {Math.abs(delta)} pts this month
+                  </div>
+                )}
               </div>
-              <div style={{ fontFamily: UI.serif, fontWeight: 700, fontSize: "2rem", lineHeight: 1, color: UI.ink }}>
-                {stat.value}
+
+              {/* Stats */}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {stats.map((stat, i, arr) => (
+                  <div key={stat.label} style={{ flex: 1, padding: "1.25rem 1.5rem", borderBottom: i < arr.length - 1 ? `1px solid ${COLORS.rule}` : "none", display: "flex", alignItems: "center", gap: "1rem", background: COLORS.white }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.375rem" }}>
+                        {stat.label}
+                      </div>
+                      <div style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: UI.ink }}>
+                        {stat.value}
+                      </div>
+                      {stat.sub && (
+                        <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sage, marginTop: "0.3rem", letterSpacing: "0.03em" }}>
+                          {stat.sub}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ color: "rgba(46,37,64,0.2)", flexShrink: 0 }}>{stat.icon}</div>
+                  </div>
+                ))}
               </div>
+
             </div>
-          ))}
-          {/* HomeGentic Score — accent cell */}
-          <div style={{ padding: "1.25rem 1.5rem", borderRadius: RADIUS.card, background: COLORS.plum, boxShadow: SHADOWS.hover }}>
-            <div style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.625rem" }}>
-              HomeGentic Score
-            </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem", marginBottom: "0.5rem" }}>
-              <span style={{ fontFamily: UI.serif, fontWeight: 700, fontSize: "2rem", lineHeight: 1, color: COLORS.white }}>{homegenticScore}</span>
-              <span style={{ fontFamily: UI.mono, fontSize: "0.7rem", color: COLORS.plumMid }}>/100 · {scoreGrade}</span>
-            </div>
-            {delta !== 0 && (
-              <div style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: delta > 0 ? COLORS.sage : COLORS.blush, letterSpacing: "0.06em" }}>
-                {delta > 0 ? "+" : ""}{delta} pts this period
-              </div>
-            )}
-            <ScoreSparkline history={scoreHistory} onExpand={toggleScoreChart} />
-          </div>
-        </ResponsiveGrid>
+          );
+        })()}
 
 
         {/* Score history chart */}
@@ -858,6 +1129,56 @@ export default function DashboardPage() {
 
         {/* Multi-property overview */}
         {!loading && isAllView && propertyComparison && (
+          <>
+          {/* Aggregate stats — mirrors the single-property midsection */}
+          {(() => {
+            const avgScore      = Math.round(propertyComparison.reduce((s, r) => s + r.score, 0) / propertyComparison.length);
+            const totalVal      = propertyComparison.reduce((s, r) => s + r.value, 0);
+            const totalVerified = propertyComparison.reduce((s, r) => s + r.verified, 0);
+            const avgGrade      = avgScore >= 88 ? "Excellent" : avgScore >= 75 ? "Great" : avgScore >= 60 ? "Good" : "Fair";
+            const r2 = 46, cx2 = 60, cy2 = 60;
+            const circ2  = 2 * Math.PI * r2;
+            const arcLen2 = circ2 * 0.75;
+            const fill2   = arcLen2 * (avgScore / 100);
+            const aggStats = [
+              { label: "Total Portfolio Value", value: `$${(totalVal / 100).toLocaleString()}`,                          sub: null,                                          icon: <CheckCircle size={18} strokeWidth={1.5} /> },
+              { label: "Total Verified Jobs",   value: String(totalVerified),                                            sub: `across ${properties.length} properties`,      icon: <CheckCircle size={18} strokeWidth={1.5} /> },
+              { label: "HomeGentic Premium™",   value: `$${Math.round((totalVal / 100) * 0.03).toLocaleString()}`,       sub: "Active",                                      icon: <CheckCircle size={18} strokeWidth={1.5} /> },
+            ];
+            return (
+              <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", width: "100%", maxWidth: "680px", margin: "0 auto 2.5rem", border: `1px solid ${COLORS.rule}`, borderRadius: "1rem", overflow: "hidden", alignItems: "stretch" }}>
+                <div style={{ background: COLORS.plum, padding: "1.75rem 1.25rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: `1px solid rgba(122,175,118,0.15)` }}>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "0.875rem" }}>Avg Score</div>
+                  <div style={{ position: "relative", width: 120, height: 120 }}>
+                    <svg viewBox="0 0 120 120" width="120" height="120">
+                      <circle cx={cx2} cy={cy2} r={r2} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${arcLen2} ${circ2 - arcLen2}`} transform={`rotate(135 ${cx2} ${cy2})`} />
+                      <circle cx={cx2} cy={cy2} r={r2} fill="none" stroke={COLORS.sage} strokeWidth="10" strokeLinecap="round" strokeDasharray={`${fill2} ${circ2 - fill2}`} transform={`rotate(135 ${cx2} ${cy2})`} />
+                    </svg>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingBottom: "8px" }}>
+                      <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2rem", color: "white", lineHeight: 1 }}>{avgScore}</span>
+                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>{avgGrade}</div>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: "0.25rem" }}>{properties.length} properties</div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  {aggStats.map((stat, i, arr) => (
+                    <div key={stat.label} style={{ flex: 1, padding: "1.25rem 1.5rem", borderBottom: i < arr.length - 1 ? `1px solid ${COLORS.rule}` : "none", display: "flex", alignItems: "center", gap: "1rem", background: COLORS.white }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.375rem" }}>{stat.label}</div>
+                        <div style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: UI.ink }}>{stat.value}</div>
+                        {stat.sub && <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sage, marginTop: "0.3rem", letterSpacing: "0.03em" }}>{stat.sub}</div>}
+                      </div>
+                      <div style={{ color: "rgba(46,37,64,0.2)", flexShrink: 0 }}>{stat.icon}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Property comparison table */}
           <div style={{ marginBottom: "2.5rem" }}>
             <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "1rem" }}>
               Property Comparison
@@ -904,32 +1225,19 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+          </>
         )}
 
-        {/* Quick Actions */}
-        <div style={{ marginBottom: "2.5rem" }}>
-          <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "1rem" }}>
-            Quick Actions
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <Button variant="outline" icon={<Plus size={14} />}          onClick={() => navigate("/properties/new")}>Add Property</Button>
-            <Button variant="outline" icon={<Wrench size={14} />}        onClick={() => openLogJob(undefined)}>Log a Job</Button>
-            <Button variant="outline" icon={<MessageSquare size={14} />} onClick={openQuote}>Request Quote</Button>
-            <Button variant="outline" icon={<Home size={14} />}          onClick={() => navigate("/contractors")}>Find Contractors</Button>
-            <Button variant="outline" icon={<ShieldCheck size={14} />}   onClick={() => navigate("/insurance-defense")}>Insurance Defense</Button>
-          </div>
-        </div>
-
         {/* Properties */}
-        <div style={{ marginBottom: "2.5rem" }}>
-          <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "1rem" }}>
+        <div style={{ maxWidth: "680px", margin: "0 auto 2.5rem", border: `1px solid ${COLORS.rule}`, borderRadius: "1rem", overflow: "hidden" }}>
+          <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, padding: "0.875rem 1.25rem", borderBottom: `1px solid ${COLORS.rule}` }}>
             My Properties
           </div>
 
           {loading ? (
             <div style={{ textAlign: "center", padding: "3rem 0" }}><div className="spinner-lg" /></div>
           ) : properties.length === 0 ? (
-            <div style={{ border: `1px dashed ${UI.rule}`, padding: "3rem", textAlign: "center" }}>
+            <div style={{ padding: "3rem", textAlign: "center" }}>
               <Home size={40} color={UI.rule} style={{ margin: "0 auto 1rem" }} />
               <p style={{ fontFamily: UI.serif, fontWeight: 700, fontSize: "1.125rem", marginBottom: "0.5rem" }}>No properties yet</p>
               <p style={{ fontSize: "0.875rem", color: UI.inkLight, fontWeight: 300, maxWidth: "24rem", margin: "0 auto 1.5rem" }}>
@@ -942,14 +1250,14 @@ export default function DashboardPage() {
             </div>
           ) : (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "1rem", padding: "1.25rem" }}>
                 {properties.map((property) => (
                   <PropertyCard key={String(property.id)} property={property} onClick={() => navigate(`/properties/${property.id}`)} badge={verificationBadge(property.verificationLevel)} />
                 ))}
               </div>
 
               {/* Baseline photo prompts — one per property, hidden once dismissed or all 6 captured */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "0 1.25rem 1.25rem" }}>
                 {properties.map((property) => (
                   <BaselinePromptCard
                     key={String(property.id)}

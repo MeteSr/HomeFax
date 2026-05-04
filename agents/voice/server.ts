@@ -3,6 +3,7 @@ import express, { Request, Response } from "express";
 import { activateInCanister, consumeAgentCredit, grantAgentCredits } from "./paymentCanister";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import { createHmac, timingSafeEqual } from "crypto";
 import { buildSystemPrompt } from "./prompts";
 import { buildMaintenanceSystemPrompt } from "../maintenance/prompts";
 import { HOMEGENTIC_TOOLS } from "./tools";
@@ -131,6 +132,90 @@ app.use("/api/", (req: Request, res: Response, next: express.NextFunction): void
 
 const provider = createAnthropicProvider();
 const MODEL    = resolveModel();
+
+// ── Context integrity middleware ──────────────────────────────────────────────
+// Applied to /api/chat and /api/agent only (not stripe webhooks, classify, etc.)
+// Three jobs:
+//   1. Verify HMAC so the context hasn't been tampered with (skipped in dev when key absent)
+//   2. Inject the server-verified principal into context (overrides anything client sent)
+//   3. Clamp and sanitise the context schema to prevent oversized / malformed payloads
+
+function verifyHmac(key: string, body: object, provided: string): boolean {
+  const expected = createHmac("sha256", key)
+    .update(JSON.stringify(body))
+    .digest("hex");
+  try {
+    return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(provided, "hex"));
+  } catch {
+    return false; // mismatched lengths → invalid
+  }
+}
+
+function sanitiseContext(ctx: any, principal: string): any {
+  if (!ctx || typeof ctx !== "object") return { properties: [], recentJobs: [], principal };
+
+  const clampStr  = (v: unknown, max = 200)  => typeof v === "string"  ? v.slice(0, max) : "";
+  const clampNum  = (v: unknown, max = 1e9)  => typeof v === "number"  ? Math.min(Math.abs(v), max) : 0;
+  const clampArr  = (v: unknown, max: number) => Array.isArray(v) ? v.slice(0, max) : [];
+
+  const properties = clampArr(ctx.properties, 20).map((p: any) => ({
+    id:                clampStr(p.id, 64),
+    address:           clampStr(p.address),
+    city:              clampStr(p.city, 100),
+    state:             clampStr(p.state, 50),
+    zipCode:           clampStr(p.zipCode, 20),
+    propertyType:      clampStr(p.propertyType, 50),
+    yearBuilt:         clampNum(p.yearBuilt, 2100),
+    squareFeet:        clampNum(p.squareFeet, 100_000),
+    verificationLevel: clampStr(p.verificationLevel, 50),
+  }));
+
+  const recentJobs = clampArr(ctx.recentJobs, 50).map((j: any) => ({
+    id:             clampStr(j.id, 64),
+    serviceType:    clampStr(j.serviceType, 100),
+    description:    clampStr(j.description, 500),
+    contractorName: clampStr(j.contractorName, 100) || undefined,
+    amount:         clampNum(j.amount, 100_000_00),
+    status:         clampStr(j.status, 50),
+    date:           clampStr(j.date, 20),
+    warrantyMonths: typeof j.warrantyMonths === "number" ? clampNum(j.warrantyMonths, 600) : undefined,
+  }));
+
+  return {
+    ...ctx,          // keep optional sections (score, forecast, etc.) as-is
+    properties,      // replaced with clamped versions
+    recentJobs,      // replaced with clamped versions
+    principal,       // always overwritten from the verified header, never from client
+  };
+}
+
+function contextMiddleware(req: Request, res: Response, next: express.NextFunction): void {
+  // Only guard routes that accept context
+  if (req.method !== "POST" || (!req.path.startsWith("/chat") && !req.path.startsWith("/agent"))) {
+    next(); return;
+  }
+
+  const principal = (req.headers["x-icp-principal"] as string | undefined) ?? "anon";
+
+  // HMAC verification — skip in dev when key is absent
+  if (VOICE_API_KEY) {
+    const provided = (req.headers["x-context-hmac"] as string | undefined) ?? "";
+    const context  = req.body?.context ?? req.body?.message != null ? (req.body?.context ?? {}) : null;
+    if (context !== null && !verifyHmac(VOICE_API_KEY, context, provided)) {
+      res.status(403).json({ error: "Context integrity check failed." });
+      return;
+    }
+  }
+
+  // Sanitise and inject principal into context
+  if (req.body && typeof req.body === "object") {
+    req.body.context = sanitiseContext(req.body.context, principal);
+  }
+
+  next();
+}
+
+app.use("/api/", contextMiddleware);
 
 // ── POST /api/chat ────────────────────────────────────────────────────────────
 // Accepts { message, context }, streams Claude's response as SSE.

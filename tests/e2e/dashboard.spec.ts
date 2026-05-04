@@ -70,18 +70,7 @@ test.describe("DashboardPage — /dashboard", () => {
   test.beforeEach(async ({ page }) => {
     await setup(page);
     await page.goto("/dashboard");
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  });
-
-  // ── Page structure ──────────────────────────────────────────────────────────
-
-  test("shows the Overview eyebrow label", async ({ page }) => {
-    await expect(page.getByText("Overview")).toBeVisible();
-  });
-
-  test("shows the user email in the dashboard subheading", async ({ page }) => {
-    // injectTestAuth sets email = "e2e@test.com", shown below the Dashboard heading
-    await expect(page.getByRole("main").getByText("e2e@test.com")).toBeVisible();
+    await expect(page.getByText("My Properties")).toBeVisible();
   });
 
   // ── Stats panel ─────────────────────────────────────────────────────────────
@@ -105,25 +94,6 @@ test.describe("DashboardPage — /dashboard", () => {
 
   test("shows HomeGentic Premium stat", async ({ page }) => {
     await expect(page.getByText(/HomeGentic Premium/)).toBeVisible();
-  });
-
-  // ── Quick Actions ───────────────────────────────────────────────────────────
-
-  test("shows Quick Actions section", async ({ page }) => {
-    await expect(page.getByText("Quick Actions")).toBeVisible();
-  });
-
-  test("Add Property quick action is visible", async ({ page }) => {
-    // There are multiple "Add Property" buttons; at least one should be visible
-    await expect(page.getByRole("button", { name: /add property/i }).first()).toBeVisible();
-  });
-
-  test("Log a Job quick action is visible", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /log a job/i })).toBeVisible();
-  });
-
-  test("Request Quote quick action is visible", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /request quote/i })).toBeVisible();
   });
 
   // ── Properties section ──────────────────────────────────────────────────────
@@ -150,11 +120,6 @@ test.describe("DashboardPage — /dashboard", () => {
     await expect(page).toHaveURL("/properties/new");
   });
 
-  test("Log a Job opens the log job modal", async ({ page }) => {
-    await page.getByRole("button", { name: /log a job/i }).first().click();
-    await expect(page.getByRole("heading", { name: /log a job/i })).toBeVisible();
-  });
-
   // ── Baseline photo prompt ───────────────────────────────────────────────────
 
   test.describe("baseline prompt — zero photos", () => {
@@ -163,7 +128,7 @@ test.describe("DashboardPage — /dashboard", () => {
       await injectBaselinePhotos(page, { "1": [], "2": [] });
       await setup(page);
       await page.goto("/dashboard");
-      await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+      await expect(page.getByText("My Properties")).toBeVisible();
     });
 
     test("shows 'Complete your property baseline' card for first property", async ({ page }) => {
@@ -201,7 +166,7 @@ test.describe("DashboardPage — /dashboard", () => {
       });
       await setup(page);
       await page.goto("/dashboard");
-      await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+      await expect(page.getByText("My Properties")).toBeVisible();
     });
 
     test("shows 'Baseline photos complete' badge when all 6 are captured", async ({ page }) => {

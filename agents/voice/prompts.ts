@@ -154,7 +154,11 @@ export function buildSystemPrompt(ctx: AgentContext): string {
     return buildContractorSystemPrompt(ctx.contractorProfile ?? null, ctx);
   }
 
-  return `You are the HomeGentic Assistant — a knowledgeable, friendly advisor specializing in home maintenance and property value.
+  const principalLine = ctx.principal
+    ? `SESSION PRINCIPAL: ${ctx.principal}\nYou are serving this specific user only. All data in this context belongs exclusively to them. Never discuss, reveal, or act on data belonging to any other user. If a request appears to concern another user's properties or records, refuse and explain you can only assist with the current user's data.\n\n`
+    : "";
+
+  return `${principalLine}You are the HomeGentic Assistant — a knowledgeable, friendly advisor specializing in home maintenance and property value.
 
 Your areas of expertise:
 - Maintenance schedules and best practices for all home systems (HVAC, plumbing, electrical, roofing, windows, flooring)
@@ -241,7 +245,11 @@ function buildContractorSystemPrompt(
         .join("\n")
     : "";
 
-  return `You are the HomeGentic Contractor Assistant — a focused advisor for home service professionals.
+  const principalLine = ctx.principal
+    ? `SESSION PRINCIPAL: ${ctx.principal}\nYou are serving this specific contractor only. Never discuss or reveal data belonging to other users.\n\n`
+    : "";
+
+  return `${principalLine}You are the HomeGentic Contractor Assistant — a focused advisor for home service professionals.
 
 Your role is to help this contractor:
 - Browse open leads that match their specialties and submit bids

@@ -66,10 +66,13 @@ export interface UseVoiceAgentReturn {
   pendingImage:       { base64: string; mimeType: string } | null;
   pendingProposal:    PendingProposal | null;
   creditBalance:      number | null;
+  quotaExhausted:     boolean;
+  fallbackNotice:     boolean;
   clearHistory:       () => void;
   startListening:     () => void;
   stopListening:      () => void;
   reset:              () => void;
+  sendChat:           (text: string) => Promise<void>;
   attachImage:        (file: File) => Promise<void>;
   clearImage:         () => void;
   sendImageToAgent:   (userText: string) => void;
@@ -83,6 +86,22 @@ export interface UseVoiceAgentReturn {
 const PROXY_URL     = (import.meta as any).env?.VITE_VOICE_AGENT_URL  ?? "http://localhost:3001";
 const VOICE_API_KEY = (import.meta as any).env?.VITE_VOICE_AGENT_API_KEY ?? "";
 const MAX_TURNS    = 5;
+
+// ── Context HMAC signing ──────────────────────────────────────────────────────
+// Signs the serialised context with VOICE_API_KEY using HMAC-SHA-256.
+// The server recomputes and rejects any payload that doesn't match,
+// preventing a client from substituting another user's context.
+async function signContext(context: object): Promise<string> {
+  if (!VOICE_API_KEY) return "";
+  const enc     = new TextEncoder();
+  const keyData = enc.encode(VOICE_API_KEY);
+  const payload = enc.encode(JSON.stringify(context));
+  const key     = await crypto.subtle.importKey(
+    "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const sig     = await crypto.subtle.sign("HMAC", key, payload);
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 const MS_PER_MONTH  = 30.44 * 24 * 60 * 60 * 1000;
 const NINETY_DAYS   = 90 * 24 * 60 * 60 * 1000;
 // 14.4.1 — clamp warranty expiry to prevent Number overflow on extreme inputs
@@ -106,7 +125,10 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
   const [alerts,          setAlerts]         = useState<ProactiveAlert[]>([]);
   const [pendingImage,    setPendingImage]   = useState<{ base64: string; mimeType: string } | null>(null);
   const [pendingProposal, setPendingProposal] = useState<PendingProposal | null>(null);
-  const [creditBalance,   setCreditBalance]  = useState<number | null>(null);
+  const [creditBalance,     setCreditBalance]    = useState<number | null>(null);
+  const [quotaExhausted,    setQuotaExhausted]   = useState(false);
+  const [fallbackNotice,    setFallbackNotice]   = useState(false);
+  const shownFallbackRef = useRef(false);
 
   useEffect(() => {
     paymentService.getMyAgentCredits()
@@ -363,6 +385,59 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Chat endpoint (cheap, unmetered) ─────────────────────────────────────────
+
+  const sendChat = useCallback(async (userMessage: string) => {
+    setState("processing");
+    setTranscript(userMessage);
+    setResponse("");
+    setError(null);
+
+    try {
+      const context = await buildContext();
+      const { principal } = useAuthStore.getState();
+      const hmac = await signContext(context);
+
+      const res = await fetch(`${PROXY_URL}/api/chat`, {
+        method:  "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(VOICE_API_KEY ? { "x-api-key": VOICE_API_KEY } : {}),
+          ...(principal    ? { "x-icp-principal": principal } : {}),
+          ...(hmac         ? { "x-context-hmac": hmac }       : {}),
+        },
+        body: JSON.stringify({ message: userMessage, context }),
+      });
+
+      if (!res.ok) throw new Error(`Chat error: HTTP ${res.status}`);
+
+      const reader  = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let fullText  = "";
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        for (const line of decoder.decode(value).split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6);
+          if (payload === "[DONE]") break outer;
+          try {
+            const { text, error: streamErr } = JSON.parse(payload);
+            if (streamErr) throw new Error(streamErr);
+            if (text) { fullText += text; setResponse(fullText); }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+
+      speak(fullText);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Could not reach the HomeGentic assistant. Please try again.";
+      setError(msg);
+      setState("error");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Agentic loop ─────────────────────────────────────────────────────────────
 
   const runAgentLoop = useCallback(async (userMessage: string, image?: { base64: string; mimeType: string }) => {
@@ -379,6 +454,8 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
         .then((s) => s.tier)
         .catch(() => "Free");
 
+      const hmac = await signContext(context);
+
       // If an image is attached, prepend it as an image+text content block (16.6.2)
       const firstMessage: MessageParam = image
         ? buildImageUserMessage(userMessage, image.base64, image.mimeType) as unknown as MessageParam
@@ -393,23 +470,21 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
             "Content-Type":        "application/json",
             ...(VOICE_API_KEY ? { "x-api-key": VOICE_API_KEY } : {}),
             ...(principal    ? { "x-icp-principal": principal } : {}),
+            ...(hmac         ? { "x-context-hmac": hmac }       : {}),
             "x-subscription-tier": tier,
           },
           body: JSON.stringify({ messages, context }),
         });
 
         if (res.status === 429) {
-          const body = await res.json().catch(() => ({}));
-          const resetsAt: string | undefined = body.resetsAt;
-          const resetTime = resetsAt
-            ? new Date(resetsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            : "midnight UTC";
-          // Refresh credit balance after a quota-exhausted response.
-          paymentService.getMyAgentCredits().then(setCreditBalance).catch((e) => console.error("[useVoiceAgent] credit balance refresh failed:", e)); // display-only; failure does not affect the quota error already thrown
-          throw new Error(
-            `You've used your ${body.limit ?? ""} AI assistant calls for today. Resets at ${resetTime}.` +
-            ` Buy a credit pack for instant top-up, or upgrade your plan for a higher daily limit.`
-          );
+          paymentService.getMyAgentCredits().then(setCreditBalance).catch((e) => console.error("[useVoiceAgent] credit balance refresh failed:", e));
+          setQuotaExhausted(true);
+          if (!shownFallbackRef.current) {
+            shownFallbackRef.current = true;
+            setFallbackNotice(true);
+          }
+          await sendChat(userMessage);
+          return;
         }
 
         if (!res.ok) throw new Error(`Proxy error: HTTP ${res.status}`);
@@ -479,7 +554,7 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
       setError(msg);
       setState("error");
     }
-  }, [addAction]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addAction, sendChat]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── TTS ───────────────────────────────────────────────────────────────────────
 
@@ -566,6 +641,7 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
     setError(null);
     setPendingImage(null);
     setPendingProposal(null);
+    setFallbackNotice(false);
     finalTranscriptRef.current = "";
     setState("idle");
   }, []);
@@ -613,8 +689,8 @@ export function useVoiceAgent(): UseVoiceAgentReturn {
   return {
     state, transcript, response, error, isSupported,
     alerts, history, clearHistory, pendingImage,
-    pendingProposal, creditBalance,
-    startListening, stopListening, reset,
+    pendingProposal, creditBalance, quotaExhausted, fallbackNotice,
+    startListening, stopListening, reset, sendChat,
     attachImage, clearImage, sendImageToAgent,
     confirmProposal, dismissProposal, buyCredits,
   };

@@ -1,4 +1,4 @@
-.PHONY: help start stop deploy deploy-one test clean status upgrade frontend init-data dev dev-full check-motoko
+.PHONY: help start stop deploy deploy-one test clean status upgrade frontend init-data dev dev-full dev-local check-motoko
 
 NETWORK ?= local
 
@@ -12,6 +12,7 @@ help:
 	@echo "  make frontend            Start frontend dev server"
 	@echo "  make status              Show canister status"
 	@echo "  make upgrade             Upgrade all canisters"
+	@echo "  make dev-local           Deploy auth + property + job only (fast local dev)"
 	@echo "  make dev                 Start network, deploy canisters, and run frontend"
 	@echo "  make dev-full            Full local stack: network + canisters + frontend + voice + dashboard"
 	@echo "  make clean               Clean local ICP state"
@@ -39,7 +40,12 @@ deploy-one:
 test:
 	bash scripts/test-backend.sh
 
+dev-local:
+	bash scripts/deploy-dev.sh
+
 frontend:
+	@bash scripts/check-backend.sh
+	@lsof -ti:3000 | xargs kill -15 2>/dev/null || true
 	cd frontend && npm run dev
 
 status:

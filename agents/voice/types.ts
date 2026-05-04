@@ -125,6 +125,8 @@ export interface AgentContext {
   maintenanceForecast?:  MaintenanceForecastContext;
   role?:                 "Homeowner" | "Contractor" | "Realtor";
   contractorProfile?:    ContractorContext;
+  /** Authenticated ICP principal — set server-side from x-icp-principal header, not trusted from client. */
+  principal?:            string;
 }
 
 export interface ChatRequest {

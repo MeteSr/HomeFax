@@ -154,6 +154,7 @@ export const authService = {
   },
 
   async completeOnboarding(): Promise<void> {
+    if (!getCanisterId()) return;
     const a = await getActor();
     await a.completeOnboarding();
   },
