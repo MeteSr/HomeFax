@@ -158,7 +158,7 @@ function NotFoundResult({ address }: { address: string }) {
   const [submitted, setSubmitted]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const registerHref = `/properties/new?address=${encodeURIComponent(address)}`;
+  const registerHref = `/dashboard`;
 
   const handleRequest = async () => {
     if (!email.trim() || !isValidEmail(email)) return;

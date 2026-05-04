@@ -1,7 +1,7 @@
 /**
  * §17.5.5 — Permit Coverage Indicator
  *
- * Shown in the address step of PropertyRegisterPage once city+state are filled.
+ * Shown in the address step of AddPropertyModal once city+state are filled.
  * Tells the homeowner whether permit auto-import will be available for their area.
  */
 

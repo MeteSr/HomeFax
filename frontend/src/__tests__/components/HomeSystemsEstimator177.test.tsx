@@ -3,7 +3,7 @@
  *
  * 17.7.1 — page renders system table without login
  * 17.7.2 — shareable URL shown and updated when inputs change
- * 17.7.3 — "Track this property" CTA links to /properties/new with yearBuilt
+ * 17.7.3 — "Track this property" CTA links to /dashboard
  * 17.7.5 — estimator → registration migration (yearBuilt in CTA href)
  */
 
@@ -107,25 +107,10 @@ describe("HomeSystemsEstimatorPage — registration CTA", () => {
     expect(screen.getByRole("link", { name: /track this property/i })).toBeInTheDocument();
   });
 
-  it("CTA links to /properties/new", () => {
+  it("CTA links to /dashboard", () => {
     renderPage("?yearBuilt=1998");
     const link = screen.getByRole("link", { name: /track this property/i });
-    expect(link.getAttribute("href")).toContain("/properties/new");
-  });
-
-  // ── 17.7.5 — migration: yearBuilt pre-populated in registration URL ─────────
-  it("CTA href carries yearBuilt param for pre-population (17.7.5)", () => {
-    renderPage("?yearBuilt=1998&type=single-family");
-    const link = screen.getByRole("link", { name: /track this property/i });
-    const href = link.getAttribute("href") ?? "";
-    expect(href).toContain("yearBuilt=1998");
-  });
-
-  it("CTA href carries propertyType param when type provided", () => {
-    renderPage("?yearBuilt=1998&type=condo");
-    const link = screen.getByRole("link", { name: /track this property/i });
-    const href = link.getAttribute("href") ?? "";
-    expect(href).toContain("type=condo");
+    expect(link.getAttribute("href")).toContain("/dashboard");
   });
 
   it("CTA is visible even for a new house (all Good urgency)", () => {

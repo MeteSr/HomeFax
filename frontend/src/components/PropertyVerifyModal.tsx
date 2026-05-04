@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Shield, Upload, CheckCircle, FileText, Clock, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/Button";
 import { propertyService } from "@/services/property";
+import { useAddPropertyStore } from "@/store/addPropertyStore";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS } from "@/theme";
 
@@ -41,7 +42,8 @@ export interface PropertyVerifyModalProps {
 }
 
 export default function PropertyVerifyModal({ open, onClose, propertyId, onSuccess }: PropertyVerifyModalProps) {
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
+  const openAddProp = useAddPropertyStore((s) => s.open);
 
   const [method,     setMethod]     = useState<VerificationMethod>("UtilityBill");
   const [file,       setFile]       = useState<File | null>(null);
@@ -141,7 +143,7 @@ export default function PropertyVerifyModal({ open, onClose, propertyId, onSucce
             </div>
             <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
               <Button variant="outline" onClick={handleClose}>Back to Property</Button>
-              <Button onClick={() => { handleClose(); navigate("/onboarding"); }}>Continue Setup</Button>
+              <Button onClick={() => { handleClose(); openAddProp(); }}>Continue Setup</Button>
             </div>
           </div>
         ) : (

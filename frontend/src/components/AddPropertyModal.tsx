@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CheckCircle, Camera } from "lucide-react";
+import { useBreakpoint } from "@/hooks/useBreakpoint";
+import { X, ArrowLeft, ArrowRight, CheckCircle, Camera } from "lucide-react";
 import { propertyService } from "@/services/property";
 import { photoService, type PhotoQuota } from "@/services/photo";
 import { authService } from "@/services/auth";
@@ -32,43 +33,25 @@ const BASELINE_SYSTEMS = [
 ];
 
 const SYSTEM_LABELS = [
-  { key: "hvac",        label: "HVAC / AC",        },
-  { key: "roof",        label: "Roof",              },
-  { key: "waterHeater", label: "Water Heater",      },
-  { key: "electrical",  label: "Electrical Panel",  },
-  { key: "plumbing",    label: "Plumbing",          },
+  { key: "hvac",        label: "HVAC / AC"       },
+  { key: "roof",        label: "Roof"             },
+  { key: "waterHeater", label: "Water Heater"     },
+  { key: "electrical",  label: "Electrical Panel" },
+  { key: "plumbing",    label: "Plumbing"         },
 ];
 
 const DOC_TYPES = [
-  { value: "DeedRecord",   label: "Deed / Title"  },
-  { value: "UtilityBill",  label: "Utility Bill"  },
-  { value: "TaxRecord",    label: "Tax Record"    },
+  { value: "DeedRecord",  label: "Deed / Title" },
+  { value: "UtilityBill", label: "Utility Bill" },
+  { value: "TaxRecord",   label: "Tax Record"   },
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface AddressForm {
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-}
-
-interface DetailsForm {
-  propertyType: PropertyType;
-  yearBuilt: string;
-  squareFeet: string;
-}
-
-interface VerifyForm {
-  legalName: string;
-  docType:   string;
-  docFile:   File | null;
-}
-
-interface SystemAgesForm {
-  [key: string]: string;
-}
+interface AddressForm  { address: string; city: string; state: string; zipCode: string; }
+interface DetailsForm  { propertyType: PropertyType; yearBuilt: string; squareFeet: string; }
+interface VerifyForm   { legalName: string; docType: string; docFile: File | null; }
+interface SystemAgesForm { [key: string]: string; }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -77,28 +60,14 @@ function StepIndicator({ step }: { step: number }) {
   return (
     <div style={{ marginBottom: "1.75rem" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-        <span
-          style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid }}
-        >
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid }}>
           Step {step} of {TOTAL_STEPS}
         </span>
-        <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", color: COLORS.plumMid }}>
-          {pct}%
-        </span>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", color: COLORS.plumMid }}>{pct}%</span>
       </div>
-      <div
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        style={{ height: "6px", background: COLORS.rule, borderRadius: 100 }}
-      >
-        <div style={{
-          height: "6px", width: `${pct}%`,
-          background: COLORS.sage,
-          borderRadius: 100,
-          transition: "width 0.35s ease",
-        }} />
+      <div role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+        style={{ height: "6px", background: COLORS.rule, borderRadius: 100 }}>
+        <div style={{ height: "6px", width: `${pct}%`, background: COLORS.sage, borderRadius: 100, transition: "width 0.35s ease" }} />
       </div>
     </div>
   );
@@ -106,10 +75,7 @@ function StepIndicator({ step }: { step: number }) {
 
 function StepHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h2 style={{
-      fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem",
-      lineHeight: 1.1, color: COLORS.plum, margin: "0 0 0.375rem",
-    }}>
+    <h2 style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1.1, color: COLORS.plum, margin: "0 0 0.375rem" }}>
       {children}
     </h2>
   );
@@ -117,10 +83,7 @@ function StepHeading({ children }: { children: React.ReactNode }) {
 
 function StepSubtitle({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{
-      fontFamily: FONTS.sans, fontSize: "0.85rem", color: COLORS.plumMid,
-      fontWeight: 300, lineHeight: 1.6, margin: "0 0 1.5rem",
-    }}>
+    <p style={{ fontFamily: FONTS.sans, fontSize: "0.85rem", color: COLORS.plumMid, fontWeight: 300, lineHeight: 1.6, margin: "0 0 1.5rem" }}>
       {children}
     </p>
   );
@@ -128,37 +91,68 @@ function StepSubtitle({ children }: { children: React.ReactNode }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function OnboardingWizard() {
-  const navigate     = useNavigate();
-  const { addProperty, setProperties } = usePropertyStore();
+interface Props {
+  open:    boolean;
+  onClose: () => void;
+}
+
+export default function AddPropertyModal({ open, onClose }: Props) {
+  const navigate = useNavigate();
+  const { isMobile } = useBreakpoint();
+  const { addProperty } = usePropertyStore();
 
   const [step, setStep] = useState(1);
 
-  // Step 1 — address
-  const [addr, setAddr] = useState<AddressForm>({ address: "", city: "", state: "", zipCode: "" });
-
-  // Step 2 — details
+  const [addr,    setAddr]    = useState<AddressForm>({ address: "", city: "", state: "", zipCode: "" });
   const [details, setDetails] = useState<DetailsForm>({ propertyType: "SingleFamily", yearBuilt: "", squareFeet: "" });
 
-  // Registration (happens when leaving step 2)
   const [registeredId, setRegisteredId] = useState<string | null>(null);
-  const [registering, setRegistering]   = useState(false);
+  const [registering,  setRegistering]  = useState(false);
 
-  // Step 3 — ownership verification
-  const [verify, setVerify]           = useState<VerifyForm>({ legalName: "", docType: "DeedRecord", docFile: null });
+  const [verify,          setVerify]          = useState<VerifyForm>({ legalName: "", docType: "DeedRecord", docFile: null });
   const [submittingVerify, setSubmittingVerify] = useState(false);
 
-  // Step 3 — baseline photos
   const [baselineCompleted, setBaselineCompleted] = useState<Set<string>>(new Set());
   const [uploadingBaseline, setUploadingBaseline] = useState<string | null>(null);
   const baselineInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  // Step 5 — documents
-  const [quota, setQuota] = useState<PhotoQuota>({ used: 0, limit: 10, tier: "Free" });
-
-  // Step 5 — system ages
-  const [ages, setAges]       = useState<SystemAgesForm>({});
+  const [quota,   setQuota]   = useState<PhotoQuota>({ used: 0, limit: 10, tier: "Free" });
+  const [ages,    setAges]    = useState<SystemAgesForm>({});
   const [hasSolar, setHasSolar] = useState(false);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  // ESC closes the modal
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // Reset wizard state each time it opens
+  useEffect(() => {
+    if (!open) return;
+    setStep(1);
+    setAddr({ address: "", city: "", state: "", zipCode: "" });
+    setDetails({ propertyType: "SingleFamily", yearBuilt: "", squareFeet: "" });
+    setRegisteredId(null);
+    setRegistering(false);
+    setVerify({ legalName: "", docType: "DeedRecord", docFile: null });
+    setSubmittingVerify(false);
+    setBaselineCompleted(new Set());
+    setUploadingBaseline(null);
+    setAges({});
+    setHasSolar(false);
+  }, [open]);
 
   // Auto-skip baseline photos step in E2E tests
   useEffect(() => {
@@ -167,7 +161,7 @@ export default function OnboardingWizard() {
     }
   }, [step]);
 
-  // ── Validation ──────────────────────────────────────────────────────────────
+  // ── Validation ───────────────────────────────────────────────────────────────
 
   const step1Valid =
     addr.address.trim().length > 0 &&
@@ -185,7 +179,7 @@ export default function OnboardingWizard() {
     verify.legalName.trim().length > 0 &&
     verify.docFile !== null;
 
-  // ── Navigation ──────────────────────────────────────────────────────────────
+  // ── Navigation ───────────────────────────────────────────────────────────────
 
   const handleNext = async () => {
     if (step === 2 && !registeredId) {
@@ -202,9 +196,8 @@ export default function OnboardingWizard() {
           tier:         "Free",
         });
         addProperty(property);
-        setProperties([property]);
         setRegisteredId(String(property.id));
-        photoService.getQuota().then(setQuota).catch(() => {}); // quota is display-only enrichment; failure is non-critical
+        photoService.getQuota().then(setQuota).catch(() => {});
         toast.success("Property registered!");
       } catch (err: any) {
         toast.error(err.message || "Registration failed");
@@ -217,11 +210,10 @@ export default function OnboardingWizard() {
     if (step === 4 && registeredId) {
       setSubmittingVerify(true);
       try {
-        const buffer      = await verify.docFile!.arrayBuffer();
-        const hashBuffer  = await crypto.subtle.digest("SHA-256", buffer);
-        const hashHex     = Array.from(new Uint8Array(hashBuffer))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
+        const buffer     = await verify.docFile!.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+        const hashHex    = Array.from(new Uint8Array(hashBuffer))
+          .map((b) => b.toString(16).padStart(2, "0")).join("");
         await propertyService.submitVerification(BigInt(registeredId), verify.docType, hashHex);
         toast.success("Verification submitted — pending admin review");
       } catch (err: any) {
@@ -235,9 +227,17 @@ export default function OnboardingWizard() {
     setStep((s) => s + 1);
   };
 
-  const handleBack   = () => setStep((s) => s - 1);
-  const handleFinish = () => { authService.completeOnboarding().catch((e) => console.error("[Onboarding] completeOnboarding failed:", e)); navigate("/dashboard"); };
-  const handleSkip   = () => { authService.completeOnboarding().catch((e) => console.error("[Onboarding] completeOnboarding failed:", e)); navigate("/dashboard"); };
+  const handleBack = () => setStep((s) => s - 1);
+
+  const handleFinish = () => {
+    authService.completeOnboarding().catch((e) => console.error("[AddPropertyModal] completeOnboarding failed:", e));
+    onClose();
+  };
+
+  const handleSkip = () => {
+    authService.completeOnboarding().catch((e) => console.error("[AddPropertyModal] completeOnboarding failed:", e));
+    onClose();
+  };
 
   const handleBaselineUpload = async (systemKey: string, file: File) => {
     if (!registeredId) return;
@@ -258,7 +258,7 @@ export default function OnboardingWizard() {
     setQuota((q) => ({ ...q, used: q.used + 1 }));
   };
 
-  // ── Step content ────────────────────────────────────────────────────────────
+  // ── Step content ─────────────────────────────────────────────────────────────
 
   const renderStep = () => {
     switch (step) {
@@ -284,7 +284,7 @@ export default function OnboardingWizard() {
                   }))}
                 />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "1rem" }}>
                 <div>
                   <label className="form-label" htmlFor="wiz-city">City *</label>
                   <input id="wiz-city" className="form-input" placeholder="Austin"
@@ -330,7 +330,7 @@ export default function OnboardingWizard() {
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
                 <label className="form-label">Property Type *</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px", background: COLORS.rule }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "1px", background: COLORS.rule }}>
                   {PROPERTY_TYPES.map((t) => (
                     <div
                       key={t}
@@ -349,7 +349,7 @@ export default function OnboardingWizard() {
                   ))}
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "1rem" }}>
                 <div>
                   <label className="form-label" htmlFor="wiz-year">Year Built *</label>
                   <input id="wiz-year" className="form-input" type="number"
@@ -385,14 +385,10 @@ export default function OnboardingWizard() {
               Photograph your major home systems now to create a permanent baseline record.
               This step is optional — you can always come back later.
             </StepSubtitle>
-
-            {/* Progress count */}
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginBottom: "1.25rem",
-              padding: "0.625rem 0.875rem",
-              background: COLORS.white,
-              border: `1px solid ${COLORS.rule}`,
+              marginBottom: "1.25rem", padding: "0.625rem 0.875rem",
+              background: COLORS.white, border: `1px solid ${COLORS.rule}`,
             }}>
               <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
                 Baseline photos captured
@@ -401,35 +397,22 @@ export default function OnboardingWizard() {
                 {completedCount} <span style={{ fontWeight: 300, color: COLORS.plumMid }}>/ {BASELINE_SYSTEMS.length}</span>
               </span>
             </div>
-
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {BASELINE_SYSTEMS.map(({ key, label, prompt }) => {
-                const done = baselineCompleted.has(key);
+                const done      = baselineCompleted.has(key);
                 const uploading = uploadingBaseline === key;
                 return (
-                  <div
-                    key={key}
-                    style={{
-                      display: "flex", alignItems: "flex-start", gap: "0.875rem",
-                      padding: "0.875rem",
-                      border: `1px solid ${done ? COLORS.sage : COLORS.rule}`,
-                      background: done ? "#F2FAF4" : COLORS.white,
-                    }}
-                  >
-                    <div style={{
-                      flexShrink: 0, width: "1.5rem", height: "1.5rem",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      marginTop: "0.1rem",
-                    }}>
-                      {done
-                        ? <CheckCircle size={18} color={COLORS.sage} />
-                        : <Camera size={18} color={COLORS.plumMid} />
-                      }
+                  <div key={key} style={{
+                    display: "flex", alignItems: "flex-start", gap: "0.875rem",
+                    padding: "0.875rem",
+                    border: `1px solid ${done ? COLORS.sage : COLORS.rule}`,
+                    background: done ? "#F2FAF4" : COLORS.white,
+                  }}>
+                    <div style={{ flexShrink: 0, width: "1.5rem", height: "1.5rem", display: "flex", alignItems: "center", justifyContent: "center", marginTop: "0.1rem" }}>
+                      {done ? <CheckCircle size={18} color={COLORS.sage} /> : <Camera size={18} color={COLORS.plumMid} />}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 600, color: COLORS.plum, margin: "0 0 0.2rem" }}>
-                        {label}
-                      </p>
+                      <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: 600, color: COLORS.plum, margin: "0 0 0.2rem" }}>{label}</p>
                       <p style={{ fontFamily: FONTS.sans, fontSize: "0.775rem", color: COLORS.plumMid, fontWeight: 300, margin: 0, lineHeight: 1.5 }}>
                         {done ? "Photo captured" : prompt}
                       </p>
@@ -437,13 +420,11 @@ export default function OnboardingWizard() {
                     {!done && (
                       <div style={{ flexShrink: 0 }}>
                         <input
-                          type="file"
-                          accept="image/*"
-                          style={{ display: "none" }}
+                          type="file" accept="image/*" style={{ display: "none" }}
                           ref={(el) => { baselineInputRefs.current[key] = el; }}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) handleBaselineUpload(key, file).catch(() => {}); // errors surfaced via toast inside handleBaselineUpload; outer catch prevents unhandled-rejection noise
+                            if (file) handleBaselineUpload(key, file).catch(() => {});
                             e.target.value = "";
                           }}
                         />
@@ -481,19 +462,14 @@ export default function OnboardingWizard() {
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div>
                 <label className="form-label" htmlFor="wiz-legal-name">Legal Name *</label>
-                <input
-                  id="wiz-legal-name"
-                  className="form-input"
-                  placeholder="Jane Smith"
+                <input id="wiz-legal-name" className="form-input" placeholder="Jane Smith"
                   value={verify.legalName}
                   onChange={(e) => setVerify((v) => ({ ...v, legalName: e.target.value }))}
                 />
               </div>
               <div>
                 <label className="form-label" htmlFor="wiz-doc-type">Document Type *</label>
-                <select
-                  id="wiz-doc-type"
-                  className="form-input"
+                <select id="wiz-doc-type" className="form-input"
                   value={verify.docType}
                   onChange={(e) => setVerify((v) => ({ ...v, docType: e.target.value }))}
                 >
@@ -505,9 +481,7 @@ export default function OnboardingWizard() {
               <div>
                 <label className="form-label" htmlFor="wiz-ownership-doc">Ownership Document *</label>
                 <input
-                  id="wiz-ownership-doc"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  id="wiz-ownership-doc" type="file" accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => setVerify((v) => ({ ...v, docFile: e.target.files?.[0] ?? null }))}
                   style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plumMid, display: "block", marginTop: "0.25rem" }}
                 />
@@ -532,7 +506,7 @@ export default function OnboardingWizard() {
             <ConstructionPhotoUpload
               onUpload={(file, docType) => { handleDocUpload(file, docType).catch(() => toast.error("Upload failed")); }}
               quota={quota}
-              onUpgradeQuota={() => navigate("/pricing")}
+              onUpgradeQuota={() => { onClose(); navigate("/pricing"); }}
             />
           </div>
         );
@@ -550,32 +524,21 @@ export default function OnboardingWizard() {
                 <div key={key}>
                   <label className="form-label" htmlFor={`sys-${key}`}>{label}</label>
                   <input
-                    id={`sys-${key}`}
-                    className="form-input"
-                    type="number"
-                    min="1900"
-                    max={new Date().getFullYear()}
+                    id={`sys-${key}`} className="form-input" type="number"
+                    min="1900" max={new Date().getFullYear()}
                     value={ages[key] ?? details.yearBuilt}
                     onChange={(e) => setAges((a) => ({ ...a, [key]: e.target.value }))}
                   />
                 </div>
               ))}
-
-              {/* Solar panels — optional toggle */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
                   <input
-                    id="sys-solar-toggle"
-                    type="checkbox"
-                    checked={hasSolar}
-                    onChange={(e) => setHasSolar(e.target.checked)}
+                    id="sys-solar-toggle" type="checkbox"
+                    checked={hasSolar} onChange={(e) => setHasSolar(e.target.checked)}
                     style={{ cursor: "pointer", width: "1rem", height: "1rem" }}
                   />
-                  <label
-                    className="form-label"
-                    htmlFor="sys-solar-toggle"
-                    style={{ margin: 0, cursor: "pointer" }}
-                  >
+                  <label className="form-label" htmlFor="sys-solar-toggle" style={{ margin: 0, cursor: "pointer" }}>
                     Solar Panels
                   </label>
                 </div>
@@ -583,11 +546,8 @@ export default function OnboardingWizard() {
                   <div style={{ marginTop: "0.625rem" }}>
                     <label className="form-label" htmlFor="sys-solar">Year Installed</label>
                     <input
-                      id="sys-solar"
-                      className="form-input"
-                      type="number"
-                      min="1990"
-                      max={new Date().getFullYear()}
+                      id="sys-solar" className="form-input" type="number"
+                      min="1990" max={new Date().getFullYear()}
                       value={ages["solar"] ?? details.yearBuilt}
                       onChange={(e) => setAges((a) => ({ ...a, solar: e.target.value }))}
                     />
@@ -603,31 +563,26 @@ export default function OnboardingWizard() {
     }
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────────
 
   const isNextDisabled =
     (step === 1 && !step1Valid) ||
     (step === 2 && (!step2Valid || registering)) ||
     (step === 4 && (!step4Valid || submittingVerify));
 
+  if (!open) return null;
+
   return (
-    <div style={{
-      minHeight: "100vh", background: COLORS.white,
-      display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "3rem 1.25rem 4rem",
-    }}>
-
-      {/* Logo */}
-      <div
-        style={{ display: "flex", alignItems: "center", marginBottom: "2.5rem", cursor: "pointer" }}
-        onClick={() => navigate("/")}
-      >
-        <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", letterSpacing: "-0.5px", color: COLORS.plum }}>
-          Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
-        </span>
-      </div>
-
-      {/* Wizard card */}
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(14, 14, 12, 0.55)",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "3rem 1.25rem",
+        overflowY: "auto",
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div style={{
         borderRadius: RADIUS.card,
         border: `1px solid ${COLORS.rule}`,
@@ -636,23 +591,36 @@ export default function OnboardingWizard() {
         maxWidth: "36rem",
         width: "100%",
         boxShadow: SHADOWS.modal,
+        position: "relative",
+        margin: "auto",
       }}>
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          style={{
+            position: "absolute", top: "1rem", right: "1rem",
+            background: "none", border: "none", cursor: "pointer",
+            color: COLORS.plumMid, padding: "0.25rem",
+            display: "flex", alignItems: "center",
+            borderRadius: RADIUS.sm,
+          }}
+        >
+          <X size={18} />
+        </button>
 
         <StepIndicator step={step} />
 
-        {/* Step content */}
-        <div style={{ marginBottom: "2rem" }}>
-          {renderStep()}
-        </div>
+        <div style={{ marginBottom: "2rem" }}>{renderStep()}</div>
 
-        {/* Navigation row */}
+        {/* Navigation */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           {step > 1 && (
             <Button variant="outline" onClick={handleBack} icon={<ArrowLeft size={14} />}>
               Back
             </Button>
           )}
-
           {step < TOTAL_STEPS ? (
             <Button
               style={{ flex: 1 }}
@@ -664,17 +632,12 @@ export default function OnboardingWizard() {
               Next
             </Button>
           ) : (
-            <Button
-              style={{ flex: 1 }}
-              onClick={handleFinish}
-              icon={<CheckCircle size={14} />}
-            >
+            <Button style={{ flex: 1 }} onClick={handleFinish} icon={<CheckCircle size={14} />}>
               Finish
             </Button>
           )}
         </div>
 
-        {/* Skip setup link */}
         <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
           <button
             onClick={handleSkip}
@@ -687,7 +650,6 @@ export default function OnboardingWizard() {
             Skip setup — go to my dashboard
           </button>
         </div>
-
       </div>
     </div>
   );

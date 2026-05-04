@@ -1,6 +1,6 @@
 import { test, expect, Page } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
-import { injectRegisterProperty } from "./helpers/testData";
+import { injectRegisterProperty, injectSubscription } from "./helpers/testData";
 
 // Helper: fill Step 1 and advance
 async function fillStep1(page: Parameters<typeof injectTestAuth>[0]) {
@@ -25,12 +25,14 @@ async function injectSkipBaseline(page: Page) {
   await page.addInitScript(() => { (window as any).__e2e_skipBaselinePhotos = true; });
 }
 
-test.describe("OnboardingWizard — /onboarding", () => {
+test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
   test.beforeEach(async ({ page }) => {
     await injectTestAuth(page);
+    await injectSubscription(page, "Basic");
     await injectSkipBaseline(page);
-    await page.goto("/onboarding");
-    // Wait for wizard card to render
+    // No properties injected + onboardingComplete defaults to false → modal auto-opens
+    await page.goto("/dashboard");
+    // Wait for wizard modal to render
     await expect(page.getByText(/step 1 of 6/i)).toBeVisible();
   });
 
@@ -191,9 +193,10 @@ test.describe("OnboardingWizard — /onboarding", () => {
   test.describe("step 4 — Verify Ownership", () => {
     test.beforeEach(async ({ page }) => {
       await injectTestAuth(page);
+      await injectSubscription(page, "Basic");
       await injectRegisterProperty(page);          // must be before goto
       await injectSkipBaseline(page);              // auto-skip baseline photos step
-      await page.goto("/onboarding");
+      await page.goto("/dashboard");
       await expect(page.getByText(/step 1 of 6/i)).toBeVisible();
       // Navigate through step 1
       await page.getByLabel(/street address/i).fill("100 Onboarding Lane");
@@ -240,11 +243,12 @@ test.describe("OnboardingWizard — /onboarding", () => {
   test.describe("step 3 — Capture Baseline Photos", () => {
     test.beforeEach(async ({ page }) => {
       await injectTestAuth(page);
+      await injectSubscription(page, "Basic");
       await injectRegisterProperty(page);
       // The outer beforeEach adds __e2e_skipBaselinePhotos via addInitScript; that
       // script persists across navigations. Override it here so step 3 actually renders.
       await page.addInitScript(() => { delete (window as any).__e2e_skipBaselinePhotos; });
-      await page.goto("/onboarding");
+      await page.goto("/dashboard");
       await expect(page.getByText(/step 1 of 6/i)).toBeVisible();
       await page.getByLabel(/street address/i).fill("100 Onboarding Lane");
       await page.getByLabel(/city/i).fill("Austin");
@@ -301,8 +305,9 @@ test.describe("OnboardingWizard — /onboarding", () => {
 
   // ── Skip setup ──────────────────────────────────────────────────────────────
 
-  test("'Skip setup' link navigates to /dashboard", async ({ page }) => {
+  test("'Skip setup' link closes modal and stays on /dashboard", async ({ page }) => {
     await page.getByText(/skip setup/i).click();
+    await expect(page.getByText(/step 1 of 6/i)).not.toBeVisible();
     await expect(page).toHaveURL("/dashboard");
   });
 });

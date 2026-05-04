@@ -127,11 +127,11 @@ describe("CheckAddressPage — no report found", () => {
     );
   });
 
-  it("§17.4.5 — seller CTA links to /properties/new", async () => {
+  it("§17.4.5 — seller CTA links to /dashboard", async () => {
     renderPage("?address=99+Unknown+Rd");
     await waitFor(() => {
       const link = screen.getByRole("link", { name: /start.*report|create.*report/i });
-      expect(link.getAttribute("href")).toContain("/properties/new");
+      expect(link.getAttribute("href")).toContain("/dashboard");
     });
   });
 

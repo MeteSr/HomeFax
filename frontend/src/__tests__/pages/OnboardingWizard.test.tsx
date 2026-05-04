@@ -118,14 +118,17 @@ Object.defineProperty(globalThis, "crypto", {
 
 // ─── Import under test ────────────────────────────────────────────────────────
 
-import OnboardingWizard from "@/pages/OnboardingWizard";
+import AddPropertyModal from "@/components/AddPropertyModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const mockOnClose = vi.fn();
+
 function renderWizard() {
+  mockOnClose.mockReset();
   return render(
     <MemoryRouter>
-      <OnboardingWizard />
+      <AddPropertyModal open={true} onClose={mockOnClose} />
     </MemoryRouter>
   );
 }
@@ -448,9 +451,9 @@ describe("OnboardingWizard — step 6 Finish button", () => {
     expect(screen.queryByRole("button", { name: /^next$/i })).not.toBeInTheDocument();
   });
 
-  it("clicking Finish navigates to /dashboard", async () => {
+  it("clicking Finish closes the modal", async () => {
     fireEvent.click(screen.getByRole("button", { name: /^finish$/i }));
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/dashboard"));
+    await waitFor(() => expect(mockOnClose).toHaveBeenCalled());
   });
 });
 
@@ -536,10 +539,10 @@ describe("OnboardingWizard — Skip setup link", () => {
     expect(screen.getByRole("button", { name: /skip setup/i })).toBeInTheDocument();
   });
 
-  it("clicking 'Skip setup' navigates to /dashboard from step 1", () => {
+  it("clicking 'Skip setup' closes the modal from step 1", () => {
     renderWizard();
     fireEvent.click(screen.getByRole("button", { name: /skip setup/i }));
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+    expect(mockOnClose).toHaveBeenCalled();
   });
 
   it("shows 'Skip setup' link on step 2", async () => {
@@ -547,10 +550,10 @@ describe("OnboardingWizard — Skip setup link", () => {
     expect(screen.getByRole("button", { name: /skip setup/i })).toBeInTheDocument();
   });
 
-  it("clicking 'Skip setup' from step 2 navigates to /dashboard", async () => {
+  it("clicking 'Skip setup' from step 2 closes the modal", async () => {
     await goToStep(2);
     fireEvent.click(screen.getByRole("button", { name: /skip setup/i }));
-    expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+    expect(mockOnClose).toHaveBeenCalled();
   });
 });
 

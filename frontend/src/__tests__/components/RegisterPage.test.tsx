@@ -21,7 +21,7 @@
  *     - shows the selected role, email, and phone
  *     - shows "Not provided" for empty optional fields
  *     - calls authService.register on Create Account
- *     - navigates to /onboarding after successful Homeowner registration
+ *     - navigates to /dashboard after successful Homeowner registration
  *     - navigates to /contractor-dashboard after successful Contractor registration
  *     - shows toast error on registration failure
  */
@@ -215,11 +215,11 @@ describe("RegisterPage — step 3: confirm & submit", () => {
     }));
   });
 
-  it("navigates to /onboarding after Homeowner registration", async () => {
+  it("navigates to /dashboard after Homeowner registration", async () => {
     vi.mocked(authService.register).mockResolvedValue(MOCK_PROFILE);
     goToStep3();
     fireEvent.click(screen.getByRole("button", { name: /create account/i }));
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/onboarding"));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/dashboard"));
   });
 
   it("navigates to /contractor-dashboard after Contractor registration", async () => {

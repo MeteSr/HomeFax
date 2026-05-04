@@ -7,7 +7,7 @@
  *   - Each system row has an inline "Last replaced" input
  *   - Changing override input updates the URL
  *   - 10-year budget displayed in summary
- *   - "Save your forecast" CTA links to /properties/new?...
+ *   - "Save your forecast" CTA links to /dashboard
  *   - lookupYearBuilt auto-fills year (stub returns null gracefully)
  */
 
@@ -93,16 +93,10 @@ describe("InstantForecastPage — Save CTA", () => {
     expect(screen.getByRole("link", { name: /save your forecast|save forecast/i })).toBeInTheDocument();
   });
 
-  it("Save CTA href contains /properties/new", () => {
+  it("Save CTA href links to /dashboard", () => {
     renderAtPath("?address=123+Main+St&yearBuilt=1976");
     const link = screen.getByRole("link", { name: /save your forecast|save forecast/i }) as HTMLAnchorElement;
-    expect(link.href).toContain("/properties/new");
-  });
-
-  it("Save CTA href carries the address param", () => {
-    renderAtPath("?address=123+Main+St&yearBuilt=1976");
-    const link = screen.getByRole("link", { name: /save your forecast|save forecast/i }) as HTMLAnchorElement;
-    expect(link.href).toContain("address=");
+    expect(link.href).toContain("/dashboard");
   });
 });
 

@@ -32,7 +32,6 @@ import PaymentFailurePage    from "@/pages/PaymentFailurePage";
 const RegisterPage               = React.lazy(() => import("@/pages/RegisterPage"));
 const DashboardPage              = React.lazy(() => import("@/pages/DashboardPage"));
 const PropertyDetailPage         = React.lazy(() => import("@/pages/PropertyDetailPage"));
-const PropertyRegisterPage       = React.lazy(() => import("@/pages/PropertyRegisterPage"));
 const PropertyVerifyPage         = React.lazy(() => import("@/pages/PropertyVerifyPage"));
 const SystemAgesPage             = React.lazy(() => import("@/pages/SystemAgesPage"));
 const JobCreatePage              = React.lazy(() => import("@/pages/JobCreatePage"));
@@ -49,7 +48,6 @@ const BadgePage                  = React.lazy(() => import("@/pages/BadgePage"))
 const ScoreCertPage              = React.lazy(() => import("@/pages/ScoreCertPage"));
 const PredictiveMaintenancePage  = React.lazy(() => import("@/pages/PredictiveMaintenancePage"));
 const AdminDashboardPage         = React.lazy(() => import("@/pages/AdminDashboardPage"));
-const OnboardingWizard           = React.lazy(() => import("@/pages/OnboardingWizard"));
 const AgentDashboardPage         = React.lazy(() => import("@/pages/AgentDashboardPage"));
 const SensorPage                 = React.lazy(() => import("@/pages/SensorPage"));
 const WarrantyWalletPage         = React.lazy(() => import("@/pages/WarrantyWalletPage"));
@@ -158,7 +156,7 @@ export default function App() {
           <Route path="/contractors"  element={<ProtectedRoute><ContractorBrowsePage /></ProtectedRoute>} />
           <Route path="/contractor/:id" element={<ProtectedRoute><ContractorPublicPage /></ProtectedRoute>} />
           <Route path="/contractor/profile" element={<ProtectedRoute><ContractorProfilePage /></ProtectedRoute>} />
-          <Route path="/properties/new" element={<PaidHomeownerRoute><PropertyRegisterPage /></PaidHomeownerRoute>} />
+          <Route path="/properties/new" element={<Navigate to="/dashboard" replace />} />
           <Route path="/properties/:id" element={<PaidHomeownerRoute><PropertyDetailPage /></PaidHomeownerRoute>} />
           <Route path="/properties/:id/verify" element={<PaidHomeownerRoute><PropertyVerifyPage /></PaidHomeownerRoute>} />
           <Route path="/properties/:id/systems" element={<PaidHomeownerRoute><SystemAgesPage /></PaidHomeownerRoute>} />
@@ -169,7 +167,7 @@ export default function App() {
           <Route path="/market"       element={<PaidHomeownerRoute><MarketIntelligencePage /></PaidHomeownerRoute>} />
           <Route path="/maintenance"  element={<PaidHomeownerRoute><PredictiveMaintenancePage /></PaidHomeownerRoute>} />
           <Route path="/admin"        element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>} />
-          <Route path="/onboarding"   element={<ProtectedRoute><OnboardingWizard /></ProtectedRoute>} />
+          <Route path="/onboarding"   element={<Navigate to="/dashboard" replace />} />
           <Route path="/agent-dashboard" element={<ProtectedRoute><AgentDashboardPage /></ProtectedRoute>} />
           <Route path="/sensors"      element={<PaidHomeownerRoute><SensorPage /></PaidHomeownerRoute>} />
           <Route path="/warranties"   element={<PaidHomeownerRoute><WarrantyWalletPage /></PaidHomeownerRoute>} />

@@ -95,7 +95,7 @@ export default function PropertyVerifyPage() {
           </div>
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
             <Button variant="outline" onClick={() => navigate(`/properties/${id}`)}>Back to Property</Button>
-            <Button onClick={() => navigate("/onboarding")}>Continue setup</Button>
+            <Button onClick={() => navigate("/dashboard")}>Continue setup</Button>
           </div>
         </div>
       </Layout>

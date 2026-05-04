@@ -3,7 +3,7 @@
  *
  * forecastParamsToRegistration() parses the URL that the "Save your forecast"
  * CTA produces and returns the data needed to:
- *   1. Pre-populate the PropertyRegisterPage form (address, yearBuilt, state)
+ *   1. Provide pre-fill data for the AddPropertyModal (address, yearBuilt, state)
  *   2. Seed systemAgesService after registration (systemAges)
  */
 

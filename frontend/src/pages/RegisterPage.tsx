@@ -57,7 +57,7 @@ export default function RegisterPage() {
         const { tier, billing } = JSON.parse(pending);
         navigate(`/checkout?tier=${tier}&billing=${billing}`);
       } else {
-        navigate(profile.role === "Contractor" ? "/contractor-dashboard" : "/onboarding");
+        navigate(profile.role === "Contractor" ? "/contractor-dashboard" : "/dashboard");
       }
     } catch (err: any) {
       toast.error(err.message || "Registration failed");

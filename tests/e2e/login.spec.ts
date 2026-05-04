@@ -51,9 +51,9 @@ test.describe("LoginPage — /login", () => {
 
   // ── Dev login redirect ────────────────────────────────────────────────────
 
-  test("dev login button click navigates to /onboarding for a new user", async ({ page }) => {
+  test("dev login button click navigates to /dashboard for a new user", async ({ page }) => {
     await page.getByRole("button", { name: /dev login/i }).click();
-    await expect(page).toHaveURL("/onboarding");
+    await expect(page).toHaveURL("/dashboard");
   });
 
   // ── Protected route redirect ──────────────────────────────────────────────

@@ -1,6 +1,6 @@
 /**
  * MOB.8 — Core form pages mobile audit
- * JobCreatePage, QuoteRequestPage, PropertyRegisterPage,
+ * JobCreatePage, QuoteRequestPage, AddPropertyModal,
  * ContractorProfilePage, SettingsPage
  */
 import { render, act } from "@testing-library/react";
@@ -23,7 +23,7 @@ function mockMatchMedia(width: number) {
 
 let JobCreatePage: React.ComponentType;
 let QuoteRequestPage: React.ComponentType;
-let PropertyRegisterPage: React.ComponentType;
+let AddPropertyModal: React.ComponentType<{ open: boolean; onClose: () => void }>;
 let ContractorProfilePage: React.ComponentType;
 let SettingsPage: React.ComponentType;
 
@@ -31,7 +31,7 @@ beforeAll(async () => {
   mockMatchMedia(1280);
   JobCreatePage         = (await import("@/pages/JobCreatePage")).default;
   QuoteRequestPage      = (await import("@/pages/QuoteRequestPage")).default;
-  PropertyRegisterPage  = (await import("@/pages/PropertyRegisterPage")).default;
+  AddPropertyModal      = (await import("@/components/AddPropertyModal")).default;
   ContractorProfilePage = (await import("@/pages/ContractorProfilePage")).default;
   SettingsPage          = (await import("@/pages/SettingsPage")).default;
 });
@@ -91,17 +91,33 @@ describe("QuoteRequestPage — mobile layout", () => {
   });
 });
 
-// ── PropertyRegisterPage ──────────────────────────────────────────────────────
+// ── AddPropertyModal ──────────────────────────────────────────────────────────
 
-describe("PropertyRegisterPage — mobile layout", () => {
+describe("AddPropertyModal — mobile layout", () => {
   it("renders without crashing on mobile", async () => {
-    const { container } = await renderPage(PropertyRegisterPage, "/properties/new", 390);
-    expect(container.firstChild).not.toBeNull();
+    mockMatchMedia(390);
+    let result!: ReturnType<typeof render>;
+    await act(async () => {
+      result = render(
+        <MemoryRouter>
+          <AddPropertyModal open={true} onClose={() => {}} />
+        </MemoryRouter>
+      );
+    });
+    expect(result.container.firstChild).not.toBeNull();
   });
 
   it("does NOT use bare 1fr 1fr grid on mobile", async () => {
-    const { container } = await renderPage(PropertyRegisterPage, "/properties/new", 390);
-    expect(hasBare2ColGrid(container)).toBe(false);
+    mockMatchMedia(390);
+    let result!: ReturnType<typeof render>;
+    await act(async () => {
+      result = render(
+        <MemoryRouter>
+          <AddPropertyModal open={true} onClose={() => {}} />
+        </MemoryRouter>
+      );
+    });
+    expect(hasBare2ColGrid(result.container)).toBe(false);
   });
 });
 
