@@ -173,7 +173,7 @@ export default function ForProsPage() {
             Join a network of trusted contractors and realtors connected directly to motivated homeowners. No cold outreach. No bidding wars. Verified work auto-logged to permanent records.
           </p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <button className="hfl-nav-pill" style={{ fontSize: "1rem", padding: "14px 32px" }} onClick={() => navigate("/login")}>Join the network</button>
+            <button className="hfl-nav-pill" style={{ fontSize: "1rem", padding: "14px 32px" }} onClick={() => document.getElementById("contractor-plans")?.scrollIntoView({ behavior: "smooth" })}>Join the network</button>
             <button className="hfl-btn-soft" onClick={() => navigate("/")}>Learn about HomeGentic</button>
           </div>
         </section>
