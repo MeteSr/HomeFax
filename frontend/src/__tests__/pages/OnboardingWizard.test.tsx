@@ -13,9 +13,8 @@
  *   - Step indicator ("Step X of 6") visible throughout
  *   - No Back button on step 1; Back available on steps 2–6
  *   - Next advances; Back retreats
- *   - "Skip setup" link navigates to /dashboard from any step
  *   - Step 6 shows "Finish" (not "Next")
- *   - Finishing navigates to /dashboard
+ *   - Finishing closes the modal
  *   - Step 1 Next disabled until required address fields are filled
  *   - Step 2 Next disabled until type, year, and sq ft are filled
  *   - Step 3 (baseline photos) Next always enabled (optional step)
@@ -529,33 +528,6 @@ describe("OnboardingWizard — step 6 solar panels", () => {
   });
 });
 
-// ─── Skip setup link ──────────────────────────────────────────────────────────
-
-describe("OnboardingWizard — Skip setup link", () => {
-  beforeEach(() => { vi.clearAllMocks(); mockNavigate.mockReset(); });
-
-  it("shows a 'Skip setup' link on step 1", () => {
-    renderWizard();
-    expect(screen.getByRole("button", { name: /skip setup/i })).toBeInTheDocument();
-  });
-
-  it("clicking 'Skip setup' closes the modal from step 1", () => {
-    renderWizard();
-    fireEvent.click(screen.getByRole("button", { name: /skip setup/i }));
-    expect(mockOnClose).toHaveBeenCalled();
-  });
-
-  it("shows 'Skip setup' link on step 2", async () => {
-    await goToStep(2);
-    expect(screen.getByRole("button", { name: /skip setup/i })).toBeInTheDocument();
-  });
-
-  it("clicking 'Skip setup' from step 2 closes the modal", async () => {
-    await goToStep(2);
-    fireEvent.click(screen.getByRole("button", { name: /skip setup/i }));
-    expect(mockOnClose).toHaveBeenCalled();
-  });
-});
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 

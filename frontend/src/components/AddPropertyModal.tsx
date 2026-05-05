@@ -234,11 +234,6 @@ export default function AddPropertyModal({ open, onClose }: Props) {
     onClose();
   };
 
-  const handleSkip = () => {
-    authService.completeOnboarding().catch((e) => console.error("[AddPropertyModal] completeOnboarding failed:", e));
-    onClose();
-  };
-
   const handleBaselineUpload = async (systemKey: string, file: File) => {
     if (!registeredId) return;
     setUploadingBaseline(systemKey);
@@ -638,18 +633,6 @@ export default function AddPropertyModal({ open, onClose }: Props) {
           )}
         </div>
 
-        <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
-          <button
-            onClick={handleSkip}
-            style={{
-              fontFamily: FONTS.sans, fontSize: "0.75rem", color: COLORS.plumMid,
-              background: "none", border: "none", cursor: "pointer",
-              textDecoration: "underline", textUnderlineOffset: "3px",
-            }}
-          >
-            Skip setup — go to my dashboard
-          </button>
-        </div>
       </div>
     </div>
   );

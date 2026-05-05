@@ -50,10 +50,6 @@ test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
     await expect(page.getByText("Step 1 of 6")).toBeVisible();
   });
 
-  test("shows 'Skip setup — go to my dashboard' link", async ({ page }) => {
-    await expect(page.getByText(/skip setup/i)).toBeVisible();
-  });
-
   test("clicking logo navigates to home", async ({ page }) => {
     await page.getByText(/HomeGentic/).first().click();
     await expect(page).toHaveURL("/");
@@ -303,11 +299,4 @@ test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
     expect(barAt1).not.toEqual(barAt2);
   });
 
-  // ── Skip setup ──────────────────────────────────────────────────────────────
-
-  test("'Skip setup' link closes modal and stays on /dashboard", async ({ page }) => {
-    await page.getByText(/skip setup/i).click();
-    await expect(page.getByText(/step 1 of 6/i)).not.toBeVisible();
-    await expect(page).toHaveURL("/dashboard");
-  });
 });
