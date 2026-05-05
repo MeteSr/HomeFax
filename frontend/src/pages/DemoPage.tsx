@@ -1479,7 +1479,7 @@ export default function DemoPage() {
       <nav className="dm-nav">
         <Link to="/" className="dm-logo">Home<span>Gentic</span></Link>
 
-        <Link to="/login" className="dm-nav-cta">
+        <Link to="/pricing" className="dm-nav-cta">
           Get Started <ArrowRight size={15} />
         </Link>
       </nav>
@@ -1548,7 +1548,7 @@ export default function DemoPage() {
                   Next: {slides[step + 1].subtitle} <ChevronRight size={15} />
                 </button>
               ) : (
-                <Link to="/login" className="dm-btn-cta">
+                <Link to="/pricing" className="dm-btn-cta">
                   Get Started <ArrowRight size={15} />
                 </Link>
               )}
@@ -1564,7 +1564,7 @@ export default function DemoPage() {
       <div className="dm-cta-band">
         <h2>Ready to own your<br /><em>home's story?</em></h2>
         <p>Plans start at $10/mo. See pricing for the tier that fits your needs.</p>
-        <Link to="/login" className="dm-cta-pill">
+        <Link to="/pricing" className="dm-cta-pill">
           <Play size={16} /> Get Started
         </Link>
         <Link to="/pricing" className="dm-cta-ghost">
