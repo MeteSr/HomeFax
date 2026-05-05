@@ -69,6 +69,17 @@ const REALTOR_PLANS = [
   },
 ];
 
+const CANCELLATION_STYLE: React.CSSProperties = {
+  textAlign: "center",
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
+  fontSize: "0.9rem",
+  color: "var(--plum-mid)",
+  marginTop: "1.75rem",
+  lineHeight: 1.7,
+  maxWidth: 680,
+  margin: "1.75rem auto 0",
+};
+
 export default function ForProsPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -172,19 +183,19 @@ export default function ForProsPage() {
 
         {/* ── Contractor Plans ─────────────────────────────────────────────── */}
         <section className="hfl-pricing" id="contractor-plans">
-          <div className="hfl-pricing-inner">
-            <div className="hfl-pricing-header">
+          <div className="hfl-pricing-inner" style={{ background: "var(--white)" }}>
+            <div className="hfl-pricing-header" style={{ textAlign: "center", margin: "0 auto 56px" }}>
               <div className="hfl-kicker">👷 Contractors</div>
               <h2>Start free.<br /><em>Scale when you're ready.</em></h2>
               <p className="hfl-sec-sub">Join the network at no cost and pay a small referral fee per job — or upgrade to Pro and keep everything you earn.</p>
             </div>
-            <div className="hfl-pricing-grid" style={{ maxWidth: 680, margin: "0 auto" }}>
+            <div className="hfl-pricing-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", maxWidth: 720, margin: "0 auto" }}>
               {CONTRACTOR_PLANS.map((plan) => (
                 <div key={plan.tier} className={`hfl-plan-card${plan.tag ? " hfl-plan-featured" : ""}`}>
                   {plan.tag && <div className="hfl-plan-badge">{plan.tag}</div>}
                   <div className="hfl-plan-tier">{plan.tier}</div>
                   <div className="hfl-plan-price">{plan.price}</div>
-                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.75rem", color: plan.tag ? "rgba(122,175,118,0.9)" : "var(--plum-mid)", marginTop: "-16px", marginBottom: "18px", fontWeight: 600 }}>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.8rem", color: plan.tag ? "rgba(122,175,118,0.9)" : "var(--plum-mid)", marginTop: "-16px", marginBottom: "18px", fontWeight: 600 }}>
                     {plan.fee}
                   </div>
                   <ul className="hfl-plan-features">
@@ -194,27 +205,27 @@ export default function ForProsPage() {
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.7rem", color: "var(--plum-mid)", marginTop: "1.5rem", lineHeight: 1.6 }}>
+            <p style={CANCELLATION_STYLE}>
               * Plans billed monthly. Cancel anytime — access ends at the close of your current billing period. Referral fees are charged per verified completed job and are non-refundable.
             </p>
           </div>
         </section>
 
         {/* ── Realtor Plans ────────────────────────────────────────────────── */}
-        <section className="hfl-pricing" id="realtor-plans" style={{ background: "var(--sage-light)" }}>
-          <div className="hfl-pricing-inner">
-            <div className="hfl-pricing-header">
+        <section className="hfl-pricing" id="realtor-plans">
+          <div className="hfl-pricing-inner" style={{ background: "var(--sage-light)", borderColor: "var(--sage-mid)" }}>
+            <div className="hfl-pricing-header" style={{ textAlign: "center", margin: "0 auto 56px" }}>
               <div className="hfl-kicker">🏡 Realtors</div>
               <h2>Win more listings.<br /><em>Compete on merit.</em></h2>
               <p className="hfl-sec-sub">Homeowners post listing requests and verified agents submit competing proposals. The best offer wins — no referral networks, no gatekeepers.</p>
             </div>
-            <div className="hfl-pricing-grid" style={{ maxWidth: 680, margin: "0 auto" }}>
+            <div className="hfl-pricing-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", maxWidth: 720, margin: "0 auto" }}>
               {REALTOR_PLANS.map((plan) => (
                 <div key={plan.tier} className={`hfl-plan-card${plan.tag ? " hfl-plan-featured" : ""}`}>
                   {plan.tag && <div className="hfl-plan-badge">{plan.tag}</div>}
                   <div className="hfl-plan-tier">{plan.tier}</div>
                   <div className="hfl-plan-price">{plan.price}</div>
-                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.75rem", color: plan.tag ? "rgba(122,175,118,0.9)" : "var(--plum-mid)", marginTop: "-16px", marginBottom: "18px", fontWeight: 600 }}>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.8rem", color: plan.tag ? "rgba(122,175,118,0.9)" : "var(--plum-mid)", marginTop: "-16px", marginBottom: "18px", fontWeight: 600 }}>
                     {plan.fee}
                   </div>
                   <ul className="hfl-plan-features">
@@ -224,7 +235,7 @@ export default function ForProsPage() {
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.7rem", color: "var(--plum-mid)", marginTop: "1.5rem", lineHeight: 1.6 }}>
+            <p style={CANCELLATION_STYLE}>
               * Plans billed monthly. Cancel anytime — access ends at the close of your current billing period. Bid fees are charged per won listing and are non-refundable.
             </p>
           </div>
