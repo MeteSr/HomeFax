@@ -1,6 +1,6 @@
-import { HttpAgent, Actor } from "@dfinity/agent";
-import { Ed25519KeyIdentity } from "@dfinity/identity";
-import { Principal } from "@dfinity/principal";
+import { HttpAgent, Actor } from "@icp-sdk/core/agent";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
+import { Principal } from "@icp-sdk/core/principal";
 import crypto from "node:crypto";
 
 // Testnet ID is the fallback; override with CANISTER_ID_PAYMENT in Railway env vars.
@@ -30,7 +30,7 @@ export function identityFromPem(pem: string): Ed25519KeyIdentity {
   // Use slice to get an owned ArrayBuffer — seed.buffer may point to Node's
   // shared pool (up to 8 KiB), which @noble/curves rejects as too large.
   const seedBuffer = seed.buffer.slice(seed.byteOffset, seed.byteOffset + seed.byteLength);
-  return Ed25519KeyIdentity.fromSecretKey(seedBuffer as ArrayBuffer);
+  return Ed25519KeyIdentity.fromSecretKey(new Uint8Array(seedBuffer));
 }
 
 // ── Agent (lazy singleton) ────────────────────────────────────────────────────
