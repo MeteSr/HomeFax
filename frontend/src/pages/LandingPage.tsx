@@ -533,8 +533,10 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            <p style={{ textAlign: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.7rem", color: "var(--plum-mid)", marginTop: "1.5rem", lineHeight: 1.6 }}>
-              * Annual plans billed upfront. Cancel anytime — subscription access ends at the close of your current billing period. Your blockchain records remain yours forever.
+            <p style={{ textAlign: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.9rem", color: "var(--plum-mid)", marginTop: "1.5rem", lineHeight: 1.7 }}>
+              {annual
+                ? "* Billed annually upfront. Cancel anytime — subscription access ends at the close of your current billing year. Your blockchain records remain yours forever."
+                : "* Billed monthly. Cancel anytime — subscription access ends at the close of your current billing period. Your blockchain records remain yours forever."}
             </p>
           </div>
         </section>
