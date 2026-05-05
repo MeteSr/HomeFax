@@ -182,7 +182,7 @@ export default function ForProsPage() {
         </section>
 
         {/* ── Contractor Plans ─────────────────────────────────────────────── */}
-        <section className="hfl-pricing" id="contractor-plans">
+        <section className="hfl-pricing" id="contractor-plans" style={{ paddingTop: "80px" }}>
           <div className="hfl-pricing-inner" style={{ background: "var(--white)" }}>
             <div className="hfl-pricing-header" style={{ textAlign: "center", margin: "0 auto 56px" }}>
               <div className="hfl-kicker">👷 Contractors</div>
