@@ -25,6 +25,7 @@ import SupportPage           from "@/pages/SupportPage";
 import FAQPage               from "@/pages/FAQPage";
 import GiftPage              from "@/pages/GiftPage";
 import ContractorVerifyPage  from "@/pages/ContractorVerifyPage";
+import ForProsPage           from "@/pages/ForProsPage";
 import PaymentSuccessPage    from "@/pages/PaymentSuccessPage";
 import PaymentFailurePage    from "@/pages/PaymentFailurePage";
 
@@ -141,6 +142,7 @@ export default function App() {
           <Route path="/support"     element={<SupportPage />} />
           <Route path="/faq"         element={<FAQPage />} />
           <Route path="/gift"             element={<GiftPage />} />
+          <Route path="/for-pros"         element={<ForProsPage />} />
           <Route path="/payment-success" element={<PaymentSuccessPage />} />
           <Route path="/payment-failure" element={<PaymentFailurePage />} />
           <Route path="/checkout"        element={<CheckoutPage />} />

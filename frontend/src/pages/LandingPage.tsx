@@ -116,6 +116,7 @@ export default function LandingPage() {
           <ul className={`hfl-nav-links${menuOpen ? " hfl-menu-open" : ""}`}>
             <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/demo"); }}>Demo</a></li>
             <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/pricing"); }}>Pricing</a></li>
+            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/for-pros"); }}>For Pros</a></li>
           </ul>
           <div className="hfl-nav-actions">
             <button className="hfl-nav-signin" onClick={() => navigate("/login")}>Sign in</button>
@@ -532,9 +533,9 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            <div className="hfl-pricing-note">
-              Contractor and Realtor plans available — <a onClick={(e) => { e.preventDefault(); navigate("/pricing"); }} style={{ cursor: "pointer" }}>see full pricing →</a>
-            </div>
+            <p style={{ textAlign: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.7rem", color: "var(--plum-mid)", marginTop: "1.5rem", lineHeight: 1.6 }}>
+              * Annual plans billed upfront. Cancel anytime — subscription access ends at the close of your current billing period. Your blockchain records remain yours forever.
+            </p>
           </div>
         </section>
 
