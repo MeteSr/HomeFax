@@ -264,7 +264,7 @@ Upgrade when you're ready. Cancel anytime.
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             flexWrap: "wrap", gap: 24,
-            background: `linear-gradient(135deg, ${COLORS.blush}, ${COLORS.butter})`,
+            background: `linear-gradient(135deg, ${COLORS.sageLight}, ${COLORS.sageMid}60)`,
             borderRadius: RADIUS.card, padding: "32px 40px", marginBottom: "4rem",
           }}>
             <div>

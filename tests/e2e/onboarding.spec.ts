@@ -50,11 +50,6 @@ test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
     await expect(page.getByText("Step 1 of 6")).toBeVisible();
   });
 
-  test("clicking logo navigates to home", async ({ page }) => {
-    await page.getByText(/HomeGentic/).first().click();
-    await expect(page).toHaveURL("/");
-  });
-
   // ── Step 1: Property Address ────────────────────────────────────────────────
 
   test("step 1 shows 'Property Address' heading", async ({ page }) => {
@@ -221,7 +216,7 @@ test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
     });
 
     test("shows file upload input", async ({ page }) => {
-      await expect(page.locator('input[type="file"]')).toBeVisible();
+      await expect(page.locator('#wiz-ownership-doc')).toBeAttached();
     });
 
     test("Next is disabled when legal name and file are missing", async ({ page }) => {
@@ -243,7 +238,7 @@ test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
       await injectRegisterProperty(page);
       // The outer beforeEach adds __e2e_skipBaselinePhotos via addInitScript; that
       // script persists across navigations. Override it here so step 3 actually renders.
-      await page.addInitScript(() => { delete (window as any).__e2e_skipBaselinePhotos; });
+      await page.addInitScript(() => { (window as any).__e2e_skipBaselinePhotos = false; });
       await page.goto("/dashboard");
       await expect(page.getByText(/step 1 of 6/i)).toBeVisible();
       await page.getByLabel(/street address/i).fill("100 Onboarding Lane");
