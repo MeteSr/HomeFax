@@ -1508,13 +1508,6 @@ export default function DemoPage() {
 
       {/* Slide Area */}
       <div className="dm-slide-wrap">
-        {/* Persona header */}
-        <div className="dm-persona-header">
-          <div className="dm-persona-kicker">{meta.kicker}</div>
-          <h2>{meta.heading}</h2>
-          <p className="dm-persona-desc">{meta.desc}</p>
-        </div>
-
         {/* Step pills */}
         <div className="dm-steps">
           {slides.map((s, i) => (
