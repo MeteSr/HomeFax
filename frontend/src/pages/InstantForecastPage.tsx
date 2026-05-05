@@ -5,7 +5,7 @@
  * Entry form when no params → forecast table when params present.
  * Each system row has an inline "Last replaced" input.
  * Changing an override updates the URL and re-runs estimates.
- * "Save your forecast" CTA → /properties/new?address=...&yearBuilt=...
+ * "Save your forecast" CTA → /dashboard (modal auto-opens for new users)
  */
 
 import React, { useEffect, useState } from "react";
@@ -169,10 +169,7 @@ function ForecastView({ input }: { input: ForecastInput }) {
     navigate(`/instant-forecast?${p.toString()}`, { replace: true });
   }
 
-  // Save CTA URL
-  const saveParams = new URLSearchParams({ address: input.address, yearBuilt: String(input.yearBuilt) });
-  if (input.state) saveParams.set("state", input.state);
-  const saveHref = `/properties/new?${saveParams.toString()}`;
+  const saveHref = `/dashboard`;
 
   return (
     <div style={{ flex: 1, maxWidth: "56rem", margin: "0 auto", padding: "2.5rem 1.5rem", width: "100%" }}>

@@ -17,6 +17,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthStore } from "@/store/authStore";
 import { usePropertyStore } from "@/store/propertyStore";
+import { useAddPropertyStore } from "@/store/addPropertyStore";
+import AddPropertyModal from "@/components/AddPropertyModal";
 import { jobService, type Job } from "@/services/job";
 import { quoteService, type QuoteRequest } from "@/services/quote";
 import { paymentService, type PlanTier } from "@/services/payment";
@@ -75,6 +77,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
   const [userMenuOpen,  setUserMenuOpen]  = useState(false);
   const [upgradeOpen,   setUpgradeOpen]   = useState(false);
+  const { isOpen: addPropOpen, open: openAddProp, close: closeAddProp } = useAddPropertyStore();
   const [userTier,        setUserTier]        = useState<PlanTier>("Free");
   const [hasActiveListing, setHasActiveListing] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -279,7 +282,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 if (atPropertyLimit && userTier !== "Premium") {
                   setUpgradeOpen(true);
                 } else {
-                  navigate("/properties/new");
+                  openAddProp();
                 }
               }}
               style={{ ...itemBase(), width: "100%", border: "none", cursor: "pointer" }}
@@ -498,6 +501,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Upgrade modal — triggered from user menu */}
       <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
+      <AddPropertyModal open={addPropOpen} onClose={closeAddProp} />
 
       {/* Activity feed drawer */}
       {feedOpen && (

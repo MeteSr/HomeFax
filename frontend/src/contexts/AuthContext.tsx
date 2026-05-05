@@ -25,7 +25,7 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 async function homeownerDestination(profile: import("@/services/auth").UserProfile): Promise<string> {
-  if (!profile.onboardingComplete) return "/onboarding";
+  if (!profile.onboardingComplete) return "/dashboard";
   try {
     const props = await propertyService.getMyProperties();
     if (props.length === 1) return `/properties/${props[0].id}`;
@@ -165,8 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch {
-      // No profile yet (new user) — send to onboarding to create one
-      navigate("/onboarding");
+      // No profile yet (new user) — send to dashboard; modal auto-opens for first-time setup
+      navigate("/dashboard");
     }
   };
 

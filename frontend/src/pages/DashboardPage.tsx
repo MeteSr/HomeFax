@@ -30,6 +30,7 @@ import { NeighborhoodBenchmark } from "@/components/NeighborhoodBenchmark";
 import { ScoreActivityFeed } from "@/components/ScoreActivityFeed";
 import UpgradeModal from "@/components/UpgradeModal";
 import RecurringServiceCreateModal from "@/components/RecurringServiceCreateModal";
+import { useAddPropertyStore } from "@/store/addPropertyStore";
 import { usePropertySummary } from "@/hooks/usePropertySummary";
 import { useJobSummary } from "@/hooks/useJobSummary";
 import { useQuoteSummary } from "@/hooks/useQuoteSummary";
@@ -367,6 +368,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { profile, lastLoginAt } = useAuthStore();
   const { isMobile } = useBreakpoint();
+  const { open: openAddProp } = useAddPropertyStore();
 
   // ─── Domain hooks ────────────────────────────────────────────────────────────
   const {
@@ -463,6 +465,15 @@ export default function DashboardPage() {
       setSelectedPropertyId(String(properties[0].id));
     }
   }, [propLoading, properties]);
+
+  // Auto-open the add-property modal for new users who haven't completed onboarding
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!propLoading && !autoOpenedRef.current && profile && !profile.onboardingComplete && properties.length === 0) {
+      autoOpenedRef.current = true;
+      openAddProp();
+    }
+  }, [propLoading, profile, properties.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Derived UI values ───────────────────────────────────────────────────────
 
@@ -1244,8 +1255,7 @@ export default function DashboardPage() {
                 Add your first property to start building a verified, on-chain maintenance history.
               </p>
               <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center" }}>
-                <Button onClick={() => navigate("/onboarding")} icon={<Sparkles size={14} />}>Get started</Button>
-                <Button variant="outline" onClick={() => navigate("/properties/new")} icon={<Plus size={14} />}>Add property</Button>
+                <Button onClick={openAddProp} icon={<Sparkles size={14} />}>Get started</Button>
               </div>
             </div>
           ) : (

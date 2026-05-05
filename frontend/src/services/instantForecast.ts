@@ -82,7 +82,7 @@ export function buildForecastUrl(input: ForecastInput): string {
 
 /**
  * Parse the URL produced by the "Save your forecast" CTA and return the data
- * needed to pre-populate PropertyRegisterPage and seed systemAgesService.
+ * needed to seed systemAgesService.
  *
  * Returns null when the URL is missing required fields (address, yearBuilt).
  */

@@ -392,47 +392,22 @@ export default function LandingPage() {
 
         {/* ── Report CTA ──────────────────────────────────────────────────── */}
         <section id="hfl-report" className="hfl-report">
-          <div>
-            <div className="hfl-rc-label">The HomeGentic Report</div>
-            <h2>Your Home's Verified<br /><em>Biography</em></h2>
-            <p>
-              When it's time to sell, your HomeGentic Report is a tamper-proof document showing
-              every owner, every service, every improvement. Buyers love it. Agents share it.
-              Homes with it sell first.
-            </p>
-            <div className="hfl-rc-actions">
-              <button className="hfl-rc-btn" onClick={() => navigate("/login")}>Generate My HomeGentic</button>
-              <button className="hfl-btn-soft" onClick={() => window.open("/sample-report", "_blank", "noopener,noreferrer")}>View Sample Report</button>
+          <div className="hfl-report-card">
+            <div className="hfl-report-img-col">
+              <img src="/sample_report.png" alt="Sample HomeGentic Report" />
             </div>
-          </div>
-          <div>
-            <div className="hfl-report-mock">
-              <div className="hfl-mock-top">
-                <span className="hfl-mock-addr">327 Keech Street, Daytona Beach FL</span>
-                <span className="hfl-mock-badge">HomeGentic ✓</span>
+            <div className="hfl-report-body">
+              <div className="hfl-rc-label">The HomeGentic Report</div>
+              <h2>Your Home's Verified<br /><em>Biography</em></h2>
+              <p>
+                When it's time to sell, your HomeGentic Report is a tamper-proof document showing
+                every owner, every service, every improvement. Buyers love it. Agents share it.
+                Homes with it sell first.
+              </p>
+              <div className="hfl-rc-actions">
+                <button className="hfl-rc-btn" onClick={() => navigate("/login")}>Generate My HomeGentic</button>
+                <button className="hfl-btn-soft" onClick={() => window.open("/sample-report", "_blank", "noopener,noreferrer")}>View Sample Report</button>
               </div>
-              <div className="hfl-mock-score">
-                <div className="hfl-mock-num">91</div>
-                <div style={{ flex: 1 }}>
-                  <div className="hfl-mock-score-lbl">HomeGentic Property Score</div>
-                  <div className="hfl-mock-bar"><div className="hfl-mock-bar-fill" /></div>
-                </div>
-              </div>
-              <div className="hfl-mock-rows">
-                {[
-                  { label: "📋 Title & Ownership",     val: "Clear ✓",            cls: "hfl-mock-pass" },
-                  { label: "🔨 Permits & Renovations", val: "12 Logged ✓",        cls: "hfl-mock-pass" },
-                  { label: "🔧 Service History",        val: "47 Records ✓",       cls: "hfl-mock-pass" },
-                  { label: "🌿 Recurring Services",     val: "4 Under Contract ✓", cls: "hfl-mock-pass" },
-                  { label: "⚖️ Liens & Encumbrances",  val: "None ✓",             cls: "hfl-mock-pass" },
-                ].map((r) => (
-                  <div key={r.label} className="hfl-mock-row">
-                    <span className="hfl-mock-row-lbl">{r.label}</span>
-                    <span className={r.cls}>{r.val}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="hfl-mock-footer">📋 <span>All records independently verified · Shareable link generated</span></div>
             </div>
           </div>
         </section>

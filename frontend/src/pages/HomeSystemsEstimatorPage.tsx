@@ -156,10 +156,7 @@ function EstimatorResults({ yearBuilt, propertyType, state }: { yearBuilt: numbe
   const shareInput = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
 
-  const registerHref = (() => {
-    const p = new URLSearchParams({ yearBuilt: String(yearBuilt), type: propertyType });
-    return `/properties/new?${p.toString()}`;
-  })();
+  const registerHref = `/dashboard`;
 
   const handleCopy = () => {
     if (shareInput.current) {

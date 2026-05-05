@@ -115,10 +115,10 @@ test.describe("DashboardPage — /dashboard", () => {
 
   // ── Navigation ──────────────────────────────────────────────────────────────
 
-  test("Add Property button navigates to /properties/new", async ({ page }) => {
+  test("Add Property button opens the add-property modal", async ({ page }) => {
     // Sidebar "+" button (aria-label="Add property")
     await page.getByRole("button", { name: /add property/i }).first().click();
-    await expect(page).toHaveURL("/properties/new");
+    await expect(page.getByText(/step 1 of 6/i)).toBeVisible();
   });
 
   // ── Baseline photo prompt ───────────────────────────────────────────────────

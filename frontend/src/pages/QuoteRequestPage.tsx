@@ -11,6 +11,7 @@ import { jobService, Job } from "@/services/job";
 import { getPriceRange, PriceRange, SERVICE_SUBCATEGORIES } from "@/services/market";
 import { PriceBenchmarkWidget } from "@/components/PriceBenchmarkWidget";
 import { usePropertyStore } from "@/store/propertyStore";
+import { useAddPropertyStore } from "@/store/addPropertyStore";
 import toast from "react-hot-toast";
 import { COLORS, FONTS, RADIUS, SHADOWS } from "@/theme";
 
@@ -41,7 +42,8 @@ const TIER_LIMITS: Record<string, number> = {
 };
 
 export default function QuoteRequestPage() {
-  const navigate  = useNavigate();
+  const navigate      = useNavigate();
+  const openAddProp   = useAddPropertyStore((s) => s.open);
   const location  = useLocation();
   const prefill   = (location.state as { prefill?: Record<string, string> } | null)?.prefill ?? null;
   const { properties, setProperties } = usePropertyStore();
@@ -113,7 +115,7 @@ export default function QuoteRequestPage() {
           <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", color: UI.inkLight, marginBottom: "1.25rem" }}>
             Add a property before requesting quotes.
           </p>
-          <Button onClick={() => navigate("/properties/new")}>Add Property</Button>
+          <Button onClick={openAddProp}>Add Property</Button>
         </div>
       </Layout>
     );
