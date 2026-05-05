@@ -212,7 +212,7 @@ export default function FAQPage() {
           {/* Still have questions */}
           <div style={{
             marginTop: 64, padding: "40px 48px",
-            background: `linear-gradient(135deg, ${UI.blush}, ${UI.butter})`,
+            background: `linear-gradient(135deg, ${UI.sageLight}, ${COLORS.sageMid}60)`,
             borderRadius: 24, textAlign: "center",
           }}>
             <p style={{

@@ -48,8 +48,8 @@ const GIFT_PLANS: Record<GiftTier, { monthlyPrice: number; annualPrice: number; 
     ],
   },
   Premium: {
-    monthlyPrice: 35,
-    annualPrice:  350,
+    monthlyPrice: 40,
+    annualPrice:  400,
     tagline: "For multiple properties or serious sellers",
     bullets: [
       "Everything in Pro",
@@ -216,55 +216,55 @@ function StepSelect({ data, setData, onNext }: {
       {/* Tier cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24 }}>
         {(["Basic", "Pro", "Premium"] as GiftTier[]).map((tier) => {
-          const plan    = GIFT_PLANS[tier];
-          const price   = data.billing === "monthly" ? plan.monthlyPrice : plan.annualPrice;
-          const period  = data.billing === "monthly" ? "/mo" : "/yr";
-          const isPlum  = tier === "Premium";
-          const active  = data.tier === tier;
+          const plan      = GIFT_PLANS[tier];
+          const price     = data.billing === "monthly" ? plan.monthlyPrice : plan.annualPrice;
+          const period    = data.billing === "monthly" ? "/mo" : "/yr";
+          const isPopular = tier === "Pro";
+          const active    = data.tier === tier;
 
           return (
             <div
               key={tier}
               onClick={() => setData((d) => ({ ...d, tier }))}
               style={{
-                borderRadius: RADIUS.card, padding: "36px 32px", cursor: "pointer",
-                background: isPlum ? COLORS.plum : COLORS.white,
-                border: `2px solid ${active ? COLORS.sage : isPlum ? "transparent" : COLORS.rule}`,
-                boxShadow: active ? `0 0 0 4px ${COLORS.sage}22` : SHADOWS.card,
+                padding: "2rem", borderRadius: RADIUS.card, cursor: "pointer",
+                background: isPopular ? COLORS.plum : COLORS.white,
+                border: `1.5px solid ${isPopular ? COLORS.plum : active ? COLORS.sage : COLORS.rule}`,
+                boxShadow: isPopular ? SHADOWS.hover : active ? `0 0 0 3px ${COLORS.sage}22` : SHADOWS.card,
                 transition: "all .2s", position: "relative",
               }}
             >
-              {/* Badge */}
-              <div style={{
-                display: "inline-block", marginBottom: 16,
-                fontFamily: FONTS.sans, fontSize: 12, fontWeight: 600,
-                color: isPlum ? COLORS.plum : COLORS.sage,
-                background: isPlum ? COLORS.butter : COLORS.sageLight,
-                padding: "4px 12px", borderRadius: RADIUS.pill,
-              }}>
-                {tier === "Basic" ? "Great Start" : tier === "Pro" ? "Most Popular" : "Best Gift"}
-              </div>
+              {isPopular && (
+                <div style={{ display: "inline-flex", alignItems: "center", background: COLORS.sage, color: COLORS.white, padding: "3px 12px", borderRadius: 100, fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+                  Most Popular
+                </div>
+              )}
 
-              <div style={{ fontFamily: FONTS.serif, fontSize: 28, fontWeight: 900, color: isPlum ? COLORS.white : COLORS.plum, marginBottom: 4 }}>
+              <div style={{ fontFamily: FONTS.sans, fontWeight: 600, fontSize: "0.875rem", color: isPopular ? COLORS.sageLight : COLORS.plumMid, marginBottom: "0.5rem" }}>
                 {tier}
               </div>
-              <div style={{ fontFamily: FONTS.sans, fontSize: 13, color: isPlum ? "rgba(253,252,250,0.55)" : COLORS.plumMid, marginBottom: 20 }}>
+              <div style={{ fontFamily: FONTS.sans, fontSize: 13, color: isPopular ? "rgba(253,252,250,0.55)" : COLORS.plumMid, marginBottom: 20, lineHeight: 1.4 }}>
                 {plan.tagline}
               </div>
 
-              <div style={{ marginBottom: 24 }}>
-                <span style={{ fontFamily: FONTS.serif, fontSize: 42, fontWeight: 900, color: isPlum ? COLORS.white : COLORS.plum }}>
+              <div style={{ marginBottom: "1.5rem" }}>
+                <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2.5rem", lineHeight: 1, color: isPopular ? COLORS.white : COLORS.plum }}>
                   ${price}
                 </span>
-                <span style={{ fontFamily: FONTS.sans, fontSize: 14, color: isPlum ? "rgba(253,252,250,0.5)" : COLORS.plumMid }}>
+                <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: isPopular ? "rgba(253,252,250,0.5)" : COLORS.plumMid }}>
                   {period}
                 </span>
+                {data.billing === "annual" && (
+                  <div style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.sage, marginTop: "0.25rem" }}>
+                    ${(price / 12).toFixed(2)}/mo billed annually
+                  </div>
+                )}
               </div>
 
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                 {plan.bullets.map((b) => (
-                  <li key={b} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: FONTS.sans, fontSize: 14, color: isPlum ? "rgba(253,252,250,0.8)" : COLORS.plum }}>
-                    <span style={{ color: COLORS.sage, flexShrink: 0, marginTop: 2 }}>✓</span>
+                  <li key={b} style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", fontFamily: FONTS.sans, fontSize: "0.85rem", color: isPopular ? COLORS.sageLight : COLORS.plumMid, fontWeight: 300 }}>
+                    <CheckCircle size={14} color={COLORS.sage} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
                     {b}
                   </li>
                 ))}
@@ -275,9 +275,10 @@ function StepSelect({ data, setData, onNext }: {
                 style={{
                   width: "100%", padding: "13px 0", borderRadius: RADIUS.pill,
                   fontFamily: FONTS.sans, fontSize: 15, fontWeight: 700,
-                  background: isPlum ? COLORS.sage : COLORS.plum,
-                  color: COLORS.white, border: "none", cursor: "pointer",
-                  transition: "opacity .2s",
+                  background: isPopular ? COLORS.sage : tier === "Basic" ? COLORS.plum : COLORS.plumDark,
+                  color: COLORS.white,
+                  border: tier === "Premium" ? `2px solid ${COLORS.sage}` : "none",
+                  cursor: "pointer", transition: "opacity .2s",
                 }}
               >
                 Gift {tier}
