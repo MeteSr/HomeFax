@@ -29,26 +29,14 @@ export default function PricingPage() {
   const [annual, setAnnual] = useState<boolean>(() => {
     try { return localStorage.getItem(BILLING_KEY) === "annual"; } catch { return false; }
   });
-  const [audience, setAudience] = useState<"homeowner" | "contractor" | "realtor">("homeowner");
 
   useEffect(() => {
     try { localStorage.setItem(BILLING_KEY, annual ? "annual" : "monthly"); } catch {}
   }, [annual]);
 
-  // Plans to display based on toggle state and audience
-  const homeownerPlans: Plan[] = annual
+  const displayPlans: Plan[] = annual
     ? ANNUAL_PLANS
     : PLANS.filter((p) => p.tier === "Basic" || p.tier === "Pro" || p.tier === "Premium");
-
-  const contractorPlans: Plan[] = PLANS.filter(
-    (p) => p.tier === "ContractorFree" || p.tier === "ContractorPro"
-  );
-
-  const realtorPlans: Plan[] = PLANS.filter(
-    (p) => p.tier === "RealtorFree" || p.tier === "RealtorPro"
-  );
-
-  const displayPlans = audience === "homeowner" ? homeownerPlans : audience === "contractor" ? contractorPlans : realtorPlans;
 
   const handleUpgrade = async (tier: PlanTier) => {
     if (tier === "ContractorFree" || tier === "RealtorFree") {
@@ -97,31 +85,8 @@ Upgrade when you're ready. Cancel anytime.
           </p>
         </div>
 
-        {/* Audience toggle */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.5rem" }}>
-          <div style={{ display: "inline-flex", border: `1px solid ${UI.rule}`, borderRadius: RADIUS.sm, overflow: "hidden" }}>
-            {(["homeowner", "contractor", "realtor"] as const).map((a) => (
-              <button
-                key={a}
-                onClick={() => setAudience(a)}
-                style={{
-                  padding: "0.5rem 1.5rem",
-                  fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase",
-                  background: audience === a ? COLORS.plum : COLORS.white,
-                  color: audience === a ? COLORS.white : UI.inkLight,
-                  border: "none", cursor: "pointer",
-                  transition: "background 0.15s, color 0.15s",
-                }}
-              >
-                {a === "homeowner" ? "Homeowner" : a === "contractor" ? "Contractor" : "Realtor"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Monthly/Annual toggle — homeowner only (realtor/contractor plans don't have annual billing) */}
-        {audience === "homeowner" && (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.75rem", marginBottom: "2.5rem" }}>
+        {/* Monthly/Annual toggle */}
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.75rem", marginBottom: "2.5rem" }}>
             <span style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.06em", color: annual ? UI.inkLight : UI.ink, fontWeight: annual ? 400 : 700 }}>
               Monthly
             </span>
@@ -153,19 +118,17 @@ Upgrade when you're ready. Cancel anytime.
               </span>
             )}
           </div>
-        )}
 
         {/* Plan cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.25rem", marginBottom: "4rem" }}>
           {displayPlans.map((plan) => {
             const isPopular = plan.tier === "Pro";
-            const isFeatured = plan.tier === "ContractorFree" || plan.tier === "RealtorFree";
             return (
               <div key={plan.tier} style={{
                 padding: "2rem",
                 borderRadius: RADIUS.card,
                 background: isPopular ? COLORS.plum : COLORS.white,
-                border: `1.5px solid ${isPopular ? COLORS.plum : isFeatured ? COLORS.sage : COLORS.rule}`,
+                border: `1.5px solid ${isPopular ? COLORS.plum : COLORS.rule}`,
                 boxShadow: isPopular ? SHADOWS.hover : SHADOWS.card,
                 position: "relative",
               }}>
@@ -175,39 +138,23 @@ Upgrade when you're ready. Cancel anytime.
                   </div>
                 )}
                 <div style={{ fontFamily: FONTS.sans, fontWeight: 600, fontSize: "0.875rem", color: isPopular ? COLORS.sageLight : COLORS.plumMid, marginBottom: "0.5rem" }}>
-                  {plan.tier === "ContractorFree" ? "Contractor Free"
-                    : plan.tier === "ContractorPro" ? "Contractor Pro"
-                    : plan.tier === "RealtorFree" ? "Realtor Free"
-                    : plan.tier === "RealtorPro" ? "Realtor Pro"
-                    : plan.tier}
+                  {plan.tier}
                 </div>
-                <div style={{ marginBottom: (plan.tier === "ContractorFree" || plan.tier === "RealtorFree") ? "0.5rem" : "1.5rem" }}>
+                <div style={{ marginBottom: "1.5rem" }}>
                   <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2.5rem", lineHeight: 1, color: isPopular ? COLORS.white : COLORS.plum }}>
-                    {plan.price === 0 ? "Free" : `$${plan.price}`}
+                    ${plan.price}
                   </span>
-                  {plan.price > 0 && (
-                    <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>/{plan.period}</span>
-                  )}
+                  <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>/{plan.period}</span>
                   {plan.period === "year" && (
                     <div style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: COLORS.sage, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
                       ${(plan.price / 12).toFixed(2)}/mo billed annually
                     </div>
                   )}
                 </div>
-                {plan.tier === "ContractorFree" && (
-                  <div style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 300, color: COLORS.plumMid, marginBottom: "1.25rem", padding: "0.5rem 0.75rem", background: COLORS.sageLight, borderRadius: RADIUS.sm, lineHeight: 1.5 }}>
-                    $15 flat fee per verified referral job
-                  </div>
-                )}
-                {plan.tier === "RealtorFree" && (
-                  <div style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 300, color: COLORS.plumMid, marginBottom: "1.25rem", padding: "0.5rem 0.75rem", background: COLORS.sageLight, borderRadius: RADIUS.sm, lineHeight: 1.5 }}>
-                    $100 per won bid — no monthly fee
-                  </div>
-                )}
 
-                {/* AI agent call badge — shown for paid tiers with agent access */}
-                {(plan.tier === "Basic" || plan.tier === "Pro" || plan.tier === "Premium" || plan.tier === "RealtorPro") && (() => {
-                  const agentCalls = plan.tier === "Basic" ? 5 : plan.tier === "Pro" ? 10 : plan.tier === "RealtorPro" ? 10 : 20;
+                {/* AI agent call badge */}
+                {(() => {
+                  const agentCalls = plan.tier === "Basic" ? 5 : plan.tier === "Pro" ? 10 : 20;
                   return (
                     <div style={{
                       display: "flex", alignItems: "center", gap: "0.5rem",
@@ -243,15 +190,11 @@ Upgrade when you're ready. Cancel anytime.
                     ...(isPopular && { backgroundColor: COLORS.sage, color: COLORS.white, borderColor: COLORS.sage }),
                     ...(plan.tier === "Basic"   && { backgroundColor: COLORS.plum, color: COLORS.white, borderColor: COLORS.plum }),
                     ...(plan.tier === "Premium" && { backgroundColor: COLORS.plumDark, color: COLORS.white, borderColor: COLORS.sage, borderWidth: "2px" }),
-                    ...(isFeatured && { borderColor: COLORS.sage }),
                   }}
                   onClick={() => handleUpgrade(plan.tier)}
                 >
-                  {(plan.tier === "ContractorFree" || plan.tier === "RealtorFree") ? "Get Started Free"
-                    : plan.tier === "Basic"      ? "Start with Basic"
-                    : plan.tier === "Premium"    ? "Unlock Premium"
-                    : plan.tier === "ContractorPro" ? "Get Contractor Pro"
-                    : plan.tier === "RealtorPro" ? "Get Realtor Pro"
+                  {plan.tier === "Basic"   ? "Start with Basic"
+                    : plan.tier === "Premium" ? "Unlock Premium"
                     : `Get ${plan.tier}`}
                 </Button>
               </div>
@@ -260,31 +203,37 @@ Upgrade when you're ready. Cancel anytime.
         </div>
 
         {/* Gift callout */}
-        {audience === "homeowner" && (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            flexWrap: "wrap", gap: 24,
-            background: `linear-gradient(135deg, ${COLORS.sageLight}, ${COLORS.sageMid}60)`,
-            borderRadius: RADIUS.card, padding: "32px 40px", marginBottom: "4rem",
-          }}>
-            <div>
-              <div style={{ fontFamily: FONTS.sans, fontSize: 11, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: 8 }}>For realtors & gift givers</div>
-              <h3 style={{ fontFamily: FONTS.serif, fontSize: 22, fontWeight: 900, color: COLORS.plum, margin: "0 0 6px" }}>Gifting for a client?</h3>
-              <p style={{ fontFamily: FONTS.sans, fontSize: 14, color: COLORS.plumMid, margin: 0, lineHeight: 1.6 }}>Give your buyer an AI-powered home maintenance platform that tracks repairs, predicts costs, and builds a verified record that makes their home easier to sell — one of the most useful closing gifts you can offer.</p>
-            </div>
-            <Link
-              to="/gift"
-              style={{
-                fontFamily: FONTS.sans, fontSize: 15, fontWeight: 700,
-                padding: "13px 28px", borderRadius: RADIUS.pill,
-                background: COLORS.plum, color: COLORS.white, textDecoration: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Gift a Subscription
-            </Link>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: 24,
+          background: `linear-gradient(135deg, ${COLORS.sageLight}, ${COLORS.sageMid}60)`,
+          borderRadius: RADIUS.card, padding: "32px 40px", marginBottom: "2rem",
+        }}>
+          <div>
+            <div style={{ fontFamily: FONTS.sans, fontSize: 11, fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: 8 }}>For realtors & gift givers</div>
+            <h3 style={{ fontFamily: FONTS.serif, fontSize: 22, fontWeight: 900, color: COLORS.plum, margin: "0 0 6px" }}>Gifting for a client?</h3>
+            <p style={{ fontFamily: FONTS.sans, fontSize: 14, color: COLORS.plumMid, margin: 0, lineHeight: 1.6 }}>Give your buyer an AI-powered home maintenance platform that tracks repairs, predicts costs, and builds a verified record that makes their home easier to sell — one of the most useful closing gifts you can offer.</p>
           </div>
-        )}
+          <Link
+            to="/gift"
+            style={{
+              fontFamily: FONTS.sans, fontSize: 15, fontWeight: 700,
+              padding: "13px 28px", borderRadius: RADIUS.pill,
+              background: COLORS.plum, color: COLORS.white, textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Gift a Subscription
+          </Link>
+        </div>
+
+        {/* For pros link */}
+        <p style={{ textAlign: "center", fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.plumMid }}>
+          Contractor or realtor?{" "}
+          <Link to="/for-pros" style={{ color: COLORS.plum, fontWeight: 700, textDecoration: "none", borderBottom: `1px solid ${COLORS.rule}` }}>
+            See plans for pros →
+          </Link>
+        </p>
 
       </div>
     </div>

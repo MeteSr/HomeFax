@@ -2,10 +2,14 @@ import React from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CSS } from "./landingStyles";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAuthStore } from "@/store/authStore";
+import { type PlanTier, type BillingCycle } from "@/services/planConstants";
 
 const CONTRACTOR_PLANS = [
   {
     tier: "Contractor Free",
+    planTier: "ContractorFree" as PlanTier,
     price: "$0",
     tag: null as string | null,
     fee: "+ $15 referral fee per verified job",
@@ -20,6 +24,7 @@ const CONTRACTOR_PLANS = [
   },
   {
     tier: "Contractor Pro",
+    planTier: "ContractorPro" as PlanTier,
     price: "$30/mo",
     tag: "Most Popular",
     fee: "No referral fees",
@@ -38,6 +43,7 @@ const CONTRACTOR_PLANS = [
 const REALTOR_PLANS = [
   {
     tier: "Realtor Free",
+    planTier: "RealtorFree" as PlanTier,
     price: "$0",
     tag: null as string | null,
     fee: "+ $100 per won bid",
@@ -52,6 +58,7 @@ const REALTOR_PLANS = [
   },
   {
     tier: "Realtor Pro",
+    planTier: "RealtorPro" as PlanTier,
     price: "$30/mo",
     tag: "Most Popular",
     fee: "No bid fees",
@@ -83,6 +90,22 @@ const CANCELLATION_STYLE: React.CSSProperties = {
 export default function ForProsPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const { login, devLogin } = useAuth();
+  const handleLogin = import.meta.env.DEV ? devLogin : login;
+  const { isAuthenticated } = useAuthStore();
+
+  async function handleUpgrade(tier: PlanTier) {
+    if (tier === "ContractorFree" || tier === "RealtorFree") {
+      await handleLogin();
+      return;
+    }
+    const billing: BillingCycle = "Monthly";
+    if (!isAuthenticated) {
+      await handleLogin();
+      return;
+    }
+    navigate(`/checkout?tier=${tier}&billing=${billing}`);
+  }
 
   React.useEffect(() => {
     if (!document.getElementById("hf-landing-fonts")) {
@@ -201,7 +224,7 @@ export default function ForProsPage() {
                   <ul className="hfl-plan-features">
                     {plan.features.map((f) => <li key={f}>✓ {f}</li>)}
                   </ul>
-                  <button className="hfl-plan-cta" onClick={() => navigate("/login")}>{plan.cta}</button>
+                  <button className="hfl-plan-cta" onClick={() => handleUpgrade(plan.planTier)}>{plan.cta}</button>
                 </div>
               ))}
             </div>
@@ -231,7 +254,7 @@ export default function ForProsPage() {
                   <ul className="hfl-plan-features">
                     {plan.features.map((f) => <li key={f}>✓ {f}</li>)}
                   </ul>
-                  <button className="hfl-plan-cta" onClick={() => navigate("/login")}>{plan.cta}</button>
+                  <button className="hfl-plan-cta" onClick={() => handleUpgrade(plan.planTier)}>{plan.cta}</button>
                 </div>
               ))}
             </div>
