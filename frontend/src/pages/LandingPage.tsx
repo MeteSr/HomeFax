@@ -288,7 +288,7 @@ export default function LandingPage() {
                 )}
 
                 {activeFeature === 1 && (
-                  <div style={{ background: "var(--plum)" }}>
+                  <div style={{ background: "white" }}>
                   <div className="hfl-ai-panel-hdr">
                     <div className="hfl-ai-panel-hdr-l">
                       <span style={{ fontSize: 16 }}>🏠</span>
