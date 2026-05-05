@@ -388,15 +388,19 @@ export const CSS = `
   .hfl-compete-footer { padding: 14px 26px; background: var(--sage-light); border-top: 1px solid var(--sage-mid); font-size: 11px; color: var(--plum-mid); font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
   /* ── REPORT CTA ───────────────────────────────────────────────────────── */
-  .hfl-report {
-    padding: 0 56px 100px;
-    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  .hfl-report { padding: 0 56px 100px; }
+  .hfl-report-card {
+    display: flex; align-items: stretch; min-height: 480px;
+    border: 1px solid var(--rule); overflow: hidden; background: white;
+  }
+  .hfl-report-img-col { flex: 0 0 60%; }
+  .hfl-report-img-col img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hfl-report-body {
+    flex: 1; padding: 52px 48px; display: flex; flex-direction: column; justify-content: center;
   }
   .hfl-rc-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--plum); margin-bottom: 18px; }
   .hfl-report h2 { color: var(--plum); margin-bottom: 18px; }
   .hfl-report h2 em { color: var(--sage); font-style: italic; font-weight: 300; }
-  .hfl-report > div:first-child { order: 2; }
-  .hfl-report > div:last-child { order: 1; }
   .hfl-report p { font-size: 16px; color: rgba(46,37,64,0.7); line-height: 1.7; margin-bottom: 36px; }
   .hfl-rc-actions { display: flex; gap: 14px; flex-wrap: wrap; }
   .hfl-rc-btn {
@@ -411,23 +415,6 @@ export const CSS = `
     font-family: 'Plus Jakarta Sans', sans-serif; transition: background .2s;
   }
   .hfl-rc-ghost:hover { background: rgba(46,37,64,0.14); }
-  .hfl-report-mock { background: white; overflow: hidden; box-shadow: 0 20px 60px rgba(46,37,64,0.18); border: 1px solid var(--rule); }
-  .hfl-mock-top { background: var(--plum); padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
-  .hfl-mock-addr { font-family: 'Fraunces', serif; font-size: 15px; color: white; font-weight: 700; }
-  .hfl-mock-badge { background: var(--sage); color: var(--plum); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 100px; letter-spacing: 1px; }
-  .hfl-mock-score { background: var(--sage-light); padding: 14px 20px; display: flex; align-items: center; gap: 14px; }
-  .hfl-mock-num { font-family: 'Fraunces', serif; font-size: 38px; font-weight: 900; color: var(--sage); line-height: 1; }
-  .hfl-mock-score-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--plum-mid); margin-bottom: 6px; }
-  .hfl-mock-bar { height: 8px; background: var(--sage-mid); border-radius: 100px; overflow: hidden; }
-  .hfl-mock-bar-fill { height: 100%; width: 91%; background: linear-gradient(90deg, var(--sage), #A8E8A0); border-radius: 100px; }
-  .hfl-mock-rows { padding: 8px 20px 16px; }
-  .hfl-mock-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F0EDE8; font-size: 12px; }
-  .hfl-mock-row:last-child { border-bottom: none; }
-  .hfl-mock-row-lbl { color: var(--plum-mid); display: flex; align-items: center; gap: 6px; }
-  .hfl-mock-pass { font-weight: 700; color: var(--sage); }
-  .hfl-mock-flag { font-weight: 700; color: #D4843A; }
-  .hfl-mock-info { font-weight: 700; color: var(--plum-mid); }
-  .hfl-mock-footer { padding: 10px 20px 14px; display: flex; align-items: center; gap: 8px; background: var(--sage-light); border-top: 1px solid var(--sage-mid); font-size: 11px; color: var(--plum-mid); font-weight: 600; }
 
   /* ── FEATURE DEEP DIVE ───────────────────────────────────────────────── */
   .hfl-fdd { padding: 0 56px 100px; }
@@ -850,9 +837,11 @@ export const CSS = `
     .hfl-feat-2 .hfl-feat-text { order: 0; }
     .hfl-feat-2 .hfl-feat-visual { order: 0; }
 
-    .hfl-report { padding: 0 24px 64px; grid-template-columns: 1fr; gap: 36px; }
+    .hfl-report { padding: 0 24px 64px; }
     .hfl-report h2 { font-size: 32px; }
-    .hfl-report > div:last-child { display: none; }
+    .hfl-report-card { flex-direction: column; }
+    .hfl-report-img-col { flex: none; width: 100%; max-height: 320px; }
+    .hfl-report-body { padding: 36px 28px; }
 
     .hfl-fdd { padding: 0 24px 64px; }
     .hfl-fdd-inner { padding: 40px 28px; grid-template-columns: 1fr; gap: 36px; }
