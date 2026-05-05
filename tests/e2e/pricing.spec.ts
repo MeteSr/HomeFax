@@ -52,9 +52,10 @@ test.describe("PricingPage — /pricing", () => {
     await expect(page.getByText(/\$40/)).toBeVisible();
   });
 
-  test("shows ContractorPro plan card in contractor view", async ({ page }) => {
-    await page.getByRole("button", { name: /contractor/i }).click();
-    await expect(page.getByText("Contractor Pro", { exact: true })).toBeVisible();
+  test("shows 'See plans for pros' link pointing to /for-pros", async ({ page }) => {
+    const link = page.getByRole("link", { name: /see plans for pros/i });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", "/for-pros");
   });
 
   // ── Feature comparison table ──────────────────────────────────────────────

@@ -334,34 +334,34 @@ export const CSS = `
   .hfl-rec-footer { padding: 14px 26px; background: var(--sage-light); border-top: 1px solid var(--sage-mid); font-size: 11px; color: var(--plum-mid); font-weight: 600; display: flex; align-items: center; gap: 8px; }
   /* AI panel */
   .hfl-ai-panel-hdr {
-    background: rgba(253,252,250,0.1); padding: 16px 22px;
+    background: rgba(46,37,64,0.04); padding: 16px 22px;
     display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid rgba(253,252,250,0.08);
+    border-bottom: 1px solid rgba(46,37,64,0.1);
   }
   .hfl-ai-panel-hdr-l { display: flex; align-items: center; gap: 10px; }
-  .hfl-ai-panel-name { font-size: 14px; font-weight: 700; color: white; }
+  .hfl-ai-panel-name { font-size: 14px; font-weight: 700; color: var(--plum); }
   .hfl-ai-panel-live { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sage); font-weight: 600; }
   .hfl-ai-panel-dot { width: 6px; height: 6px; background: var(--sage); border-radius: 50%; animation: hfl-pulse 2s infinite; }
   .hfl-ai-panel-body { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
   .hfl-ai-notice {
-    background: rgba(245,233,187,0.12); border: 1px solid rgba(245,233,187,0.25);
+    background: var(--butter); border: 1px solid rgba(200,160,80,0.3);
     border-radius: 14px; padding: 16px;
   }
-  .hfl-ai-notice-tag { font-size: 10px; font-weight: 700; color: #F5E9BB; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-  .hfl-ai-notice p { font-size: 13px; color: rgba(253,252,250,0.85); line-height: 1.6; margin-bottom: 12px; }
+  .hfl-ai-notice-tag { font-size: 10px; font-weight: 700; color: var(--plum); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .hfl-ai-notice p { font-size: 13px; color: var(--plum); line-height: 1.6; margin-bottom: 12px; }
   .hfl-ai-notice-btn { background: var(--sage); color: var(--plum); font-size: 12px; font-weight: 700; padding: 7px 16px; border-radius: 100px; border: none; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif; }
   .hfl-ai-user-msg { display: flex; align-items: flex-start; gap: 10px; }
-  .hfl-ai-user-icon { width: 30px; height: 30px; background: rgba(253,252,250,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
-  .hfl-ai-user-msg p { font-size: 13px; color: rgba(253,252,250,0.55); line-height: 1.55; font-style: italic; }
-  .hfl-ai-reply { background: rgba(122,175,118,0.15); border-radius: 14px; padding: 14px 16px; }
+  .hfl-ai-user-icon { width: 30px; height: 30px; background: rgba(46,37,64,0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .hfl-ai-user-msg p { font-size: 13px; color: var(--plum-mid); line-height: 1.55; font-style: italic; }
+  .hfl-ai-reply { background: var(--sage-light); border-radius: 14px; padding: 14px 16px; }
   .hfl-ai-reply-tag { font-size: 10px; font-weight: 700; color: var(--sage); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
-  .hfl-ai-reply p { font-size: 13px; color: rgba(253,252,250,0.85); line-height: 1.6; }
+  .hfl-ai-reply p { font-size: 13px; color: var(--plum); line-height: 1.6; }
   .hfl-ai-panel-footer {
-    padding: 14px 22px; border-top: 1px solid rgba(253,252,250,0.08);
+    padding: 14px 22px; border-top: 1px solid rgba(46,37,64,0.1);
     display: flex; align-items: center; gap: 12px;
   }
   .hfl-ai-mic { width: 40px; height: 40px; background: var(--sage); border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 0 0 8px rgba(122,175,118,0.15); }
-  .hfl-ai-mic-hint { font-size: 12px; color: rgba(253,252,250,0.4); }
+  .hfl-ai-mic-hint { font-size: 12px; color: var(--plum-mid); }
   /* Agent compete panel */
   .hfl-compete-hdr { background: var(--plum); padding: 22px 26px; }
   .hfl-compete-title { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: white; margin-bottom: 4px; }

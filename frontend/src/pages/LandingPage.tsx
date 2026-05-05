@@ -112,11 +112,14 @@ export default function LandingPage() {
 
         {/* ── Nav ─────────────────────────────────────────────────────────── */}
         <nav className="hfl-nav">
-          <a href="/" className="hfl-logo">Home<span>Gentic</span></a>
-          <ul className={`hfl-nav-links${menuOpen ? " hfl-menu-open" : ""}`}>
-            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/demo"); }}>Demo</a></li>
-            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/pricing"); }}>Pricing</a></li>
-          </ul>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <a href="/" className="hfl-logo">Home<span>Gentic</span></a>
+            <ul className={`hfl-nav-links${menuOpen ? " hfl-menu-open" : ""}`}>
+              <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/demo"); }}>Demo</a></li>
+              <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/pricing"); }}>Pricing</a></li>
+              <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/for-pros"); }}>For Pros</a></li>
+            </ul>
+          </div>
           <div className="hfl-nav-actions">
             <button className="hfl-nav-signin" onClick={() => navigate("/login")}>Sign in</button>
             <button className="hfl-nav-pill" onClick={() => navigate("/login")}>Get Started</button>
@@ -285,7 +288,7 @@ export default function LandingPage() {
                 )}
 
                 {activeFeature === 1 && (
-                  <div style={{ background: "var(--plum)" }}>
+                  <div style={{ background: "white" }}>
                   <div className="hfl-ai-panel-hdr">
                     <div className="hfl-ai-panel-hdr-l">
                       <span style={{ fontSize: 16 }}>🏠</span>
@@ -532,9 +535,11 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
-            <div className="hfl-pricing-note">
-              Contractor and Realtor plans available — <a onClick={(e) => { e.preventDefault(); navigate("/pricing"); }} style={{ cursor: "pointer" }}>see full pricing →</a>
-            </div>
+            <p style={{ textAlign: "center", fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.9rem", color: "var(--plum-mid)", marginTop: "1.5rem", lineHeight: 1.7 }}>
+              {annual
+                ? "* Billed annually upfront. Cancel anytime — subscription access ends at the close of your current billing year. Your blockchain records remain yours forever."
+                : "* Billed monthly. Cancel anytime — subscription access ends at the close of your current billing period. Your blockchain records remain yours forever."}
+            </p>
           </div>
         </section>
 

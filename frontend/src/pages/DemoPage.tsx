@@ -373,21 +373,21 @@ const CSS = `
 
   /* ── AI CHAT CARD ─────────────────────────────────────────────────────── */
   .dm-ai-card {
-    background: var(--charcoal); border-radius: 20px; overflow: hidden;
-    box-shadow: 0 24px 60px rgba(30,25,40,0.35), 0 4px 16px rgba(30,25,40,0.2);
+    background: white; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(46,37,64,0.12), 0 4px 16px rgba(46,37,64,0.06);
   }
   .dm-ai-card-header {
     padding: 16px 22px; display: flex; align-items: center; gap: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(46,37,64,0.1);
+    background: rgba(46,37,64,0.04);
   }
   .dm-ai-spark-badge {
     display: flex; align-items: center; gap: 6px; padding: 5px 12px;
     background: rgba(122,175,118,0.18); border: 1px solid rgba(122,175,118,0.35);
-    border-radius: 100px; font-size: 11px; font-weight: 700; color: #A8DCA5; letter-spacing: 0.5px;
+    border-radius: 100px; font-size: 11px; font-weight: 700; color: var(--sage); letter-spacing: 0.5px;
   }
   .dm-ai-card-title {
-    font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); margin-left: auto;
+    font-size: 13px; font-weight: 600; color: var(--plum-mid); margin-left: auto;
   }
   .dm-ai-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
   .dm-bubble {
@@ -395,32 +395,32 @@ const CSS = `
     font-size: 13px; line-height: 1.55;
   }
   .dm-bubble-user {
-    background: var(--plum-light); color: rgba(255,255,255,0.9);
+    background: var(--plum); color: rgba(255,255,255,0.9);
     align-self: flex-end; border-bottom-right-radius: 4px;
   }
   .dm-bubble-ai {
-    background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.88);
+    background: var(--sage-light); color: var(--plum);
     align-self: flex-start; border-bottom-left-radius: 4px;
   }
-  .dm-bubble-ai strong { color: white; }
+  .dm-bubble-ai strong { color: var(--plum); }
   .dm-bubble-label {
     font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     margin-bottom: 6px;
   }
   .dm-bubble-label-ai   { color: var(--sage); }
-  .dm-bubble-label-user { color: rgba(255,255,255,0.4); text-align: right; }
+  .dm-bubble-label-user { color: var(--plum-mid); text-align: right; }
   .dm-ai-actions { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
   .dm-ai-action {
     display: flex; align-items: center; gap: 10px; padding: 10px 14px;
     border-radius: 10px; font-size: 12px; font-weight: 600; cursor: default;
   }
   .dm-ai-action-default {
-    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.8);
+    background: rgba(46,37,64,0.04); border: 1px solid rgba(46,37,64,0.1);
+    color: var(--plum);
   }
   .dm-ai-action-primary {
     background: rgba(122,175,118,0.18); border: 1px solid rgba(122,175,118,0.45);
-    color: #A8DCA5;
+    color: var(--sage);
   }
   .dm-ai-action-cta {
     background: var(--sage); color: white; border: none;
@@ -1461,6 +1461,10 @@ export default function DemoPage() {
   const slide   = slides[step];
   const isLast  = step === slides.length - 1;
 
+  const pricingHref = (persona === "contractors" || persona === "realtors")
+    ? `/for-pros#${persona === "contractors" ? "contractor-plans" : "realtor-plans"}`
+    : "/pricing";
+
   function goTo(s: number) {
     setStep(s);
     setAnimKey((k) => k + 1);
@@ -1479,7 +1483,7 @@ export default function DemoPage() {
       <nav className="dm-nav">
         <Link to="/" className="dm-logo">Home<span>Gentic</span></Link>
 
-        <Link to="/login" className="dm-nav-cta">
+        <Link to={pricingHref} className="dm-nav-cta">
           Get Started <ArrowRight size={15} />
         </Link>
       </nav>
@@ -1508,13 +1512,6 @@ export default function DemoPage() {
 
       {/* Slide Area */}
       <div className="dm-slide-wrap">
-        {/* Persona header */}
-        <div className="dm-persona-header">
-          <div className="dm-persona-kicker">{meta.kicker}</div>
-          <h2>{meta.heading}</h2>
-          <p className="dm-persona-desc">{meta.desc}</p>
-        </div>
-
         {/* Step pills */}
         <div className="dm-steps">
           {slides.map((s, i) => (
@@ -1555,7 +1552,7 @@ export default function DemoPage() {
                   Next: {slides[step + 1].subtitle} <ChevronRight size={15} />
                 </button>
               ) : (
-                <Link to="/login" className="dm-btn-cta">
+                <Link to={pricingHref} className="dm-btn-cta">
                   Get Started <ArrowRight size={15} />
                 </Link>
               )}
@@ -1571,10 +1568,10 @@ export default function DemoPage() {
       <div className="dm-cta-band">
         <h2>Ready to own your<br /><em>home's story?</em></h2>
         <p>Plans start at $10/mo. See pricing for the tier that fits your needs.</p>
-        <Link to="/login" className="dm-cta-pill">
+        <Link to={pricingHref} className="dm-cta-pill">
           <Play size={16} /> Get Started
         </Link>
-        <Link to="/pricing" className="dm-cta-ghost">
+        <Link to={pricingHref} className="dm-cta-ghost">
           View Pricing
         </Link>
       </div>
