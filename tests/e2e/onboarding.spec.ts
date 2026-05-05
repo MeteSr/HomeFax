@@ -276,7 +276,8 @@ test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
     });
 
     test("shows 'Add photo' button for each system", async ({ page }) => {
-      const addPhotoButtons = page.getByRole("button", { name: /add photo/i });
+      const modal = page.getByTestId("property-wizard-modal");
+      const addPhotoButtons = modal.getByRole("button", { name: /add photo/i });
       await expect(addPhotoButtons).toHaveCount(6);
     });
   });

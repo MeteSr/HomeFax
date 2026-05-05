@@ -578,7 +578,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
+      <div data-testid="property-wizard-modal" style={{
         borderRadius: RADIUS.card,
         border: `1px solid ${COLORS.rule}`,
         background: COLORS.white,
