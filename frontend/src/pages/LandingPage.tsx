@@ -112,12 +112,14 @@ export default function LandingPage() {
 
         {/* ── Nav ─────────────────────────────────────────────────────────── */}
         <nav className="hfl-nav">
-          <a href="/" className="hfl-logo">Home<span>Gentic</span></a>
-          <ul className={`hfl-nav-links${menuOpen ? " hfl-menu-open" : ""}`}>
-            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/demo"); }}>Demo</a></li>
-            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/pricing"); }}>Pricing</a></li>
-            <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/for-pros"); }}>For Pros</a></li>
-          </ul>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <a href="/" className="hfl-logo">Home<span>Gentic</span></a>
+            <ul className={`hfl-nav-links${menuOpen ? " hfl-menu-open" : ""}`}>
+              <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/demo"); }}>Demo</a></li>
+              <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/pricing"); }}>Pricing</a></li>
+              <li><a onClick={(e) => { e.preventDefault(); setMenuOpen(false); navigate("/for-pros"); }}>For Pros</a></li>
+            </ul>
+          </div>
           <div className="hfl-nav-actions">
             <button className="hfl-nav-signin" onClick={() => navigate("/login")}>Sign in</button>
             <button className="hfl-nav-pill" onClick={() => navigate("/login")}>Get Started</button>
