@@ -1,6 +1,6 @@
-import { HttpAgent, Actor } from "@dfinity/agent";
-import { Ed25519KeyIdentity } from "@dfinity/identity";
-import { Principal } from "@dfinity/principal";
+import { HttpAgent, Actor } from "@icp-sdk/core/agent";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
+import { Principal } from "@icp-sdk/core/principal";
 import crypto from "node:crypto";
 
 // Testnet ID is the fallback; override with CANISTER_ID_PAYMENT in Railway env vars.
