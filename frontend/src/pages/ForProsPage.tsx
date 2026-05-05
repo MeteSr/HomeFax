@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CSS } from "./landingStyles";
 import { useAuth } from "@/contexts/AuthContext";
@@ -89,7 +89,15 @@ const CANCELLATION_STYLE: React.CSSProperties = {
 
 export default function ForProsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!location.hash) return;
+    const el = document.getElementById(location.hash.slice(1));
+    if (!el) return;
+    setTimeout(() => el.scrollIntoView({ behavior: "smooth" }), 80);
+  }, [location.hash]);
   const { login, devLogin } = useAuth();
   const handleLogin = import.meta.env.DEV ? devLogin : login;
   const { isAuthenticated } = useAuthStore();
