@@ -10,6 +10,7 @@ export default function LandingPage() {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [activeFeature, setActiveFeature] = React.useState(0);
   const [heroPhase, setHeroPhase] = React.useState(0);
+  const [annual, setAnnual] = React.useState(false);
 
   const HERO_PHASES = [
     { icon: "📋", label: "14 records verified", detail: "Share link ready" },
@@ -405,7 +406,7 @@ export default function LandingPage() {
                 Homes with it sell first.
               </p>
               <div className="hfl-rc-actions">
-                <button className="hfl-rc-btn" onClick={() => navigate("/login")}>Generate My HomeGentic</button>
+                <button className="hfl-rc-btn" onClick={() => navigate("/login")}>Start Journey</button>
                 <button className="hfl-btn-soft" onClick={() => window.open("/sample-report", "_blank", "noopener,noreferrer")}>View Sample Report</button>
               </div>
             </div>
@@ -469,19 +470,57 @@ export default function LandingPage() {
         <section className="hfl-pricing">
           <div className="hfl-pricing-inner">
             <div className="hfl-pricing-header">
-<h2>Start for $10/mo.<br /><em>Your home earns it back.</em></h2>
+              <h2>Start for {annual ? "$100/yr" : "$10/mo"}.<br /><em>Your home earns it back.</em></h2>
               <p className="hfl-sec-sub">A verified maintenance record pays for itself the first time a buyer negotiates. Pick the plan that fits your homeownership stage.</p>
             </div>
+
+            {/* Billing toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "2.5rem" }}>
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.65rem", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: annual ? "var(--plum-mid)" : "var(--plum)", fontWeight: annual ? 400 : 700 }}>Monthly</span>
+              <button
+                onClick={() => setAnnual((v) => !v)}
+                aria-label="Toggle annual billing"
+                style={{
+                  width: "2.5rem", height: "1.375rem", borderRadius: 100,
+                  border: "none", cursor: "pointer",
+                  background: annual ? "var(--sage)" : "var(--rule)",
+                  position: "relative", transition: "background 0.2s",
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: "3px",
+                  left: annual ? "calc(100% - 1.125rem)" : "3px",
+                  width: "1rem", height: "1rem", borderRadius: "50%",
+                  background: "white", transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </button>
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.65rem", letterSpacing: "0.06em", textTransform: "uppercase" as const, color: annual ? "var(--plum)" : "var(--plum-mid)", fontWeight: annual ? 700 : 400 }}>Annual</span>
+              {annual && (
+                <span style={{ background: "var(--sage)", color: "white", padding: "2px 10px", borderRadius: 100, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em" }}>
+                  Save 2 months
+                </span>
+              )}
+            </div>
+
             <div className="hfl-pricing-grid">
               {([
-                { tier: "Basic",   price: "$10", tag: null as string | null, properties: "1 property",  photos: "5 photos/job",  quotes: "3 open quotes" },
-                { tier: "Pro",     price: "$20", tag: "Most Popular",         properties: "5 properties", photos: "10 photos/job", quotes: "10 open quotes" },
-                { tier: "Premium", price: "$40", tag: null as string | null, properties: "20 properties", photos: "30 photos/job", quotes: "Unlimited quotes" },
+                { tier: "Basic",   monthly: 10, annual: 100, tag: null as string | null, properties: "1 property",   photos: "5 photos/job",  quotes: "3 open quotes" },
+                { tier: "Pro",     monthly: 20, annual: 200, tag: "Most Popular",        properties: "5 properties", photos: "10 photos/job", quotes: "10 open quotes" },
+                { tier: "Premium", monthly: 40, annual: 400, tag: null as string | null, properties: "20 properties", photos: "30 photos/job", quotes: "Unlimited quotes" },
               ]).map((plan) => (
                 <div key={plan.tier} className={`hfl-plan-card${plan.tag ? " hfl-plan-featured" : ""}`}>
                   {plan.tag && <div className="hfl-plan-badge">{plan.tag}</div>}
                   <div className="hfl-plan-tier">{plan.tier}</div>
-                  <div className="hfl-plan-price">{plan.price}<span className="hfl-plan-period">/mo</span></div>
+                  <div className="hfl-plan-price">
+                    ${annual ? plan.annual : plan.monthly}<span className="hfl-plan-period">/{annual ? "yr" : "mo"}</span>
+                  </div>
+                  {annual && (
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.7rem", color: "var(--sage)", marginTop: "-20px", marginBottom: "20px", fontWeight: 600 }}>
+                      ${(plan.annual / 12).toFixed(2)}/mo billed annually
+                    </div>
+                  )}
                   <ul className="hfl-plan-features">
                     <li>✓ {plan.properties}</li>
                     <li>✓ {plan.photos}</li>
