@@ -17,6 +17,7 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { quoteService } from "@/services/quote";
 import type { QuoteRequest, Quote } from "@/services/quote";
+import { propertyService } from "@/services/property";
 import { TEST_PRINCIPAL } from "./setup";
 
 const CANISTER_ID = (process.env as any).QUOTE_CANISTER_ID || "";
@@ -25,51 +26,72 @@ const deployed = !!CANISTER_ID;
 const RUN_ID = Date.now();
 function pid(label: string) { return `integ-quote-${label}-${RUN_ID}`; }
 
+// cancel() and close() cross-call property.isAuthorized — a made-up propertyId
+// returns #Unauthorized. Register one real property before any test runs and use
+// its ID for all requests that need cleanup.
+let realPropId = "";
+
 const BASE_REQUEST = {
-  propertyId:  pid("base"),
+  propertyId:  pid("base"),  // overridden in every deployed test with realPropId
   serviceType: "HVAC" as const,
   description: "Annual HVAC tune-up integration test",
   urgency:     "medium" as const,
 };
 
+beforeAll(async () => {
+  if (!deployed) return;
+  const prop = await propertyService.registerProperty({
+    address:      `${RUN_ID} Quote Test Ave, Austin TX 78701`,
+    city:         "Austin",
+    state:        "TX",
+    zipCode:      "78701",
+    propertyType: "SingleFamily" as const,
+    yearBuilt:    2000,
+    squareFeet:   2000,
+    tier:         "Basic" as const,
+  });
+  realPropId = prop.id;
+});
+
 // ─── createRequest — Candid serialization ────────────────────────────────────
 // Each test cancels its request inline to stay within the Premium open-request
-// limit (10). Without cleanup, 16 sequential creates would exceed the cap mid-suite.
+// limit (10). cancel() requires the property to exist in the property canister
+// (cross-canister isAuthorized check), so all requests use realPropId.
 
 describe.skipIf(!deployed)("createRequest — Candid serialization", () => {
   it("returns a QuoteRequest with a non-empty id", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("id") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     expect(req.id).toBeTruthy();
     expect(typeof req.id).toBe("string");
     await quoteService.cancel(req.id);
   });
 
   it("serviceType is preserved correctly", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("svc-type") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     expect(req.serviceType).toBe("HVAC");
     await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: low", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-low"), urgency: "low" });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "low" });
     expect(req.urgency).toBe("low");
     await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: medium", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-med"), urgency: "medium" });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "medium" });
     expect(req.urgency).toBe("medium");
     await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: high", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-high"), urgency: "high" });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "high" });
     expect(req.urgency).toBe("high");
     await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: emergency", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-emergency"), urgency: "emergency" });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "emergency" });
     expect(req.urgency).toBe("emergency");
     await quoteService.cancel(req.id);
   });
@@ -79,7 +101,7 @@ describe.skipIf(!deployed)("createRequest — Candid serialization", () => {
     for (const serviceType of types) {
       const req = await quoteService.createRequest({
         ...BASE_REQUEST,
-        propertyId: pid(`svc-${serviceType}`),
+        propertyId: realPropId,
         serviceType,
       });
       expect(req.serviceType).toBe(serviceType);
@@ -88,20 +110,20 @@ describe.skipIf(!deployed)("createRequest — Candid serialization", () => {
   });
 
   it("homeowner principal matches the test identity", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("principal") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     expect(req.homeowner).toBe(TEST_PRINCIPAL);
     await quoteService.cancel(req.id);
   });
 
   it("status starts as 'open'", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("initial-status") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     expect(req.status).toBe("open");
     await quoteService.cancel(req.id);
   });
 
   it("createdAt is a recent ms timestamp (ns→ms conversion applied)", async () => {
     const before = Date.now() - 5_000;
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("ts") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     const after = Date.now() + 5_000;
     expect(req.createdAt).toBeGreaterThan(before);
     expect(req.createdAt).toBeLessThan(after);
@@ -115,7 +137,7 @@ describe.skipIf(!deployed)("getRequests — caller scoping", () => {
   let seeded: QuoteRequest;
 
   beforeAll(async () => {
-    seeded = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("scope") });
+    seeded = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
   });
 
   it("getRequests returns the created request", async () => {
@@ -136,7 +158,7 @@ describe.skipIf(!deployed)("submitQuote — amount/timeline/validUntil round-tri
   let request: QuoteRequest;
 
   beforeAll(async () => {
-    request = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("quote-submit") });
+    request = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
   });
 
   it("returns a Quote with a non-empty id", async () => {
@@ -186,7 +208,7 @@ describe.skipIf(!deployed)("getQuotesForRequest — retrieval", () => {
   let submitted: Quote;
 
   beforeAll(async () => {
-    request = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("get-quotes") });
+    request = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     const validUntil = Date.now() + 7 * 24 * 60 * 60 * 1000;
     submitted = await quoteService.submitQuote(request.id, 200_000, 5, validUntil);
   });
@@ -203,7 +225,7 @@ describe.skipIf(!deployed)("getQuotesForRequest — retrieval", () => {
   });
 
   it("getQuotesForRequest returns empty for a request with no quotes", async () => {
-    const emptyReq = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("no-quotes") });
+    const emptyReq = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     const quotes = await quoteService.getQuotesForRequest(emptyReq.id);
     expect(quotes).toHaveLength(0);
   });
@@ -216,7 +238,7 @@ describe.skipIf(!deployed)("accept — QuoteStatus Pending → Accepted", () => 
   let quote: Quote;
 
   beforeAll(async () => {
-    request = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("accept") });
+    request = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     const validUntil = Date.now() + 7 * 24 * 60 * 60 * 1000;
     quote = await quoteService.submitQuote(request.id, 300_000, 7, validUntil);
   });
@@ -230,7 +252,7 @@ describe.skipIf(!deployed)("accept — QuoteStatus Pending → Accepted", () => 
 
 describe.skipIf(!deployed)("close — RequestStatus Open → Closed", () => {
   it("close() resolves without error and marks request as closed", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("close") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     await expect(quoteService.close(req.id)).resolves.toBeUndefined();
   });
 });
@@ -239,12 +261,12 @@ describe.skipIf(!deployed)("close — RequestStatus Open → Closed", () => {
 
 describe.skipIf(!deployed)("cancel — RequestStatus Open → Cancelled", () => {
   it("cancel() resolves without error", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("cancel") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     await expect(quoteService.cancel(req.id)).resolves.toBeUndefined();
   });
 
   it("cancel() twice rejects with an error", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("cancel-double") });
+    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     await quoteService.cancel(req.id);
     await expect(quoteService.cancel(req.id)).rejects.toThrow();
   });
@@ -256,7 +278,7 @@ describe.skipIf(!deployed)("zipCode — opt(Text) round-trip", () => {
   it("zipCode is preserved when set", async () => {
     const req = await quoteService.createRequest({
       ...BASE_REQUEST,
-      propertyId: pid("zip-set"),
+      propertyId: realPropId,
       zipCode: "78701",
     });
     expect(req.zipCode).toBe("78701");
@@ -265,7 +287,7 @@ describe.skipIf(!deployed)("zipCode — opt(Text) round-trip", () => {
   it("zipCode is undefined when omitted", async () => {
     const req = await quoteService.createRequest({
       ...BASE_REQUEST,
-      propertyId: pid("zip-omit"),
+      propertyId: realPropId,
     });
     expect(req.zipCode).toBeUndefined();
   });
@@ -278,12 +300,12 @@ describe.skipIf(!deployed)("getOpenRequestsForMe — returns open requests visib
     // Seed two open requests — one with a specific zip, one without
     await quoteService.createRequest({
       ...BASE_REQUEST,
-      propertyId: pid("for-me-zip"),
+      propertyId: realPropId,
       zipCode: "78701",
     });
     await quoteService.createRequest({
       ...BASE_REQUEST,
-      propertyId: pid("for-me-no-zip"),
+      propertyId: realPropId,
     });
   });
 

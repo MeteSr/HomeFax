@@ -159,15 +159,27 @@ describe.skipIf(!deployed)("getByProperty — principal scoping & retrieval", ()
 
 // ─── updateJobStatus — Variant round-trip ────────────────────────────────────
 
+// updateJobStatus cross-calls property.isAuthorized — a made-up propertyId returns
+// Unauthorized. Register a real property so the auth check passes.
 describe.skipIf(!deployed)("updateJobStatus — Variant round-trip", () => {
+  let statusPropId: string;
+
+  beforeAll(async () => {
+    const prop = await propertyService.registerProperty({
+      ...PROP_BASE,
+      address: `${RUN_ID} UpdateStatus Blvd, Orlando FL 32801`,
+    });
+    statusPropId = prop.id;
+  });
+
   it("transitions status from pending to completed", async () => {
-    const job = await jobService.create({ ...BASE, propertyId: pid("status-completed") });
+    const job = await jobService.create({ ...BASE, propertyId: statusPropId });
     const updated = await jobService.updateJobStatus(job.id, "completed");
     expect(updated.status).toBe("completed");
   });
 
   it("transitions status from pending to in_progress", async () => {
-    const job = await jobService.create({ ...BASE, propertyId: pid("status-inprog") });
+    const job = await jobService.create({ ...BASE, propertyId: statusPropId });
     const updated = await jobService.updateJobStatus(job.id, "in_progress");
     expect(updated.status).toBe("in_progress");
   });
