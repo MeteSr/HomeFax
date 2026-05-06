@@ -238,6 +238,65 @@ describe.skipIf(!deployed)("cancel — RequestStatus Open → Cancelled", () => 
   });
 });
 
+// ─── zipCode — opt field round-trip ──────────────────────────────────────────
+
+describe.skipIf(!deployed)("zipCode — opt(Text) round-trip", () => {
+  it("zipCode is preserved when set", async () => {
+    const req = await quoteService.createRequest({
+      ...BASE_REQUEST,
+      propertyId: pid("zip-set"),
+      zipCode: "78701",
+    });
+    expect(req.zipCode).toBe("78701");
+  });
+
+  it("zipCode is undefined when omitted", async () => {
+    const req = await quoteService.createRequest({
+      ...BASE_REQUEST,
+      propertyId: pid("zip-omit"),
+    });
+    expect(req.zipCode).toBeUndefined();
+  });
+});
+
+// ─── getOpenRequestsForMe — cross-canister filtering ─────────────────────────
+
+describe.skipIf(!deployed)("getOpenRequestsForMe — returns open requests visible to caller", () => {
+  beforeAll(async () => {
+    // Seed two open requests — one with a specific zip, one without
+    await quoteService.createRequest({
+      ...BASE_REQUEST,
+      propertyId: pid("for-me-zip"),
+      zipCode: "78701",
+    });
+    await quoteService.createRequest({
+      ...BASE_REQUEST,
+      propertyId: pid("for-me-no-zip"),
+    });
+  });
+
+  it("returns an array (not null or undefined)", async () => {
+    const results = await quoteService.getOpenRequestsForMe();
+    expect(Array.isArray(results)).toBe(true);
+  });
+
+  it("all returned requests are open or quoted", async () => {
+    const results = await quoteService.getOpenRequestsForMe();
+    for (const r of results) {
+      expect(["open", "quoted"]).toContain(r.status);
+    }
+  });
+
+  it("caller with no serviceZips registered sees all open requests (opt-in-to-all default)", async () => {
+    // The test identity is not a registered contractor → contrActor.getContractor()
+    // returns #err(#NotFound) → quote canister falls back to showing all requests.
+    const all    = await quoteService.getRequests();
+    const forMe  = await quoteService.getOpenRequestsForMe();
+    const openCount = all.filter((r) => r.status === "open" || r.status === "quoted").length;
+    expect(forMe.length).toBe(openCount);
+  });
+});
+
 // ─── cancel — mock fallback ───────────────────────────────────────────────────
 
 describe("cancel — mock fallback (no canister)", () => {
