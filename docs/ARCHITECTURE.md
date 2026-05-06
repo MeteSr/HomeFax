@@ -17,14 +17,14 @@ No traditional database. No centralized server. No single point of failure.
 │                                                                         │
 │   Public pages         │  Authenticated pages    │  Shared widgets      │
 │   /  /pricing          │  /dashboard             │  VoiceAgent (mic)    │
-│   /check               │  /properties/:id        │  Toasts              │
-│   /home-systems        │  /maintenance           │  Layout / Badge      │
-│   /prices              │  /market                │  ScoreValueBanner    │
-│   /instant-forecast    │  /quotes/:id            │                      │
-│   /report/:token       │  /jobs/new              │                      │
-│   /cert/:token         │  /settings              │                      │
-│   /neighborhood/:zip   │  /sensors               │                      │
-│                        │  /warranties            │                      │
+│   /for-pros            │  /properties/:id        │  Toasts              │
+│   /check               │  /maintenance           │  Layout / Badge      │
+│   /home-systems        │  /market                │  ScoreValueBanner    │
+│   /prices              │  /quotes/:id            │                      │
+│   /instant-forecast    │  /jobs/new              │                      │
+│   /report/:token       │  /settings              │                      │
+│   /cert/:token         │  /sensors               │                      │
+│   /neighborhood/:zip   │  /warranties            │                      │
 │                        │  /recurring/:id         │                      │
 │                        │  /listing/:id           │                      │
 │                        │  /agents                │                      │
@@ -337,7 +337,7 @@ docs/             — ARCHITECTURE.md, API.md, DEPLOYMENT.md, SECURITY.md, BACKL
 ## Local Development
 
 ```bash
-make dev          # replica + all 16 canisters + frontend in one command
+make dev          # replica + all 17 canisters + frontend in one command
 make frontend     # Vite dev server only (:5173)
 cd agents/voice && npm run dev   # voice proxy (:3001)
 
