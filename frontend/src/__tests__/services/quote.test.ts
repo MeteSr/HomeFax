@@ -27,7 +27,7 @@ function patchQuoteService(svc: any): void {
       }
     }
     reqCounter++;
-    const created = {
+    const created: any = {
       id:          `req-${reqCounter}-${Date.now()}`,
       propertyId:  req.propertyId,
       homeowner:   "local",
@@ -37,6 +37,7 @@ function patchQuoteService(svc: any): void {
       status:      "open",
       createdAt:   Date.now(),
     };
+    if (req.zipCode !== undefined) created.zipCode = req.zipCode;
     requests.push(created);
     return created;
   };
@@ -82,6 +83,12 @@ function patchQuoteService(svc: any): void {
     const req = requests.find((r) => r.id === requestId);
     if (!req) throw new Error("NotFound");
     req.status = "cancelled";
+  };
+
+  svc.getOpenRequestsForMe = async (serviceZips?: string[]): Promise<any[]> => {
+    const open = requests.filter((r) => r.status === "open");
+    if (!serviceZips || serviceZips.length === 0) return open;
+    return open.filter((r) => !r.zipCode || serviceZips.includes(r.zipCode));
   };
 
   svc.reset = () => {
@@ -538,5 +545,81 @@ describe("quoteService mock — tier quota enforcement (12.2.3)", () => {
     await expect(
       svc.createRequest({ propertyId: "p", serviceType: "Electrical", urgency: "low", description: "4th" }, "Free")
     ).rejects.toThrow(/quota|limit reached/i);
+  });
+});
+
+// ─── zipCode field on QuoteRequest ────────────────────────────────────────────
+
+describe("quoteService mock — zipCode on QuoteRequest", () => {
+  let svc: typeof quoteService;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const m = await import("@/services/quote");
+    svc = m.quoteService;
+    patchQuoteService(svc);
+  });
+
+  it("stores zipCode when provided", async () => {
+    const r = await svc.createRequest({
+      propertyId: "p1", serviceType: "HVAC", urgency: "medium", description: "d",
+      zipCode: "78701",
+    });
+    expect(r.zipCode).toBe("78701");
+  });
+
+  it("zipCode is undefined when not provided", async () => {
+    const r = await svc.createRequest({
+      propertyId: "p1", serviceType: "HVAC", urgency: "medium", description: "d",
+    });
+    expect(r.zipCode).toBeUndefined();
+  });
+});
+
+// ─── getOpenRequestsForMe location filtering ─────────────────────────────────
+
+describe("quoteService mock — getOpenRequestsForMe (location filtering)", () => {
+  let svc: typeof quoteService;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const m = await import("@/services/quote");
+    svc = m.quoteService;
+    patchQuoteService(svc);
+  });
+
+  it("contractor with no serviceZips sees all open requests", async () => {
+    await svc.createRequest({ propertyId: "p", serviceType: "HVAC",    urgency: "low", description: "d1", zipCode: "78701" });
+    await svc.createRequest({ propertyId: "p", serviceType: "Roofing", urgency: "low", description: "d2", zipCode: "90210" });
+    const results = await (svc as any).getOpenRequestsForMe([]);
+    expect(results).toHaveLength(2);
+  });
+
+  it("contractor with serviceZips only sees requests in those zips", async () => {
+    await svc.createRequest({ propertyId: "p", serviceType: "HVAC",    urgency: "low", description: "d1", zipCode: "78701" });
+    await svc.createRequest({ propertyId: "p", serviceType: "Roofing", urgency: "low", description: "d2", zipCode: "90210" });
+    const results = await (svc as any).getOpenRequestsForMe(["78701"]);
+    expect(results).toHaveLength(1);
+    expect(results[0].zipCode).toBe("78701");
+  });
+
+  it("requests with no zipCode are visible to all contractors regardless of serviceZips", async () => {
+    await svc.createRequest({ propertyId: "p", serviceType: "HVAC", urgency: "low", description: "no zip" });
+    const results = await (svc as any).getOpenRequestsForMe(["99999"]);
+    expect(results).toHaveLength(1);
+    expect(results[0].zipCode).toBeUndefined();
+  });
+
+  it("returns empty array when no open requests match contractor zips", async () => {
+    await svc.createRequest({ propertyId: "p", serviceType: "HVAC", urgency: "low", description: "d", zipCode: "78701" });
+    const results = await (svc as any).getOpenRequestsForMe(["99999"]);
+    expect(results).toHaveLength(0);
+  });
+
+  it("does not return cancelled requests", async () => {
+    const r = await svc.createRequest({ propertyId: "p", serviceType: "HVAC", urgency: "low", description: "d", zipCode: "78701" });
+    await svc.cancel(r.id);
+    const results = await (svc as any).getOpenRequestsForMe(["78701"]);
+    expect(results).toHaveLength(0);
   });
 });
