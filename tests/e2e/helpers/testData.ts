@@ -48,6 +48,7 @@ export async function injectContractors(
     id: string; name: string; specialties: string[];
     email: string; phone: string;
     bio?: string | null; licenseNumber?: string | null; serviceArea?: string | null;
+    serviceZips?: string[];
     trustScore: number; jobsCompleted: number; isVerified: boolean; createdAt: number;
   }>
 ) {

@@ -72,6 +72,7 @@ persistent actor Quote {
     status: RequestStatus;
     createdAt: Time.Time;
     closeAt: ?Time.Time;   // bid-window close time; null = no sealed-bid window
+    zipCode: ?Text;        // property zip code; null = visible to all contractors
   };
 
   /// A sealed bid submitted by a contractor before the bid window closes.
@@ -135,6 +136,9 @@ persistent actor Quote {
   /// When set, quote creation uses the property owner's tier when the caller
   /// is a delegated manager, so managers don't need their own subscription.
   private var propCanisterId: Text = "";
+  /// Contractor canister ID — set post-deploy via setContractorCanisterId().
+  /// When set, getOpenRequestsForMe() filters requests by the caller's serviceZips.
+  private var contrCanisterId: Text = "";
 
   private var reqCounter: Nat = 0;
   private var quoteCounter: Nat = 0;
@@ -319,7 +323,8 @@ persistent actor Quote {
     propertyId: Text,
     serviceType: ServiceType,
     description: Text,
-    urgency: UrgencyLevel
+    urgency: UrgencyLevel,
+    zipCode: ?Text
   ) : async Result.Result<QuoteRequest, Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
@@ -378,9 +383,10 @@ persistent actor Quote {
       serviceType;
       description;
       urgency;
-      status  = #Open;
+      status    = #Open;
       createdAt = Time.now();
-      closeAt = null;
+      closeAt   = null;
+      zipCode;
     };
     Map.add(requests, Text.compare, id, req);
     #ok(req)
@@ -394,7 +400,44 @@ persistent actor Quote {
     }
   };
 
-  /// Fetch all open or quoted requests — visible to any contractor browsing the marketplace.
+  /// Fetch open/quoted requests filtered by the caller's declared service zips.
+  ///
+  /// - If the contractor canister is not wired, returns all requests (backward compatible).
+  /// - If the caller has no serviceZips configured (empty), returns all requests (opt-in).
+  /// - Otherwise returns only requests whose zipCode is in the caller's serviceZips,
+  ///   plus requests with no zipCode set (visible to everyone).
+  public shared(msg) func getOpenRequestsForMe() : async [QuoteRequest] {
+    let allOpen = Iter.toArray(
+      Iter.filter(Map.values(requests), func(r: QuoteRequest) : Bool {
+        r.status == #Open or r.status == #Quoted
+      })
+    );
+
+    if (Text.size(contrCanisterId) == 0) return allOpen;
+
+    let contrActor = actor(contrCanisterId) : actor {
+      getContractor : (Principal) -> async {
+        #ok: { serviceZips: [Text] };
+        #err: { #NotFound; #AlreadyExists; #Unauthorized; #Paused; #RateLimitExceeded; #InvalidInput: Text };
+      };
+    };
+
+    let serviceZips : [Text] = switch (await contrActor.getContractor(msg.caller)) {
+      case (#err(_)) { [] };
+      case (#ok(p))  { p.serviceZips };
+    };
+
+    if (serviceZips.size() == 0) return allOpen;
+
+    Array.filter<QuoteRequest>(allOpen, func(r: QuoteRequest) : Bool {
+      switch (r.zipCode) {
+        case null      { true };  // no zip on request — visible to all
+        case (?zip)    { Option.isSome(Array.find<Text>(serviceZips, func(z) { z == zip })) };
+      }
+    })
+  };
+
+  /// Fetch all open or quoted requests — unfiltered, visible to any contractor.
   public query func getOpenRequests() : async [QuoteRequest] {
     Iter.toArray(
       Iter.filter(Map.values(requests), func(r: QuoteRequest) : Bool {
@@ -464,6 +507,7 @@ persistent actor Quote {
             status      = #Quoted;
             createdAt   = req.createdAt;
             closeAt     = req.closeAt;
+            zipCode     = req.zipCode;
           };
           Map.add(requests, Text.compare, requestId, updated);
         };
@@ -547,6 +591,7 @@ persistent actor Quote {
               status      = #Accepted;
               createdAt   = req.createdAt;
               closeAt     = req.closeAt;
+              zipCode     = req.zipCode;
             };
             Map.add(requests, Text.compare, req.id, closed);
 
@@ -581,6 +626,7 @@ persistent actor Quote {
           status      = #Closed;
           createdAt   = req.createdAt;
           closeAt     = req.closeAt;
+          zipCode     = req.zipCode;
         };
         Map.add(requests, Text.compare, requestId, updated);
         #ok(updated)
@@ -617,6 +663,7 @@ persistent actor Quote {
           status      = #Cancelled;
           createdAt   = req.createdAt;
           closeAt     = req.closeAt;
+          zipCode     = req.zipCode;
         };
         Map.add(requests, Text.compare, requestId, updated);
 
@@ -641,7 +688,8 @@ persistent actor Quote {
     serviceType: ServiceType,
     description: Text,
     urgency: UrgencyLevel,
-    closeAtNs: Time.Time
+    closeAtNs: Time.Time,
+    zipCode: ?Text
   ) : async Result.Result<QuoteRequest, Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
@@ -683,6 +731,7 @@ persistent actor Quote {
       status    = #Open;
       createdAt = Time.now();
       closeAt   = ?closeAtNs;
+      zipCode;
     };
     Map.add(requests, Text.compare, id, req);
     #ok(req)
@@ -866,6 +915,14 @@ persistent actor Quote {
   public shared(msg) func setPaymentCanisterId(id: Principal) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     payCanisterId := Principal.toText(id);
+    #ok(())
+  };
+
+  /// Wire the quote canister to the contractor canister for service-area filtering.
+  /// When set, getOpenRequestsForMe() queries the contractor's serviceZips before filtering.
+  public shared(msg) func setContractorCanisterId(id: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    contrCanisterId := Principal.toText(id);
     #ok(())
   };
 

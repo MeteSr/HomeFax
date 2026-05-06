@@ -50,7 +50,8 @@ persistent actor Contractor {
     phone:         Text;
     bio:           ?Text;
     licenseNumber: ?Text;
-    serviceArea:   ?Text;
+    serviceArea:   ?Text;   // free-text display label (e.g. "Tampa Bay Area")
+    serviceZips:   [Text];  // structured 5-digit zip codes used for request filtering
     trustScore:    Nat;
     jobsCompleted: Nat;
     isVerified:    Bool;
@@ -93,6 +94,7 @@ persistent actor Contractor {
     bio:           ?Text;
     licenseNumber: ?Text;
     serviceArea:   ?Text;
+    serviceZips:   [Text];  // 5-digit zip codes; empty = serve all (opt-in)
   };
 
   public type Error = {
@@ -233,6 +235,15 @@ persistent actor Contractor {
     true
   };
 
+  /// Validates a US zip code: exactly 5 decimal digits.
+  private func validateZip(zip: Text) : Bool {
+    if (Text.size(zip) != 5) return false;
+    for (c in zip.chars()) {
+      if (c < '0' or c > '9') return false;
+    };
+    true
+  };
+
   // ─── Core Functions ────────────────────────────────────────────────────────────
 
   /// Register a new contractor profile. Validates all required fields.
@@ -263,6 +274,7 @@ persistent actor Contractor {
       bio           = null;
       licenseNumber = null;
       serviceArea   = null;
+      serviceZips   = [];
       trustScore    = 70;
       jobsCompleted = 0;
       isVerified    = false;
@@ -338,6 +350,10 @@ persistent actor Contractor {
       return #err(#InvalidInput("phone must be in E.164 format (e.g. +12125551234)"));
     if (args.specialties.size() == 0) return #err(#InvalidInput("at least one trade category is required"));
     if (args.specialties.size() > 10) return #err(#InvalidInput("cannot exceed 10 trade categories"));
+    if (args.serviceZips.size() > 50) return #err(#InvalidInput("serviceZips cannot exceed 50 entries"));
+    for (zip in args.serviceZips.vals()) {
+      if (not validateZip(zip)) return #err(#InvalidInput("serviceZips: '" # zip # "' is not a valid 5-digit zip code"));
+    };
 
     switch (Map.get(contractors, Principal.compare, msg.caller)) {
       case null { #err(#NotFound) };
@@ -351,6 +367,7 @@ persistent actor Contractor {
           bio           = args.bio;
           licenseNumber = args.licenseNumber;
           serviceArea   = args.serviceArea;
+          serviceZips   = args.serviceZips;
           trustScore    = existing.trustScore;
           jobsCompleted = existing.jobsCompleted;
           isVerified    = existing.isVerified;
@@ -427,6 +444,7 @@ persistent actor Contractor {
           bio           = existing.bio;
           licenseNumber = existing.licenseNumber;
           serviceArea   = existing.serviceArea;
+          serviceZips   = existing.serviceZips;
           trustScore    = newScore;
           jobsCompleted = existing.jobsCompleted + 1;
           isVerified    = existing.isVerified;
@@ -472,10 +490,10 @@ persistent actor Contractor {
           bio           = existing.bio;
           licenseNumber = existing.licenseNumber;
           serviceArea   = existing.serviceArea;
+          serviceZips   = existing.serviceZips;
           trustScore    = existing.trustScore;
           jobsCompleted = existing.jobsCompleted;
           isVerified    = true;
-
           createdAt     = existing.createdAt;
         };
         Map.add(contractors, Principal.compare, c, updated);
@@ -533,6 +551,16 @@ persistent actor Contractor {
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())
+  };
+
+  /// Return all contractors who have explicitly listed the given zip code in their serviceZips.
+  /// Contractors with empty serviceZips are excluded (they haven't configured a service area yet).
+  public query func getByZip(zipCode: Text) : async [ContractorProfile] {
+    Iter.toArray(
+      Iter.filter(Map.values(contractors), func(c: ContractorProfile) : Bool {
+        Option.isSome(Array.find<Text>(c.serviceZips, func(z) { z == zipCode }))
+      })
+    )
   };
 
   /// Return all contractors who serve a given trade category.

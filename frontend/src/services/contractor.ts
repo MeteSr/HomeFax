@@ -21,6 +21,7 @@ export const idlFactory = ({ IDL }: any) => {
     bio:           IDL.Opt(IDL.Text),
     licenseNumber: IDL.Opt(IDL.Text),
     serviceArea:   IDL.Opt(IDL.Text),
+    serviceZips:   IDL.Vec(IDL.Text),
     trustScore:    IDL.Nat,
     jobsCompleted: IDL.Nat,
     isVerified:    IDL.Bool,
@@ -40,6 +41,7 @@ export const idlFactory = ({ IDL }: any) => {
     bio:           IDL.Opt(IDL.Text),
     licenseNumber: IDL.Opt(IDL.Text),
     serviceArea:   IDL.Opt(IDL.Text),
+    serviceZips:   IDL.Vec(IDL.Text),
   });
   const Review = IDL.Record({
     id:         IDL.Text,
@@ -127,6 +129,7 @@ export interface ContractorProfile {
   bio:           string | null;
   licenseNumber: string | null;
   serviceArea:   string | null;
+  serviceZips:   string[];
   trustScore:    number;
   jobsCompleted: number;
   isVerified:    boolean;
@@ -158,6 +161,7 @@ export interface UpdateContractorArgs {
   bio:           string | null;
   licenseNumber: string | null;
   serviceArea:   string | null;
+  serviceZips:   string[];
 }
 
 // ─── Converters ───────────────────────────────────────────────────────────────
@@ -172,6 +176,7 @@ function fromProfile(raw: any): ContractorProfile {
     bio:           raw.bio[0] ?? null,
     licenseNumber: raw.licenseNumber[0] ?? null,
     serviceArea:   raw.serviceArea[0] ?? null,
+    serviceZips:   (raw.serviceZips as string[]) ?? [],
     trustScore:    Number(raw.trustScore),
     jobsCompleted: Number(raw.jobsCompleted),
     isVerified:    raw.isVerified,
@@ -273,6 +278,7 @@ function createContractorService() {
       bio:           args.bio           ? [args.bio]           : [],
       licenseNumber: args.licenseNumber ? [args.licenseNumber] : [],
       serviceArea:   args.serviceArea   ? [args.serviceArea]   : [],
+      serviceZips:   args.serviceZips,
     }));
   },
 
