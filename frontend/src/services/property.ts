@@ -18,8 +18,10 @@ export const idlFactory = ({ IDL }: any) => {
   });
   const SubscriptionTier = IDL.Variant({
     Free: IDL.Null,
+    Basic: IDL.Null,
     Pro: IDL.Null,
     Premium: IDL.Null,
+    ContractorFree: IDL.Null,
     ContractorPro: IDL.Null,
   });
   const Property = IDL.Record({
@@ -161,7 +163,7 @@ export const idlFactory = ({ IDL }: any) => {
 export type PropertyType      = "SingleFamily" | "Condo" | "Townhouse" | "MultiFamily";
 export type VerificationLevel = "Unverified" | "PendingReview" | "Basic" | "Premium";
 export type ManagerRole       = "Viewer" | "Manager";
-export type SubscriptionTier = "Free" | "Pro" | "Premium" | "ContractorPro";
+export type SubscriptionTier = "Free" | "Basic" | "Pro" | "Premium" | "ContractorFree" | "ContractorPro";
 
 export interface Property {
   id: string;

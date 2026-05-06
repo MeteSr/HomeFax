@@ -147,8 +147,8 @@ describe("propertyService", () => {
       }
     });
 
-    it("maps all four SubscriptionTier variants", async () => {
-      const tiers = ["Free", "Pro", "Premium", "ContractorPro"];
+    it("maps all SubscriptionTier variants", async () => {
+      const tiers = ["Free", "Basic", "Pro", "Premium", "ContractorFree", "ContractorPro"];
       for (const tier of tiers) {
         mockActor.getMyProperties.mockResolvedValue([makeRawProperty({ tier: { [tier]: null } })]);
         const [prop] = await propertyService.getMyProperties();

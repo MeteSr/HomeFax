@@ -22,7 +22,7 @@ const UI = {
 };
 
 type Tab = "verifications" | "tiers" | "cycles" | "referrals";
-const TIERS: SubscriptionTier[] = ["Free", "Pro", "Premium", "ContractorPro"];
+const TIERS: SubscriptionTier[] = ["Basic", "Pro", "Premium", "ContractorFree", "ContractorPro"];
 
 // ─── 13.6.3: Cycles burn rate dashboard ──────────────────────────────────────
 
