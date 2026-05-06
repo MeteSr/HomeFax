@@ -54,11 +54,12 @@ interface FormState {
   bio:           string;
   licenseNumber: string;
   serviceArea:   string;
+  serviceZips:   string[];
 }
 
 const EMPTY: FormState = {
   name: "", specialties: [], email: "", phone: "",
-  bio: "", licenseNumber: "", serviceArea: "",
+  bio: "", licenseNumber: "", serviceArea: "", serviceZips: [],
 };
 
 function fromProfile(p: ContractorProfile): FormState {
@@ -70,6 +71,7 @@ function fromProfile(p: ContractorProfile): FormState {
     bio:           p.bio           ?? "",
     licenseNumber: p.licenseNumber ?? "",
     serviceArea:   p.serviceArea   ?? "",
+    serviceZips:   p.serviceZips   ?? [],
   };
 }
 
@@ -82,10 +84,11 @@ function toggleTrade(specialties: string[], trade: string): string[] {
 export default function ContractorProfilePage() {
   const navigate = useNavigate();
   const { isMobile } = useBreakpoint();
-  const [existing, setExisting] = useState<ContractorProfile | null>(null);
-  const [form,     setForm]     = useState<FormState>(EMPTY);
-  const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
+  const [existing,  setExisting]  = useState<ContractorProfile | null>(null);
+  const [form,      setForm]      = useState<FormState>(EMPTY);
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState(false);
+  const [zipInput,  setZipInput]  = useState("");
 
   useEffect(() => {
     contractorService.getMyProfile()
@@ -98,6 +101,14 @@ export default function ContractorProfilePage() {
 
   const update = (key: keyof FormState, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const commitZip = (raw: string) => {
+    const zip = raw.trim();
+    if (/^\d{5}$/.test(zip) && form.serviceZips.length < 50 && !form.serviceZips.includes(zip)) {
+      setForm((f) => ({ ...f, serviceZips: [...f.serviceZips, zip] }));
+    }
+    setZipInput("");
+  };
 
   const isEditing = existing !== null;
 
@@ -121,7 +132,7 @@ export default function ContractorProfilePage() {
           bio:           form.bio.trim()           || null,
           licenseNumber: form.licenseNumber.trim() || null,
           serviceArea:   form.serviceArea.trim()   || null,
-          serviceZips:   existing?.serviceZips     ?? [],
+          serviceZips:   form.serviceZips,
         });
         toast.success("Profile updated.");
       } else {
@@ -346,6 +357,42 @@ export default function ContractorProfilePage() {
                     onChange={(e) => update("serviceArea", e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="form-label">Service ZIP Codes</label>
+                {form.serviceZips.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem", marginBottom: "0.5rem" }}>
+                    {form.serviceZips.map((zip) => (
+                      <span
+                        key={zip}
+                        style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "0.15rem 0.5rem", border: `1px solid ${UI.sage}`, background: COLORS.sageLight, fontFamily: UI.mono, fontSize: "0.6rem", color: UI.sage }}
+                      >
+                        {zip}
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, serviceZips: f.serviceZips.filter((z) => z !== zip) }))}
+                          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 1, color: UI.sage }}
+                          aria-label={`Remove ${zip}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  className="form-input"
+                  placeholder="e.g. 78701 — press Enter to add"
+                  value={zipInput}
+                  onChange={(e) => setZipInput(e.target.value.replace(/\D/g, "").slice(0, 5))}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " " || e.key === ",") { e.preventDefault(); commitZip(zipInput); } }}
+                  onBlur={() => commitZip(zipInput)}
+                  maxLength={5}
+                />
+                <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, marginTop: "0.375rem" }}>
+                  Leave blank to receive requests from all areas
+                </p>
               </div>
             </div>
           </div>

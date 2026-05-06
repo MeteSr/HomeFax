@@ -58,6 +58,7 @@ export const idlFactory = ({ IDL }: any) => {
       ["query"]
     ),
     getMyQuoteRequests: IDL.Func([], [IDL.Vec(QuoteRequest)], ["query"]),
+    getMyQuotes: IDL.Func([], [IDL.Vec(Quote)], ["query"]),
     getOpenRequests: IDL.Func([], [IDL.Vec(QuoteRequest)], ["query"]),
     getOpenRequestsForMe: IDL.Func([], [IDL.Vec(QuoteRequest)], []),
     submitQuote: IDL.Func(
@@ -294,8 +295,14 @@ function createQuoteService() {
   },
 
   async getMyBids(): Promise<Quote[]> {
-    // TODO(#xxx): canister does not expose getMyQuotes yet; implement when added.
-    throw new Error("getMyBids: not implemented — canister endpoint pending");
+    if (typeof window !== "undefined" && (window as any).__e2e_quotes) {
+      return (window as any).__e2e_quotes as Quote[];
+    }
+    if (typeof window !== "undefined" && (window as any).__e2e_properties) {
+      return [];
+    }
+    const a = await getActor();
+    return (await a.getMyQuotes() as any[]).map(fromQuote);
   },
 
   async getQuotesForRequest(requestId: string): Promise<Quote[]> {

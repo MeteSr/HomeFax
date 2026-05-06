@@ -1331,6 +1331,15 @@ exports[`quote IDL factory > full signature snapshot 1`] = `
       "vec record {id:text; status:variant {Quoted; Open; Closed; Accepted; Cancelled}; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; urgency:variant {Low; High; Medium; Emergency}; createdAt:int; description:text; propertyId:text; zipCode:opt text; closeAt:opt int; homeowner:principal}",
     ],
   },
+  "getMyQuotes": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {id:text; status:variant {Rejected; Accepted; Expired; Pending}; requestId:text; createdAt:int; amount:nat; contractor:principal; validUntil:int; timeline:nat}",
+    ],
+  },
   "getOpenRequests": {
     "args": [],
     "mode": [
