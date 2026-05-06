@@ -23,7 +23,7 @@ export const idlFactory = ({ IDL }: any) => {
     ContractorPro: IDL.Null,
   });
   const Property = IDL.Record({
-    id: IDL.Nat,
+    id: IDL.Text,
     owner: IDL.Principal,
     address: IDL.Text,
     city: IDL.Text,
@@ -58,14 +58,14 @@ export const idlFactory = ({ IDL }: any) => {
     AddressConflict: IDL.Int,
   });
   const TransferRecord = IDL.Record({
-    propertyId : IDL.Nat,
+    propertyId : IDL.Text,
     from       : IDL.Principal,
     to         : IDL.Principal,
     timestamp  : IDL.Int,
     txHash     : IDL.Text,
   });
   const PendingTransfer = IDL.Record({
-    propertyId  : IDL.Nat,
+    propertyId  : IDL.Text,
     from        : IDL.Principal,
     token       : IDL.Text,
     initiatedAt : IDL.Int,
@@ -81,7 +81,7 @@ export const idlFactory = ({ IDL }: any) => {
     addedAt     : IDL.Int,
   });
   const ManagerInvite = IDL.Record({
-    propertyId  : IDL.Nat,
+    propertyId  : IDL.Text,
     token       : IDL.Text,
     role        : ManagerRole,
     displayName : IDL.Text,
@@ -102,18 +102,18 @@ export const idlFactory = ({ IDL }: any) => {
   return IDL.Service({
     registerProperty: IDL.Func([RegisterArgs], [IDL.Variant({ ok: Property, err: Error })], []),
     getMyProperties: IDL.Func([], [IDL.Vec(Property)], ["query"]),
-    getProperty: IDL.Func([IDL.Nat], [IDL.Variant({ ok: Property, err: Error })], ["query"]),
+    getProperty: IDL.Func([IDL.Text], [IDL.Variant({ ok: Property, err: Error })], ["query"]),
     getPropertyLimitForTier: IDL.Func([SubscriptionTier], [IDL.Nat], ["query"]),
     submitVerification: IDL.Func(
-      [IDL.Nat, IDL.Text, IDL.Text],
+      [IDL.Text, IDL.Text, IDL.Text],
       [IDL.Variant({ ok: Property, err: Error })],
       []
     ),
-    getVerificationLevel: IDL.Func([IDL.Nat], [IDL.Opt(IDL.Text)], ["query"]),
+    getVerificationLevel: IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ["query"]),
     getPendingVerifications: IDL.Func([], [IDL.Vec(Property)], ["query"]),
     isAdminPrincipal: IDL.Func([IDL.Principal], [IDL.Bool], ["query"]),
     verifyProperty: IDL.Func(
-      [IDL.Nat, IDL.Variant({ Unverified: IDL.Null, PendingReview: IDL.Null, Basic: IDL.Null, Premium: IDL.Null }), IDL.Opt(IDL.Text)],
+      [IDL.Text, IDL.Variant({ Unverified: IDL.Null, PendingReview: IDL.Null, Basic: IDL.Null, Premium: IDL.Null }), IDL.Opt(IDL.Text)],
       [IDL.Variant({ ok: Property, err: Error })],
       []
     ),
@@ -123,38 +123,38 @@ export const idlFactory = ({ IDL }: any) => {
       []
     ),
     // Token-based ownership transfer
-    initiateTransfer: IDL.Func([IDL.Nat], [IDL.Variant({ ok: PendingTransfer, err: Error })], []),
+    initiateTransfer: IDL.Func([IDL.Text], [IDL.Variant({ ok: PendingTransfer, err: Error })], []),
     claimTransfer: IDL.Func([IDL.Text], [IDL.Variant({ ok: Property, err: Error })], []),
-    cancelTransfer: IDL.Func([IDL.Nat], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
-    getPendingTransfer: IDL.Func([IDL.Nat], [IDL.Opt(PendingTransfer)], ["query"]),
+    cancelTransfer: IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
+    getPendingTransfer: IDL.Func([IDL.Text], [IDL.Opt(PendingTransfer)], ["query"]),
     getPendingTransferByToken: IDL.Func([IDL.Text], [IDL.Opt(PendingTransfer)], ["query"]),
-    getOwnershipHistory: IDL.Func([IDL.Nat], [IDL.Vec(TransferRecord)], ["query"]),
-    getPropertyOwner: IDL.Func([IDL.Nat], [IDL.Opt(IDL.Principal)], ["query"]),
+    getOwnershipHistory: IDL.Func([IDL.Text], [IDL.Vec(TransferRecord)], ["query"]),
+    getPropertyOwner: IDL.Func([IDL.Text], [IDL.Opt(IDL.Principal)], ["query"]),
     // Delegated management
     inviteManager: IDL.Func(
-      [IDL.Nat, ManagerRole, IDL.Text],
+      [IDL.Text, ManagerRole, IDL.Text],
       [IDL.Variant({ ok: ManagerInvite, err: Error })],
       []
     ),
     claimManagerRole: IDL.Func(
       [IDL.Text],
-      [IDL.Variant({ ok: IDL.Record({ propertyId: IDL.Nat, role: ManagerRole }), err: Error })],
+      [IDL.Variant({ ok: IDL.Record({ propertyId: IDL.Text, role: ManagerRole }), err: Error })],
       []
     ),
     updateManagerRole: IDL.Func(
-      [IDL.Nat, IDL.Principal, ManagerRole],
+      [IDL.Text, IDL.Principal, ManagerRole],
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
     ),
-    removeManager: IDL.Func([IDL.Nat, IDL.Principal], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
-    resignAsManager: IDL.Func([IDL.Nat], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
+    removeManager: IDL.Func([IDL.Text, IDL.Principal], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
+    resignAsManager: IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
     getMyManagedProperties: IDL.Func([], [IDL.Vec(ManagedProperty)], ["query"]),
-    getPropertyManagers: IDL.Func([IDL.Nat], [IDL.Variant({ ok: IDL.Vec(PropertyManager), err: Error })], ["query"]),
+    getPropertyManagers: IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Vec(PropertyManager), err: Error })], ["query"]),
     getManagerInviteByToken: IDL.Func([IDL.Text], [IDL.Opt(ManagerInvite)], ["query"]),
-    recordManagerActivity: IDL.Func([IDL.Nat, IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
-    getOwnerNotifications: IDL.Func([IDL.Nat], [IDL.Variant({ ok: IDL.Vec(OwnerNotification), err: Error })], ["query"]),
-    dismissNotifications: IDL.Func([IDL.Nat], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
-    isAuthorized: IDL.Func([IDL.Nat, IDL.Principal, IDL.Bool], [IDL.Bool], ["query"]),
+    recordManagerActivity: IDL.Func([IDL.Text, IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
+    getOwnerNotifications: IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Vec(OwnerNotification), err: Error })], ["query"]),
+    dismissNotifications: IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
+    isAuthorized: IDL.Func([IDL.Text, IDL.Principal, IDL.Bool], [IDL.Bool], ["query"]),
   });
 };
 
@@ -164,7 +164,7 @@ export type ManagerRole       = "Viewer" | "Manager";
 export type SubscriptionTier = "Free" | "Pro" | "Premium" | "ContractorPro";
 
 export interface Property {
-  id: bigint;
+  id: string;
   owner: string;
   address: string;
   city: string;
@@ -181,7 +181,7 @@ export interface Property {
 }
 
 export interface TransferRecord {
-  propertyId : bigint;
+  propertyId : string;
   from       : string;  // principal text
   to         : string;  // principal text
   timestamp  : number;  // ms
@@ -189,7 +189,7 @@ export interface TransferRecord {
 }
 
 export interface PendingTransfer {
-  propertyId  : bigint;
+  propertyId  : string;
   from        : string;  // principal text
   token       : string;  // bearer token embedded in the claim URL
   initiatedAt : number;  // ms
@@ -204,7 +204,7 @@ export interface PropertyManager {
 }
 
 export interface ManagerInvite {
-  propertyId  : bigint;
+  propertyId  : string;
   token       : string;
   role        : ManagerRole;
   displayName : string;
@@ -352,7 +352,7 @@ export const propertyService = {
     return (props as any[]).map(fromProperty);
   },
 
-  async getProperty(id: bigint): Promise<Property> {
+  async getProperty(id: string): Promise<Property> {
     if (typeof window !== "undefined" && (window as any).__e2e_properties) {
       const props = (window as any).__e2e_properties as any[];
       const found = props.find((p: any) => String(p.id) === String(id));
@@ -367,7 +367,7 @@ export const propertyService = {
    *  method: "UtilityBill" | "DeedRecord" | "TaxRecord"
    *  documentHash: SHA-256 hex of the file, computed client-side */
   async submitVerification(
-    propertyId: bigint,
+    propertyId: string,
     method: string,
     documentHash: string
   ): Promise<Property> {
@@ -388,7 +388,7 @@ export const propertyService = {
     return a.isAdminPrincipal(P.fromText(principal));
   },
 
-  async verifyProperty(id: bigint, level: VerificationLevel, method?: string): Promise<Property> {
+  async verifyProperty(id: string, level: VerificationLevel, method?: string): Promise<Property> {
     const a = await getActor();
     const result = await a.verifyProperty(id, { [level]: null }, method ? [method] : []);
     return unwrap(result);
@@ -405,7 +405,7 @@ export const propertyService = {
   },
 
   /** Step 1: seller generates a bearer-token link for this property. */
-  async initiateTransfer(propertyId: bigint): Promise<PendingTransfer> {
+  async initiateTransfer(propertyId: string): Promise<PendingTransfer> {
     const a = await getActor();
     const result = await a.initiateTransfer(propertyId);
     if ("ok" in result) {
@@ -423,7 +423,7 @@ export const propertyService = {
     return unwrap(result);
   },
 
-  async cancelTransfer(propertyId: bigint): Promise<void> {
+  async cancelTransfer(propertyId: string): Promise<void> {
     const a = await getActor();
     const result = await a.cancelTransfer(propertyId);
     if ("err" in result) {
@@ -432,7 +432,7 @@ export const propertyService = {
     }
   },
 
-  async getPendingTransfer(propertyId: bigint): Promise<PendingTransfer | null> {
+  async getPendingTransfer(propertyId: string): Promise<PendingTransfer | null> {
     const a = await getActor();
     const result: any[] = await a.getPendingTransfer(propertyId);
     if (!result[0]) return null;
@@ -449,14 +449,14 @@ export const propertyService = {
 
   /** Returns the owner principal of a property, or null if not found.
    *  Used by job/photo/quote canisters to resolve manager tier bypass. */
-  async getPropertyOwner(propertyId: bigint): Promise<string | null> {
+  async getPropertyOwner(propertyId: string): Promise<string | null> {
     const a = await getActor();
     const result: any[] = await a.getPropertyOwner(propertyId);
     if (!result[0]) return null;
     return result[0].toText();
   },
 
-  async getOwnershipHistory(propertyId: bigint): Promise<TransferRecord[]> {
+  async getOwnershipHistory(propertyId: string): Promise<TransferRecord[]> {
     const a = await getActor();
     const records: any[] = await a.getOwnershipHistory(propertyId);
     return records.map((r) => ({
@@ -489,7 +489,7 @@ export const propertyService = {
   // ── Delegated management ────────────────────────────────────────────────────
 
   /** Owner invites someone by role + display name; returns a bearer-token invite. */
-  async inviteManager(propertyId: bigint, role: ManagerRole, displayName: string): Promise<ManagerInvite> {
+  async inviteManager(propertyId: string, role: ManagerRole, displayName: string): Promise<ManagerInvite> {
     const a = await getActor();
     const result = await a.inviteManager(propertyId, { [role]: null }, displayName);
     if ("ok" in result) return fromManagerInvite(result.ok);
@@ -499,7 +499,7 @@ export const propertyService = {
   },
 
   /** Invited person clicks the link and claims their manager role. */
-  async claimManagerRole(token: string): Promise<{ propertyId: bigint; role: ManagerRole }> {
+  async claimManagerRole(token: string): Promise<{ propertyId: string; role: ManagerRole }> {
     const a = await getActor();
     const result = await a.claimManagerRole(token);
     if ("ok" in result) {
@@ -514,7 +514,7 @@ export const propertyService = {
   },
 
   /** Owner changes a manager's role (Viewer ↔ Manager). */
-  async updateManagerRole(propertyId: bigint, managerPrincipal: string, role: ManagerRole): Promise<void> {
+  async updateManagerRole(propertyId: string, managerPrincipal: string, role: ManagerRole): Promise<void> {
     const a = await getActor();
     const { Principal: P } = await import("@icp-sdk/core/principal");
     const result = await a.updateManagerRole(propertyId, P.fromText(managerPrincipal), { [role]: null });
@@ -526,7 +526,7 @@ export const propertyService = {
   },
 
   /** Owner removes a manager from the property. */
-  async removeManager(propertyId: bigint, managerPrincipal: string): Promise<void> {
+  async removeManager(propertyId: string, managerPrincipal: string): Promise<void> {
     const a = await getActor();
     const { Principal: P } = await import("@icp-sdk/core/principal");
     const result = await a.removeManager(propertyId, P.fromText(managerPrincipal));
@@ -538,7 +538,7 @@ export const propertyService = {
   },
 
   /** Manager steps down from their delegated role. */
-  async resignAsManager(propertyId: bigint): Promise<void> {
+  async resignAsManager(propertyId: string): Promise<void> {
     const a = await getActor();
     const result = await a.resignAsManager(propertyId);
     if ("err" in result) {
@@ -559,7 +559,7 @@ export const propertyService = {
   },
 
   /** Owner fetches the list of managers for one of their properties. */
-  async getPropertyManagers(propertyId: bigint): Promise<PropertyManager[]> {
+  async getPropertyManagers(propertyId: string): Promise<PropertyManager[]> {
     const a = await getActor();
     const result = await a.getPropertyManagers(propertyId);
     if ("ok" in result) return (result.ok as any[]).map(fromPropertyManager);
@@ -577,7 +577,7 @@ export const propertyService = {
   },
 
   /** Manager calls this to record a significant action (triggers owner notification). */
-  async recordManagerActivity(propertyId: bigint, description: string): Promise<void> {
+  async recordManagerActivity(propertyId: string, description: string): Promise<void> {
     const a = await getActor();
     const result = await a.recordManagerActivity(propertyId, description);
     if ("err" in result) {
@@ -588,7 +588,7 @@ export const propertyService = {
   },
 
   /** Owner fetches notifications about manager actions on their property. */
-  async getOwnerNotifications(propertyId: bigint): Promise<OwnerNotification[]> {
+  async getOwnerNotifications(propertyId: string): Promise<OwnerNotification[]> {
     const a = await getActor();
     const result = await a.getOwnerNotifications(propertyId);
     if ("ok" in result) return (result.ok as any[]).map(fromOwnerNotification);
@@ -598,7 +598,7 @@ export const propertyService = {
   },
 
   /** Mark all unseen notifications for a property as seen. */
-  async dismissNotifications(propertyId: bigint): Promise<void> {
+  async dismissNotifications(propertyId: string): Promise<void> {
     const a = await getActor();
     const result = await a.dismissNotifications(propertyId);
     if ("err" in result) {
@@ -610,7 +610,7 @@ export const propertyService = {
 
   /** Cross-canister auth check: is this principal allowed to act on this property?
    *  requireWrite=false → owner OR manager; requireWrite=true → owner OR Manager-role. */
-  async isAuthorized(propertyId: bigint, principal: string, requireWrite: boolean): Promise<boolean> {
+  async isAuthorized(propertyId: string, principal: string, requireWrite: boolean): Promise<boolean> {
     const a = await getActor();
     const { Principal: P } = await import("@icp-sdk/core/principal");
     return a.isAuthorized(propertyId, P.fromText(principal), requireWrite);

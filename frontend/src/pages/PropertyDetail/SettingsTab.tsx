@@ -37,15 +37,15 @@ export function SettingsTab({ property, currentPrincipal, onVerifyOwnership }: {
   const [inviteCopied,      setInviteCopied]      = React.useState(false);
 
   React.useEffect(() => {
-    propertyService.getPendingTransfer(BigInt(property.id)).then((pt) => {
+    propertyService.getPendingTransfer(property.id).then((pt) => {
       if (pt && pt.from === currentPrincipal) {
         setTransferToken(pt.token);
         setTransferExpiry(new Date(pt.expiresAt));
         setTransferStep("done");
       }
     }).catch((e) => console.error("[SettingsTab] pending transfer load failed:", e));
-    propertyService.getOwnershipHistory(BigInt(property.id)).then(setHistoryRecords).catch((e) => console.error("[SettingsTab] ownership history load failed:", e));
-    propertyService.getPropertyManagers(BigInt(property.id)).then(setManagers).catch((e) => console.error("[SettingsTab] managers load failed:", e));
+    propertyService.getOwnershipHistory(property.id).then(setHistoryRecords).catch((e) => console.error("[SettingsTab] ownership history load failed:", e));
+    propertyService.getPropertyManagers(property.id).then(setManagers).catch((e) => console.error("[SettingsTab] managers load failed:", e));
   }, [property.id, currentPrincipal]);
 
   const inviteUrl = inviteToken
@@ -169,7 +169,7 @@ export function SettingsTab({ property, currentPrincipal, onVerifyOwnership }: {
                   setTransferStep("loading");
                   setTransferError(null);
                   try {
-                    const pt = await propertyService.initiateTransfer(BigInt(property.id));
+                    const pt = await propertyService.initiateTransfer(property.id);
                     setTransferToken(pt.token);
                     setTransferExpiry(new Date(pt.expiresAt));
                     setTransferStep("done");
@@ -229,7 +229,7 @@ export function SettingsTab({ property, currentPrincipal, onVerifyOwnership }: {
                 onClick={async () => {
                   setCancelLoading(true);
                   try {
-                    await propertyService.cancelTransfer(BigInt(property.id));
+                    await propertyService.cancelTransfer(property.id);
                     setTransferToken(null);
                     setTransferExpiry(null);
                     setTransferStep("idle");
@@ -310,7 +310,7 @@ export function SettingsTab({ property, currentPrincipal, onVerifyOwnership }: {
                     onClick={async () => {
                       setRemovingManager(m.principal);
                       try {
-                        await propertyService.removeManager(BigInt(property.id), m.principal);
+                        await propertyService.removeManager(property.id, m.principal);
                         setManagers((prev) => prev.filter((x) => x.principal !== m.principal));
                       } catch (e: any) {
                         toast.error(e.message ?? "Could not remove manager.");
@@ -366,7 +366,7 @@ export function SettingsTab({ property, currentPrincipal, onVerifyOwnership }: {
                   setInviteStep("loading");
                   setInviteError(null);
                   try {
-                    const invite = await propertyService.inviteManager(BigInt(property.id), inviteRole, inviteDisplayName.trim());
+                    const invite = await propertyService.inviteManager(property.id, inviteRole, inviteDisplayName.trim());
                     setInviteToken(invite.token);
                     setInviteExpiry(new Date(invite.expiresAt));
                     setInviteStep("done");

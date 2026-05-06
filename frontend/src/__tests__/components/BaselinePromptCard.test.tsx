@@ -46,7 +46,7 @@ const FAKE_PHOTO = (description: string) => ({
 });
 
 const PROPERTY: Property = {
-  id: BigInt(1), owner: "test",
+  id: "prop-1", owner: "test",
   address: "123 Maple Street", city: "Austin", state: "TX", zipCode: "78701",
   propertyType: "SingleFamily",
   yearBuilt: BigInt(2001), squareFeet: BigInt(2400),

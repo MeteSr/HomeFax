@@ -35,7 +35,7 @@ type PageState =
   | { status: "expired" }
   | { status: "ready"; invite: ManagerInvite; property: Property | null }
   | { status: "claiming" }
-  | { status: "claimed"; role: string; propertyId: bigint };
+  | { status: "claimed"; role: string; propertyId: string };
 
 export default function PropertyManagerClaimPage() {
   const { token }   = useParams<{ token: string }>();

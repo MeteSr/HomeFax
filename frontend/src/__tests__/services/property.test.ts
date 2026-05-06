@@ -161,24 +161,24 @@ describe("propertyService", () => {
   describe("getProperty", () => {
     it("returns a mapped property on success", async () => {
       mockActor.getProperty.mockResolvedValue({ ok: makeRawProperty() });
-      const prop = await propertyService.getProperty(BigInt(1));
+      const prop = await propertyService.getProperty("1");
       expect(prop.address).toBe("123 Main St");
       expect(prop.owner).toBe("owner-principal");
     });
 
     it("throws NotFound error when canister returns err NotFound", async () => {
       mockActor.getProperty.mockResolvedValue({ err: { NotFound: null } });
-      await expect(propertyService.getProperty(BigInt(999))).rejects.toThrow("NotFound");
+      await expect(propertyService.getProperty("999")).rejects.toThrow("NotFound");
     });
 
     it("throws NotAuthorized error", async () => {
       mockActor.getProperty.mockResolvedValue({ err: { NotAuthorized: null } });
-      await expect(propertyService.getProperty(BigInt(1))).rejects.toThrow("NotAuthorized");
+      await expect(propertyService.getProperty("1")).rejects.toThrow("NotAuthorized");
     });
 
     it("throws with text payload for InvalidInput errors", async () => {
       mockActor.getProperty.mockResolvedValue({ err: { InvalidInput: "Bad ID" } });
-      await expect(propertyService.getProperty(BigInt(1))).rejects.toThrow("Bad ID");
+      await expect(propertyService.getProperty("1")).rejects.toThrow("Bad ID");
     });
   });
 
@@ -229,13 +229,13 @@ describe("propertyService", () => {
       mockActor.submitVerification.mockResolvedValue({
         ok: makeRawProperty({ verificationLevel: { PendingReview: null } }),
       });
-      const prop = await propertyService.submitVerification(BigInt(1), "UtilityBill", "abc123");
+      const prop = await propertyService.submitVerification("1", "UtilityBill", "abc123");
       expect(prop.verificationLevel).toBe("PendingReview");
     });
 
     it("throws on error", async () => {
       mockActor.submitVerification.mockResolvedValue({ err: { NotFound: null } });
-      await expect(propertyService.submitVerification(BigInt(1), "UtilityBill", "abc"))
+      await expect(propertyService.submitVerification("1", "UtilityBill", "abc"))
         .rejects.toThrow("NotFound");
     });
   });
@@ -276,7 +276,7 @@ describe("propertyService", () => {
       mockActor.verifyProperty.mockResolvedValue({
         ok: makeRawProperty({ verificationLevel: { Basic: null } }),
       });
-      const prop = await propertyService.verifyProperty(BigInt(1), "Basic", "DeedRecord");
+      const prop = await propertyService.verifyProperty("1", "Basic", "DeedRecord");
       expect(prop.verificationLevel).toBe("Basic");
     });
 
@@ -284,7 +284,7 @@ describe("propertyService", () => {
       mockActor.verifyProperty.mockResolvedValue({
         ok: makeRawProperty({ verificationLevel: { Premium: null } }),
       });
-      const prop = await propertyService.verifyProperty(BigInt(1), "Premium");
+      const prop = await propertyService.verifyProperty("1", "Premium");
       expect(prop.verificationLevel).toBe("Premium");
     });
   });
@@ -312,7 +312,7 @@ describe("propertyService", () => {
   describe("initiateTransfer", () => {
     it("maps raw canister response to a PendingTransfer with token", async () => {
       mockActor.initiateTransfer.mockResolvedValue({ ok: makeRawPendingTransfer() });
-      const result = await propertyService.initiateTransfer(BigInt(1));
+      const result = await propertyService.initiateTransfer("1");
       expect(result.from).toBe("from-principal");
       expect(result.token).toBe("1735689600000000000-1");
       // initiatedAt converted from ns → ms
@@ -321,12 +321,12 @@ describe("propertyService", () => {
 
     it("throws with error key when canister returns err", async () => {
       mockActor.initiateTransfer.mockResolvedValue({ err: { NotFound: null } });
-      await expect(propertyService.initiateTransfer(BigInt(99))).rejects.toThrow("NotFound");
+      await expect(propertyService.initiateTransfer("99")).rejects.toThrow("NotFound");
     });
 
     it("throws with string payload for InvalidInput error", async () => {
       mockActor.initiateTransfer.mockResolvedValue({ err: { InvalidInput: "Cannot claim your own property transfer." } });
-      await expect(propertyService.initiateTransfer(BigInt(1)))
+      await expect(propertyService.initiateTransfer("1"))
         .rejects.toThrow("Cannot claim your own property transfer.");
     });
   });
@@ -351,12 +351,12 @@ describe("propertyService", () => {
   describe("cancelTransfer", () => {
     it("resolves without error on success", async () => {
       mockActor.cancelTransfer.mockResolvedValue({ ok: null });
-      await expect(propertyService.cancelTransfer(BigInt(1))).resolves.toBeUndefined();
+      await expect(propertyService.cancelTransfer("1")).resolves.toBeUndefined();
     });
 
     it("throws on canister error", async () => {
       mockActor.cancelTransfer.mockResolvedValue({ err: { NotFound: null } });
-      await expect(propertyService.cancelTransfer(BigInt(1))).rejects.toThrow("NotFound");
+      await expect(propertyService.cancelTransfer("1")).rejects.toThrow("NotFound");
     });
   });
 
@@ -364,13 +364,13 @@ describe("propertyService", () => {
   describe("getPendingTransfer", () => {
     it("returns null when canister returns empty array", async () => {
       mockActor.getPendingTransfer.mockResolvedValue([]);
-      const result = await propertyService.getPendingTransfer(BigInt(1));
+      const result = await propertyService.getPendingTransfer("1");
       expect(result).toBeNull();
     });
 
     it("maps the raw pending transfer when one exists", async () => {
       mockActor.getPendingTransfer.mockResolvedValue([makeRawPendingTransfer()]);
-      const result = await propertyService.getPendingTransfer(BigInt(1));
+      const result = await propertyService.getPendingTransfer("1");
       expect(result).not.toBeNull();
       expect(result!.from).toBe("from-principal");
       expect(result!.token).toBe("1735689600000000000-1");
@@ -400,7 +400,7 @@ describe("propertyService", () => {
   describe("getOwnershipHistory", () => {
     it("returns empty array when actor returns no records", async () => {
       mockActor.getOwnershipHistory.mockResolvedValue([]);
-      const history = await propertyService.getOwnershipHistory(BigInt(1));
+      const history = await propertyService.getOwnershipHistory("1");
       expect(history).toEqual([]);
     });
   });
@@ -409,13 +409,13 @@ describe("propertyService", () => {
   describe("getPropertyOwner", () => {
     it("returns null when canister returns empty array (property not found)", async () => {
       mockActor.getPropertyOwner.mockResolvedValue([]);
-      const result = await propertyService.getPropertyOwner(BigInt(1));
+      const result = await propertyService.getPropertyOwner("1");
       expect(result).toBeNull();
     });
 
     it("returns the principal text when an owner exists", async () => {
       mockActor.getPropertyOwner.mockResolvedValue([{ toText: () => "owner-abc" }]);
-      const result = await propertyService.getPropertyOwner(BigInt(1));
+      const result = await propertyService.getPropertyOwner("1");
       expect(result).toBe("owner-abc");
     });
   });
@@ -437,7 +437,7 @@ describe("propertyService", () => {
 
     it("returns a mapped ManagerInvite on success", async () => {
       mockActor.inviteManager.mockResolvedValue({ ok: makeRawInvite() });
-      const invite = await propertyService.inviteManager(BigInt(1), "Viewer", "John Smith");
+      const invite = await propertyService.inviteManager("1", "Viewer", "John Smith");
       expect(invite.token).toBe("invite-token-xyz");
       expect(invite.role).toBe("Viewer");
       expect(invite.displayName).toBe("John Smith");
@@ -447,18 +447,18 @@ describe("propertyService", () => {
 
     it("maps Manager role correctly", async () => {
       mockActor.inviteManager.mockResolvedValue({ ok: makeRawInvite({ role: { Manager: null } }) });
-      const invite = await propertyService.inviteManager(BigInt(1), "Manager", "Jane Doe");
+      const invite = await propertyService.inviteManager("1", "Manager", "Jane Doe");
       expect(invite.role).toBe("Manager");
     });
 
     it("throws with error key on canister error", async () => {
       mockActor.inviteManager.mockResolvedValue({ err: { NotAuthorized: null } });
-      await expect(propertyService.inviteManager(BigInt(1), "Viewer", "x")).rejects.toThrow("NotAuthorized");
+      await expect(propertyService.inviteManager("1", "Viewer", "x")).rejects.toThrow("NotAuthorized");
     });
 
     it("throws with text payload for InvalidInput", async () => {
       mockActor.inviteManager.mockResolvedValue({ err: { InvalidInput: "Display name too long" } });
-      await expect(propertyService.inviteManager(BigInt(1), "Viewer", "x")).rejects.toThrow("Display name too long");
+      await expect(propertyService.inviteManager("1", "Viewer", "x")).rejects.toThrow("Display name too long");
     });
   });
 
@@ -486,7 +486,7 @@ describe("propertyService", () => {
       vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("p") },
       }));
-      await expect(propertyService.updateManagerRole(BigInt(1), "manager-p", "Manager")).resolves.toBeUndefined();
+      await expect(propertyService.updateManagerRole("1", "manager-p", "Manager")).resolves.toBeUndefined();
     });
 
     it("throws on canister error", async () => {
@@ -494,7 +494,7 @@ describe("propertyService", () => {
       vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("p") },
       }));
-      await expect(propertyService.updateManagerRole(BigInt(1), "manager-p", "Viewer")).rejects.toThrow("NotAuthorized");
+      await expect(propertyService.updateManagerRole("1", "manager-p", "Viewer")).rejects.toThrow("NotAuthorized");
     });
   });
 
@@ -505,7 +505,7 @@ describe("propertyService", () => {
       vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("p") },
       }));
-      await expect(propertyService.removeManager(BigInt(1), "manager-p")).resolves.toBeUndefined();
+      await expect(propertyService.removeManager("1", "manager-p")).resolves.toBeUndefined();
     });
 
     it("throws on canister error", async () => {
@@ -513,7 +513,7 @@ describe("propertyService", () => {
       vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("p") },
       }));
-      await expect(propertyService.removeManager(BigInt(1), "manager-p")).rejects.toThrow("NotFound");
+      await expect(propertyService.removeManager("1", "manager-p")).rejects.toThrow("NotFound");
     });
   });
 
@@ -521,12 +521,12 @@ describe("propertyService", () => {
   describe("resignAsManager", () => {
     it("resolves without error on success", async () => {
       mockActor.resignAsManager.mockResolvedValue({ ok: null });
-      await expect(propertyService.resignAsManager(BigInt(1))).resolves.toBeUndefined();
+      await expect(propertyService.resignAsManager("1")).resolves.toBeUndefined();
     });
 
     it("throws on canister error", async () => {
       mockActor.resignAsManager.mockResolvedValue({ err: { NotAuthorized: null } });
-      await expect(propertyService.resignAsManager(BigInt(1))).rejects.toThrow("NotAuthorized");
+      await expect(propertyService.resignAsManager("1")).rejects.toThrow("NotAuthorized");
     });
   });
 
@@ -552,7 +552,7 @@ describe("propertyService", () => {
           },
         ],
       });
-      const [mgr] = await propertyService.getPropertyManagers(BigInt(1));
+      const [mgr] = await propertyService.getPropertyManagers("1");
       expect(mgr.principal).toBe("manager-principal");
       expect(mgr.role).toBe("Viewer");
       expect(mgr.displayName).toBe("Alice");
@@ -560,13 +560,13 @@ describe("propertyService", () => {
 
     it("returns empty array when no managers", async () => {
       mockActor.getPropertyManagers.mockResolvedValue({ ok: [] });
-      const result = await propertyService.getPropertyManagers(BigInt(1));
+      const result = await propertyService.getPropertyManagers("1");
       expect(result).toEqual([]);
     });
 
     it("throws on canister error", async () => {
       mockActor.getPropertyManagers.mockResolvedValue({ err: { NotFound: null } });
-      await expect(propertyService.getPropertyManagers(BigInt(1))).rejects.toThrow("NotFound");
+      await expect(propertyService.getPropertyManagers("1")).rejects.toThrow("NotFound");
     });
   });
 
@@ -601,12 +601,12 @@ describe("propertyService", () => {
   describe("recordManagerActivity", () => {
     it("resolves without error on success", async () => {
       mockActor.recordManagerActivity.mockResolvedValue({ ok: null });
-      await expect(propertyService.recordManagerActivity(BigInt(1), "Updated photos")).resolves.toBeUndefined();
+      await expect(propertyService.recordManagerActivity("1", "Updated photos")).resolves.toBeUndefined();
     });
 
     it("throws on canister error", async () => {
       mockActor.recordManagerActivity.mockResolvedValue({ err: { NotAuthorized: null } });
-      await expect(propertyService.recordManagerActivity(BigInt(1), "x")).rejects.toThrow("NotAuthorized");
+      await expect(propertyService.recordManagerActivity("1", "x")).rejects.toThrow("NotAuthorized");
     });
   });
 
@@ -614,7 +614,7 @@ describe("propertyService", () => {
   describe("getOwnerNotifications", () => {
     it("returns empty array when actor returns no notifications", async () => {
       mockActor.getOwnerNotifications.mockResolvedValue({ ok: [] });
-      const result = await propertyService.getOwnerNotifications(BigInt(1));
+      const result = await propertyService.getOwnerNotifications("1");
       expect(result).toEqual([]);
     });
   });
@@ -623,12 +623,12 @@ describe("propertyService", () => {
   describe("dismissNotifications", () => {
     it("resolves without error on success", async () => {
       mockActor.dismissNotifications.mockResolvedValue({ ok: null });
-      await expect(propertyService.dismissNotifications(BigInt(1))).resolves.toBeUndefined();
+      await expect(propertyService.dismissNotifications("1")).resolves.toBeUndefined();
     });
 
     it("throws on canister error", async () => {
       mockActor.dismissNotifications.mockResolvedValue({ err: { NotAuthorized: null } });
-      await expect(propertyService.dismissNotifications(BigInt(1))).rejects.toThrow("NotAuthorized");
+      await expect(propertyService.dismissNotifications("1")).rejects.toThrow("NotAuthorized");
     });
   });
 
@@ -639,7 +639,7 @@ describe("propertyService", () => {
       vi.doMock("@icp-sdk/core/principal", () => ({
         Principal: { fromText: vi.fn().mockReturnValue("p") },
       }));
-      const result = await propertyService.isAuthorized(BigInt(1), "some-principal", false);
+      const result = await propertyService.isAuthorized("1", "some-principal", false);
       expect(typeof result).toBe("boolean");
     });
   });

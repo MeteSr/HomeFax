@@ -26,7 +26,7 @@ const {
   mockPhotos,
 } = vi.hoisted(() => {
   const mockProperty = {
-    id:                BigInt(42),
+    id:                "42",
     address:           "123 Maple Street",
     city:              "Austin",
     state:             "TX",

@@ -80,12 +80,12 @@ done
 # so all tests can exercise their full flows.
 
 echo ""
-echo "▶ Granting test identity a Basic subscription…"
+echo "▶ Granting test identity a Premium subscription…"
 if command -v dfx >/dev/null 2>&1 && [ -n "${CANISTER_ID_PAYMENT:-}" ]; then
   dfx canister call payment grantSubscription \
-    "(principal \"qxmov-duod5-ahrw6-wydp4-lppe4-ljtvj-7zvu3-qke5i-umwsv-vcb7g-mqe\", variant { Basic })" \
+    "(principal \"qxmov-duod5-ahrw6-wydp4-lppe4-ljtvj-7zvu3-qke5i-umwsv-vcb7g-mqe\", variant { Premium })" \
     2>/dev/null \
-    && echo "  ✓ Basic subscription granted to test identity" \
+    && echo "  ✓ Premium subscription granted to test identity" \
     || echo "  ⚠  Could not grant subscription (tests may fail for tier-gated operations)"
 else
   echo "  ⚠  dfx not found or payment canister not deployed — skipping grant"

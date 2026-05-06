@@ -9,7 +9,7 @@ const NOW = new Date("2025-06-15").getTime(); // month = 6
 
 function makeProperty(): Property {
   return {
-    id:                BigInt(1),
+    id:                "prop-1",
     owner:             "principal",
     address:           "123 Elm St",
     city:              "Austin",

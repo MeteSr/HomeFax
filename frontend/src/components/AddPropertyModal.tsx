@@ -214,7 +214,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
         const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
         const hashHex    = Array.from(new Uint8Array(hashBuffer))
           .map((b) => b.toString(16).padStart(2, "0")).join("");
-        await propertyService.submitVerification(BigInt(registeredId), verify.docType, hashHex);
+        await propertyService.submitVerification(registeredId, verify.docType, hashHex);
         toast.success("Verification submitted — pending admin review");
       } catch (err: any) {
         toast.error(err.message || "Verification submission failed");

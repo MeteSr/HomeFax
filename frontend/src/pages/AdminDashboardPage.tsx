@@ -293,8 +293,8 @@ function VerificationCard({
   onReject,
 }: {
   property: Property;
-  onApprove: (id: bigint, level: "Basic" | "Premium") => Promise<void>;
-  onReject: (id: bigint) => Promise<void>;
+  onApprove: (id: string, level: "Basic" | "Premium") => Promise<void>;
+  onReject: (id: string) => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
   const [level, setLevel] = useState<"Basic" | "Premium">("Basic");
@@ -584,13 +584,13 @@ export default function AdminDashboardPage() {
 
   if (isAdmin === false) return <Navigate to="/dashboard" replace />;
 
-  const handleApprove = async (id: bigint, level: "Basic" | "Premium") => {
+  const handleApprove = async (id: string, level: "Basic" | "Premium") => {
     await propertyService.verifyProperty(id, level as VerificationLevel);
     toast.success(`Property approved as ${level}`);
     setPending((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleReject = async (id: bigint) => {
+  const handleReject = async (id: string) => {
     await propertyService.verifyProperty(id, "Unverified");
     toast.success("Property rejected — returned to Unverified");
     setPending((prev) => prev.filter((p) => p.id !== id));

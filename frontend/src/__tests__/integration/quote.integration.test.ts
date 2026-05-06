@@ -298,8 +298,11 @@ describe.skipIf(!deployed)("getOpenRequestsForMe — returns open requests visib
 });
 
 // ─── cancel — mock fallback ───────────────────────────────────────────────────
+// Skip when a real canister is deployed: vi.resetModules() + reimport causes the
+// service to init an AuthClient (browser IndexedDB) in Node, which throws.
+// Mock-path coverage lives in the unit tests; this block guards local dev only.
 
-describe("cancel — mock fallback (no canister)", () => {
+describe.skipIf(deployed)("cancel — mock fallback (no canister)", () => {
   let svc: typeof quoteService;
 
   beforeEach(async () => {

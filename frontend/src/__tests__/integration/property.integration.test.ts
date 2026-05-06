@@ -132,7 +132,7 @@ describe.skipIf(!deployed)("getProperty — fetch by bigint id", () => {
 
   it("getProperty for unknown id throws NotFound", async () => {
     // Use a very large id that won't exist
-    await expect(propertyService.getProperty(999_999_999n)).rejects.toThrow();
+    await expect(propertyService.getProperty("999999999")).rejects.toThrow();
   });
 });
 

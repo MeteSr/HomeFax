@@ -55,7 +55,7 @@ export function usePropertySummary(): PropertySummary {
       try {
         const allNotifs = await Promise.all(
           propList.map((p) =>
-            propertyService.getOwnerNotifications(BigInt(p.id))
+            propertyService.getOwnerNotifications(p.id)
               .catch(() => [] as OwnerNotification[])
           )
         );
@@ -73,7 +73,7 @@ export function usePropertySummary(): PropertySummary {
     const unseenPropertyIds = [...new Set(
       ownerNotifs
         .filter((n) => !n.seen)
-        .map(() => properties.map((p) => BigInt(p.id)))
+        .map(() => properties.map((p) => p.id))
         .flat()
     )];
     await Promise.all(
