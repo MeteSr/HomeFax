@@ -58,77 +58,44 @@ beforeAll(async () => {
 // limit (10). cancel() requires the property to exist in the property canister
 // (cross-canister isAuthorized check), so all requests use realPropId.
 
+// Candid serialization tests share a single describe but are split into three
+// tests to stay under the canister's 30 update-calls/minute rate limit:
+//   - scalar fields:   2 calls (1 create + 1 cancel)
+//   - urgency loop:    8 calls (4 × create+cancel)
+//   - serviceType loop: 16 calls (8 × create+cancel)
+// Total: 26 calls < 30 limit.
+
 describe.skipIf(!deployed)("createRequest — Candid serialization", () => {
-  it("returns a QuoteRequest with a non-empty id", async () => {
+  it("scalar fields: id, serviceType, homeowner, status, createdAt", async () => {
+    const before = Date.now() - 5_000;
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
+    const after = Date.now() + 5_000;
     expect(req.id).toBeTruthy();
     expect(typeof req.id).toBe("string");
-    await quoteService.cancel(req.id);
-  });
-
-  it("serviceType is preserved correctly", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
     expect(req.serviceType).toBe("HVAC");
+    expect(req.homeowner).toBe(TEST_PRINCIPAL);
+    expect(req.status).toBe("open");
+    expect(req.createdAt).toBeGreaterThan(before);
+    expect(req.createdAt).toBeLessThan(after);
     await quoteService.cancel(req.id);
   });
 
-  it("UrgencyLevel Variant round-trips: low", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "low" });
-    expect(req.urgency).toBe("low");
-    await quoteService.cancel(req.id);
-  });
-
-  it("UrgencyLevel Variant round-trips: medium", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "medium" });
-    expect(req.urgency).toBe("medium");
-    await quoteService.cancel(req.id);
-  });
-
-  it("UrgencyLevel Variant round-trips: high", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "high" });
-    expect(req.urgency).toBe("high");
-    await quoteService.cancel(req.id);
-  });
-
-  it("UrgencyLevel Variant round-trips: emergency", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency: "emergency" });
-    expect(req.urgency).toBe("emergency");
-    await quoteService.cancel(req.id);
+  it("UrgencyLevel Variant round-trips: all four levels", async () => {
+    for (const urgency of ["low", "medium", "high", "emergency"] as const) {
+      const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, urgency });
+      expect(req.urgency).toBe(urgency);
+      await quoteService.cancel(req.id);
+    }
   });
 
   it("all 8 ServiceType variants round-trip correctly", async () => {
     const types = ["HVAC", "Roofing", "Plumbing", "Electrical", "Painting", "Flooring", "Windows", "Landscaping"] as const;
     for (const serviceType of types) {
-      const req = await quoteService.createRequest({
-        ...BASE_REQUEST,
-        propertyId: realPropId,
-        serviceType,
-      });
+      const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId, serviceType });
       expect(req.serviceType).toBe(serviceType);
       await quoteService.cancel(req.id);
     }
-  });
-
-  it("homeowner principal matches the test identity", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
-    expect(req.homeowner).toBe(TEST_PRINCIPAL);
-    await quoteService.cancel(req.id);
-  });
-
-  it("status starts as 'open'", async () => {
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
-    expect(req.status).toBe("open");
-    await quoteService.cancel(req.id);
-  });
-
-  it("createdAt is a recent ms timestamp (ns→ms conversion applied)", async () => {
-    const before = Date.now() - 5_000;
-    const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: realPropId });
-    const after = Date.now() + 5_000;
-    expect(req.createdAt).toBeGreaterThan(before);
-    expect(req.createdAt).toBeLessThan(after);
-    await quoteService.cancel(req.id);
-  });
+  }, 60_000);
 });
 
 // ─── getRequests — caller scoping ────────────────────────────────────────────

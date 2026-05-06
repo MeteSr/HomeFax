@@ -249,9 +249,13 @@ describe.skipIf(!deployed)("createInviteToken / getJobByInviteToken — token li
   const propAddress = "123 Test St, Orlando FL 32801";
 
   beforeAll(async () => {
+    const prop = await propertyService.registerProperty({
+      ...PROP_BASE,
+      address: `${RUN_ID} InviteToken Ln, Orlando FL 32801`,
+    });
     const job = await jobService.create({
       ...BASE,
-      propertyId:     pid("invite"),
+      propertyId:     prop.id,
       serviceType:    "Plumbing",
       contractorName: "Pipe Masters Inc",
       amount:         85_000,
