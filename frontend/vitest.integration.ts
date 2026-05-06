@@ -63,7 +63,6 @@ export default defineConfig({
     reporters: ["verbose"],
     // Run integration tests serially — shared canister state means parallel
     // writes can produce unexpected interleaving across test files.
-    pool: "forks",
-    poolOptions: { forks: { singleFork: true } },
+    fileParallelism: false,
   },
 });

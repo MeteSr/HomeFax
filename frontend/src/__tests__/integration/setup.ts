@@ -54,6 +54,16 @@ beforeAll(async () => {
     shouldFetchRootKey: true,   // required for local replica (non-production)
   });
 
+  // @icp-sdk/core v5.x defaults to /api/v4/ for update calls (synchronous mode).
+  // dfx 0.24.x pocket-ic returns HTTP 400 (not 404) for unknown v4 endpoints,
+  // which prevents the SDK's built-in v4→v2 fallback (which only triggers on 404).
+  // Force v2 by setting callSync: false on every call so the agent always uses
+  // /api/v2/canister/{id}/call, which dfx 0.24.x supports.
+  const _origCall = agent.call.bind(agent);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (agent as any).call = (canisterId: any, options: any, identity: any) =>
+    _origCall(canisterId, { ...options, callSync: false }, identity);
+
   // Inject the agent so all services use this identity instead of AuthClient
   setAgentForTesting(agent);
 });

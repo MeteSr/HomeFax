@@ -202,7 +202,6 @@ jobs:
         run: bash scripts/test-backend.sh
 
   test-integration:
-    name: Integration tests (TypeScript service layer vs live canister)
     runs-on: ubuntu-latest
     needs: [motoko-check]
     steps:
