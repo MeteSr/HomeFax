@@ -257,7 +257,7 @@ export const paymentService = {
   },
 
   async getMySubscription(): Promise<{ tier: PlanTier; expiresAt: number | null; cancelledAt: number | null }> {
-    if ((window as any).__e2e_subscription) {
+    if (typeof window !== "undefined" && (window as any).__e2e_subscription) {
       return { cancelledAt: null, ...(window as any).__e2e_subscription };
     }
     if (!PAYMENT_CANISTER_ID) return { tier: "Basic", expiresAt: null, cancelledAt: null };

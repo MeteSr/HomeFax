@@ -11,7 +11,7 @@
  *   - QuoteStatus Variant: Pending → Accepted (acceptQuote)
  *   - Homeowner scoping: getMyQuoteRequests only returns the caller's requests
  *   - getQuotesForRequest returns quotes submitted to a specific request
- *   - Free-tier open-request limit (max 3 concurrent open requests)
+ *   - Premium-tier open-request limit (max 10 concurrent open requests)
  */
 
 import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
@@ -33,37 +33,45 @@ const BASE_REQUEST = {
 };
 
 // ─── createRequest — Candid serialization ────────────────────────────────────
+// Each test cancels its request inline to stay within the Premium open-request
+// limit (10). Without cleanup, 16 sequential creates would exceed the cap mid-suite.
 
 describe.skipIf(!deployed)("createRequest — Candid serialization", () => {
   it("returns a QuoteRequest with a non-empty id", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("id") });
     expect(req.id).toBeTruthy();
     expect(typeof req.id).toBe("string");
+    await quoteService.cancel(req.id);
   });
 
   it("serviceType is preserved correctly", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("svc-type") });
     expect(req.serviceType).toBe("HVAC");
+    await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: low", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-low"), urgency: "low" });
     expect(req.urgency).toBe("low");
+    await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: medium", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-med"), urgency: "medium" });
     expect(req.urgency).toBe("medium");
+    await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: high", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-high"), urgency: "high" });
     expect(req.urgency).toBe("high");
+    await quoteService.cancel(req.id);
   });
 
   it("UrgencyLevel Variant round-trips: emergency", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("urg-emergency"), urgency: "emergency" });
     expect(req.urgency).toBe("emergency");
+    await quoteService.cancel(req.id);
   });
 
   it("all 8 ServiceType variants round-trip correctly", async () => {
@@ -75,17 +83,20 @@ describe.skipIf(!deployed)("createRequest — Candid serialization", () => {
         serviceType,
       });
       expect(req.serviceType).toBe(serviceType);
+      await quoteService.cancel(req.id);
     }
   });
 
   it("homeowner principal matches the test identity", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("principal") });
     expect(req.homeowner).toBe(TEST_PRINCIPAL);
+    await quoteService.cancel(req.id);
   });
 
   it("status starts as 'open'", async () => {
     const req = await quoteService.createRequest({ ...BASE_REQUEST, propertyId: pid("initial-status") });
     expect(req.status).toBe("open");
+    await quoteService.cancel(req.id);
   });
 
   it("createdAt is a recent ms timestamp (ns→ms conversion applied)", async () => {
@@ -94,6 +105,7 @@ describe.skipIf(!deployed)("createRequest — Candid serialization", () => {
     const after = Date.now() + 5_000;
     expect(req.createdAt).toBeGreaterThan(before);
     expect(req.createdAt).toBeLessThan(after);
+    await quoteService.cancel(req.id);
   });
 });
 

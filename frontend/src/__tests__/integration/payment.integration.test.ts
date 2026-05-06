@@ -9,10 +9,12 @@
  *   - getAllPricing() returns the full Motoko pricing table exactly as the
  *     frontend PLANS array expects — a mismatch here means the UI silently
  *     shows wrong prices
- *   - getMySubscription() returns Free for an unsubscribed principal
- *   - subscribe("Free") works without ICP ledger approval (paid tiers need II)
- *   - Tier Variant for all five plan tiers (Free, Pro, Premium, ContractorFree, ContractorPro)
+ *   - getMySubscription() returns the granted tier for the test identity
+ *   - Tier Variant for all plan tiers (Basic, Pro, Premium, ContractorFree, ContractorPro, RealtorFree, RealtorPro)
  *   - PricingInfo Nat fields (priceUSD, periodDays, propertyLimit, etc.) survive BigInt→number
+ *
+ * Note: subscribe('Free') is NOT tested here because calling it would overwrite the
+ * Premium subscription granted in CI setup and break all subsequent integration tests.
  */
 
 import { describe, it, expect } from "vitest";
@@ -51,20 +53,6 @@ describe.skipIf(!deployed)("getMySubscription — Tier Variant and Int expiresAt
   });
 });
 
-// ─── subscribe(Free) ──────────────────────────────────────────────────────────
-
-describe.skipIf(!deployed)("subscribe — Free tier (no ICP ledger required)", () => {
-  it("subscribe('Free') resolves without error", async () => {
-    await expect(paymentService.subscribe("Free")).resolves.toBeUndefined();
-  });
-
-  it("getMySubscription returns Free after subscribe('Free')", async () => {
-    await paymentService.subscribe("Free");
-    const sub = await paymentService.getMySubscription();
-    expect(sub.tier).toBe("Free");
-  });
-});
-
 // ─── getPricing — individual tier lookup ─────────────────────────────────────
 
 describe.skipIf(!deployed)("getPricing — PricingInfo Nat field round-trips", () => {
@@ -74,15 +62,15 @@ describe.skipIf(!deployed)("getPricing — PricingInfo Nat field round-trips", (
     expect(info!.priceUSD).toBe(0);
   });
 
-  it("getPricing('Pro') returns priceUSD: 10 (matching PLANS)", async () => {
+  it("getPricing('Pro') returns priceUSD: 20 (matching PLANS)", async () => {
     const info = await paymentService.getPricing("Pro");
     const plan = PLANS.find((p) => p.tier === "Pro")!;
     expect(info!.priceUSD).toBe(plan.price);
   });
 
-  it("getPricing('Premium') returns priceUSD: 20", async () => {
+  it("getPricing('Premium') returns priceUSD: 40", async () => {
     const info = await paymentService.getPricing("Premium");
-    expect(info!.priceUSD).toBe(20);
+    expect(info!.priceUSD).toBe(40);
   });
 
   it("getPricing('Pro') propertyLimit is 5", async () => {
@@ -90,9 +78,9 @@ describe.skipIf(!deployed)("getPricing — PricingInfo Nat field round-trips", (
     expect(info!.propertyLimit).toBe(5);
   });
 
-  it("getPricing('Free') propertyLimit is 1", async () => {
+  it("getPricing('Free') propertyLimit is 0", async () => {
     const info = await paymentService.getPricing("Free");
-    expect(info!.propertyLimit).toBe(1);
+    expect(info!.propertyLimit).toBe(0);
   });
 
   it("getPricing('Premium') photosPerJob is 30", async () => {
@@ -109,13 +97,13 @@ describe.skipIf(!deployed)("getPricing — PricingInfo Nat field round-trips", (
 // ─── getAllPricing — full table vs PLANS ──────────────────────────────────────
 
 describe.skipIf(!deployed)("getAllPricing — Motoko pricing table matches frontend PLANS", () => {
-  it("returns at least 5 entries (one per tier)", async () => {
+  it("returns at least 5 entries (one per paid tier)", async () => {
     const all = await paymentService.getAllPricing();
     expect(all.length).toBeGreaterThanOrEqual(5);
   });
 
   it("every entry has a valid PlanTier string", async () => {
-    const validTiers = new Set(["Free", "Pro", "Premium", "ContractorFree", "ContractorPro"]);
+    const validTiers = new Set(["Free", "Basic", "Pro", "Premium", "ContractorFree", "ContractorPro", "RealtorFree", "RealtorPro"]);
     const all = await paymentService.getAllPricing();
     for (const entry of all) {
       expect(validTiers.has(entry.tier)).toBe(true);
@@ -144,14 +132,12 @@ describe.skipIf(!deployed)("getAllPricing — Motoko pricing table matches front
     expect(canisterPro!.photosPerJob).toBe(frontendPro.photosPerJob);
   });
 
-  it("canister Free tier matches frontend PLANS Free entry", async () => {
+  it("canister Basic tier is present in getAllPricing", async () => {
     const all = await paymentService.getAllPricing();
-    const canisterFree = all.find((e) => e.tier === "Free");
-    const frontendFree = PLANS.find((p) => p.tier === "Free")!;
-    expect(canisterFree).toBeDefined();
-    expect(canisterFree!.priceUSD).toBe(frontendFree.price);
-    expect(canisterFree!.propertyLimit).toBe(frontendFree.propertyLimit);
-    expect(canisterFree!.photosPerJob).toBe(frontendFree.photosPerJob);
+    const canisterBasic = all.find((e) => e.tier === "Basic");
+    expect(canisterBasic).toBeDefined();
+    expect(canisterBasic!.priceUSD).toBe(10);
+    expect(canisterBasic!.propertyLimit).toBe(1);
   });
 
   it("canister Premium tier has photosPerJob 30 matching frontend", async () => {

@@ -5,7 +5,7 @@
  * Run:      npm run test:integration  (from repo root)
  *
  * What these tests prove that unit tests cannot:
- *   - Candid IDL: id (Nat/bigint), yearBuilt/squareFeet (Nat), createdAt/updatedAt (Int)
+ *   - Candid IDL: id (Text/string), yearBuilt/squareFeet (Nat), createdAt/updatedAt (Int)
  *   - PropertyType and VerificationLevel Variant round-trips (all variants)
  *   - Owner scoping: getMyProperties only returns the caller's properties
  *   - New properties start at Unverified and transition to PendingReview on submitVerification
@@ -37,10 +37,10 @@ const BASE = {
 // ─── registerProperty — Candid serialization ──────────────────────────────────
 
 describe.skipIf(!deployed)("registerProperty — Candid serialization", () => {
-  it("returns a property with a bigint id", async () => {
-    const prop = await propertyService.registerProperty({ ...BASE, address: addr("bigint-id") });
-    expect(typeof prop.id).toBe("bigint");
-    expect(prop.id).toBeGreaterThan(0n);
+  it("returns a property with a string id", async () => {
+    const prop = await propertyService.registerProperty({ ...BASE, address: addr("string-id") });
+    expect(typeof prop.id).toBe("string");
+    expect(prop.id.length).toBeGreaterThan(0);
   });
 
   it("address, city, state, zipCode are preserved exactly", async () => {
@@ -172,25 +172,6 @@ describe.skipIf(!deployed)("registerProperty — duplicate address detection", (
 });
 
 // ─── Tier enforcement ─────────────────────────────────────────────────────────
-
-describe.skipIf(!deployed)("tier enforcement — Free tier property limit", () => {
-  it("the second registerProperty in the same run is rejected if Free-tier limit is reached", async () => {
-    // The test principal may already have properties registered from earlier tests in this run.
-    // We just need to verify the canister enforces LimitReached eventually.
-    // Register until we hit the error (or we already have it after prior tests).
-    const myProps = await propertyService.getMyProperties();
-    if (myProps.length >= 1) {
-      // Already at limit — next registration should fail
-      await expect(
-        propertyService.registerProperty({ ...BASE, address: addr("tier-limit-extra") })
-      ).rejects.toThrow(/LimitReached|limit/i);
-    } else {
-      // Haven't hit limit yet — just verify the limit is 1 for Free tier
-      const limit = await (async () => {
-        // We can skip this check if the canister enforces it correctly in other tests
-        return 1;
-      })();
-      expect(limit).toBe(1);
-    }
-  });
-});
+// Skipped in integration: the CI test identity is granted Premium (20-property limit),
+// so the per-tier property cap cannot be exercised here without a dedicated Free identity.
+// Free-tier LimitReached behaviour is covered by the backend canister unit tests.

@@ -16,6 +16,7 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { jobService } from "@/services/job";
+import { propertyService } from "@/services/property";
 import { TEST_PRINCIPAL } from "./setup";
 
 const CANISTER_ID = process.env.JOB_CANISTER_ID || "";
@@ -25,11 +26,22 @@ const RUN_ID = Date.now();
 function pid(label: string) { return `integ-job-${label}-${RUN_ID}`; }
 
 const BASE = {
-  serviceType:  "HVAC" as const,
-  description:  "Annual HVAC tune-up",
-  amount:       25_000,
-  date:         "2024-06-15",
-  isDiy:        false,
+  serviceType:    "HVAC" as const,
+  description:    "Annual HVAC tune-up",
+  amount:         25_000,
+  date:           "2024-06-15",
+  isDiy:          false,
+  contractorName: "Test Contractor LLC",
+};
+
+const PROP_BASE = {
+  city:         "Orlando",
+  state:        "FL",
+  zipCode:      "32801",
+  propertyType: "SingleFamily" as const,
+  yearBuilt:    1995,
+  squareFeet:   1800,
+  tier:         "Free" as const,
 };
 
 // ─── create — Candid serialization ───────────────────────────────────────────
@@ -89,7 +101,7 @@ describe.skipIf(!deployed)("create — Candid serialization", () => {
   });
 
   it("contractorName is undefined when not provided (DIY)", async () => {
-    const job = await jobService.create({ ...BASE, propertyId: pid("no-contractor"), isDiy: true });
+    const job = await jobService.create({ ...BASE, propertyId: pid("no-contractor"), isDiy: true, contractorName: undefined });
     expect(job.contractorName).toBeUndefined();
   });
 
@@ -162,10 +174,22 @@ describe.skipIf(!deployed)("updateJobStatus — Variant round-trip", () => {
 });
 
 // ─── DIY verification ─────────────────────────────────────────────────────────
+// verifyJob cross-calls property.isAuthorized, so we need a property that actually
+// exists in the property canister — a made-up propertyId would return Unauthorized.
 
 describe.skipIf(!deployed)("verifyJob — DIY single-signature path", () => {
+  let realPropId: string;
+
+  beforeAll(async () => {
+    const prop = await propertyService.registerProperty({
+      ...PROP_BASE,
+      address: `${RUN_ID} VerifyJob St, Orlando FL 32801`,
+    });
+    realPropId = prop.id;
+  });
+
   it("DIY job becomes verified: true after a single verifyJob call", async () => {
-    const job = await jobService.create({ ...BASE, propertyId: pid("diy-verify"), isDiy: true });
+    const job = await jobService.create({ ...BASE, propertyId: realPropId, isDiy: true, contractorName: undefined });
     const verified = await jobService.verifyJob(job.id);
     expect(verified.homeownerSigned).toBe(true);
     expect(verified.verified).toBe(true);
@@ -174,24 +198,33 @@ describe.skipIf(!deployed)("verifyJob — DIY single-signature path", () => {
 });
 
 // ─── getCertificationData ─────────────────────────────────────────────────────
+// Requires a real property (verifyJob cross-calls property.isAuthorized).
 
 describe.skipIf(!deployed)("getCertificationData — counter from canister state", () => {
-  const propId = pid("cert-data");
+  let realCertPropId: string;
+
+  beforeAll(async () => {
+    const prop = await propertyService.registerProperty({
+      ...PROP_BASE,
+      address: `${RUN_ID} CertData Blvd, Orlando FL 32801`,
+    });
+    realCertPropId = prop.id;
+  });
 
   it("verifiedJobCount is 0 before any verified jobs", async () => {
-    const data = await jobService.getCertificationData(propId);
+    const data = await jobService.getCertificationData(realCertPropId);
     expect(data.verifiedJobCount).toBe(0);
   });
 
   it("verifiedJobCount increments to 1 after a verified DIY job", async () => {
-    const job = await jobService.create({ ...BASE, propertyId: propId, serviceType: "HVAC", isDiy: true });
+    const job = await jobService.create({ ...BASE, propertyId: realCertPropId, serviceType: "HVAC", isDiy: true, contractorName: undefined });
     await jobService.verifyJob(job.id);
-    const data = await jobService.getCertificationData(propId);
+    const data = await jobService.getCertificationData(realCertPropId);
     expect(data.verifiedJobCount).toBeGreaterThanOrEqual(1);
   });
 
   it("verifiedKeySystems includes HVAC after a verified HVAC job", async () => {
-    const data = await jobService.getCertificationData(propId);
+    const data = await jobService.getCertificationData(realCertPropId);
     expect(data.verifiedKeySystems).toContain("HVAC");
   });
 });
