@@ -247,6 +247,13 @@ function createAgentService() {
       const raw = await actor.getReviews(Principal.fromText(agentId));
       return raw.map(fromRawReview);
     },
+
+    async verifyAgent(agentId: string): Promise<void> {
+      const { Principal } = await import("@icp-sdk/core/principal");
+      const actor = await getActor();
+      const result = await actor.verifyAgent(Principal.fromText(agentId));
+      if ("err" in result) throw new Error(JSON.stringify(result.err));
+    },
   };
 }
 

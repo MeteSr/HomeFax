@@ -319,6 +319,15 @@ exports[`contractor IDL factory > full signature snapshot 1`] = `
       "variant {ok:record {id:principal; bio:opt text; serviceArea:opt text; jobsCompleted:nat; serviceZips:vec text; name:text; createdAt:int; trustScore:nat; email:text; isVerified:bool; licenseNumber:opt text; specialties:vec variant {Solar; HVAC; Pest; Pool; Plumbing; Painting; Concrete; Fencing; Gutters; Insulation; Landscaping; Windows; Electrical; Flooring; Roofing; GeneralHandyman}; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; Unauthorized; AlreadyExists; RateLimitExceeded}}",
     ],
   },
+  "verifyContractor": {
+    "args": [
+      "principal",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {id:principal; bio:opt text; serviceArea:opt text; jobsCompleted:nat; serviceZips:vec text; name:text; createdAt:int; trustScore:nat; email:text; isVerified:bool; licenseNumber:opt text; specialties:vec variant {Solar; HVAC; Pest; Pool; Plumbing; Painting; Concrete; Fencing; Gutters; Insulation; Landscaping; Windows; Electrical; Flooring; Roofing; GeneralHandyman}; phone:text}; err:variant {Paused; InvalidInput:text; NotFound; Unauthorized; AlreadyExists; RateLimitExceeded}}",
+    ],
+  },
 }
 `;
 
