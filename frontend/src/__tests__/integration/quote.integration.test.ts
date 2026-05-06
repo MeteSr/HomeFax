@@ -48,7 +48,7 @@ beforeAll(async () => {
     propertyType: "SingleFamily" as const,
     yearBuilt:    2000,
     squareFeet:   2000,
-    tier:         "Basic" as const,
+    tier:         "Free" as const,
   });
   realPropId = prop.id;
 });
