@@ -170,7 +170,7 @@ test.describe("CD — /contractor-dashboard", () => {
   // CD.5 — service ZIP input on contractor profile form
   test("ZIP codes can be added to the profile form", async ({ page }) => {
     await injectContractors(page, [CONTRACTORS[0]]);
-    await page.goto("/contractor-profile");
+    await page.goto("/contractor/profile");
     const zipInput = page.getByPlaceholder(/78701/i);
     await zipInput.fill("90210");
     await zipInput.press("Enter");
