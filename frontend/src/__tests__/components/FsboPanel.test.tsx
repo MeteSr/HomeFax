@@ -24,7 +24,7 @@ const { mockRecord, mockProperty } = vi.hoisted(() => ({
     hasReport:      true,
   },
   mockProperty: {
-    id:                BigInt(42),
+    id:                "42",
     address:           "123 Maple St",
     city:              "Austin",
     state:             "TX",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.4.16"
+DEPLOY_SCRIPT_VERSION="1.5.1"
 ENV=${1:-local}
 
 echo "============================================"
@@ -618,10 +618,26 @@ if [ -n "$QUOTE_ID" ]    && [ -n "$PROPERTY_ID" ];   then
   echo "  Wiring property -> quote..."
   icp canister call quote    setPropertyCanisterId   "(principal \"$PROPERTY_ID\")" -e "$ENV" &
 fi
+if [ -n "$QUOTE_ID" ]    && [ -n "$CONTRACTOR_ID" ]; then
+  echo "  Wiring contractor -> quote..."
+  icp canister call quote    setContractorCanisterId "(principal \"$CONTRACTOR_ID\")" -e "$ENV" &
+fi
 MAINTENANCE_ID=$(icp canister status maintenance -e "$ENV" --id-only 2>/dev/null || echo "")
 if [ -n "$MAINTENANCE_ID" ] && [ -n "$PROPERTY_ID" ]; then
   echo "  Wiring property -> maintenance..."
   icp canister call maintenance setPropertyCanisterId "(principal \"$PROPERTY_ID\")" -e "$ENV" &
+fi
+if [ -n "$CONTRACTOR_ID" ] && [ -n "$JOB_ID" ]; then
+  echo "  Wiring job -> contractor..."
+  icp canister call contractor setJobCanisterId        "(\"$JOB_ID\")"               -e "$ENV" &
+fi
+if [ -n "$SENSOR_ID" ]     && [ -n "$JOB_ID" ]; then
+  echo "  Wiring job -> sensor..."
+  icp canister call sensor     setJobCanisterId        "(\"$JOB_ID\")"               -e "$ENV" &
+fi
+if [ -n "$REPORT_ID" ]     && [ -n "$PROPERTY_ID" ]; then
+  echo "  Wiring property -> report..."
+  icp canister call report     setPropertyCanisterId   "(\"$PROPERTY_ID\")"          -e "$ENV" &
 fi
 
 wait

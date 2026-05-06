@@ -50,7 +50,7 @@ const EXPIRY_MS  = NOW_MS + 90 * 24 * 3600 * 1000;  // 90 days from now — alwa
 const PAST_MS    = NOW_MS - 1;                        // already expired
 
 const MOCK_PENDING: PendingTransfer = {
-  propertyId:  BigInt(42),
+  propertyId:  "42",
   from:        "seller-principal",
   token:       "test-token-123",
   initiatedAt: NOW_MS,
@@ -58,7 +58,7 @@ const MOCK_PENDING: PendingTransfer = {
 };
 
 const MOCK_PROPERTY: Property = {
-  id:                BigInt(42),
+  id:                "42",
   owner:             "seller-principal",
   address:           "123 Main St",
   city:              "Tampa",

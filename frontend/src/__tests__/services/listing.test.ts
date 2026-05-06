@@ -30,7 +30,7 @@ const mockListingActor = {
       homeowner: { toText: () => "local" },
       targetListDate, desiredSalePrice, notes, bidDeadline,
       status: { Open: null },
-      createdAt: BigInt(Date.now()),
+      createdAt: BigInt(Date.now()) * 1_000_000n,
     };
     _bidRequests.set(id, raw);
     return { ok: raw };
@@ -53,7 +53,7 @@ const mockListingActor = {
 
   getOpenBidRequests: vi.fn(async () =>
     [..._bidRequests.values()].filter(
-      (r) => Object.keys(r.status)[0] === "Open" && Number(r.bidDeadline) > Date.now(),
+      (r) => Object.keys(r.status)[0] === "Open" && Number(r.bidDeadline) / 1_000_000 > Date.now(),
     )
   ),
 
@@ -74,7 +74,7 @@ const mockListingActor = {
       agentName, agentBrokerage, commissionBps, cmaSummary, marketingPlan,
       estimatedDaysOnMarket, estimatedSalePrice, includedServices, validUntil, coverLetter,
       status: { Pending: null },
-      createdAt: BigInt(Date.now()),
+      createdAt: BigInt(Date.now()) * 1_000_000n,
     };
     _proposals.set(id, raw);
     return { ok: raw };
@@ -84,7 +84,7 @@ const mockListingActor = {
     const req = _bidRequests.get(requestId);
     if (!req) return [];
     // Sealed-bid: proposals hidden until deadline passes
-    if (Number(req.bidDeadline) > Date.now()) return [];
+    if (Number(req.bidDeadline) / 1_000_000 > Date.now()) return [];
     return [..._proposals.values()].filter((p) => p.requestId === requestId);
   }),
 

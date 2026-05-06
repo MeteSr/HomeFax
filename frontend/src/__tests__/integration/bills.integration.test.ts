@@ -214,15 +214,26 @@ describe.skipIf(!deployed)("deleteBill — removes from canister state", () => {
 
 // ─── getUsageTrend (new Motoko query) ────────────────────────────────────────
 
+// getUsageTrend filters client-side by b.periodStart >= cutoff (N months ago).
+// Hardcoded 2024 dates fall outside a 12-month window in 2026+, so use dynamic
+// dates relative to today.
+function monthAgo(n: number): string {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - n);
+  return d.toISOString().slice(0, 10);
+}
+
 describe.skipIf(!deployed)("getUsageTrend — Motoko query round-trip", () => {
   const pid = propId("usage-trend");
 
   beforeAll(async () => {
-    // Seed 3 Electric bills with ascending usage over 3 months
+    // Seed 3 Electric bills with ascending usage — oldest first so degradation
+    // analysis sees low-early / high-late when more bills are added below.
     const bills = [
-      { amountCents: 9_000, usageAmount: 800, usageUnit: "kWh", periodStart: "2024-01-01", periodEnd: "2024-01-31" },
-      { amountCents: 9_500, usageAmount: 850, usageUnit: "kWh", periodStart: "2024-02-01", periodEnd: "2024-02-29" },
-      { amountCents: 9_800, usageAmount: 900, usageUnit: "kWh", periodStart: "2024-03-01", periodEnd: "2024-03-31" },
+      { amountCents: 9_000, usageAmount: 800, usageUnit: "kWh", periodStart: monthAgo(11), periodEnd: monthAgo(10) },
+      { amountCents: 9_500, usageAmount: 850, usageUnit: "kWh", periodStart: monthAgo(10), periodEnd: monthAgo(9) },
+      { amountCents: 9_800, usageAmount: 900, usageUnit: "kWh", periodStart: monthAgo(9),  periodEnd: monthAgo(8) },
     ];
     for (const b of bills) {
       await billService.addBill({ ...BASE_ARGS, ...b, propertyId: pid, billType: "Electric", provider: "FPL" });
@@ -248,7 +259,8 @@ describe.skipIf(!deployed)("getUsageTrend — Motoko query round-trip", () => {
 
   it("excludes bills without usageAmount from the trend", async () => {
     const pidMixed = propId("usage-mixed");
-    await billService.addBill({ ...BASE_ARGS, propertyId: pidMixed, billType: "Electric", usageAmount: 800, usageUnit: "kWh" });
+    // Bill WITH usageAmount must have a recent periodStart to pass the date filter.
+    await billService.addBill({ ...BASE_ARGS, propertyId: pidMixed, billType: "Electric", usageAmount: 800, usageUnit: "kWh", periodStart: monthAgo(1) });
     await billService.addBill({ ...BASE_ARGS, propertyId: pidMixed, billType: "Electric" /* no usage */ });
 
     const trend = await getUsageTrend(pidMixed, "Electric", 12);
@@ -257,12 +269,14 @@ describe.skipIf(!deployed)("getUsageTrend — Motoko query round-trip", () => {
   });
 
   it("analyzeEfficiencyTrend correctly identifies degradation from canister data", async () => {
-    // Add two more high-usage bills to push the late average well above the early average
-    await billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric", usageAmount: 1_100, usageUnit: "kWh", periodStart: "2024-04-01", periodEnd: "2024-04-30" });
-    await billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric", usageAmount: 1_150, usageUnit: "kWh", periodStart: "2024-05-01", periodEnd: "2024-05-31" });
-    await billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric", usageAmount: 1_200, usageUnit: "kWh", periodStart: "2024-06-01", periodEnd: "2024-06-30" });
+    // Add 3 high-usage bills more recent than the seeded low-usage bills.
+    // Sorted order: [month-11..month-9: ~850 avg] then [month-3..month-1: ~1150 avg]
+    // → early avg < late avg → degradation detected.
+    await billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric", usageAmount: 1_100, usageUnit: "kWh", periodStart: monthAgo(3), periodEnd: monthAgo(2) });
+    await billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric", usageAmount: 1_150, usageUnit: "kWh", periodStart: monthAgo(2), periodEnd: monthAgo(1) });
+    await billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric", usageAmount: 1_200, usageUnit: "kWh", periodStart: monthAgo(1), periodEnd: monthAgo(0) });
 
-    const trend = await getUsageTrend(pid, "Electric", 24);
+    const trend = await getUsageTrend(pid, "Electric", 12);
     const analysis = analyzeEfficiencyTrend(trend);
 
     // Early avg ~850 kWh, late avg ~1150 kWh → ~35% increase → degradation
@@ -273,25 +287,17 @@ describe.skipIf(!deployed)("getUsageTrend — Motoko query round-trip", () => {
 
 // ─── Tier enforcement ─────────────────────────────────────────────────────────
 
-describe.skipIf(!deployed)("tier enforcement — Free tier monthly upload limit", () => {
-  it("second upload in the same month is rejected for a Free-tier caller", async () => {
-    // The test identity is Free tier by default (no grantTier called)
-    const pid = propId("tier-limit");
-
-    // First upload should succeed
-    await billService.addBill({
-      ...BASE_ARGS,
-      propertyId: pid,
-      billType:   "Electric",
-    });
-
-    // Second upload in the same month should be rejected
+describe.skipIf(!deployed)("tier enforcement — Basic tier has no monthly upload cap", () => {
+  // The test identity is granted Basic in CI (scripts/test-integration.sh).
+  // Basic tier: monthlyUploadLimit = 0 = unlimited.
+  // Free-tier blocking (any upload rejected) is covered by canister unit tests.
+  it("multiple uploads in the same month all succeed for a Basic-tier caller", async () => {
+    const pid = propId("tier-basic");
     await expect(
-      billService.addBill({
-        ...BASE_ARGS,
-        propertyId: pid,
-        billType:   "Gas",
-      })
-    ).rejects.toThrow(/Free plan|TierLimitReached|1 bill/i);
+      billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric" })
+    ).resolves.toBeDefined();
+    await expect(
+      billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Gas" })
+    ).resolves.toBeDefined();
   });
 });

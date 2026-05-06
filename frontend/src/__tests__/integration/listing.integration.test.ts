@@ -209,13 +209,16 @@ describe.skipIf(!deployed)("submitProposal — Candid serialization", () => {
 
 describe.skipIf(!deployed)("deadline enforcement — DeadlinePassed", () => {
   it("submitProposal after bidDeadline throws DeadlinePassed", async () => {
-    const expiredReq = await listingService.createBidRequest({
+    // The canister rejects createBidRequest with a past bidDeadline, so we must
+    // create with a short future window and wait for it to expire.
+    const req = await listingService.createBidRequest({
       ...BASE_REQUEST,
-      propertyId: pid("deadline-past"),
-      bidDeadline: DEADLINE_PAST,
+      propertyId: pid("deadline-wait"),
+      bidDeadline: Date.now() + 2_000,
     });
+    await new Promise((resolve) => setTimeout(resolve, 3_000));
     await expect(
-      listingService.submitProposal(expiredReq.id, BASE_PROPOSAL)
+      listingService.submitProposal(req.id, BASE_PROPOSAL)
     ).rejects.toThrow(/DeadlinePassed|deadline/i);
   });
 });

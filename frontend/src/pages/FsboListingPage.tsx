@@ -185,7 +185,7 @@ export default function FsboListingPage() {
     setFsbo(record);
 
     const fetches: Promise<any>[] = [
-      propertyService.getProperty(BigInt(propertyId)),
+      propertyService.getProperty(propertyId),
       jobService.getByProperty(propertyId),
     ];
 

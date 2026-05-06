@@ -64,7 +64,7 @@ export default function PropertyVerifyPage() {
     setSubmitting(true);
     try {
       const hash = await sha256Hex(file);
-      await propertyService.submitVerification(BigInt(id), method, hash);
+      await propertyService.submitVerification(id, method, hash);
       setStep("submitted");
     } catch (err: any) {
       toast.error(err.message ?? "Submission failed. Please try again.");

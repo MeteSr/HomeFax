@@ -71,7 +71,7 @@ export default function PropertyVerifyModal({ open, onClose, propertyId, onSucce
     setSubmitting(true);
     try {
       const hash = await sha256Hex(file);
-      await propertyService.submitVerification(BigInt(propertyId), method, hash);
+      await propertyService.submitVerification(propertyId, method, hash);
       setSubmitted(true);
       onSuccess?.();
     } catch (err: any) {

@@ -57,7 +57,7 @@ function makeProperty(overrides: Partial<{
   yearBuilt: number; state: string; address: string; city: string; zipCode: string;
 }> = {}) {
   return {
-    id:                BigInt(1),
+    id:                "prop-1",
     address:           overrides.address   ?? "123 Main St",
     city:              overrides.city      ?? "Austin",
     state:             overrides.state     ?? "TX",
@@ -204,7 +204,7 @@ describe("buildMaintenanceForecast", () => {
 
   it("returns forecasts for multi-property users using the first property", () => {
     const prop1 = makeProperty({ yearBuilt: 1980, address: "100 Old St" });
-    const prop2 = { ...makeProperty({ yearBuilt: 2020, address: "200 New St" }), id: BigInt(2) };
+    const prop2 = { ...makeProperty({ yearBuilt: 2020, address: "200 New St" }), id: "prop-2" };
     const result = buildMaintenanceForecast([prop1, prop2], []);
     // Should use the first property (1980 → more Critical systems)
     expect(result!.propertyAddress).toContain("100 Old St");

@@ -67,7 +67,7 @@ function makeLink(expiresAt: number | null): any {
 }
 
 const mockProperty = {
-  id: BigInt(42), address: "123 Maple St", city: "Austin", state: "TX",
+  id: "42", address: "123 Maple St", city: "Austin", state: "TX",
   zipCode: "78701", propertyType: "SingleFamily" as const,
   yearBuilt: BigInt(1998), squareFeet: BigInt(2100),
   verificationLevel: "Basic" as const, tier: "Free" as const,

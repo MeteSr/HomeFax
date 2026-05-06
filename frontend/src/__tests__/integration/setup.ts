@@ -48,10 +48,27 @@ let agent: HttpAgent;
 beforeAll(async () => {
   await assertReplicaRunning();
 
+  // dfx 0.24.x pocket-ic only supports /api/v2/ for all endpoints.
+  // @icp-sdk/core v5.x uses /api/v4/ for update calls and /api/v3/ for queries
+  // and read_state — dfx returns 400 or 404 for those, and the SDK's automatic
+  // fallback only triggers on 404 (not 400), so some calls would fail silently.
+  // Rewrite all v3/v4 paths to v2 at the fetch level so every request goes to
+  // the supported endpoint without touching the SDK's internal routing logic.
+  const v2Fetch: typeof globalThis.fetch = (input, init) => {
+    const url = typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : (input as Request).url;
+    const rewritten = url.replace(/\/api\/v[34]\//, "/api/v2/");
+    return globalThis.fetch(rewritten, init);
+  };
+
   agent = await HttpAgent.create({
-    identity:          testIdentity,
-    host:              "http://localhost:4943",
+    identity:           testIdentity,
+    host:               "http://localhost:4943",
     shouldFetchRootKey: true,   // required for local replica (non-production)
+    fetch:              v2Fetch,
   });
 
   // Inject the agent so all services use this identity instead of AuthClient

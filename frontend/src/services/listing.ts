@@ -406,12 +406,12 @@ function fromRawRequest(raw: any): ListingBidRequest {
     id:               raw.id,
     propertyId:       raw.propertyId,
     homeowner:        raw.homeowner.toText(),
-    targetListDate:   Number(raw.targetListDate),
+    targetListDate:   Number(raw.targetListDate / 1_000_000n),
     desiredSalePrice: raw.desiredSalePrice.length > 0 ? Number(raw.desiredSalePrice[0]) : null,
     notes:            raw.notes,
-    bidDeadline:      Number(raw.bidDeadline),
+    bidDeadline:      Number(raw.bidDeadline / 1_000_000n),
     status:           statusKey,
-    createdAt:        Number(raw.createdAt),
+    createdAt:        Number(raw.createdAt / 1_000_000n),
     visibility:       "open",
     invitedAgentIds:  [],
   };
@@ -431,10 +431,10 @@ function fromRawProposal(raw: any): ListingProposal {
     estimatedDaysOnMarket: Number(raw.estimatedDaysOnMarket),
     estimatedSalePrice:    Number(raw.estimatedSalePrice),
     includedServices:      raw.includedServices,
-    validUntil:            Number(raw.validUntil),
+    validUntil:            Number(raw.validUntil / 1_000_000n),
     coverLetter:           raw.coverLetter,
     status:                statusKey,
-    createdAt:             Number(raw.createdAt),
+    createdAt:             Number(raw.createdAt / 1_000_000n),
     cmaComps:              [],
   };
 }
@@ -484,10 +484,10 @@ function createListingService() {
     const actor = await getActor();
     const result = await actor.createBidRequest(
       input.propertyId,
-      BigInt(input.targetListDate),
+      BigInt(input.targetListDate) * 1_000_000n,
       input.desiredSalePrice !== null ? [BigInt(input.desiredSalePrice)] : [],
       input.notes,
-      BigInt(input.bidDeadline)
+      BigInt(input.bidDeadline) * 1_000_000n
     );
     if ("err" in result) throw new Error(JSON.stringify(result.err));
     return fromRawRequest(result.ok);
@@ -536,7 +536,7 @@ function createListingService() {
       /* estimatedDaysOnMarket*/ BigInt(input.estimatedDaysOnMarket),
       /* estimatedSalePrice   */ BigInt(input.estimatedSalePrice),
       /* includedServices     */ input.includedServices,
-      /* validUntil           */ BigInt(input.validUntil),
+      /* validUntil           */ BigInt(input.validUntil) * 1_000_000n,
       /* coverLetter          */ input.coverLetter,
     );
     if ("err" in result) throw new Error(JSON.stringify(result.err));

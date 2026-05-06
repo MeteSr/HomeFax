@@ -43,7 +43,7 @@ function makeJob(overrides: Partial<Job> = {}): Job {
 
 function makeProperty(overrides: Partial<Property> = {}): Property {
   return {
-    id:                BigInt(1),
+    id:                "prop-1",
     owner:             "principal-abc",
     address:           "123 Elm St",
     city:              "Austin",
@@ -108,12 +108,12 @@ describe("computeScore", () => {
 
   it("adds 10 pts for Premium property, 5 for Basic, capped at 20", () => {
     const premium = makeProperty({ verificationLevel: "Premium" });
-    const basic   = makeProperty({ id: BigInt(2), verificationLevel: "Basic" });
+    const basic   = makeProperty({ id: "prop-2", verificationLevel: "Basic" });
     expect(computeScore([], [premium])).toBe(10);
     expect(computeScore([], [basic])).toBe(5);
     expect(computeScore([], [premium, basic])).toBe(15);
     // two Premium → 20, capped
-    const premium2 = makeProperty({ id: BigInt(3), verificationLevel: "Premium" });
+    const premium2 = makeProperty({ id: "prop-3", verificationLevel: "Premium" });
     expect(computeScore([], [premium, premium2])).toBe(20);
   });
 
@@ -132,8 +132,8 @@ describe("computeScore", () => {
       makeJob({ id: `j${i}`, serviceType: `Type${i}`, amount: 1_000_000 })
     );
     const props = [
-      makeProperty({ id: BigInt(1), verificationLevel: "Premium" }),
-      makeProperty({ id: BigInt(2), verificationLevel: "Premium" }),
+      makeProperty({ id: "prop-1", verificationLevel: "Premium" }),
+      makeProperty({ id: "prop-2", verificationLevel: "Premium" }),
     ];
     expect(computeScore(jobs, props)).toBe(100);
   });

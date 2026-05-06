@@ -15,7 +15,7 @@ export function usePropertyDetail(id: string | undefined): PropertyDetail {
   useEffect(() => {
     if (!id) { setLoading(false); return; }
     let cancelled = false;
-    propertyService.getProperty(BigInt(id))
+    propertyService.getProperty(id)
       .then((p)  => { if (!cancelled) setProperty(p); })
       .catch(()  => {
         const cached = storeProperties.find((p) => String(p.id) === id);

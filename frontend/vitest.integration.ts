@@ -20,11 +20,17 @@
 
 import { defineConfig } from "vitest/config";
 import path from "path";
-import { config as dotenvConfig } from "dotenv";
 
-// Load canister IDs written by `dfx deploy` / `make deploy`.
-// dfx writes CANISTER_ID_<NAME> vars to .env in the repo root.
-dotenvConfig({ path: path.resolve(__dirname, "../.env") });
+// Load canister IDs from .env when running locally.
+// In CI, scripts/test-integration.sh already exports CANISTER_ID_* from
+// canister_ids.json, so dotenv is not required and may not be installed.
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { config } = require("dotenv");
+  config({ path: path.resolve(__dirname, "../.env") });
+} catch {
+  // dotenv not installed — env vars already set by the calling script
+}
 
 export default defineConfig({
   resolve: {
@@ -57,7 +63,6 @@ export default defineConfig({
     reporters: ["verbose"],
     // Run integration tests serially — shared canister state means parallel
     // writes can produce unexpected interleaving across test files.
-    pool: "forks",
-    poolOptions: { forks: { singleFork: true } },
+    fileParallelism: false,
   },
 });
