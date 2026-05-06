@@ -51,7 +51,7 @@ jobs:
       - name: Install ic-wasm
         run: |
           TMP=$(mktemp -d)
-          curl -sSfL \
+          curl -sSfL --retry 3 --retry-delay 5 \
             https://github.com/dfinity/ic-wasm/releases/download/0.9.11/ic-wasm-x86_64-unknown-linux-musl.tar.xz \
             -o "$TMP/ic-wasm.tar.xz"
           tar -xJf "$TMP/ic-wasm.tar.xz" -C "$TMP"
