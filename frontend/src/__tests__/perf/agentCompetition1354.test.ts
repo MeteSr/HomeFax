@@ -64,7 +64,8 @@ const mockListingActor = {
     if (Object.keys(req.status)[0] !== "Open")
       return { err: { InvalidInput: "Request not open" } };
     // Deadline check: reject if bidDeadline has already passed
-    if (Number(req.bidDeadline) < Date.now())
+    // bidDeadline is stored as nanoseconds (service multiplies ms * 1_000_000n)
+    if (Number(req.bidDeadline) / 1_000_000 < Date.now())
       return { err: { InvalidInput: "Deadline passed" } };
     _propSeq++;
     const id = `PROP_${_propSeq}`;
@@ -82,7 +83,8 @@ const mockListingActor = {
   getProposalsForRequest: vi.fn(async (requestId: string) => {
     const req = _bidRequests.get(requestId);
     if (!req) return [];
-    if (Number(req.bidDeadline) > Date.now()) return [];
+    // bidDeadline is stored as nanoseconds — convert to ms before comparing
+    if (Number(req.bidDeadline) / 1_000_000 > Date.now()) return [];
     return [..._proposals.values()].filter((p) => p.requestId === requestId);
   }),
 
@@ -91,7 +93,7 @@ const mockListingActor = {
   cancelBidRequest:    vi.fn(async () => ({ ok: null })),
   getOpenBidRequests:  vi.fn(async () =>
     [..._bidRequests.values()].filter(
-      (r) => Object.keys(r.status)[0] === "Open" && Number(r.bidDeadline) > Date.now(),
+      (r) => Object.keys(r.status)[0] === "Open" && Number(r.bidDeadline) / 1_000_000 > Date.now(),
     )),
   getMyProposals:      vi.fn(async () => [..._proposals.values()]),
   acceptProposal:      vi.fn(async () => ({ ok: null })),
