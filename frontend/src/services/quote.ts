@@ -27,6 +27,7 @@ export const idlFactory = ({ IDL }: any) => {
     description: IDL.Text,
     urgency:     UrgencyLevel,
     status:      RequestStatus,
+    zipCode:     IDL.Opt(IDL.Text),
     createdAt:   IDL.Int,
     closeAt:     IDL.Opt(IDL.Int),
   });
@@ -47,7 +48,7 @@ export const idlFactory = ({ IDL }: any) => {
   });
   return IDL.Service({
     createQuoteRequest: IDL.Func(
-      [IDL.Text, ServiceType, IDL.Text, UrgencyLevel],
+      [IDL.Text, ServiceType, IDL.Text, UrgencyLevel, IDL.Opt(IDL.Text)],
       [IDL.Variant({ ok: QuoteRequest, err: Error })],
       []
     ),
@@ -58,6 +59,7 @@ export const idlFactory = ({ IDL }: any) => {
     ),
     getMyQuoteRequests: IDL.Func([], [IDL.Vec(QuoteRequest)], ["query"]),
     getOpenRequests: IDL.Func([], [IDL.Vec(QuoteRequest)], ["query"]),
+    getOpenRequestsForMe: IDL.Func([], [IDL.Vec(QuoteRequest)], []),
     submitQuote: IDL.Func(
       [IDL.Text, IDL.Nat, IDL.Nat, IDL.Int],
       [IDL.Variant({ ok: Quote, err: Error })],
@@ -105,6 +107,7 @@ export interface QuoteRequest {
   urgency:     Urgency;
   description: string;
   status:      QuoteRequestStatus;
+  zipCode?:    string;   // 5-digit zip for location filtering; undefined = visible to all
   createdAt:   number;   // ms
   closeAt?:    number;   // ms — bid window close time; undefined = no sealed-bid window
 }
@@ -141,6 +144,7 @@ function mapVariant<T>(map: Record<string, T>, raw: any, field: string): T {
 
 function fromRequest(raw: any): QuoteRequest {
   const closeAtArr = raw.closeAt as bigint[] | undefined;
+  const zipArr = raw.zipCode as string[] | undefined;
   return {
     id:          raw.id,
     propertyId:  raw.propertyId,
@@ -149,6 +153,7 @@ function fromRequest(raw: any): QuoteRequest {
     urgency:     mapVariant(URGENCY_MAP, raw.urgency, "urgency"),
     description: raw.description,
     status:      mapVariant(REQUEST_STATUS_MAP, raw.status, "requestStatus"),
+    zipCode:     zipArr && zipArr.length > 0 ? zipArr[0] : undefined,
     createdAt:   Number(raw.createdAt) / 1_000_000,
     closeAt:     closeAtArr && closeAtArr.length > 0
                    ? Number(closeAtArr[0]) / 1_000_000
@@ -218,7 +223,8 @@ function createQuoteService() {
       req.propertyId,
       { [req.serviceType]: null },
       req.description,
-      { [urgencyKey]: null }
+      { [urgencyKey]: null },
+      req.zipCode ? [req.zipCode] : []
     );
     return unwrapRequest(result);
   },
@@ -236,6 +242,12 @@ function createQuoteService() {
     if (!QUOTE_CANISTER_ID) return [];
     const a = await getActor();
     return (await a.getOpenRequests() as any[]).map(fromRequest);
+  },
+
+  async getOpenRequestsForMe(): Promise<QuoteRequest[]> {
+    if (!QUOTE_CANISTER_ID) return [];
+    const a = await getActor();
+    return (await a.getOpenRequestsForMe() as any[]).map(fromRequest);
   },
 
   async submitQuote(

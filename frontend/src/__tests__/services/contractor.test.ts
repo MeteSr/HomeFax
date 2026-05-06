@@ -36,6 +36,7 @@ function makeRawProfile(overrides: Record<string, unknown> = {}) {
     bio:           ["Licensed HVAC tech with 10 years experience"],
     licenseNumber: ["TX-HVAC-12345"],
     serviceArea:   ["Austin, TX"],
+    serviceZips:   ["78701", "78702"],
     trustScore:    BigInt(85),
     jobsCompleted: BigInt(42),
     isVerified:    true,
@@ -119,6 +120,7 @@ describe("contractorService", () => {
       expect(c.bio).toBe("Licensed HVAC tech with 10 years experience");
       expect(c.licenseNumber).toBe("TX-HVAC-12345");
       expect(c.serviceArea).toBe("Austin, TX");
+      expect(c.serviceZips).toEqual(["78701", "78702"]);
       expect(c.trustScore).toBe(85);
       expect(c.jobsCompleted).toBe(42);
       expect(c.isVerified).toBe(true);
@@ -132,6 +134,18 @@ describe("contractorService", () => {
       expect(c.bio).toBeNull();
       expect(c.licenseNumber).toBeNull();
       expect(c.serviceArea).toBeNull();
+    });
+
+    it("maps serviceZips as empty array when absent", async () => {
+      mockActor.getAll.mockResolvedValue([makeRawProfile({ serviceZips: [] })]);
+      const [c] = await contractorService.search();
+      expect(c.serviceZips).toEqual([]);
+    });
+
+    it("maps serviceZips as string array when present", async () => {
+      mockActor.getAll.mockResolvedValue([makeRawProfile({ serviceZips: ["78701", "78702", "78703"] })]);
+      const [c] = await contractorService.search();
+      expect(c.serviceZips).toEqual(["78701", "78702", "78703"]);
     });
 
     it("maps all sixteen trade variants", async () => {
@@ -324,7 +338,7 @@ describe("contractorService", () => {
       mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile({ name: "Updated Name" }) });
       const profile = await contractorService.updateProfile({
         name: "Updated Name", specialties: ["Plumbing"], email: "u@u.com", phone: "555-0004",
-        bio: "Updated bio", licenseNumber: null, serviceArea: null,
+        bio: "Updated bio", licenseNumber: null, serviceArea: null, serviceZips: [],
       });
       expect(profile.name).toBe("Updated Name");
     });
@@ -333,7 +347,7 @@ describe("contractorService", () => {
       mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile() });
       await contractorService.updateProfile({
         name: "Test", specialties: ["Electrical", "Solar"], email: "t@t.com", phone: "555-0005",
-        bio: null, licenseNumber: null, serviceArea: null,
+        bio: null, licenseNumber: null, serviceArea: null, serviceZips: [],
       });
       const call = mockActor.updateProfile.mock.calls[0][0];
       expect(call.specialties).toEqual([{ Electrical: null }, { Solar: null }]);
@@ -343,7 +357,7 @@ describe("contractorService", () => {
       mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile() });
       await contractorService.updateProfile({
         name: "Test", specialties: ["Electrical"], email: "t@t.com", phone: "555-0005",
-        bio: null, licenseNumber: null, serviceArea: null,
+        bio: null, licenseNumber: null, serviceArea: null, serviceZips: [],
       });
       const call = mockActor.updateProfile.mock.calls[0][0];
       expect(call.bio).toEqual([]);
@@ -355,12 +369,32 @@ describe("contractorService", () => {
       mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile() });
       await contractorService.updateProfile({
         name: "Test", specialties: ["Electrical"], email: "t@t.com", phone: "555-0005",
-        bio: "My bio", licenseNumber: "TX-123", serviceArea: "Austin",
+        bio: "My bio", licenseNumber: "TX-123", serviceArea: "Austin", serviceZips: ["78701"],
       });
       const call = mockActor.updateProfile.mock.calls[0][0];
       expect(call.bio).toEqual(["My bio"]);
       expect(call.licenseNumber).toEqual(["TX-123"]);
       expect(call.serviceArea).toEqual(["Austin"]);
+    });
+
+    it("passes serviceZips array directly to canister", async () => {
+      mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile() });
+      await contractorService.updateProfile({
+        name: "Test", specialties: ["HVAC"], email: "t@t.com", phone: "555-0005",
+        bio: null, licenseNumber: null, serviceArea: null, serviceZips: ["78701", "78702"],
+      });
+      const call = mockActor.updateProfile.mock.calls[0][0];
+      expect(call.serviceZips).toEqual(["78701", "78702"]);
+    });
+
+    it("passes empty serviceZips array when contractor serves all areas", async () => {
+      mockActor.updateProfile.mockResolvedValue({ ok: makeRawProfile({ serviceZips: [] }) });
+      await contractorService.updateProfile({
+        name: "Test", specialties: ["HVAC"], email: "t@t.com", phone: "555-0005",
+        bio: null, licenseNumber: null, serviceArea: null, serviceZips: [],
+      });
+      const call = mockActor.updateProfile.mock.calls[0][0];
+      expect(call.serviceZips).toEqual([]);
     });
   });
 });

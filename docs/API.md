@@ -102,19 +102,20 @@ Owns property registration, ownership verification, transfers, and room/fixture 
 
 | Method | Type | Signature | Description |
 |---|---|---|---|
-| `register` | update | `(RegisterArgs)` | Register as a contractor |
+| `register` | update | `(RegisterArgs)` | Register as a contractor; initializes `serviceZips=[]` |
 | `getMyProfile` | query | `()` | Caller's contractor profile |
 | `getContractor` | query | `(Principal)` | Get contractor by principal |
 | `getAll` | query | `()` | List all contractors |
 | `getBySpecialty` | query | `(ServiceType)` | Filter contractors by specialty |
-| `updateProfile` | update | `(UpdateArgs)` | Update contractor profile |
+| `getByZip` | query | `(zipCode: Text)` | Contractors who explicitly list that zip code in `serviceZips` |
+| `updateProfile` | update | `(UpdateArgs)` | Update contractor profile; `UpdateArgs` includes `serviceZips: [Text]` (max 50, each exactly 5 digits) |
 | `submitReview` | update | `(contractorPrincipal: Principal, rating: Nat, comment: Text)` | Submit a review (rate-limited: 10/day/user) |
 | `getReviewsForContractor` | query | `(Principal)` | All reviews for a contractor |
 | `recordJobVerified` | update | `(...)` | Trusted: increment verified job count |
 | `getCredentials` | query | `(Principal)` | Verified job credentials for a contractor |
 | `verifyContractor` | update | `(Principal)` | Admin: mark contractor as verified |
 
-**Admin / Lifecycle:** `addAdmin(Principal)` · `setUpdateRateLimit(Nat)` · `setJobCanisterId(Text)` · `addTrustedCanister(Principal)` · `removeTrustedCanister(Principal)` · `pause(?Nat)` · `unpause()`
+**Admin / Lifecycle:** `addAdmin(Principal)` · `setUpdateRateLimit(Nat)` · `setJobCanisterId(Text)` · `setContractorCanisterId(Text)` · `addTrustedCanister(Principal)` · `removeTrustedCanister(Principal)` · `pause(?Nat)` · `unpause()`
 
 ---
 
@@ -124,9 +125,10 @@ Owns property registration, ownership verification, transfers, and room/fixture 
 
 | Method | Type | Signature | Description |
 |---|---|---|---|
-| `createQuoteRequest` | update | `(propertyId: Text, serviceType: ServiceType, description: Text, urgency: UrgencyLevel)` | Create a quote request |
+| `createQuoteRequest` | update | `(propertyId: Text, serviceType: ServiceType, description: Text, urgency: UrgencyLevel, zipCode: ?Text)` | Create a quote request; `zipCode` restricts visibility to contractors serving that zip |
 | `getQuoteRequest` | query | `(requestId: Text)` | Get a request by ID |
-| `getOpenRequests` | query | `()` | All open requests (contractor view) |
+| `getOpenRequests` | query | `()` | All open requests unfiltered (contractor view; fast query) |
+| `getOpenRequestsForMe` | update | `()` | Open requests filtered to caller's `serviceZips`; contractors with empty `serviceZips` receive all requests; requests with no `zipCode` are always included |
 | `getMyQuoteRequests` | query | `()` | Caller's requests |
 | `submitQuote` | update | `(requestId: Text, amount: Nat, timeline: Nat, validUntil: Time)` | Contractor submits a bid |
 | `getQuotesForRequest` | query | `(requestId: Text)` | All bids on a request |
@@ -145,7 +147,7 @@ Owns property registration, ownership verification, transfers, and room/fixture 
 
 **UrgencyLevel:** `#Low | #Medium | #High | #Emergency`
 
-**Admin / Lifecycle:** `addAdmin(Principal)` · `setTier(Principal, SubscriptionTier)` · `setUpdateRateLimit(Nat)` · `pause(?Nat)` · `unpause()`
+**Admin / Lifecycle:** `addAdmin(Principal)` · `setTier(Principal, SubscriptionTier)` · `setUpdateRateLimit(Nat)` · `setPropertyCanisterId(Principal)` · `setContractorCanisterId(Principal)` · `pause(?Nat)` · `unpause()`
 
 ---
 

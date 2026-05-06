@@ -363,6 +363,7 @@ describe("quote IDL factory", () => {
       "createQuoteRequest",
       "getMyQuoteRequests",
       "getOpenRequests",
+      "getOpenRequestsForMe",
       "getQuoteRequest",
       "getQuotesForRequest",
       "setPropertyCanisterId",

@@ -25,7 +25,8 @@ rewiring screens.
 |---|---|---|
 | `/` | LandingPage | Marketing homepage |
 | `/login` | LoginPage | Internet Identity auth |
-| `/pricing` | PricingPage | Plan selector (Homeowner / Contractor / Realtor tabs) |
+| `/pricing` | PricingPage | Homeowner plan selector (Basic / Pro / Premium); links to `/for-pros` |
+| `/for-pros` | ForProsPage | Contractor and Realtor plan selector (ContractorPro / RealtorPro) |
 | `/privacy` | PrivacyPolicyPage | Privacy policy |
 | `/terms` | TermsOfServicePage | Terms of service |
 | `/support` | SupportPage | Contact / support |
