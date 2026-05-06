@@ -121,6 +121,7 @@ export default function ContractorProfilePage() {
           bio:           form.bio.trim()           || null,
           licenseNumber: form.licenseNumber.trim() || null,
           serviceArea:   form.serviceArea.trim()   || null,
+          serviceZips:   existing?.serviceZips     ?? [],
         });
         toast.success("Profile updated.");
       } else {
