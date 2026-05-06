@@ -123,9 +123,10 @@ async function compressImage(file: File, phase?: string): Promise<File> {
   const maxBytes = phase && CONSTRUCTION_PHASES.has(phase) ? MAX_BYTES_CONSTRUCTION : MAX_BYTES;
   if (!file.type.startsWith("image/")) return file;
 
-  // Canvas unavailable (jsdom/test/SSR) — skip compression entirely.
+  // Canvas unavailable (jsdom/test/SSR/Node) — skip compression entirely.
   // We check this before creating an Image so we never hang waiting for
   // onload/onerror in environments that don't fetch blob URLs.
+  if (typeof document === "undefined") return file;
   const probe = document.createElement("canvas");
   if (!probe.getContext("2d")) return file;
 

@@ -38,7 +38,7 @@ describe.skipIf(!deployed)("register — Candid serialization & defaults", () =>
         name:          `Contractor ${RUN_ID}`,
         specialties:   ["HVAC"],
         email:         `hvac-${RUN_ID}@test.com`,
-        phone:         "512-555-0101",
+        phone:         "+15125550101",
         bio:           "Integration test bio",
         licenseNumber: `TX-${RUN_ID}`,
         serviceArea:   "Austin, TX",
@@ -49,7 +49,7 @@ describe.skipIf(!deployed)("register — Candid serialization & defaults", () =>
         name:        `Contractor ${RUN_ID}`,
         specialties: ["HVAC"],
         email:       `hvac-${RUN_ID}@test.com`,
-        phone:       "512-555-0101",
+        phone:       "+15125550101",
       });
     }
   });

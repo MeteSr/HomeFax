@@ -1,8 +1,11 @@
 /**
- * Integration tests — monitoringService against the real ICP monitoring canister.
+ * Integration tests — monitoring canister via direct Actor (no service wrapper).
  *
  * Requires: dfx start --background && make deploy
  * Run:      npm run test:integration  (from repo root)
+ *
+ * Uses Actor.createActor directly with MONITORING_CANISTER_ID from env to avoid
+ * the service wrapper's VITE_* env var which is not injected in Node/Vitest.
  *
  * What these tests prove that unit tests cannot:
  *   - Candid IDL: CanisterMetrics / MonitoringMetrics / TrackedCanister record
@@ -17,8 +20,7 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { Actor } from "@icp-sdk/core/agent";
-import { monitoringService, idlFactory } from "@/services/monitoringService";
-import type { CanisterMetrics, MonitoringMetrics, TrackedCanister, CycleLevelResult } from "@/services/monitoringService";
+import { idlFactory } from "@/services/monitoringService";
 import { getAgent } from "@/services/actor";
 
 const CANISTER_ID = (process.env as any).MONITORING_CANISTER_ID || "";
@@ -32,38 +34,40 @@ async function getActor() {
 // ─── getMetrics ───────────────────────────────────────────────────────────────
 
 describe.skipIf(!deployed)("getMetrics — MonitoringMetrics record", () => {
-  let metrics: MonitoringMetrics;
+  let raw: any;
 
   beforeAll(async () => {
-    metrics = await monitoringService.getMetrics();
+    const a = await getActor();
+    raw = await a.getMetrics();
   });
 
   it("totalCanisters is a non-negative number", () => {
-    expect(typeof metrics.totalCanisters).toBe("number");
-    expect(metrics.totalCanisters).toBeGreaterThanOrEqual(0);
+    expect(typeof Number(raw.totalCanisters)).toBe("number");
+    expect(Number(raw.totalCanisters)).toBeGreaterThanOrEqual(0);
   });
 
   it("activeAlerts and criticalAlerts are non-negative numbers", () => {
-    expect(metrics.activeAlerts).toBeGreaterThanOrEqual(0);
-    expect(metrics.criticalAlerts).toBeGreaterThanOrEqual(0);
+    expect(Number(raw.activeAlerts)).toBeGreaterThanOrEqual(0);
+    expect(Number(raw.criticalAlerts)).toBeGreaterThanOrEqual(0);
   });
 
   it("isPaused is a boolean", () => {
-    expect(typeof metrics.isPaused).toBe("boolean");
+    expect(typeof raw.isPaused).toBe("boolean");
   });
 
   it("cyclesPerCall is an array", () => {
-    expect(Array.isArray(metrics.cyclesPerCall)).toBe(true);
+    expect(Array.isArray(raw.cyclesPerCall)).toBe(true);
   });
 });
 
 // ─── getAllCanisterMetrics ─────────────────────────────────────────────────────
 
 describe.skipIf(!deployed)("getAllCanisterMetrics — per-canister data", () => {
-  let all: CanisterMetrics[];
+  let all: any[];
 
   beforeAll(async () => {
-    all = await monitoringService.getAllCanisterMetrics();
+    const a = await getActor();
+    all = await a.getAllCanisterMetrics() as any[];
   });
 
   it("returns an array", () => {
@@ -72,10 +76,10 @@ describe.skipIf(!deployed)("getAllCanisterMetrics — per-canister data", () => 
 
   it("each entry has numeric fields (Nat bigint → number conversion)", () => {
     for (const m of all) {
-      expect(typeof m.cyclesBalance).toBe("number");
-      expect(typeof m.cyclesBurned).toBe("number");
-      expect(typeof m.memoryBytes).toBe("number");
-      expect(typeof m.requestCount).toBe("number");
+      expect(typeof Number(m.cyclesBalance)).toBe("number");
+      expect(typeof Number(m.cyclesBurned)).toBe("number");
+      expect(typeof Number(m.memoryBytes)).toBe("number");
+      expect(typeof Number(m.requestCount)).toBe("number");
     }
   });
 });
@@ -84,10 +88,11 @@ describe.skipIf(!deployed)("getAllCanisterMetrics — per-canister data", () => 
 
 describe.skipIf(!deployed)("getTrackedCanisters — returns registered canisters", () => {
   it("returns an array of TrackedCanister records", async () => {
-    const canisters = await monitoringService.getTrackedCanisters();
+    const a = await getActor();
+    const canisters = await a.getTrackedCanisters() as any[];
     expect(Array.isArray(canisters)).toBe(true);
     for (const c of canisters) {
-      expect(typeof c.id).toBe("string");
+      expect(typeof c.id.toText()).toBe("string");
       expect(typeof c.name).toBe("string");
     }
   });
@@ -102,11 +107,9 @@ describe.skipIf(!deployed)("registerCanister & unregisterCanister — round-trip
     const a = await getActor();
     try {
       const result = await a.registerCanister(
-        // Use the monitoring canister itself as the test subject
         (await import("@icp-sdk/core/principal")).Principal.fromText(CANISTER_ID),
         testName
       ) as any;
-      // ok or AlreadyExists are both acceptable
       expect("ok" in result || "err" in result).toBe(true);
     } catch (e: any) {
       expect(e.message).toMatch(/Unauthorized/i);
@@ -114,7 +117,8 @@ describe.skipIf(!deployed)("registerCanister & unregisterCanister — round-trip
   });
 
   it("getTrackedCanisters still returns an array after registration attempt", async () => {
-    const canisters = await monitoringService.getTrackedCanisters();
+    const a = await getActor();
+    const canisters = await a.getTrackedCanisters() as any[];
     expect(Array.isArray(canisters)).toBe(true);
   });
 
@@ -134,10 +138,11 @@ describe.skipIf(!deployed)("registerCanister & unregisterCanister — round-trip
 // ─── checkCycleLevels ─────────────────────────────────────────────────────────
 
 describe.skipIf(!deployed)("checkCycleLevels — returns CycleLevelResult array", () => {
-  let results: CycleLevelResult[];
+  let results: any[];
 
   beforeAll(async () => {
-    results = await monitoringService.checkCycleLevels();
+    const a = await getActor();
+    results = await a.checkCycleLevels() as any[];
   });
 
   it("returns an array", () => {
@@ -153,8 +158,8 @@ describe.skipIf(!deployed)("checkCycleLevels — returns CycleLevelResult array"
 
   it("each result has numeric cycles and boolean fromCache", () => {
     for (const r of results) {
-      expect(typeof r.cycles).toBe("number");
-      expect(r.cycles).toBeGreaterThanOrEqual(0);
+      expect(typeof Number(r.cycles)).toBe("number");
+      expect(Number(r.cycles)).toBeGreaterThanOrEqual(0);
       expect(typeof r.fromCache).toBe("boolean");
     }
   });

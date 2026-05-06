@@ -39,7 +39,11 @@ persistent actor Sensor {
 
   // ─── Types ───────────────────────────────────────────────────────────────
 
-  public type DeviceSource = { #Nest; #Ecobee; #MoenFlo; #Manual };
+  public type DeviceSource = {
+    #Nest; #Ecobee; #MoenFlo; #Manual;
+    #RingAlarm; #HoneywellHome; #RheemEcoNet; #Sense;
+    #EmporiaVue; #Rachio; #SmartThings; #HomeAssistant;
+  };
 
   public type SensorEventType = {
     #WaterLeak;       // Moen Flo active leak
