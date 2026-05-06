@@ -48,21 +48,28 @@ let agent: HttpAgent;
 beforeAll(async () => {
   await assertReplicaRunning();
 
-  agent = await HttpAgent.create({
-    identity:          testIdentity,
-    host:              "http://localhost:4943",
-    shouldFetchRootKey: true,   // required for local replica (non-production)
-  });
+  // dfx 0.24.x pocket-ic only supports /api/v2/ for all endpoints.
+  // @icp-sdk/core v5.x uses /api/v4/ for update calls and /api/v3/ for queries
+  // and read_state — dfx returns 400 or 404 for those, and the SDK's automatic
+  // fallback only triggers on 404 (not 400), so some calls would fail silently.
+  // Rewrite all v3/v4 paths to v2 at the fetch level so every request goes to
+  // the supported endpoint without touching the SDK's internal routing logic.
+  const v2Fetch: typeof globalThis.fetch = (input, init) => {
+    const url = typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.toString()
+        : (input as Request).url;
+    const rewritten = url.replace(/\/api\/v[34]\//, "/api/v2/");
+    return globalThis.fetch(rewritten, init);
+  };
 
-  // @icp-sdk/core v5.x defaults to /api/v4/ for update calls (synchronous mode).
-  // dfx 0.24.x pocket-ic returns HTTP 400 (not 404) for unknown v4 endpoints,
-  // which prevents the SDK's built-in v4→v2 fallback (which only triggers on 404).
-  // Force v2 by setting callSync: false on every call so the agent always uses
-  // /api/v2/canister/{id}/call, which dfx 0.24.x supports.
-  const _origCall = agent.call.bind(agent);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (agent as any).call = (canisterId: any, options: any, identity: any) =>
-    _origCall(canisterId, { ...options, callSync: false }, identity);
+  agent = await HttpAgent.create({
+    identity:           testIdentity,
+    host:               "http://localhost:4943",
+    shouldFetchRootKey: true,   // required for local replica (non-production)
+    fetch:              v2Fetch,
+  });
 
   // Inject the agent so all services use this identity instead of AuthClient
   setAgentForTesting(agent);
