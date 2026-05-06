@@ -87,14 +87,14 @@ describe.skipIf(!deployed)("updateProfile — persists all fields including serv
     if (!existing) {
       await contractorService.register({
         name: `Contractor ${RUN_ID}`, specialties: ["Roofing"],
-        email: `roof-${RUN_ID}@test.com`, phone: "512-555-0202",
+        email: `roof-${RUN_ID}@test.com`, phone: "+15125550202",
       });
     }
     updated = await contractorService.updateProfile({
       name:          `Updated ${RUN_ID}`,
       specialties:   ["Roofing", "Plumbing"],
       email:         `updated-${RUN_ID}@test.com`,
-      phone:         "512-555-0303",
+      phone:         "+15125550303",
       bio:           "Updated bio",
       licenseNumber: `LIC-${RUN_ID}`,
       serviceArea:   "Dallas, TX",
