@@ -259,6 +259,9 @@ jobs:
           done
           dfx canister call payment initAdmins "(vec { principal \"$DEPLOYER\" })" || true
           dfx canister call payment grantSubscription "(principal \"$DEPLOYER\", variant { Pro })"
+          # Grant integration test identity a Basic subscription so quote/job/bills tests pass.
+          # Principal is derived from the fixed seed (seed[0]=42) in setup.ts.
+          dfx canister call payment grantSubscription "(principal \"qxmov-duod5-ahrw6-wydp4-lppe4-ljtvj-7zvu3-qke5i-umwsv-vcb7g-mqe\", variant { Basic })"
 
           PAYMENT_ID=$(dfx canister id payment)
           PROPERTY_ID=$(dfx canister id property)

@@ -74,7 +74,24 @@ env | grep "CANISTER_ID_" | sort | while IFS='=' read -r k v; do
   echo "    $k = $v"
 done
 
-# ── 3. Run vitest with integration config ─────────────────────────────────────
+# ── 3. Grant test identity a subscription ────────────────────────────────────
+# Integration tests run as principal qxmov-... (fixed seed[0]=42 in setup.ts).
+# Quote, bills, and job canisters require an active subscription — grant Basic
+# so all tests can exercise their full flows.
+
+echo ""
+echo "▶ Granting test identity a Basic subscription…"
+if command -v dfx >/dev/null 2>&1 && [ -n "${CANISTER_ID_PAYMENT:-}" ]; then
+  dfx canister call payment grantSubscription \
+    "(principal \"qxmov-duod5-ahrw6-wydp4-lppe4-ljtvj-7zvu3-qke5i-umwsv-vcb7g-mqe\", variant { Basic })" \
+    2>/dev/null \
+    && echo "  ✓ Basic subscription granted to test identity" \
+    || echo "  ⚠  Could not grant subscription (tests may fail for tier-gated operations)"
+else
+  echo "  ⚠  dfx not found or payment canister not deployed — skipping grant"
+fi
+
+# ── 4. Run vitest with integration config ─────────────────────────────────────
 
 echo ""
 echo "▶ Running integration tests…"

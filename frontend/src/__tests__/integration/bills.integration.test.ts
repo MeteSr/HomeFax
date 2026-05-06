@@ -273,25 +273,17 @@ describe.skipIf(!deployed)("getUsageTrend — Motoko query round-trip", () => {
 
 // ─── Tier enforcement ─────────────────────────────────────────────────────────
 
-describe.skipIf(!deployed)("tier enforcement — Free tier monthly upload limit", () => {
-  it("second upload in the same month is rejected for a Free-tier caller", async () => {
-    // The test identity is Free tier by default (no grantTier called)
-    const pid = propId("tier-limit");
-
-    // First upload should succeed
-    await billService.addBill({
-      ...BASE_ARGS,
-      propertyId: pid,
-      billType:   "Electric",
-    });
-
-    // Second upload in the same month should be rejected
+describe.skipIf(!deployed)("tier enforcement — Basic tier has no monthly upload cap", () => {
+  // The test identity is granted Basic in CI (scripts/test-integration.sh).
+  // Basic tier: monthlyUploadLimit = 0 = unlimited.
+  // Free-tier blocking (any upload rejected) is covered by canister unit tests.
+  it("multiple uploads in the same month all succeed for a Basic-tier caller", async () => {
+    const pid = propId("tier-basic");
     await expect(
-      billService.addBill({
-        ...BASE_ARGS,
-        propertyId: pid,
-        billType:   "Gas",
-      })
-    ).rejects.toThrow(/Free plan|TierLimitReached|1 bill/i);
+      billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Electric" })
+    ).resolves.toBeDefined();
+    await expect(
+      billService.addBill({ ...BASE_ARGS, propertyId: pid, billType: "Gas" })
+    ).resolves.toBeDefined();
   });
 });
