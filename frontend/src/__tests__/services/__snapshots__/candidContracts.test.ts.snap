@@ -66,7 +66,8 @@ recordJobVerified(4) -> (1)
 register(1) -> (1)
 setJobCanisterId(1) -> (1)
 submitReview(4) -> (1)
-updateProfile(1) -> (1)"
+updateProfile(1) -> (1)
+verifyContractor(1) -> (1)"
 `;
 
 exports[`Candid contract snapshots — method arity > job 1`] = `
