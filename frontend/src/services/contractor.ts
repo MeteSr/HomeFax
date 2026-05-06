@@ -115,6 +115,11 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
     ),
+    verifyContractor: IDL.Func(
+      [IDL.Principal],
+      [IDL.Variant({ ok: ContractorProfile, err: Error })],
+      []
+    ),
   });
 };
 
@@ -311,6 +316,12 @@ function createContractorService() {
     const a = await getActor();
     const result = await a.getBySpecialty({ [specialty]: null }) as any[];
     return result.map(fromProfile);
+  },
+
+  async verifyContractor(principalText: string): Promise<ContractorProfile> {
+    const { Principal: P } = await import("@icp-sdk/core/principal");
+    const a = await getActor();
+    return unwrap(await a.verifyContractor(P.fromText(principalText)));
   },
 
   reset() {

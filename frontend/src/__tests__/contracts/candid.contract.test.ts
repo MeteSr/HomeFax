@@ -424,6 +424,7 @@ describe("contractor IDL factory", () => {
       "setJobCanisterId",
       "submitReview",
       "updateProfile",
+      "verifyContractor",
     ]);
   });
 
