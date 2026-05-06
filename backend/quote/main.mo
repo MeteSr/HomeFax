@@ -455,6 +455,15 @@ persistent actor Quote {
     )
   };
 
+  /// Fetch all quotes submitted by the caller (contractor bid history).
+  public query(msg) func getMyQuotes() : async [Quote] {
+    Iter.toArray(
+      Iter.filter(Map.values(quotes), func(q: Quote) : Bool {
+        q.contractor == msg.caller
+      })
+    )
+  };
+
   /// Submit a quote for an open request.
   /// Subject to 20-submissions-per-day limit per contractor.
   public shared(msg) func submitQuote(

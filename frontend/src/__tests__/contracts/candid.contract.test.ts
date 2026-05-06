@@ -362,6 +362,7 @@ describe("quote IDL factory", () => {
       "closeQuoteRequest",
       "createQuoteRequest",
       "getMyQuoteRequests",
+      "getMyQuotes",
       "getOpenRequests",
       "getOpenRequestsForMe",
       "getQuoteRequest",
@@ -379,6 +380,7 @@ describe("quote IDL factory", () => {
       .sort();
     expect(queries).toEqual([
       "getMyQuoteRequests",
+      "getMyQuotes",
       "getOpenRequests",
       "getQuoteRequest",
       "getQuotesForRequest",

@@ -194,6 +194,7 @@ cancelQuoteRequest(1) -> (1)
 closeQuoteRequest(1) -> (1)
 createQuoteRequest(5) -> (1)
 getMyQuoteRequests(0) -> (1) [query]
+getMyQuotes(0) -> (1) [query]
 getOpenRequests(0) -> (1) [query]
 getOpenRequestsForMe(0) -> (1)
 getQuoteRequest(1) -> (1) [query]

@@ -17,7 +17,7 @@
 
 import { test, expect } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
-import { injectContractors } from "./helpers/testData";
+import { injectContractors, injectQuotes } from "./helpers/testData";
 
 // ─── shared fixtures ──────────────────────────────────────────────────────────
 
@@ -143,5 +143,37 @@ test.describe("CD — /contractor-dashboard", () => {
     await injectContractors(page, [CONTRACTORS[0]]);
     await page.goto("/contractor-dashboard");
     await expect(page.getByText("Cool Air Services")).toBeVisible();
+  });
+
+  // CD.4 — bid history section appears and shows injected bid amount
+  test("shows bid history with amount when bids are injected", async ({ page }) => {
+    await injectQuotes(page, [
+      {
+        id:         "bid-1",
+        requestId:  "req-1",
+        contractor: "test-principal",
+        amount:     15000,
+        timeline:   5,
+        validUntil: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        status:     "pending",
+        createdAt:  Date.now(),
+      },
+    ]);
+    await injectContractors(page, [CONTRACTORS[0]]);
+    await page.goto("/contractor-dashboard");
+    const historyBtn = page.getByRole("button", { name: /bid history/i });
+    await expect(historyBtn).toBeVisible();
+    await historyBtn.click();
+    await expect(page.getByText("$150")).toBeVisible();
+  });
+
+  // CD.5 — service ZIP input on contractor profile form
+  test("ZIP codes can be added to the profile form", async ({ page }) => {
+    await injectContractors(page, [CONTRACTORS[0]]);
+    await page.goto("/contractor-profile");
+    const zipInput = page.getByPlaceholder(/78701/i);
+    await zipInput.fill("90210");
+    await zipInput.press("Enter");
+    await expect(page.getByText("90210")).toBeVisible();
   });
 });
