@@ -52,13 +52,13 @@ vi.mock("@/store/propertyStore", () => ({
 vi.mock("@/services/property", () => ({
   propertyService: {
     registerProperty: vi.fn().mockResolvedValue({
-      id: BigInt(1), address: "123 Main St", city: "Austin", state: "TX",
+      id: "1", address: "123 Main St", city: "Austin", state: "TX",
       zipCode: "78701", propertyType: "SingleFamily", yearBuilt: BigInt(1990),
       squareFeet: BigInt(2000), verificationLevel: "Unverified", tier: "Free",
       createdAt: BigInt(0), updatedAt: BigInt(0), owner: "test",
     }),
     submitVerification: vi.fn().mockResolvedValue({
-      id: BigInt(1), address: "123 Main St", city: "Austin", state: "TX",
+      id: "1", address: "123 Main St", city: "Austin", state: "TX",
       zipCode: "78701", propertyType: "SingleFamily", yearBuilt: BigInt(1990),
       squareFeet: BigInt(2000), verificationLevel: "PendingReview", tier: "Free",
       createdAt: BigInt(0), updatedAt: BigInt(0), owner: "test",
@@ -413,7 +413,7 @@ describe("OnboardingWizard — step 4 ownership verification", () => {
     clickNext();
     await waitFor(() => screen.getByText(/step 5 of 6/i));
     expect(propertyService.submitVerification).toHaveBeenCalledWith(
-      BigInt(1),
+      "1",
       expect.any(String), // docType
       expect.any(String), // sha-256 hash
     );

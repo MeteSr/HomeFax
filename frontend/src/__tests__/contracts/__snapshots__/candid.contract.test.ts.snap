@@ -981,7 +981,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
 {
   "cancelTransfer": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [],
     "rets": [
@@ -994,7 +994,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {role:variant {Viewer; Manager}; propertyId:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {role:variant {Viewer; Manager}; propertyId:text}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
   "claimTransfer": {
@@ -1003,12 +1003,12 @@ exports[`property IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
   "dismissNotifications": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [],
     "rets": [
@@ -1023,7 +1023,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
       "query",
     ],
     "rets": [
-      "opt record {token:text; expiresAt:int; displayName:text; createdAt:int; role:variant {Viewer; Manager}; invitedBy:principal; propertyId:nat}",
+      "opt record {token:text; expiresAt:int; displayName:text; createdAt:int; role:variant {Viewer; Manager}; invitedBy:principal; propertyId:text}",
     ],
   },
   "getMyManagedProperties": {
@@ -1032,7 +1032,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
       "query",
     ],
     "rets": [
-      "vec record {role:variant {Viewer; Manager}; property:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}}",
+      "vec record {role:variant {Viewer; Manager}; property:record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}}",
     ],
   },
   "getMyProperties": {
@@ -1041,12 +1041,12 @@ exports[`property IDL factory > full signature snapshot 1`] = `
       "query",
     ],
     "rets": [
-      "vec record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}",
+      "vec record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}",
     ],
   },
   "getOwnerNotifications": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [
       "query",
@@ -1057,24 +1057,24 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "getOwnershipHistory": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [
       "query",
     ],
     "rets": [
-      "vec record {to:principal; from:principal; propertyId:nat; timestamp:int; txHash:text}",
+      "vec record {to:principal; from:principal; propertyId:text; timestamp:int; txHash:text}",
     ],
   },
   "getPendingTransfer": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [
       "query",
     ],
     "rets": [
-      "opt record {token:text; expiresAt:int; from:principal; propertyId:nat; initiatedAt:int}",
+      "opt record {token:text; expiresAt:int; from:principal; propertyId:text; initiatedAt:int}",
     ],
   },
   "getPendingTransferByToken": {
@@ -1085,7 +1085,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
       "query",
     ],
     "rets": [
-      "opt record {token:text; expiresAt:int; from:principal; propertyId:nat; initiatedAt:int}",
+      "opt record {token:text; expiresAt:int; from:principal; propertyId:text; initiatedAt:int}",
     ],
   },
   "getPendingVerifications": {
@@ -1094,18 +1094,18 @@ exports[`property IDL factory > full signature snapshot 1`] = `
       "query",
     ],
     "rets": [
-      "vec record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}",
+      "vec record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}",
     ],
   },
   "getProperty": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [
       "query",
     ],
     "rets": [
-      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
   "getPropertyLimitForTier": {
@@ -1121,7 +1121,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "getPropertyManagers": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [
       "query",
@@ -1132,7 +1132,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "getPropertyOwner": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [
       "query",
@@ -1143,7 +1143,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "getVerificationLevel": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [
       "query",
@@ -1154,22 +1154,22 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "initiateTransfer": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {token:text; expiresAt:int; from:principal; propertyId:nat; initiatedAt:int}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {token:text; expiresAt:int; from:principal; propertyId:text; initiatedAt:int}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
   "inviteManager": {
     "args": [
-      "nat",
+      "text",
       "variant {Viewer; Manager}",
       "text",
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {token:text; expiresAt:int; displayName:text; createdAt:int; role:variant {Viewer; Manager}; invitedBy:principal; propertyId:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {token:text; expiresAt:int; displayName:text; createdAt:int; role:variant {Viewer; Manager}; invitedBy:principal; propertyId:text}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
   "isAdminPrincipal": {
@@ -1185,7 +1185,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "isAuthorized": {
     "args": [
-      "nat",
+      "text",
       "principal",
       "bool",
     ],
@@ -1198,7 +1198,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "recordManagerActivity": {
     "args": [
-      "nat",
+      "text",
       "text",
     ],
     "mode": [],
@@ -1212,12 +1212,12 @@ exports[`property IDL factory > full signature snapshot 1`] = `
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
   "removeManager": {
     "args": [
-      "nat",
+      "text",
       "principal",
     ],
     "mode": [],
@@ -1227,7 +1227,7 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "resignAsManager": {
     "args": [
-      "nat",
+      "text",
     ],
     "mode": [],
     "rets": [
@@ -1246,18 +1246,18 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "submitVerification": {
     "args": [
-      "nat",
+      "text",
       "text",
       "text",
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
   "updateManagerRole": {
     "args": [
-      "nat",
+      "text",
       "principal",
       "variant {Viewer; Manager}",
     ],
@@ -1268,13 +1268,13 @@ exports[`property IDL factory > full signature snapshot 1`] = `
   },
   "verifyProperty": {
     "args": [
-      "nat",
+      "text",
       "variant {Premium; Basic; PendingReview; Unverified}",
       "opt text",
     ],
     "mode": [],
     "rets": [
-      "variant {ok:record {id:nat; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
+      "variant {ok:record {id:text; propertyType:variant {SingleFamily; Townhouse; MultiFamily; Condo}; owner:principal; city:text; createdAt:int; tier:variant {Pro; Premium; Free; ContractorPro}; squareFeet:nat; isActive:bool; zipCode:text; updatedAt:int; state:text; address:text; verificationLevel:variant {Premium; Basic; PendingReview; Unverified}; yearBuilt:nat}; err:variant {Paused; InvalidInput:text; AddressConflict:int; NotFound; NotAuthorized; LimitReached; DuplicateAddress}}",
     ],
   },
 }

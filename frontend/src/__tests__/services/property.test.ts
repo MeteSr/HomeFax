@@ -45,7 +45,7 @@ vi.mock("@icp-sdk/core/agent", () => ({
 
 function makeRawPendingTransfer(overrides: Record<string, unknown> = {}) {
   return {
-    propertyId:  BigInt(1),
+    propertyId:  "1",
     from:        { toText: () => "from-principal" },
     token:       "1735689600000000000-1",
     initiatedAt: BigInt(1_735_689_600_000_000_000), // ~2025-01-01 in ns
@@ -56,7 +56,7 @@ function makeRawPendingTransfer(overrides: Record<string, unknown> = {}) {
 
 function makeRawTransferRecord(overrides: Record<string, unknown> = {}) {
   return {
-    propertyId: BigInt(1),
+    propertyId: "1",
     from:       { toText: () => "from-principal" },
     to:         { toText: () => "to-principal" },
     timestamp:  BigInt(1_735_689_600_000_000_000),
@@ -67,7 +67,7 @@ function makeRawTransferRecord(overrides: Record<string, unknown> = {}) {
 
 function makeRawProperty(overrides: Record<string, unknown> = {}) {
   return {
-    id:                BigInt(1),
+    id:                "1",
     owner:             { toText: () => "owner-principal" },
     address:           "123 Main St",
     city:              "Austin",
@@ -121,8 +121,8 @@ describe("propertyService", () => {
 
     it("maps multiple properties", async () => {
       mockActor.getMyProperties.mockResolvedValue([
-        makeRawProperty({ id: BigInt(1) }),
-        makeRawProperty({ id: BigInt(2), address: "456 Oak Ave" }),
+        makeRawProperty({ id: "1" }),
+        makeRawProperty({ id: "2", address: "456 Oak Ave" }),
       ]);
       const props = await propertyService.getMyProperties();
       expect(props).toHaveLength(2);
@@ -424,7 +424,7 @@ describe("propertyService", () => {
   describe("inviteManager", () => {
     function makeRawInvite(overrides: Record<string, unknown> = {}) {
       return {
-        propertyId:  BigInt(1),
+        propertyId:  "1",
         token:       "invite-token-xyz",
         role:        { Viewer: null },
         displayName: "John Smith",
@@ -466,10 +466,10 @@ describe("propertyService", () => {
   describe("claimManagerRole", () => {
     it("returns propertyId and role on success", async () => {
       mockActor.claimManagerRole.mockResolvedValue({
-        ok: { propertyId: BigInt(42), role: { Manager: null } },
+        ok: { propertyId: "42", role: { Manager: null } },
       });
       const result = await propertyService.claimManagerRole("invite-token-xyz");
-      expect(result.propertyId).toBe(BigInt(42));
+      expect(result.propertyId).toBe("42");
       expect(result.role).toBe("Manager");
     });
 
@@ -581,7 +581,7 @@ describe("propertyService", () => {
     it("maps invite when token exists", async () => {
       mockActor.getManagerInviteByToken.mockResolvedValue([
         {
-          propertyId:  BigInt(1),
+          propertyId:  "1",
           token:       "abc-token",
           role:        { Viewer: null },
           displayName: "Bob",

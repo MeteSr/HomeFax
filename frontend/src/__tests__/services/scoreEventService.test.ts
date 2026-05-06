@@ -94,8 +94,8 @@ describe("getRecentScoreEvents", () => {
   });
 
   it("emits Property event for Basic (5 pts) and Premium (10 pts)", () => {
-    const basic   = makeProperty({ id: "prop-1", verificationLevel: "Basic" });
-    const premium = makeProperty({ id: "prop-2", verificationLevel: "Premium", address: "456 Oak Ave" });
+    const basic   = makeProperty({ id: "1", verificationLevel: "Basic" });
+    const premium = makeProperty({ id: "2", verificationLevel: "Premium", address: "456 Oak Ave" });
     const events  = getRecentScoreEvents([], [basic, premium]);
     const basicEv = events.find((e) => e.id === `prop-1`);
     const premEv  = events.find((e) => e.id === `prop-2`);
@@ -105,8 +105,8 @@ describe("getRecentScoreEvents", () => {
   });
 
   it("does not emit Property events for Unverified or PendingReview", () => {
-    const p1 = makeProperty({ id: "prop-1", verificationLevel: "Unverified" });
-    const p2 = makeProperty({ id: "prop-2", verificationLevel: "PendingReview" });
+    const p1 = makeProperty({ id: "1", verificationLevel: "Unverified" });
+    const p2 = makeProperty({ id: "2", verificationLevel: "PendingReview" });
     const events = getRecentScoreEvents([], [p1, p2]);
     expect(events.filter((e) => e.category === "Property")).toHaveLength(0);
   });

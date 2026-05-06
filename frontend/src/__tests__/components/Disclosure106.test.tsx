@@ -18,7 +18,7 @@ import type { Property } from "@/services/property";
 
 function makeProperty(overrides: Partial<Property> = {}): Property {
   return {
-    id: BigInt(1),
+    id: "1",
     owner: "principal",
     address: "123 Main St",
     city: "Austin",
