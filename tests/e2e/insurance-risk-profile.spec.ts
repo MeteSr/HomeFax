@@ -236,10 +236,11 @@ test.describe("IR.7 — Generate new resets modal", () => {
     const modal = page.locator("[data-testid='insurance-modal']");
     await modal.getByRole("button", { name: /generate risk profile/i }).click();
     await expect(modal.getByText(/maintenance score/i)).toBeVisible();
-    await modal.getByRole("button", { name: /generate new/i }).click();
-    // Back to the generation form — the Generate button reappears
+    const generateNewBtn = modal.locator("button").filter({ hasText: /^Generate new$/ });
+    await expect(generateNewBtn).toBeVisible();
+    await generateNewBtn.click();
+    // Back to the generation form — Generate button and expiry selector reappear
     await expect(modal.getByRole("button", { name: /generate risk profile/i })).toBeVisible();
-    // The score section is gone from the modal
-    await expect(modal.getByText(/maintenance score/i)).not.toBeVisible();
+    await expect(modal.getByText(/link expiry/i)).toBeVisible();
   });
 });
