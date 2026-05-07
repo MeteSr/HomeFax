@@ -1,8 +1,9 @@
-import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent } from "../handlers";
+import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent } from "../handlers";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
+  HoneywellDevice,
 } from "../types";
 
 const RAW = "{}";
@@ -338,5 +339,147 @@ describe("handleMoenFloEvent", () => {
 
   it("returns null when alertType is absent", () => {
     expect(handleMoenFloEvent(moenEvent({ alertType: "" }), RAW)).toBeNull();
+  });
+});
+
+// ── handleHoneywellHomeEvent ──────────────────────────────────────────────────
+
+describe("handleHoneywellHomeEvent", () => {
+  function honeywellDevice(overrides: Partial<HoneywellDevice>): HoneywellDevice {
+    return {
+      deviceID:              "LCC-00D02D123456",
+      userDefinedDeviceName: "Living Room",
+      deviceType:            "Thermostat",
+      ...overrides,
+    };
+  }
+
+  describe("guard conditions", () => {
+    it("returns null when deviceID is absent", () => {
+      expect(handleHoneywellHomeEvent(honeywellDevice({ deviceID: "" }), RAW)).toBeNull();
+    });
+
+    it("returns null when no relevant fields are present", () => {
+      expect(handleHoneywellHomeEvent(honeywellDevice({}), RAW)).toBeNull();
+    });
+  });
+
+  describe("WLD — water leak detector", () => {
+    it("returns WaterLeak when waterPresent is true", () => {
+      const reading = handleHoneywellHomeEvent(
+        honeywellDevice({ deviceType: "Water Leak Detector", waterPresent: true }), RAW
+      );
+      expect(reading!.eventType).toEqual({ WaterLeak: null });
+      expect(reading!.externalDeviceId).toBe("LCC-00D02D123456");
+      expect(reading!.value).toBe(0);
+    });
+
+    it("returns null when waterPresent is false", () => {
+      expect(handleHoneywellHomeEvent(
+        honeywellDevice({ deviceType: "Water Leak Detector", waterPresent: false }), RAW
+      )).toBeNull();
+    });
+
+    it("WaterLeak takes priority over cold temperature on the same device", () => {
+      // waterPresent should be checked before temperature
+      const reading = handleHoneywellHomeEvent(
+        honeywellDevice({ waterPresent: true, indoorTemperature: 33 }), RAW
+      );
+      expect(reading!.eventType).toEqual({ WaterLeak: null });
+    });
+  });
+
+  describe("temperature", () => {
+    // 33 °F → (33-32)*5/9 = 0.6 °C ≤ 4 °C
+    it("returns LowTemperature when temperature converts to below the freeze threshold", () => {
+      const reading = handleHoneywellHomeEvent(honeywellDevice({ indoorTemperature: 33 }), RAW);
+      expect(reading!.eventType).toEqual({ LowTemperature: null });
+      expect(reading!.unit).toBe("°C");
+      expect(reading!.value).toBe(0.6);
+    });
+
+    // 39.2 °F → (39.2-32)*5/9 = 4.0 °C — exactly at boundary
+    it("returns LowTemperature at exactly 4 °C (inclusive boundary)", () => {
+      const reading = handleHoneywellHomeEvent(honeywellDevice({ indoorTemperature: 39.2 }), RAW);
+      expect(reading!.eventType).toEqual({ LowTemperature: null });
+    });
+
+    // 40 °F → (40-32)*5/9 = 4.4 °C — just above threshold
+    it("returns null when temperature converts to just above 4 °C", () => {
+      expect(handleHoneywellHomeEvent(honeywellDevice({ indoorTemperature: 40 }), RAW)).toBeNull();
+    });
+
+    // 96 °F → (96-32)*5/9 = 35.6 °C > 35 °C
+    it("returns HighTemperature when temperature converts to above 35 °C", () => {
+      const reading = handleHoneywellHomeEvent(honeywellDevice({ indoorTemperature: 96 }), RAW);
+      expect(reading!.eventType).toEqual({ HighTemperature: null });
+      expect(reading!.unit).toBe("°C");
+    });
+
+    // 95 °F → (95-32)*5/9 = 35.0 °C — exactly 35 is NOT triggered (exclusive upper boundary)
+    it("returns null when temperature converts to exactly 35 °C (exclusive upper boundary)", () => {
+      expect(handleHoneywellHomeEvent(honeywellDevice({ indoorTemperature: 95 }), RAW)).toBeNull();
+    });
+
+    // 72 °F → 22.2 °C — normal range
+    it("returns null when temperature is in the normal range", () => {
+      expect(handleHoneywellHomeEvent(honeywellDevice({ indoorTemperature: 72 }), RAW)).toBeNull();
+    });
+  });
+
+  describe("HVAC status", () => {
+    it("returns HvacAlert when equipmentStatus is Fault", () => {
+      const reading = handleHoneywellHomeEvent(
+        honeywellDevice({ indoorTemperature: 72, operationStatus: { equipmentStatus: "Fault" } }), RAW
+      );
+      expect(reading!.eventType).toEqual({ HvacAlert: null });
+      expect(reading!.value).toBe(0);
+    });
+
+    it("returns HvacAlert when equipmentStatus is Off", () => {
+      const reading = handleHoneywellHomeEvent(
+        honeywellDevice({ indoorTemperature: 72, operationStatus: { equipmentStatus: "Off" } }), RAW
+      );
+      expect(reading!.eventType).toEqual({ HvacAlert: null });
+    });
+
+    it("returns null when equipmentStatus is Heating (normal operation)", () => {
+      expect(handleHoneywellHomeEvent(
+        honeywellDevice({ indoorTemperature: 72, operationStatus: { equipmentStatus: "Heating" } }), RAW
+      )).toBeNull();
+    });
+
+    it("temperature check takes priority over HVAC status", () => {
+      // Low temperature should be returned before HVAC Fault is evaluated
+      const reading = handleHoneywellHomeEvent(
+        honeywellDevice({ indoorTemperature: 33, operationStatus: { equipmentStatus: "Fault" } }), RAW
+      );
+      expect(reading!.eventType).toEqual({ LowTemperature: null });
+    });
+  });
+
+  describe("humidity", () => {
+    it("returns HighHumidity when humidity exceeds 70 % with normal temperature", () => {
+      const reading = handleHoneywellHomeEvent(
+        honeywellDevice({ indoorTemperature: 72, indoorHumidity: 75 }), RAW
+      );
+      expect(reading!.eventType).toEqual({ HighHumidity: null });
+      expect(reading!.value).toBe(75);
+      expect(reading!.unit).toBe("%RH");
+    });
+
+    it("returns null when humidity is exactly 70 % (exclusive boundary)", () => {
+      expect(handleHoneywellHomeEvent(
+        honeywellDevice({ indoorTemperature: 72, indoorHumidity: 70 }), RAW
+      )).toBeNull();
+    });
+
+    it("temperature alert takes priority over high humidity", () => {
+      // High temperature should win even when humidity is also high
+      const reading = handleHoneywellHomeEvent(
+        honeywellDevice({ indoorTemperature: 96, indoorHumidity: 80 }), RAW
+      );
+      expect(reading!.eventType).toEqual({ HighTemperature: null });
+    });
   });
 });

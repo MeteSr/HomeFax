@@ -11,6 +11,7 @@ import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
+  HoneywellDevice,
 } from "./types";
 
 // ── Nest ─────────────────────────────────────────────────────────────────────
@@ -176,6 +177,76 @@ export function handleEcobeeEvent(
         rawPayload: raw,
       };
     }
+  }
+
+  return null;
+}
+
+// ── Honeywell Home / Resideo ─────────────────────────────────────────────────
+
+export function handleHoneywellHomeEvent(
+  device: HoneywellDevice,
+  raw: string
+): SensorReading | null {
+  if (!device.deviceID) return null;
+
+  const externalDeviceId = device.deviceID;
+
+  // WLD — highest priority; a water presence report is always actionable.
+  if (device.waterPresent === true) {
+    return {
+      externalDeviceId,
+      eventType: { WaterLeak: null } as SensorEventType,
+      value: 0,
+      unit: "",
+      rawPayload: raw,
+    };
+  }
+
+  // Temperature checks (Honeywell reports °F directly, not 10ths).
+  if (device.indoorTemperature !== undefined) {
+    const celsius = fahrenheitToCelsius(device.indoorTemperature);
+    if (celsius <= PIPE_FREEZE_THRESHOLD_C) {
+      return {
+        externalDeviceId,
+        eventType: { LowTemperature: null } as SensorEventType,
+        value: celsius,
+        unit: "°C",
+        rawPayload: raw,
+      };
+    }
+    if (celsius > HIGH_TEMP_THRESHOLD_C) {
+      return {
+        externalDeviceId,
+        eventType: { HighTemperature: null } as SensorEventType,
+        value: celsius,
+        unit: "°C",
+        rawPayload: raw,
+      };
+    }
+  }
+
+  // HVAC fault — "Fault" is a hard error; "Off" means the system is completely disabled.
+  const equipStatus = device.operationStatus?.equipmentStatus;
+  if (equipStatus === "Fault" || equipStatus === "Off") {
+    return {
+      externalDeviceId,
+      eventType: { HvacAlert: null } as SensorEventType,
+      value: 0,
+      unit: "",
+      rawPayload: raw,
+    };
+  }
+
+  // High humidity (only checked when temperature is in normal range).
+  if (device.indoorHumidity !== undefined && device.indoorHumidity > HIGH_HUMIDITY_THRESHOLD) {
+    return {
+      externalDeviceId,
+      eventType: { HighHumidity: null } as SensorEventType,
+      value: device.indoorHumidity,
+      unit: "%RH",
+      rawPayload: raw,
+    };
   }
 
   return null;

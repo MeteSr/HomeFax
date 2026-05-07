@@ -10,6 +10,7 @@ normalized sensor readings to the HomeGentic Sensor canister on ICP.
 | Nest (Google SDM) | Push webhook (Pub/Sub) | `NEST_WEBHOOK_SECRET` |
 | Ecobee | REST polling (3 min) | `ECOBEE_CLIENT_ID` + tokens |
 | Moen Flo | Push webhook | `MOEN_FLO_WEBHOOK_SECRET` |
+| Honeywell Home / Resideo | REST polling (3 min) | `HONEYWELL_CLIENT_ID` + tokens |
 
 ## Running
 
@@ -103,6 +104,84 @@ sensorService.registerDevice(propertyId, "411848373746", "Ecobee", "Living Room 
 ```
 
 The `externalDeviceId` passed here must match the identifier returned by the Ecobee API.
+
+---
+
+---
+
+## Honeywell Home / Resideo — OAuth 2.0 authorization walkthrough
+
+Honeywell uses the standard OAuth 2.0 Authorization Code flow. Run through
+steps 1–3 once to obtain your initial tokens. The gateway refreshes tokens
+automatically (access tokens expire in 10 minutes).
+
+### Prerequisites
+
+1. Sign up at [developer.honeywellhome.com](https://developer.honeywellhome.com)
+2. Create an app → note the **Consumer Key** (`HONEYWELL_CLIENT_ID`) and
+   **Consumer Secret** (`HONEYWELL_CLIENT_SECRET`)
+3. Set the callback URL to `http://localhost:3002/oauth/callback/honeywell`
+
+### Step 1 — start the gateway with credentials
+
+```
+HONEYWELL_CLIENT_ID=YOUR_KEY
+HONEYWELL_CLIENT_SECRET=YOUR_SECRET
+```
+
+Restart the gateway (`npm run dev`). The `/oauth/callback/honeywell` route is now active.
+
+### Step 2 — authorize in a browser
+
+Open this URL (replace `YOUR_KEY`):
+
+```
+https://api.honeywell.com/oauth2/authorize?response_type=code&client_id=YOUR_KEY&redirect_uri=http://localhost:3002/oauth/callback/honeywell
+```
+
+Log in with your Honeywell Home account and approve access. The browser redirects to the gateway callback, which exchanges the code for tokens and saves them to `.honeywell-tokens.json`.
+
+You should see: **"Honeywell Home connected!"**
+
+### Step 3 — restart to begin polling
+
+```bash
+npm run dev
+```
+
+The gateway loads the persisted tokens and starts polling every 3 minutes.
+
+### Finding your location and device IDs
+
+After completing the OAuth flow, inspect your locations and devices:
+
+```bash
+# List location IDs
+curl "https://api.honeywell.com/v2/locations?apikey=$HONEYWELL_CLIENT_ID" \
+  -H "Authorization: Bearer $HONEYWELL_ACCESS_TOKEN" | jq '.[].locationID'
+
+# List thermostats for a location (replace LOC_ID)
+curl "https://api.honeywell.com/v2/devices/thermostats?apikey=$HONEYWELL_CLIENT_ID&locationId=LOC_ID" \
+  -H "Authorization: Bearer $HONEYWELL_ACCESS_TOKEN" | jq '.[] | {deviceID, userDefinedDeviceName}'
+```
+
+Set `HONEYWELL_LOCATION_ID` to restrict polling to a single location, or leave it
+unset to poll all locations. The `deviceID` (e.g. `"LCC-00D02D123456"`) is used
+as `externalDeviceId` when registering in HomeGentic:
+
+```ts
+sensorService.registerDevice(propertyId, "LCC-00D02D123456", "HoneywellHome", "Living Room Thermostat")
+```
+
+### Events ingested
+
+| Condition | Canister event | Severity |
+|---|---|---|
+| `indoorTemperature` converts to ≤ 4 °C | `LowTemperature` | Critical |
+| `indoorTemperature` converts to > 35 °C | `HighTemperature` | Warning |
+| HVAC `equipmentStatus === "Fault"` or `"Off"` | `HvacAlert` | Warning |
+| `indoorHumidity > 70 %` | `HighHumidity` | Warning |
+| Water Leak Detector `isWaterPresent` | `WaterLeak` | Critical |
 
 ---
 
