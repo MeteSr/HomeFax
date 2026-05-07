@@ -75,7 +75,7 @@ REQ_OUT=$(dfx canister call $CANISTER createQuoteRequest "(
   variant { Plumbing },
   \"Need to fix leaky pipe under kitchen sink — active drip, causing cabinet damage.\",
   variant { Medium },
-  null
+  null, null, null, null, null
 )")
 echo "$REQ_OUT"
 REQ_ID=$(echo "$REQ_OUT" | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"')
@@ -140,7 +140,7 @@ REQ2_OUT=$(dfx canister call $CANISTER createQuoteRequest "(
   variant { HVAC },
   \"HVAC tune-up before summer — filter replacement and refrigerant check.\",
   variant { Low },
-  null
+  null, null, null, null, null
 )")
 echo "$REQ2_OUT"
 REQ2_ID=$(echo "$REQ2_OUT" | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"')
@@ -162,7 +162,7 @@ CANCEL_REQ_OUT=$(dfx canister call $CANISTER createQuoteRequest "(
   variant { Electrical },
   \"Electrical panel upgrade — cancel flow test.\",
   variant { Low },
-  null
+  null, null, null, null, null
 )")
 echo "$CANCEL_REQ_OUT"
 CANCEL_REQ_ID=$(echo "$CANCEL_REQ_OUT" | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"' || true)
@@ -232,7 +232,7 @@ RESULT=$(dfx canister call $CANISTER createQuoteRequest '(
   variant { Roofing },
   "Free tier should be rejected entirely.",
   variant { Low },
-  null
+  null, null, null, null, null
 )' --identity quote-free-test 2>&1)
 echo "$RESULT" | grep -qi "subscription\|InvalidInput" \
   && echo "  ↳ Free tier correctly blocked from creating quote requests — ✓" \
@@ -253,7 +253,7 @@ for i in 1 2 3; do
     variant { Roofing },
     \"Basic tier limit test request $i.\",
     variant { Low },
-    null
+    null, null, null, null, null
   )" --identity quote-basic-test)
   ID=$(echo "$OUT" | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"' || true)
   [ -n "$ID" ] && LIMIT_REQ_IDS+=("$ID") && echo "  → Request $i created ($ID)" \
@@ -267,7 +267,7 @@ dfx canister call $CANISTER createQuoteRequest '(
   variant { Roofing },
   "This 4th request should fail on Basic tier limit.",
   variant { Low },
-  null
+  null, null, null, null, null
 )' --identity quote-basic-test \
   && echo "  ↳ ❌ Expected LimitReached for Basic tier" \
   || echo "  ↳ Basic tier open-request limit correctly enforced (max 3) — ✓"
@@ -294,7 +294,7 @@ dfx canister call $CANISTER createQuoteRequest '(
   variant { Painting },
   "Test request for invalid bid.",
   variant { Low },
-  null
+  null, null, null, null, null
 )' > /tmp/qr_tmp.txt
 TMP_REQ=$(cat /tmp/qr_tmp.txt | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"')
 dfx canister call $CANISTER submitQuote "(
@@ -354,7 +354,7 @@ else
       variant { Roofing },
       \"open request $i for tier test\",
       variant { Low },
-      null
+      null, null, null, null, null
     )" --identity quote-tier-test 2>/dev/null || true
   done
   dfx canister call $CANISTER createQuoteRequest '(
@@ -362,7 +362,7 @@ else
     variant { Roofing },
     "4th open request — should fail on Free tier via payment canister",
     variant { Low },
-    null
+    null, null, null, null, null
   )' --identity quote-tier-test \
     && echo "  ↳ ❌ Expected LimitReached for Free tier via payment canister" \
     || echo "  ↳ Free tier open-request limit enforced via payment canister — ✓"
@@ -375,7 +375,7 @@ else
     variant { Roofing },
     "4th open request — Pro tier allows 10",
     variant { Low },
-    null
+    null, null, null, null, null
   )' --identity quote-tier-test \
     && echo "  ↳ Pro tier allows 4th open request via payment canister — ✓" \
     || echo "  ↳ ❌ Pro tier should allow 4th open request"
@@ -388,7 +388,7 @@ else
     variant { Plumbing },
     "Should fail — back to Free tier limit",
     variant { Low },
-    null
+    null, null, null, null, null
   )' --identity quote-tier-test \
     && echo "  ↳ ❌ Expected LimitReached after downgrade to Free" \
     || echo "  ↳ Downgraded to Free — open-request limit re-enforced via payment canister — ✓"
@@ -473,7 +473,7 @@ else
     variant { Plumbing },
     \"Quote request submitted by delegated manager.\",
     variant { Medium },
-    null
+    null, null, null, null, null
   )" --identity manager-test)
   echo "$MGR_QUOTE_OUT"
   if echo "$MGR_QUOTE_OUT" | grep -qi "ok"; then
@@ -490,7 +490,7 @@ else
     variant { Electrical },
     "Quote request on unrelated property — should be blocked.",
     variant { Low },
-    null
+    null, null, null, null, null
   )' --identity manager-test)
   echo "$UNAUTH_QUOTE"
   if echo "$UNAUTH_QUOTE" | grep -qiE "LimitReached|err"; then

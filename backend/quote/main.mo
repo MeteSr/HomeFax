@@ -71,8 +71,12 @@ persistent actor Quote {
     urgency: UrgencyLevel;
     status: RequestStatus;
     createdAt: Time.Time;
-    closeAt: ?Time.Time;   // bid-window close time; null = no sealed-bid window
-    zipCode: ?Text;        // property zip code; null = visible to all contractors
+    closeAt: ?Time.Time;      // bid-window close time; null = no sealed-bid window
+    zipCode: ?Text;           // property zip code; null = visible to all contractors
+    minTrustScore:    ?Nat;   // contractor trustScore must be >= this (null = no filter)
+    minJobsCompleted: ?Nat;   // contractor jobsCompleted must be >= this
+    minReviews:       ?Nat;   // contractor reviewCount must be >= this
+    maxBids:          ?Nat;   // cap on total bids accepted (null = unlimited)
   };
 
   /// A sealed bid submitted by a contractor before the bid window closes.
@@ -320,11 +324,15 @@ persistent actor Quote {
   /// Open-request quota is enforced against the admin-managed tier — callers
   /// cannot bypass limits by supplying a fake tier.
   public shared(msg) func createQuoteRequest(
-    propertyId: Text,
-    serviceType: ServiceType,
-    description: Text,
-    urgency: UrgencyLevel,
-    zipCode: ?Text
+    propertyId:       Text,
+    serviceType:      ServiceType,
+    description:      Text,
+    urgency:          UrgencyLevel,
+    zipCode:          ?Text,
+    minTrustScore:    ?Nat,
+    minJobsCompleted: ?Nat,
+    minReviews:       ?Nat,
+    maxBids:          ?Nat
   ) : async Result.Result<QuoteRequest, Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
@@ -383,10 +391,14 @@ persistent actor Quote {
       serviceType;
       description;
       urgency;
-      status    = #Open;
-      createdAt = Time.now();
-      closeAt   = null;
+      status           = #Open;
+      createdAt        = Time.now();
+      closeAt          = null;
       zipCode;
+      minTrustScore;
+      minJobsCompleted;
+      minReviews;
+      maxBids;
     };
     Map.add(requests, Text.compare, id, req);
     #ok(req)
@@ -416,25 +428,53 @@ persistent actor Quote {
     if (Text.size(contrCanisterId) == 0) return allOpen;
 
     let contrActor = actor(contrCanisterId) : actor {
-      getContractor : (Principal) -> async {
-        #ok: { serviceZips: [Text] };
-        #err: { #NotFound; #AlreadyExists; #Unauthorized; #Paused; #RateLimitExceeded; #InvalidInput: Text };
+      getContractorStats : (Principal) -> async ?{
+        trustScore:    Nat;
+        jobsCompleted: Nat;
+        reviewCount:   Nat;
+        isVerified:    Bool;
+        serviceZips:   [Text];
       };
     };
 
-    let serviceZips : [Text] = switch (await contrActor.getContractor(msg.caller)) {
-      case (#err(_)) { [] };
-      case (#ok(p))  { p.serviceZips };
-    };
+    let stats = await contrActor.getContractorStats(msg.caller);
 
-    if (serviceZips.size() == 0) return allOpen;
+    switch (stats) {
+      case null {
+        // Not registered as a contractor — no zip or quality filtering
+        allOpen
+      };
+      case (?s) {
+        Array.filter<QuoteRequest>(allOpen, func(r: QuoteRequest) : Bool {
+          // Zip filter: if contractor has no serviceZips, they see all zips
+          let zipOk : Bool = if (s.serviceZips.size() == 0) { true }
+          else {
+            switch (r.zipCode) {
+              case null    { true };
+              case (?zip)  { Option.isSome(Array.find<Text>(s.serviceZips, func(z) { z == zip })) };
+            }
+          };
+          if (not zipOk) return false;
 
-    Array.filter<QuoteRequest>(allOpen, func(r: QuoteRequest) : Bool {
-      switch (r.zipCode) {
-        case null      { true };  // no zip on request — visible to all
-        case (?zip)    { Option.isSome(Array.find<Text>(serviceZips, func(z) { z == zip })) };
-      }
-    })
+          // Verified contractors bypass all quality thresholds
+          if (s.isVerified) return true;
+
+          switch (r.minTrustScore) {
+            case null {};
+            case (?minT) { if (s.trustScore < minT) return false };
+          };
+          switch (r.minJobsCompleted) {
+            case null {};
+            case (?minJ) { if (s.jobsCompleted < minJ) return false };
+          };
+          switch (r.minReviews) {
+            case null {};
+            case (?minR) { if (s.reviewCount < minR) return false };
+          };
+          true
+        })
+      };
+    }
   };
 
   /// Fetch all open or quoted requests — unfiltered, visible to any contractor.
@@ -486,6 +526,24 @@ persistent actor Quote {
         if (timeline == 0)  return #err(#InvalidInput("Timeline must be greater than 0"));
         if (validUntil <= Time.now()) return #err(#InvalidInput("validUntil must be in the future"));
 
+        // Enforce maxBids cap
+        switch (req.maxBids) {
+          case null {};
+          case (?cap) {
+            var bidCount = 0;
+            for (q in Map.values(quotes)) {
+              if (q.requestId == requestId and q.status == #Pending) {
+                bidCount += 1;
+              };
+            };
+            if (bidCount >= cap) {
+              return #err(#InvalidInput(
+                "This request has reached its maximum number of bids (" # Nat.toText(cap) # ")"
+              ));
+            };
+          };
+        };
+
         if (not tryConsumeSubmissionSlot(msg.caller))
           return #err(#InvalidInput(
             "Daily quote submission limit reached (20/day per contractor). Resets at midnight UTC."
@@ -507,16 +565,20 @@ persistent actor Quote {
         // Advance request status to #Quoted if still #Open
         if (req.status == #Open) {
           let updated: QuoteRequest = {
-            id          = req.id;
-            propertyId  = req.propertyId;
-            homeowner   = req.homeowner;
-            serviceType = req.serviceType;
-            description = req.description;
-            urgency     = req.urgency;
-            status      = #Quoted;
-            createdAt   = req.createdAt;
-            closeAt     = req.closeAt;
-            zipCode     = req.zipCode;
+            id               = req.id;
+            propertyId       = req.propertyId;
+            homeowner        = req.homeowner;
+            serviceType      = req.serviceType;
+            description      = req.description;
+            urgency          = req.urgency;
+            status           = #Quoted;
+            createdAt        = req.createdAt;
+            closeAt          = req.closeAt;
+            zipCode          = req.zipCode;
+            minTrustScore    = req.minTrustScore;
+            minJobsCompleted = req.minJobsCompleted;
+            minReviews       = req.minReviews;
+            maxBids          = req.maxBids;
           };
           Map.add(requests, Text.compare, requestId, updated);
         };
@@ -591,16 +653,20 @@ persistent actor Quote {
 
             // Close the request
             let closed: QuoteRequest = {
-              id          = req.id;
-              propertyId  = req.propertyId;
-              homeowner   = req.homeowner;
-              serviceType = req.serviceType;
-              description = req.description;
-              urgency     = req.urgency;
-              status      = #Accepted;
-              createdAt   = req.createdAt;
-              closeAt     = req.closeAt;
-              zipCode     = req.zipCode;
+              id               = req.id;
+              propertyId       = req.propertyId;
+              homeowner        = req.homeowner;
+              serviceType      = req.serviceType;
+              description      = req.description;
+              urgency          = req.urgency;
+              status           = #Accepted;
+              createdAt        = req.createdAt;
+              closeAt          = req.closeAt;
+              zipCode          = req.zipCode;
+              minTrustScore    = req.minTrustScore;
+              minJobsCompleted = req.minJobsCompleted;
+              minReviews       = req.minReviews;
+              maxBids          = req.maxBids;
             };
             Map.add(requests, Text.compare, req.id, closed);
 
@@ -626,16 +692,20 @@ persistent actor Quote {
           return #err(#InvalidInput("Request is already cancelled"));
 
         let updated: QuoteRequest = {
-          id          = req.id;
-          propertyId  = req.propertyId;
-          homeowner   = req.homeowner;
-          serviceType = req.serviceType;
-          description = req.description;
-          urgency     = req.urgency;
-          status      = #Closed;
-          createdAt   = req.createdAt;
-          closeAt     = req.closeAt;
-          zipCode     = req.zipCode;
+          id               = req.id;
+          propertyId       = req.propertyId;
+          homeowner        = req.homeowner;
+          serviceType      = req.serviceType;
+          description      = req.description;
+          urgency          = req.urgency;
+          status           = #Closed;
+          createdAt        = req.createdAt;
+          closeAt          = req.closeAt;
+          zipCode          = req.zipCode;
+          minTrustScore    = req.minTrustScore;
+          minJobsCompleted = req.minJobsCompleted;
+          minReviews       = req.minReviews;
+          maxBids          = req.maxBids;
         };
         Map.add(requests, Text.compare, requestId, updated);
         #ok(updated)
@@ -663,16 +733,20 @@ persistent actor Quote {
         };
 
         let updated: QuoteRequest = {
-          id          = req.id;
-          propertyId  = req.propertyId;
-          homeowner   = req.homeowner;
-          serviceType = req.serviceType;
-          description = req.description;
-          urgency     = req.urgency;
-          status      = #Cancelled;
-          createdAt   = req.createdAt;
-          closeAt     = req.closeAt;
-          zipCode     = req.zipCode;
+          id               = req.id;
+          propertyId       = req.propertyId;
+          homeowner        = req.homeowner;
+          serviceType      = req.serviceType;
+          description      = req.description;
+          urgency          = req.urgency;
+          status           = #Cancelled;
+          createdAt        = req.createdAt;
+          closeAt          = req.closeAt;
+          zipCode          = req.zipCode;
+          minTrustScore    = req.minTrustScore;
+          minJobsCompleted = req.minJobsCompleted;
+          minReviews       = req.minReviews;
+          maxBids          = req.maxBids;
         };
         Map.add(requests, Text.compare, requestId, updated);
 
@@ -693,12 +767,16 @@ persistent actor Quote {
   /// Create a quote request with a bid-window close time.
   /// After closeAt the canister will accept reveal requests but reject new bids.
   public shared(msg) func createSealedBidRequest(
-    propertyId: Text,
-    serviceType: ServiceType,
-    description: Text,
-    urgency: UrgencyLevel,
-    closeAtNs: Time.Time,
-    zipCode: ?Text
+    propertyId:       Text,
+    serviceType:      ServiceType,
+    description:      Text,
+    urgency:          UrgencyLevel,
+    closeAtNs:        Time.Time,
+    zipCode:          ?Text,
+    minTrustScore:    ?Nat,
+    minJobsCompleted: ?Nat,
+    minReviews:       ?Nat,
+    maxBids:          ?Nat
   ) : async Result.Result<QuoteRequest, Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
@@ -733,14 +811,18 @@ persistent actor Quote {
     let req: QuoteRequest = {
       id;
       propertyId;
-      homeowner   = msg.caller;
+      homeowner        = msg.caller;
       serviceType;
       description;
       urgency;
-      status    = #Open;
-      createdAt = Time.now();
-      closeAt   = ?closeAtNs;
+      status           = #Open;
+      createdAt        = Time.now();
+      closeAt          = ?closeAtNs;
       zipCode;
+      minTrustScore;
+      minJobsCompleted;
+      minReviews;
+      maxBids;
     };
     Map.add(requests, Text.compare, id, req);
     #ok(req)

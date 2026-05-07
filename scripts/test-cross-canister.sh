@@ -131,7 +131,8 @@ for I in 1 2 3; do
     \"PROP_XCANISTER_1\",
     variant { Roofing },
     \"Cross-canister tier test request $I.\",
-    variant { Low }
+    variant { Low },
+    null, null, null, null, null
   )" > /dev/null && echo "    → Request $I created"
 done
 
@@ -141,7 +142,8 @@ dfx canister call quote createQuoteRequest '(
   "PROP_XCANISTER_1",
   variant { Roofing },
   "4th request should fail on Free tier.",
-  variant { Low }
+  variant { Low },
+  null, null, null, null, null
 )' && echo "  ⚠️  Created — limit not enforced" \
   || echo "  ✓ Free tier limit (3 open requests) enforced"
 
@@ -155,7 +157,8 @@ dfx canister call quote createQuoteRequest '(
   "PROP_XCANISTER_1",
   variant { Roofing },
   "4th request should succeed on Pro tier.",
-  variant { Low }
+  variant { Low },
+  null, null, null, null, null
 )' && echo "  ✓ Pro tier allows more than 3 open requests" \
   || echo "  ⚠️  Failed — tier upgrade may not have taken effect"
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, Star, Zap, Clock, ChevronDown, ChevronUp, X, Send, UserCog, PenLine, CheckCircle2 } from "lucide-react";
+import { Briefcase, Star, Zap, Clock, ChevronDown, ChevronUp, X, Send, UserCog, PenLine, CheckCircle2, Lock } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
@@ -164,17 +164,40 @@ function SubmitQuoteModal({ request, onSubmit, onClose }: SubmitModalProps) {
 
 // ─── Lead Card ───────────────────────────────────────────────────────────────
 
+interface ContractorStats {
+  trustScore:    number;
+  jobsCompleted: number;
+  reviewCount:   number;
+  isVerified:    boolean;
+}
+
 interface LeadCardProps {
   request: QuoteRequest;
   alreadyQuoted: boolean;
   isNew: boolean;
   onQuote: (r: QuoteRequest) => void;
+  contractorStats: ContractorStats | null;
 }
 
-function LeadCard({ request, alreadyQuoted, isNew, onQuote }: LeadCardProps) {
+/** Returns an array of human-readable reasons why this request is locked, or [] if open. */
+function getLockReasons(req: QuoteRequest, stats: ContractorStats | null): string[] {
+  if (!stats || stats.isVerified) return [];
+  const reasons: string[] = [];
+  if (req.minTrustScore    != null && stats.trustScore    < req.minTrustScore)
+    reasons.push(`${Math.round(req.minTrustScore / 20)}★ minimum rating (your score: ${Math.round(stats.trustScore / 20)}★)`);
+  if (req.minJobsCompleted != null && stats.jobsCompleted < req.minJobsCompleted)
+    reasons.push(`${req.minJobsCompleted} completed jobs required (you have ${stats.jobsCompleted})`);
+  if (req.minReviews       != null && stats.reviewCount   < req.minReviews)
+    reasons.push(`${req.minReviews} reviews required (you have ${stats.reviewCount})`);
+  return reasons;
+}
+
+function LeadCard({ request, alreadyQuoted, isNew, onQuote, contractorStats }: LeadCardProps) {
   const [expanded, setExpanded] = useState(false);
   const color = URGENCY_COLOR[request.urgency] ?? UI.inkLight;
   const bg    = URGENCY_BG[request.urgency]    ?? UI.paper;
+  const lockReasons = getLockReasons(request, contractorStats);
+  const isLocked = lockReasons.length > 0;
 
   return (
     <div style={{
@@ -227,7 +250,22 @@ function LeadCard({ request, alreadyQuoted, isNew, onQuote }: LeadCardProps) {
           <div style={{ display: "flex", gap: "1.5rem", fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, marginBottom: "1rem" }}>
             <span>Request ID: <strong style={{ color: UI.ink }}>{request.id}</strong></span>
           </div>
-          {alreadyQuoted ? (
+
+          {isLocked ? (
+            <div style={{ border: `1px solid ${UI.rule}`, padding: "0.875rem 1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.5rem" }}>
+                <Lock size={11} /> Requirements not met
+              </div>
+              {lockReasons.map((r) => (
+                <p key={r} style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, lineHeight: 1.6 }}>
+                  · {r}
+                </p>
+              ))}
+              <p style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: UI.inkLight, marginTop: "0.5rem", lineHeight: 1.5 }}>
+                Complete more verified jobs to unlock this request.
+              </p>
+            </div>
+          ) : alreadyQuoted ? (
             <div style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.5rem 1rem", border: `1px solid ${UI.sage}`, fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", color: UI.sage }}>
               Quote submitted
             </div>
@@ -253,6 +291,7 @@ export default function ContractorDashboardPage() {
   const navigate        = useNavigate();
   const { lastLoginAt } = useAuthStore();
   const [profile,       setProfile]       = useState<ContractorProfile | null>(null);
+  const [reviewCount,   setReviewCount]   = useState(0);
   const [openRequests,  setOpenRequests]  = useState<QuoteRequest[]>([]);
   const [pendingJobs,   setPendingJobs]   = useState<Job[]>([]);
   const [myBids,        setMyBids]        = useState<Quote[]>([]);
@@ -267,7 +306,17 @@ export default function ContractorDashboardPage() {
 
   useEffect(() => {
     Promise.all([
-      contractorService.getMyProfile().then(setProfile).catch((e) => console.error("[ContractorDashboard] profile load failed:", e)),
+      contractorService.getMyProfile()
+        .then((p) => {
+          setProfile(p);
+          // Fetch review count once we have the profile's principal ID
+          if (p?.id) {
+            contractorService.getReviewsForContractor(p.id)
+              .then((rs) => setReviewCount(rs.length))
+              .catch(() => {});
+          }
+        })
+        .catch((e) => console.error("[ContractorDashboard] profile load failed:", e)),
       quoteService.getOpenRequests().then(setOpenRequests).catch((e) => console.error("[ContractorDashboard] open requests load failed:", e)),
       jobService.getJobsPendingMySignature().then(setPendingJobs).catch((e) => console.error("[ContractorDashboard] pending jobs load failed:", e)),
       quoteService.getMyBids().then(setMyBids).catch((e) => console.error("[ContractorDashboard] my bids load failed:", e)),
@@ -311,6 +360,10 @@ export default function ContractorDashboardPage() {
       setSigningJobId(null);
     }
   };
+
+  const contractorStats: ContractorStats | null = profile
+    ? { trustScore: profile.trustScore, jobsCompleted: profile.jobsCompleted, reviewCount, isVerified: profile.isVerified }
+    : null;
 
   const newLeadsCount   = openRequests.filter((r) => !submittedIds.has(r.id)).length;
   const newSinceLogin   = countNew(openRequests, lastLoginAt);
@@ -516,6 +569,7 @@ export default function ContractorDashboardPage() {
                     alreadyQuoted={submittedIds.has(req.id)}
                     isNew={isNewSince(req.createdAt, lastLoginAt)}
                     onQuote={setModalRequest}
+                    contractorStats={contractorStats}
                   />
                 ))}
               </div>

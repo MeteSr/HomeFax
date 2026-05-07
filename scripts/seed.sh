@@ -281,7 +281,8 @@ if [ -n "$PROP1_ID" ]; then
     \"$PROP1_ID\",
     variant { Electrical },
     \"Breaker keeps tripping on kitchen circuit. GFCIs installed but issue persists. 200A panel, house built 1998.\",
-    variant { Medium }
+    variant { Medium },
+    null, null, null, null, null
   )" 2>/dev/null || echo "")
   echo "$REQ_OUT"
   REQ1_ID=$(echo "$REQ_OUT" | grep -oP '"REQ_[^"]+"' | head -1 | tr -d '"' || true)
@@ -292,7 +293,8 @@ if [ -n "$PROP1_ID" ]; then
       \"$PROP2_ID\",
       variant { Plumbing },
       \"Slow drain in master bathroom. Snaking has not resolved it — may need hydro-jetting.\",
-      variant { Low }
+      variant { Low },
+      null, null, null, null, null
     )" 2>/dev/null || echo "  ↳ Quote request 2 skipped (ok)"
   fi
 

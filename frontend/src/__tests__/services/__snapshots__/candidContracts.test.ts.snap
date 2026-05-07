@@ -193,7 +193,7 @@ exports[`Candid contract snapshots — method arity > quote 1`] = `
 "acceptQuote(1) -> (1)
 cancelQuoteRequest(1) -> (1)
 closeQuoteRequest(1) -> (1)
-createQuoteRequest(5) -> (1)
+createQuoteRequest(9) -> (1)
 getMyQuoteRequests(0) -> (1) [query]
 getMyQuotes(0) -> (1) [query]
 getOpenRequests(0) -> (1) [query]

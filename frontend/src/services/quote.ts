@@ -20,16 +20,20 @@ export const idlFactory = ({ IDL }: any) => {
     Pending: IDL.Null, Accepted: IDL.Null, Rejected: IDL.Null, Expired: IDL.Null,
   });
   const QuoteRequest = IDL.Record({
-    id:          IDL.Text,
-    propertyId:  IDL.Text,
-    homeowner:   IDL.Principal,
-    serviceType: ServiceType,
-    description: IDL.Text,
-    urgency:     UrgencyLevel,
-    status:      RequestStatus,
-    zipCode:     IDL.Opt(IDL.Text),
-    createdAt:   IDL.Int,
-    closeAt:     IDL.Opt(IDL.Int),
+    id:               IDL.Text,
+    propertyId:       IDL.Text,
+    homeowner:        IDL.Principal,
+    serviceType:      ServiceType,
+    description:      IDL.Text,
+    urgency:          UrgencyLevel,
+    status:           RequestStatus,
+    zipCode:          IDL.Opt(IDL.Text),
+    createdAt:        IDL.Int,
+    closeAt:          IDL.Opt(IDL.Int),
+    minTrustScore:    IDL.Opt(IDL.Nat),
+    minJobsCompleted: IDL.Opt(IDL.Nat),
+    minReviews:       IDL.Opt(IDL.Nat),
+    maxBids:          IDL.Opt(IDL.Nat),
   });
   const Quote = IDL.Record({
     id:         IDL.Text,
@@ -48,7 +52,8 @@ export const idlFactory = ({ IDL }: any) => {
   });
   return IDL.Service({
     createQuoteRequest: IDL.Func(
-      [IDL.Text, ServiceType, IDL.Text, UrgencyLevel, IDL.Opt(IDL.Text)],
+      [IDL.Text, ServiceType, IDL.Text, UrgencyLevel, IDL.Opt(IDL.Text),
+       IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat), IDL.Opt(IDL.Nat)],
       [IDL.Variant({ ok: QuoteRequest, err: Error })],
       []
     ),
@@ -101,16 +106,20 @@ export type QuoteRequestStatus = "open" | "quoted" | "accepted" | "closed" | "ca
 export type QuoteStatus = "pending" | "accepted" | "rejected" | "expired";
 
 export interface QuoteRequest {
-  id:          string;
-  propertyId:  string;
-  homeowner:   string;   // principal text
-  serviceType: string;
-  urgency:     Urgency;
-  description: string;
-  status:      QuoteRequestStatus;
-  zipCode?:    string;   // 5-digit zip for location filtering; undefined = visible to all
-  createdAt:   number;   // ms
-  closeAt?:    number;   // ms — bid window close time; undefined = no sealed-bid window
+  id:               string;
+  propertyId:       string;
+  homeowner:        string;   // principal text
+  serviceType:      string;
+  urgency:          Urgency;
+  description:      string;
+  status:           QuoteRequestStatus;
+  zipCode?:         string;   // 5-digit zip for location filtering; undefined = visible to all
+  createdAt:        number;   // ms
+  closeAt?:         number;   // ms — bid window close time; undefined = no sealed-bid window
+  minTrustScore?:   number;   // contractor trustScore must be >= this
+  minJobsCompleted?: number;  // contractor jobsCompleted must be >= this
+  minReviews?:      number;   // contractor reviewCount must be >= this
+  maxBids?:         number;   // max bids cap (3 or 5)
 }
 
 export interface Quote {
@@ -144,21 +153,33 @@ function mapVariant<T>(map: Record<string, T>, raw: any, field: string): T {
 }
 
 function fromRequest(raw: any): QuoteRequest {
-  const closeAtArr = raw.closeAt as bigint[] | undefined;
-  const zipArr = raw.zipCode as string[] | undefined;
+  const closeAtArr          = raw.closeAt          as bigint[]  | undefined;
+  const zipArr              = raw.zipCode           as string[]  | undefined;
+  const minTrustScoreArr    = raw.minTrustScore     as bigint[]  | undefined;
+  const minJobsCompletedArr = raw.minJobsCompleted  as bigint[]  | undefined;
+  const minReviewsArr       = raw.minReviews        as bigint[]  | undefined;
+  const maxBidsArr          = raw.maxBids           as bigint[]  | undefined;
   return {
-    id:          raw.id,
-    propertyId:  raw.propertyId,
-    homeowner:   raw.homeowner.toText(),
-    serviceType: Object.keys(raw.serviceType)[0],
-    urgency:     mapVariant(URGENCY_MAP, raw.urgency, "urgency"),
-    description: raw.description,
-    status:      mapVariant(REQUEST_STATUS_MAP, raw.status, "requestStatus"),
-    zipCode:     zipArr && zipArr.length > 0 ? zipArr[0] : undefined,
-    createdAt:   Number(raw.createdAt) / 1_000_000,
-    closeAt:     closeAtArr && closeAtArr.length > 0
-                   ? Number(closeAtArr[0]) / 1_000_000
-                   : undefined,
+    id:               raw.id,
+    propertyId:       raw.propertyId,
+    homeowner:        raw.homeowner.toText(),
+    serviceType:      Object.keys(raw.serviceType)[0],
+    urgency:          mapVariant(URGENCY_MAP, raw.urgency, "urgency"),
+    description:      raw.description,
+    status:           mapVariant(REQUEST_STATUS_MAP, raw.status, "requestStatus"),
+    zipCode:          zipArr && zipArr.length > 0 ? zipArr[0] : undefined,
+    createdAt:        Number(raw.createdAt) / 1_000_000,
+    closeAt:          closeAtArr && closeAtArr.length > 0
+                        ? Number(closeAtArr[0]) / 1_000_000
+                        : undefined,
+    minTrustScore:    minTrustScoreArr && minTrustScoreArr.length > 0
+                        ? Number(minTrustScoreArr[0]) : undefined,
+    minJobsCompleted: minJobsCompletedArr && minJobsCompletedArr.length > 0
+                        ? Number(minJobsCompletedArr[0]) : undefined,
+    minReviews:       minReviewsArr && minReviewsArr.length > 0
+                        ? Number(minReviewsArr[0]) : undefined,
+    maxBids:          maxBidsArr && maxBidsArr.length > 0
+                        ? Number(maxBidsArr[0]) : undefined,
   };
 }
 
@@ -225,7 +246,11 @@ function createQuoteService() {
       { [req.serviceType]: null },
       req.description,
       { [urgencyKey]: null },
-      req.zipCode ? [req.zipCode] : []
+      req.zipCode        ? [req.zipCode]                             : [],
+      req.minTrustScore    != null ? [BigInt(req.minTrustScore)]    : [],
+      req.minJobsCompleted != null ? [BigInt(req.minJobsCompleted)] : [],
+      req.minReviews       != null ? [BigInt(req.minReviews)]       : [],
+      req.maxBids          != null ? [BigInt(req.maxBids)]          : []
     );
     return unwrapRequest(result);
   },

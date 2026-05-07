@@ -207,6 +207,49 @@ test.describe("QF — accept bid flow", () => {
   });
 });
 
+// ── QF.5e — Contractor requirements section ───────────────────────────────────
+
+test.describe("QF — contractor requirements section", () => {
+  test.beforeEach(async ({ page }) => {
+    await injectTestAuth(page);
+    await injectSubscription(page);
+    await injectTestProperties(page);
+  });
+
+  // QF.5e-1 — section toggle is present, collapsed by default
+  test("'Contractor requirements' toggle is visible and section is collapsed by default", async ({ page }) => {
+    await page.goto("/quotes/new");
+    await expect(page.getByText(/contractor requirements/i)).toBeVisible();
+    // Min rating select is hidden while collapsed
+    await expect(page.getByLabel(/min rating/i)).not.toBeVisible();
+  });
+
+  // QF.5e-2 — toggling expands all four inputs
+  test("expanding the section reveals all four requirement inputs", async ({ page }) => {
+    await page.goto("/quotes/new");
+    await page.getByText(/contractor requirements/i).click();
+    await expect(page.getByLabel(/min rating/i)).toBeVisible();
+    await expect(page.getByLabel(/min completed jobs/i)).toBeVisible();
+    await expect(page.getByLabel(/min reviews/i)).toBeVisible();
+    await expect(page.getByLabel(/max bids/i)).toBeVisible();
+  });
+
+  // QF.5e-3 — verified contractor helper text is shown when expanded
+  test("helper text about verified contractors appears when expanded", async ({ page }) => {
+    await page.goto("/quotes/new");
+    await page.getByText(/contractor requirements/i).click();
+    await expect(page.getByText(/verified contractors are always eligible/i)).toBeVisible();
+  });
+
+  // QF.5e-4 — filter warning shown when any requirement is set
+  test("shows filter-active warning when a requirement is selected", async ({ page }) => {
+    await page.goto("/quotes/new");
+    await page.getByText(/contractor requirements/i).click();
+    await page.getByLabel(/max bids/i).selectOption("3");
+    await expect(page.getByText(/filters active/i)).toBeVisible();
+  });
+});
+
 // ── QF.6 & QF.7 — Tier limit enforcement ─────────────────────────────────────
 
 test.describe("QF — open-quote tier limit", () => {
