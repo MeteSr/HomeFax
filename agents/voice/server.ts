@@ -980,7 +980,7 @@ app.post("/api/errors", (req: Request, res: Response): void => {
   }) + "\n");
 
   // Update in-memory aggregation for canister flush
-  const fingerprint = `${message.slice(0, 100)}::${(stack ?? "").split("\n").find((line) => line.includes("/src/"))?.trim().slice(0, 100) ?? ""}`;
+  const fingerprint = `${message.slice(0, 100)}::${(stack ?? "").split("\n").find((line: string) => line.includes("/src/"))?.trim().slice(0, 100) ?? ""}`;
   const now = Date.now();
   const existing = errorAggMap.get(fingerprint);
   if (existing) {
