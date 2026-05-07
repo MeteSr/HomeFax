@@ -19,6 +19,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:integration": "bash scripts/test-integration.sh",
     "test:canister": "bash scripts/test-backend.sh",
+    "test:smoke": "playwright test --config playwright.smoke.config.ts",
     "test:upgrade": "cd tests/upgrade && npm test",
     "setup:pocketic": "bash scripts/setup-pocketic.sh",
     "frontend": "cd frontend && npm run dev",
