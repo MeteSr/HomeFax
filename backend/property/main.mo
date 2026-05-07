@@ -30,6 +30,7 @@
 
 import Array     "mo:core/Array";
 import Blob      "mo:core/Blob";
+import Debug     "mo:core/Debug";
 import Map       "mo:core/Map";
 import Int       "mo:core/Int";
 import Iter      "mo:core/Iter";
@@ -124,6 +125,7 @@ persistent actor Property {
     pendingReviewProperties : Nat;
     unverifiedProperties    : Nat;
     isPaused                : Bool;
+    errorsByMethod          : [(Text, Nat)];
   };
 
   public type BulkImportError = {
@@ -298,6 +300,13 @@ persistent actor Property {
   private var fixtureCounter : Nat                  = 0;
 
   // ─── Stable State ────────────────────────────────────────────────────────
+
+  private let errsByMethod : Map.Map<Text, Nat> = Map.empty();
+
+  private func countError(method : Text) {
+    let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
+    Map.add(errsByMethod, Text.compare, method, prev + 1);
+  };
 
   private let properties      = Map.empty<Text, Property>();
   /// Address key → property ID.
@@ -559,11 +568,15 @@ persistent actor Property {
               // Same owner re-registering the same address — allow (idempotent).
             } else if (isVerified(existing.verificationLevel)) {
               // Address is already owned and verified — hard reject.
+              Debug.print("property.registerProperty: duplicate address: " # key # " owner=" # Principal.toText(existing.owner));
+              countError("registerProperty");
               return #err(#DuplicateAddress);
             } else {
               // Address is claimed but not yet verified.
               let windowEnd : Int = existing.createdAt + SEVEN_DAYS_NS;
               if (Time.now() < windowEnd) {
+                Debug.print("property.registerProperty: address conflict: " # key # " expires=" # Int.toText(windowEnd));
+                countError("registerProperty");
                 return #err(#AddressConflict(windowEnd));
               };
               // Window expired without verification — allow the new registrant.
@@ -714,7 +727,11 @@ persistent actor Property {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
 
     switch (Map.get(properties, Text.compare, id)) {
-      case null { #err(#NotFound) };
+      case null {
+        Debug.print("property.verifyProperty: not found: " # id);
+        countError("verifyProperty");
+        #err(#NotFound)
+      };
       case (?existing) {
         let now  = Time.now();
         let updated : Property = {
@@ -1357,6 +1374,7 @@ persistent actor Property {
       pendingReviewProperties = pendingReview;
       unverifiedProperties    = unverified;
       isPaused;
+      errorsByMethod          = Iter.toArray(Map.entries(errsByMethod));
     }
   };
 

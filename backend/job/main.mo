@@ -8,6 +8,7 @@
 
 import Array     "mo:core/Array";
 import Blob      "mo:core/Blob";
+import Debug     "mo:core/Debug";
 import Map       "mo:core/Map";
 import Iter      "mo:core/Iter";
 import Nat       "mo:core/Nat";
@@ -80,6 +81,7 @@ persistent actor Job {
     verifiedJobs: Nat;
     diyJobs: Nat;
     isPaused: Bool;
+    errorsByMethod : [(Text, Nat)];
   };
 
   /// Short-lived token that lets a contractor sign a job without having an account.
@@ -131,6 +133,12 @@ persistent actor Job {
 
   private let jobs        = Map.empty<Text, Job>();
   private let inviteTokens = Map.empty<Text, InviteToken>();
+  private let errsByMethod : Map.Map<Text, Nat> = Map.empty();
+
+  private func countError(method : Text) {
+    let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
+    Map.add(errsByMethod, Text.compare, method, prev + 1);
+  };
 
   // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -439,7 +447,11 @@ persistent actor Job {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
 
     switch (Map.get(jobs, Text.compare, jobId)) {
-      case null { #err(#NotFound) };
+      case null {
+        Debug.print("job.verifyJob: not found: " # jobId);
+        countError("verifyJob");
+        #err(#NotFound)
+      };
       case (?existing) {
         if (existing.verified) return #err(#AlreadyVerified);
 
@@ -452,7 +464,11 @@ persistent actor Job {
           await checkPropertyAuth(existing.propertyId, existing.homeowner, caller, true)
         };
 
-        if (not isHomeowner and not isContractor) return #err(#Unauthorized);
+        if (not isHomeowner and not isContractor) {
+          Debug.print("job.verifyJob: unauthorized: " # Principal.toText(caller) # " job=" # jobId);
+          countError("verifyJob");
+          return #err(#Unauthorized);
+        };
 
         let newHomeownerSigned  = existing.homeownerSigned  or isHomeowner;
         let newContractorSigned = existing.contractorSigned or isContractor;
@@ -1098,6 +1114,7 @@ persistent actor Job {
       verifiedJobs  = verified;
       diyJobs       = diy;
       isPaused;
+      errorsByMethod = Iter.toArray(Map.entries(errsByMethod));
     }
   };
 }

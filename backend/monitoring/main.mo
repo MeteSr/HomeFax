@@ -673,6 +673,19 @@ persistent actor Monitoring {
     results
   };
 
+  /// Return all unresolved Critical and Warning cycle alerts.
+  /// Unauthenticated — intended for the cycle-watchdog cron and /admin/cycle-status
+  /// endpoint to query without managing a principal.
+  public query func getCriticalCycleAlerts() : async [Alert] {
+    var out : [Alert] = [];
+    for (a in Map.values(alerts)) {
+      if (not a.resolved and a.category == #Cycles) {
+        out := Array.concat(out, [a]);
+      };
+    };
+    out
+  };
+
   // ─── Admin Functions ──────────────────────────────────────────────────────────
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.

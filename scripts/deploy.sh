@@ -754,6 +754,41 @@ else
   echo "  (skipped — local network)"
 fi
 
+# ── Freezing threshold (cycle safety net) ────────────────────────────────────
+# Sets freezing_threshold to 30 days on every canister so the IC will reject
+# new calls before cycles hit zero, giving a 30-day window for the cycle-watchdog
+# to top up before an outage. Uses dfx (icp-cli update-settings not yet available,
+# see #174). Skipped silently when dfx is absent.
+echo ""
+echo "============================================"
+echo "  Freezing Threshold (30-day safety net)"
+echo "============================================"
+FREEZE_CANISTERS=(
+  auth property job contractor quote payment photo
+  report maintenance market sensor monitoring listing
+  agent recurring bills ai_proxy
+)
+FREEZE_THRESHOLD=2592000  # 30 days in seconds
+if command -v dfx >/dev/null 2>&1; then
+  FREEZE_NETWORK="${ENV}"
+  [ "$ENV" = "local" ] && FREEZE_NETWORK="local"
+  FREEZE_OK=0
+  FREEZE_SKIP=0
+  for CANISTER in "${FREEZE_CANISTERS[@]}"; do
+    if dfx canister update-settings "$CANISTER" \
+         --freezing-threshold "$FREEZE_THRESHOLD" \
+         --network "$FREEZE_NETWORK" >/dev/null 2>&1; then
+      FREEZE_OK=$(( FREEZE_OK + 1 ))
+    else
+      FREEZE_SKIP=$(( FREEZE_SKIP + 1 ))
+    fi
+  done
+  echo "  ✓ Freezing threshold set (${FREEZE_OK} ok, ${FREEZE_SKIP} skipped — not yet deployed)"
+else
+  echo "  ⚠️  dfx not found — set freezing_threshold manually:"
+  echo "     dfx canister update-settings <name> --freezing-threshold 2592000 --network ic"
+fi
+
 # Internet Identity is managed by icp-cli via ii: true in icp.yaml.
 # icp network start -d deploys it automatically. Local URL: http://id.ai.localhost:8000
 
