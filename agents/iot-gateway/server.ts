@@ -27,6 +27,7 @@ import crypto from "crypto";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import { logger } from "./logger";
 import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent, handleLGThinQEvent } from "./handlers";
 import { recordSensorEvent, getGatewayPrincipal } from "./icp";
 import { startEcobeePoller } from "./pollers/ecobee";
@@ -87,6 +88,19 @@ const lgThinQLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// CORS — only the configured frontend origin may call browser-initiated routes.
+// Webhook routes are called server-to-server (no browser origin header) so they
+// pass through regardless; the HMAC checks on those routes are the real auth gate.
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // server-to-server or same-origin
+    if (origin === FRONTEND_ORIGIN) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: false,
+}));
+
 // Store raw body for HMAC verification before JSON parsing
 app.use(
   express.json({
@@ -96,7 +110,6 @@ app.use(
     },
   })
 );
-app.use(cors());
 
 // ── Signature helpers ────────────────────────────────────────────────────────
 
@@ -137,10 +150,15 @@ function verifySmartThingsHmac(req: Request, secret: string | undefined): boolea
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
 }
 
-// ── Logging middleware ────────────────────────────────────────────────────────
+// ── Request ID + structured logging middleware ────────────────────────────────
 
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+type RequestWithId = Request & { reqId: string };
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const reqId = (req.headers["x-request-id"] as string) || crypto.randomUUID();
+  res.setHeader("x-request-id", reqId);
+  (req as RequestWithId).reqId = reqId;
+  logger.info("gateway", `${req.method} ${req.path}`, { reqId });
   next();
 });
 
@@ -152,8 +170,9 @@ app.post("/webhooks/nest", nestLimiter, async (req: Request, res: Response): Pro
     req.headers["authorization"]?.replace("Bearer ", "")) as string | undefined;
   const expected = process.env.NEST_WEBHOOK_SECRET;
 
+  const reqId = (req as RequestWithId).reqId;
   if (expected && token !== expected) {
-    console.warn("[nest] rejected — invalid token");
+    logger.warn("nest", "rejected — invalid token", { reqId });
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -167,14 +186,15 @@ app.post("/webhooks/nest", nestLimiter, async (req: Request, res: Response): Pro
     return;
   }
 
-  console.log(`[nest] event: ${Object.keys(reading.eventType)[0]} device=${reading.externalDeviceId}`);
+  const eventName = Object.keys(reading.eventType)[0];
+  logger.info("nest", `event: ${eventName}`, { reqId, device: reading.externalDeviceId });
   const result = await recordSensorEvent(reading);
 
   if (result.success) {
-    console.log(`[nest] recorded eventId=${result.eventId}${result.jobId ? ` jobId=${result.jobId}` : ""}`);
+    logger.info("nest", "recorded", { reqId, eventId: result.eventId, jobId: result.jobId });
     res.json({ status: "recorded", eventId: result.eventId, jobId: result.jobId });
   } else {
-    console.error(`[nest] canister error: ${result.error}`);
+    logger.error("nest", "canister error", { reqId, error: result.error });
     res.status(500).json({ status: "error", error: result.error });
   }
 });
@@ -183,8 +203,9 @@ app.post("/webhooks/nest", nestLimiter, async (req: Request, res: Response): Pro
 // Ecobee sends alert notifications here.
 // Validates X-Ecobee-Signature HMAC-SHA256.
 app.post("/webhooks/ecobee", ecobeeLimiter, async (req: Request, res: Response): Promise<void> => {
+  const reqId = (req as RequestWithId).reqId;
   if (!verifyHmac(req, "x-ecobee-signature", process.env.ECOBEE_WEBHOOK_SECRET)) {
-    console.warn("[ecobee] rejected — invalid signature");
+    logger.warn("ecobee", "rejected — invalid signature", { reqId });
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -198,14 +219,15 @@ app.post("/webhooks/ecobee", ecobeeLimiter, async (req: Request, res: Response):
     return;
   }
 
-  console.log(`[ecobee] event: ${Object.keys(reading.eventType)[0]} device=${reading.externalDeviceId}`);
+  const eventName = Object.keys(reading.eventType)[0];
+  logger.info("ecobee", `event: ${eventName}`, { reqId, device: reading.externalDeviceId });
   const result = await recordSensorEvent(reading);
 
   if (result.success) {
-    console.log(`[ecobee] recorded eventId=${result.eventId}${result.jobId ? ` jobId=${result.jobId}` : ""}`);
+    logger.info("ecobee", "recorded", { reqId, eventId: result.eventId, jobId: result.jobId });
     res.json({ status: "recorded", eventId: result.eventId, jobId: result.jobId });
   } else {
-    console.error(`[ecobee] canister error: ${result.error}`);
+    logger.error("ecobee", "canister error", { reqId, error: result.error });
     res.status(500).json({ status: "error", error: result.error });
   }
 });
@@ -214,8 +236,9 @@ app.post("/webhooks/ecobee", ecobeeLimiter, async (req: Request, res: Response):
 // Moen Flo cloud sends leak/flow alerts here.
 // Validates X-Moen-Signature HMAC-SHA256.
 app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Response): Promise<void> => {
+  const reqId = (req as RequestWithId).reqId;
   if (!verifyHmac(req, "x-moen-signature", process.env.MOEN_FLO_WEBHOOK_SECRET)) {
-    console.warn("[moen-flo] rejected — invalid signature");
+    logger.warn("moen-flo", "rejected — invalid signature", { reqId });
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -229,14 +252,15 @@ app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Respons
     return;
   }
 
-  console.log(`[moen-flo] event: ${Object.keys(reading.eventType)[0]} device=${reading.externalDeviceId}`);
+  const eventName = Object.keys(reading.eventType)[0];
+  logger.info("moen-flo", `event: ${eventName}`, { reqId, device: reading.externalDeviceId });
   const result = await recordSensorEvent(reading);
 
   if (result.success) {
-    console.log(`[moen-flo] recorded eventId=${result.eventId}${result.jobId ? ` jobId=${result.jobId}` : ""}`);
+    logger.info("moen-flo", "recorded", { reqId, eventId: result.eventId, jobId: result.jobId });
     res.json({ status: "recorded", eventId: result.eventId, jobId: result.jobId });
   } else {
-    console.error(`[moen-flo] canister error: ${result.error}`);
+    logger.error("moen-flo", "canister error", { reqId, error: result.error });
     res.status(500).json({ status: "error", error: result.error });
   }
 });
@@ -246,6 +270,7 @@ app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Respons
 // CONFIRMATION and PING are handled without signature verification; all other
 // lifecycles require X-ST-HMAC-SHA256 to match SMARTTHINGS_WEBHOOK_SECRET.
 app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: Response): Promise<void> => {
+  const reqId = (req as RequestWithId).reqId;
   const body = req.body as SmartThingsWebhookBody;
 
   // CONFIRMATION — SmartThings verifies endpoint ownership on first registration.
@@ -258,9 +283,9 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
     }
     try {
       await fetch(confirmationUrl);
-      console.log("[smartthings] webhook confirmed:", confirmationUrl);
+      logger.info("smartthings", "webhook confirmed", { reqId, confirmationUrl });
     } catch (err) {
-      console.error("[smartthings] confirmation fetch failed:", err);
+      logger.error("smartthings", "confirmation fetch failed", { reqId, error: String(err) });
     }
     res.json({});
     return;
@@ -274,7 +299,7 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
 
   // All other lifecycles must have a valid signature.
   if (!verifySmartThingsHmac(req, process.env.SMARTTHINGS_WEBHOOK_SECRET)) {
-    console.warn("[smartthings] rejected — invalid signature");
+    logger.warn("smartthings", "rejected — invalid signature", { reqId });
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -296,14 +321,14 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
     if (!reading) continue;
 
     const eventName = Object.keys(reading.eventType)[0];
-    console.log(`[smartthings] ${eventName} device=${reading.externalDeviceId}`);
+    logger.info("smartthings", `event: ${eventName}`, { reqId, device: reading.externalDeviceId });
 
     const result = await recordSensorEvent(reading);
     if (result.success) {
-      console.log(`[smartthings] recorded eventId=${result.eventId}${result.jobId ? ` jobId=${result.jobId}` : ""}`);
+      logger.info("smartthings", "recorded", { reqId, eventId: result.eventId, jobId: result.jobId });
       processed++;
     } else {
-      console.error(`[smartthings] canister error: ${result.error}`);
+      logger.error("smartthings", "canister error", { reqId, error: result.error });
     }
   }
 
@@ -314,6 +339,7 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
 // One-time setup endpoint: exchanges the OAuth authorization code for tokens
 // and persists them so the polling loop can start on the next gateway restart.
 app.get("/oauth/callback/honeywell", async (req: Request, res: Response): Promise<void> => {
+  const reqId = (req as RequestWithId).reqId;
   const code = req.query.code as string | undefined;
   if (!code) {
     res.status(400).send("Missing code parameter");
@@ -363,13 +389,13 @@ app.get("/oauth/callback/honeywell", async (req: Request, res: Response): Promis
       expiresAt:    Date.now() + data.expires_in * 1000,
     });
 
-    console.log("[honeywell] OAuth callback — tokens saved. Restart gateway to start polling.");
+    logger.info("honeywell", "OAuth callback — tokens saved; restart gateway to begin polling", { reqId });
     res.send(
       "<h2>Honeywell Home connected!</h2>" +
       "<p>Tokens saved. Restart the IoT gateway to begin polling.</p>"
     );
   } catch (err) {
-    console.error("[honeywell] OAuth callback error:", err);
+    logger.error("honeywell", "OAuth callback error", { reqId, error: String(err) });
     res.status(500).send("Internal error during token exchange");
   }
 });
@@ -378,11 +404,12 @@ app.get("/oauth/callback/honeywell", async (req: Request, res: Response): Promis
 // LG ThinQ PCC (Proactive Customer Care) fault and maintenance callbacks.
 // Validates the Authorization Bearer header against LG_THINQ_PAT.
 app.post("/webhooks/lgthinq", lgThinQLimiter, async (req: Request, res: Response): Promise<void> => {
+  const reqId = (req as RequestWithId).reqId;
   const bearerToken = (req.headers["authorization"] ?? "").replace(/^Bearer\s+/i, "");
   const expectedPat = process.env.LG_THINQ_PAT;
 
   if (expectedPat && bearerToken !== expectedPat) {
-    console.warn("[lgthinq] rejected — invalid PAT");
+    logger.warn("lgthinq", "rejected — invalid PAT", { reqId });
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -396,14 +423,15 @@ app.post("/webhooks/lgthinq", lgThinQLimiter, async (req: Request, res: Response
     return;
   }
 
-  console.log(`[lgthinq] event: ${Object.keys(reading.eventType)[0]} device=${reading.externalDeviceId}`);
+  const eventName = Object.keys(reading.eventType)[0];
+  logger.info("lgthinq", `event: ${eventName}`, { reqId, device: reading.externalDeviceId });
   const result = await recordSensorEvent(reading);
 
   if (result.success) {
-    console.log(`[lgthinq] recorded eventId=${result.eventId}${result.jobId ? ` jobId=${result.jobId}` : ""}`);
+    logger.info("lgthinq", "recorded", { reqId, eventId: result.eventId, jobId: result.jobId });
     res.json({ status: "recorded", eventId: result.eventId, jobId: result.jobId });
   } else {
-    console.error(`[lgthinq] canister error: ${result.error}`);
+    logger.error("lgthinq", "canister error", { reqId, error: result.error });
     res.status(500).json({ status: "error", error: result.error });
   }
 });
@@ -411,6 +439,7 @@ app.post("/webhooks/lgthinq", lgThinQLimiter, async (req: Request, res: Response
 // ── GET /oauth/callback/ge ────────────────────────────────────────────────────
 // One-time setup: exchanges the GE SmartHQ OAuth authorization code for tokens.
 app.get("/oauth/callback/ge", async (req: Request, res: Response): Promise<void> => {
+  const reqId = (req as RequestWithId).reqId;
   const code = req.query.code as string | undefined;
   if (!code) {
     res.status(400).send("Missing code parameter");
@@ -460,13 +489,13 @@ app.get("/oauth/callback/ge", async (req: Request, res: Response): Promise<void>
       expiresAt:    Date.now() + data.expires_in * 1000,
     });
 
-    console.log("[ge] OAuth callback — tokens saved. Restart gateway to start polling.");
+    logger.info("ge", "OAuth callback — tokens saved; restart gateway to begin polling", { reqId });
     res.send(
       "<h2>GE SmartHQ connected!</h2>" +
       "<p>Tokens saved. Restart the IoT gateway to begin polling.</p>"
     );
   } catch (err) {
-    console.error("[ge] OAuth callback error:", err);
+    logger.error("ge", "OAuth callback error", { reqId, error: String(err) });
     res.status(500).send("Internal error during token exchange");
   }
 });
@@ -499,7 +528,7 @@ app.get("/oauth/device/start/:platform", (req: Request, res: Response): void => 
     }
     res.redirect(url);
   } catch (err) {
-    console.error(`[oauth-device] start error (${platform}):`, err);
+    logger.error("oauth-device", `start error (${platform})`, { error: String(err) });
     res.status(500).send("OAuth start error");
   }
 });
@@ -553,21 +582,25 @@ app.get("/oauth/device/callback/:platform", async (req: Request, res: Response):
         return;
     }
 
-    const payload = JSON.stringify({ type: "oauth-devices", devices });
+    const payload     = JSON.stringify({ type: "oauth-devices", devices });
+    // Use a specific target origin so only the configured frontend can receive
+    // the device list — prevents interception by other pages in the opener.
+    const targetOrigin = JSON.stringify(FRONTEND_ORIGIN);
     res.send(`<!doctype html>
 <html><body>
 <script>
-  window.opener && window.opener.postMessage(${payload}, "*");
+  window.opener && window.opener.postMessage(${payload}, ${targetOrigin});
   window.close();
 </script>
 <p>Connected! This window will close automatically.</p>
 </body></html>`);
   } catch (err: any) {
-    const errMsg = JSON.stringify({ type: "oauth-devices", error: String(err?.message ?? err) });
+    const errMsg      = JSON.stringify({ type: "oauth-devices", error: String((err as any)?.message ?? err) });
+    const targetOrigin = JSON.stringify(FRONTEND_ORIGIN);
     res.send(`<!doctype html>
 <html><body>
 <script>
-  window.opener && window.opener.postMessage(${errMsg}, "*");
+  window.opener && window.opener.postMessage(${errMsg}, ${targetOrigin});
   window.close();
 </script>
 <p>Authorization failed. This window will close automatically.</p>
@@ -581,6 +614,7 @@ app.get("/oauth/device/callback/:platform", async (req: Request, res: Response):
 // gateway process env, and returns the user's device list.
 // Credentials are NEVER forwarded to the ICP canister.
 app.post("/accounts/:platform", async (req: Request, res: Response): Promise<void> => {
+  const reqId = (req as RequestWithId).reqId;
   const { platform } = req.params;
   const { email, password } = req.body as { email?: string; password?: string };
 
@@ -595,7 +629,7 @@ app.post("/accounts/:platform", async (req: Request, res: Response): Promise<voi
     if (platform === "rheem") {
       const loginResp = await fetch("https://rheem.clearblade.com/api/v/4/user/auth/login", {
         method:  "POST",
-        headers: { "Content-Type": "application/json", "ClearBlade-SystemKey": "e2e699cb0bb0bbb88fc8858cb5a401" },
+        headers: { "Content-Type": "application/json", "ClearBlade-SystemKey": process.env.RHEEM_SYSTEM_KEY ?? "" },
         body:    JSON.stringify({ email, password }),
         signal:  AbortSignal.timeout(10_000),
       });
@@ -604,7 +638,7 @@ app.post("/accounts/:platform", async (req: Request, res: Response): Promise<voi
       process.env.RHEEM_ACCESS_TOKEN = loginData.user_token;
 
       const devResp = await fetch("https://rheem.clearblade.com/api/v/4/data/devices_data", {
-        headers: { "ClearBlade-UserToken": loginData.user_token, "ClearBlade-SystemKey": "e2e699cb0bb0bbb88fc8858cb5a401" },
+        headers: { "ClearBlade-UserToken": loginData.user_token, "ClearBlade-SystemKey": process.env.RHEEM_SYSTEM_KEY ?? "" },
         signal:  AbortSignal.timeout(10_000),
       });
       if (devResp.ok) {
@@ -651,7 +685,7 @@ app.post("/accounts/:platform", async (req: Request, res: Response): Promise<voi
 
     res.json({ devices });
   } catch (err: any) {
-    console.error(`[accounts] ${platform} error:`, err);
+    logger.error("accounts", `${platform} error`, { reqId, error: err?.message ?? String(err) });
     res.status(502).json({ error: err?.message ?? "Login failed" });
   }
 });
@@ -676,9 +710,10 @@ app.get("/health", (_req: Request, res: Response) => {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(port, () => {
-  console.log(`HomeGentic IoT Gateway → http://localhost:${port}`);
-  console.log(`Gateway principal: ${getGatewayPrincipal()}`);
-  console.log(`Sensor canister:   ${process.env.SENSOR_CANISTER_ID ?? "(set SENSOR_CANISTER_ID)"}`);
+  logger.info("gateway", `listening on :${port}`, {
+    gatewayPrincipal: getGatewayPrincipal(),
+    sensorCanisterId: process.env.SENSOR_CANISTER_ID ?? "(set SENSOR_CANISTER_ID)",
+  });
 
   // Start polling integrations — each is a no-op when env vars are absent.
   if (process.env.ECOBEE_CLIENT_ID) {
