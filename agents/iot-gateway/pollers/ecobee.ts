@@ -31,13 +31,13 @@ const TOKENS_FILE = process.env.ECOBEE_TOKENS_FILE
 
 // ── Token state ───────────────────────────────────────────────────────────────
 
-interface TokenState {
+export interface TokenState {
   accessToken:  string;
   refreshToken: string;
   expiresAt:    number; // ms epoch
 }
 
-function loadTokenState(): TokenState | null {
+export function loadTokenState(): TokenState | null {
   // Persisted file takes precedence — survives restarts with refreshed tokens.
   if (fs.existsSync(TOKENS_FILE)) {
     try {
@@ -61,7 +61,7 @@ function loadTokenState(): TokenState | null {
   };
 }
 
-function persistTokenState(state: TokenState): void {
+export function persistTokenState(state: TokenState): void {
   try {
     fs.writeFileSync(TOKENS_FILE, JSON.stringify(state, null, 2), "utf8");
   } catch (err) {
@@ -72,7 +72,7 @@ function persistTokenState(state: TokenState): void {
   process.env.ECOBEE_REFRESH_TOKEN = state.refreshToken;
 }
 
-async function refreshTokens(state: TokenState): Promise<TokenState> {
+export async function refreshTokens(state: TokenState): Promise<TokenState> {
   const clientId = process.env.ECOBEE_CLIENT_ID;
   if (!clientId) throw new Error("[ecobee-poller] ECOBEE_CLIENT_ID is required for token refresh");
 
@@ -104,7 +104,7 @@ async function refreshTokens(state: TokenState): Promise<TokenState> {
   return newState;
 }
 
-async function ensureFreshToken(state: TokenState): Promise<TokenState> {
+export async function ensureFreshToken(state: TokenState): Promise<TokenState> {
   if (Date.now() < state.expiresAt - REFRESH_BUFFER_MS) return state;
   return refreshTokens(state);
 }
@@ -125,7 +125,7 @@ interface EcobeeApiResponse {
 
 // ── Poll ──────────────────────────────────────────────────────────────────────
 
-async function pollOnce(state: TokenState): Promise<void> {
+export async function pollOnce(state: TokenState): Promise<void> {
   const selectionMatch = process.env.ECOBEE_THERMOSTAT_ID ?? "";
   const selectionType  = selectionMatch ? "thermostats" : "registered";
 
