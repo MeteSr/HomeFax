@@ -1,4 +1,4 @@
-.PHONY: help start stop deploy deploy-one test clean status upgrade frontend init-data dev dev-full dev-local check-motoko
+.PHONY: help start stop deploy deploy-one test clean status upgrade frontend init-data dev dev-full dev-local check-motoko logs
 
 NETWORK ?= local
 
@@ -17,6 +17,7 @@ help:
 	@echo "  make dev-full            Full local stack: network + canisters + frontend + voice + dashboard"
 	@echo "  make clean               Clean local ICP state"
 	@echo "  make check-motoko        Compile-check all Motoko canisters (no network needed)"
+	@echo "  make logs                Tail recent logs for all 7 key canisters"
 
 dev:
 	icp network start -d && bash scripts/deploy.sh && cd frontend && npm run dev
@@ -63,3 +64,8 @@ init-data:
 check-motoko:
 	@grep "^  - name:" icp.yaml | awk '{print $$3}' | grep -v "^frontend$$" | \
 	  while read -r c; do echo "=== $$c ==="; icp build "$$c" || exit 1; done
+
+logs:
+	@for c in sensor auth job property ai_proxy payment monitoring; do \
+	  echo "=== $$c ==="; icp canister logs $$c -e $(NETWORK) 2>&1 | tail -50; \
+	done

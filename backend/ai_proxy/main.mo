@@ -16,7 +16,9 @@
 
 import Array     "mo:core/Array";
 import Blob      "mo:core/Blob";
+import Debug     "mo:core/Debug";
 import Int       "mo:core/Int";
+import Iter      "mo:core/Iter";
 import Map       "mo:core/Map";
 import Nat       "mo:core/Nat";
 import Nat64     "mo:core/Nat64";
@@ -53,6 +55,7 @@ persistent actor AiProxy {
     permitsFetched : Nat;
     adminCount     : Nat;
     isPaused       : Bool;
+    errorsByMethod : [(Text, Nat)];
   };
 
   // ── IC Management Canister (HTTP outcalls) ─────────────────────────────────
@@ -85,6 +88,13 @@ persistent actor AiProxy {
   private var resendFromAddress      : Text = "HomeGentic <noreply@homegentic.app>";
 
   // Email usage counters
+  private let errsByMethod : Map.Map<Text, Nat> = Map.empty();
+
+  private func countError(method : Text) {
+    let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
+    Map.add(errsByMethod, Text.compare, method, prev + 1);
+  };
+
   private var emailSentDaily         : Nat = 0;
   private var emailSentMonthly       : Nat = 0;
   private var emailSentTotal         : Nat = 0;
@@ -534,18 +544,26 @@ persistent actor AiProxy {
         });
 
         switch (Text.decodeUtf8(response.body)) {
-          case null      { #err(#HttpError("Failed to decode ArcGIS response")) };
+          case null      {
+            Debug.print("ai_proxy.importPermits: failed to decode ArcGIS response");
+            countError("importPermits");
+            #err(#HttpError("Failed to decode ArcGIS response"))
+          };
           case (?rawJson) {
             permitsFetched += 1;
             #ok("{\"source\":\"arcgis\",\"data\":" # rawJson # "," # jsonStr("address", address) # "}")
           };
         }
       } catch (e) {
+        Debug.print("ai_proxy.importPermits: ArcGIS request failed: " # address);
+        countError("importPermits");
         #err(#HttpError("ArcGIS request failed"))
       }
     } else {
       // OpenPermit.org
       if (Text.size(openPermitApiKey) == 0) {
+        Debug.print("ai_proxy.importPermits: OpenPermit key not configured");
+        countError("importPermits");
         return #err(#KeyNotConfigured);
       };
       let params =
@@ -567,13 +585,19 @@ persistent actor AiProxy {
         });
 
         switch (Text.decodeUtf8(response.body)) {
-          case null      { #err(#HttpError("Failed to decode OpenPermit response")) };
+          case null      {
+            Debug.print("ai_proxy.importPermits: failed to decode OpenPermit response");
+            countError("importPermits");
+            #err(#HttpError("Failed to decode OpenPermit response"))
+          };
           case (?rawJson) {
             permitsFetched += 1;
             #ok("{\"source\":\"openpermit\",\"data\":" # rawJson # "," # jsonStr("address", address) # "}")
           };
         }
       } catch (_e) {
+        Debug.print("ai_proxy.importPermits: OpenPermit request failed: " # address);
+        countError("importPermits");
         #err(#HttpError("OpenPermit request failed"))
       }
     }
@@ -639,12 +663,21 @@ persistent actor AiProxy {
           case null    { #ok("{\"id\":\"sent\"}") };
         }
       } else {
+        countError("sendEmail");
         switch (Text.decodeUtf8(response.body)) {
-          case (?errBody) { #err(#HttpError("Resend error " # Nat.toText(response.status) # ": " # errBody)) };
-          case null       { #err(#HttpError("Resend error " # Nat.toText(response.status))) };
+          case (?errBody) {
+            Debug.print("ai_proxy.sendEmail: Resend error " # Nat.toText(response.status) # ": " # errBody);
+            #err(#HttpError("Resend error " # Nat.toText(response.status) # ": " # errBody))
+          };
+          case null {
+            Debug.print("ai_proxy.sendEmail: Resend error " # Nat.toText(response.status));
+            #err(#HttpError("Resend error " # Nat.toText(response.status)))
+          };
         }
       }
     } catch (_e) {
+      Debug.print("ai_proxy.sendEmail: email request failed to=" # to);
+      countError("sendEmail");
       #err(#HttpError("Email request failed"))
     }
   };
@@ -796,6 +829,7 @@ persistent actor AiProxy {
       permitsFetched = permitsFetched;
       adminCount     = adminListEntries.size();
       isPaused       = isPaused;
+      errorsByMethod = Iter.toArray(Map.entries(errsByMethod));
     }
   };
 }

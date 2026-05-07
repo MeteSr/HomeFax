@@ -4,13 +4,16 @@
  * Supports Homeowner, Contractor, Realtor, and Builder roles.
  */
 
+import Array "mo:core/Array";
+import Debug "mo:core/Debug";
+import Iter "mo:core/Iter";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
+import Option "mo:core/Option";
 import Principal "mo:core/Principal";
 import Result "mo:core/Result";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
-import Array "mo:core/Array";
 
 persistent actor class Auth(initDeployer : Principal) {
 
@@ -55,6 +58,7 @@ persistent actor class Auth(initDeployer : Principal) {
     realtors: Nat;
     builders: Nat;
     isPaused: Bool;
+    errorsByMethod : [(Text, Nat)];
   };
 
   public type UserStats = {
@@ -92,6 +96,12 @@ persistent actor class Auth(initDeployer : Principal) {
   /// Map is stable directly (mo:core/Map uses a stable B-tree internally).
   /// No preupgrade serialisation required — eliminates the upgrade instruction-limit footgun.
   private let users = Map.empty<Principal, UserProfile>();
+  private let errsByMethod : Map.Map<Text, Nat> = Map.empty();
+
+  private func countError(method : Text) {
+    let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
+    Map.add(errsByMethod, Text.compare, method, prev + 1);
+  };
 
   // ─── Ingress Inspection ───────────────────────────────────────────────────────
 
@@ -217,7 +227,11 @@ persistent actor class Auth(initDeployer : Principal) {
 
     let caller = msg.caller;
 
-    if (Map.get(users, Principal.compare, caller) != null) return #err(#AlreadyExists);
+    if (Map.get(users, Principal.compare, caller) != null) {
+      Debug.print("auth.register: already exists: " # Principal.toText(caller));
+      countError("register");
+      return #err(#AlreadyExists);
+    };
     // Email and phone are optional; validate format only when provided
     if (Text.size(args.phone) > 30)  return #err(#InvalidInput("phone exceeds 30 characters"));
     if (Text.size(args.email) > 0) {
@@ -404,6 +418,7 @@ persistent actor class Auth(initDeployer : Principal) {
       realtors;
       builders;
       isPaused;
+      errorsByMethod = Iter.toArray(Map.entries(errsByMethod));
     }
   };
 }

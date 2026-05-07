@@ -9,6 +9,7 @@ import { buildMaintenanceSystemPrompt } from "../maintenance/prompts";
 import { HOMEGENTIC_TOOLS } from "./tools";
 import { resolveModel, PROVIDER_JSON_ERROR } from "./provider";
 import { createAnthropicProvider } from "./anthropicProvider";
+import { getCriticalCycleAlerts, checkCycleLevels as getCanisterCycleLevels } from "./monitoringCanister";
 import {
   buildDocumentSystemPrompt,
   normalizeExtraction,
@@ -107,13 +108,19 @@ app.use("/api/", (req: Request, res: Response, next: express.NextFunction): void
 // ── Structured request logging ────────────────────────────────────────────────
 // Emits one JSON line per /api/ request on completion.
 // Format is stable so any log aggregator (Datadog, Loki, CloudWatch) can parse it.
-// Fields: ts (ISO), method, path, status, latencyMs, ip, principal.
+// Fields: ts, method, path, status, latencyMs, ip, principal, traceId, reqId.
 // "principal" is the ICP principal from x-icp-principal header if sent by the
 // frontend, otherwise "anon". Never logs request bodies (no PII leakage).
 app.use("/api/", (req: Request, res: Response, next: express.NextFunction): void => {
-  const start = Date.now();
+  const start   = Date.now();
+  const reqId   = (req.headers["x-request-id"] as string | undefined) ?? crypto.randomUUID();
+  const traceId = req.headers["x-trace-id"] as string | undefined;
+
+  res.setHeader("x-request-id", reqId);
+  if (traceId) res.setHeader("x-trace-id", traceId);
+
   res.on("finish", () => {
-    const entry = {
+    const entry: Record<string, unknown> = {
       ts:        new Date().toISOString(),
       method:    req.method,
       path:      req.path,
@@ -122,9 +129,9 @@ app.use("/api/", (req: Request, res: Response, next: express.NextFunction): void
       ip:        (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0].trim()
                    ?? req.socket.remoteAddress ?? "unknown",
       principal: (req.headers["x-icp-principal"] as string | undefined) ?? "anon",
+      reqId,
     };
-    // Use process.stdout.write for JSON-lines — avoids console.log's extra newline handling
-    // and keeps lines machine-parseable even when piped.
+    if (traceId) entry.traceId = traceId;
     process.stdout.write(JSON.stringify(entry) + "\n");
   });
   next();
@@ -908,6 +915,9 @@ app.post("/api/errors", (req: Request, res: Response): void => {
       }))
     : undefined;
 
+  const traceId   = (req.headers["x-trace-id"] as string | undefined)
+                    ?? (typeof b.traceId === "string" ? b.traceId.slice(0, 36) : undefined);
+
   process.stdout.write(JSON.stringify({
     event:      "frontend_error",
     level,
@@ -923,6 +933,7 @@ app.post("/api/errors", (req: Request, res: Response): void => {
     ...(userAgent  && { userAgent }),
     ...(breadcrumbs && { breadcrumbs }),
     ...(tags       && { tags }),
+    ...(traceId    && { traceId }),
   }) + "\n");
 
   res.sendStatus(204);
@@ -1540,6 +1551,40 @@ app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
   }
 
   res.json({ received: true });
+});
+
+// ── GET /admin/cycle-status ───────────────────────────────────────────────────
+// Returns canister cycle levels and any active critical/warning cycle alerts.
+// Protected by VOICE_AGENT_API_KEY — intended for the cycle-watchdog cron
+// and ops tooling; never exposed to browser clients.
+app.get("/admin/cycle-status", async (req: Request, res: Response): Promise<void> => {
+  const apiKey = (req.headers["x-api-key"] as string | undefined) ?? "";
+  if (process.env.VOICE_AGENT_API_KEY && apiKey !== process.env.VOICE_AGENT_API_KEY) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  try {
+    const [alerts, levels] = await Promise.all([
+      getCriticalCycleAlerts(),
+      getCanisterCycleLevels(),
+    ]);
+    const critical = alerts.filter((a) => a.severity === "Critical");
+    const warning  = alerts.filter((a) => a.severity === "Warning");
+    res.json({
+      ok:       critical.length === 0,
+      critical: critical.length,
+      warning:  warning.length,
+      alerts,
+      levels,
+      ts:       new Date().toISOString(),
+    });
+  } catch (err) {
+    process.stdout.write(JSON.stringify({
+      ts: new Date().toISOString(), event: "admin_cycle_status_error",
+      error: (err as Error)?.message ?? String(err),
+    }) + "\n");
+    res.status(502).json({ error: "Failed to query monitoring canister" });
+  }
 });
 
 // ── GET /health ───────────────────────────────────────────────────────────────

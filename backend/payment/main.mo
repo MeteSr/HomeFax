@@ -1,5 +1,7 @@
 import Array     "mo:core/Array";
+import Debug     "mo:core/Debug";
 import Int       "mo:core/Int";
+import Iter      "mo:core/Iter";
 import Map       "mo:core/Map";
 import Nat       "mo:core/Nat";
 import Nat32     "mo:core/Nat32";
@@ -73,6 +75,12 @@ persistent actor Payment {
   public type AgentCreditBalance = {
     balance:   Nat;
     expiresAt: Int;  // nanoseconds; 0 = never expires
+  };
+
+  public type Metrics = {
+    totalSubscriptions : Nat;
+    activePaid         : Nat;
+    errorsByMethod     : [(Text, Nat)];
   };
 
   public type SubscriptionStats = {
@@ -219,6 +227,12 @@ persistent actor Payment {
 
   private let subscriptions        = Map.empty<Principal, Subscription>();
   private let agentCreditBalances  = Map.empty<Principal, AgentCreditBalance>();
+  private let errsByMethod : Map.Map<Text, Nat> = Map.empty();
+
+  private func countError(method : Text) {
+    let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
+    Map.add(errsByMethod, Text.compare, method, prev + 1);
+  };
 
   // Admin
   private var adminEntries     : [Principal] = [];
@@ -952,6 +966,23 @@ persistent actor Payment {
     }
   };
 
+  public query func getMetrics() : async Metrics {
+    let now = Time.now();
+    var activePaid = 0;
+    for (sub in Map.values(subscriptions)) {
+      let isActive = sub.expiresAt == 0 or sub.expiresAt > now;
+      switch (sub.tier) {
+        case (#Free or #ContractorFree or #RealtorFree) {};
+        case _ { if (isActive) { activePaid += 1 } };
+      };
+    };
+    {
+      totalSubscriptions = Map.size(subscriptions);
+      activePaid;
+      errorsByMethod = Iter.toArray(Map.entries(errsByMethod));
+    }
+  };
+
   /// Inter-canister helper: returns the effective tier for a principal.
   /// Returns #Free if no subscription exists or if the subscription has expired.
   public query func getTierForPrincipal(p: Principal) : async Tier {
@@ -1014,10 +1045,22 @@ persistent actor Payment {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     let now = Time.now();
     switch (Map.get(agentCreditBalances, Principal.compare, user)) {
-      case null  { #err(#NotFound) };
+      case null  {
+        Debug.print("payment.consumeAgentCredit: no credits for " # Principal.toText(user));
+        countError("consumeAgentCredit");
+        #err(#NotFound)
+      };
       case (?b)  {
-        if (b.expiresAt > 0 and b.expiresAt <= now) return #err(#NotFound);
-        if (b.balance == 0)                          return #err(#NotFound);
+        if (b.expiresAt > 0 and b.expiresAt <= now) {
+          Debug.print("payment.consumeAgentCredit: credits expired for " # Principal.toText(user));
+          countError("consumeAgentCredit");
+          return #err(#NotFound)
+        };
+        if (b.balance == 0) {
+          Debug.print("payment.consumeAgentCredit: balance zero for " # Principal.toText(user));
+          countError("consumeAgentCredit");
+          return #err(#NotFound)
+        };
         let updated : AgentCreditBalance = { balance = b.balance - 1; expiresAt = b.expiresAt };
         Map.add(agentCreditBalances, Principal.compare, user, updated);
         #ok(updated.balance)

@@ -62,6 +62,8 @@ export interface ErrorReport {
   userAgent:       string;
   breadcrumbs:     Breadcrumb[];
   tags?:           Record<string, string>;
+  /** Session trace ID — links this error to voice server and gateway log lines. */
+  traceId?:        string;
 }
 
 // ── Tracker ───────────────────────────────────────────────────────────────────
@@ -152,6 +154,9 @@ class ErrorTracker {
       }
 
       // ── build report ────────────────────────────────────────────────────────
+      let traceId: string | undefined;
+      try { traceId = sessionStorage.getItem("hg-trace") ?? undefined; } catch { /* blocked */ }
+
       const report: ErrorReport = {
         level,
         message,
@@ -166,6 +171,7 @@ class ErrorTracker {
         userAgent:   navigator.userAgent,
         breadcrumbs: [...this.breadcrumbs],
         tags:        { source: source ?? "manual" },
+        traceId,
       };
 
       void this._send(report);

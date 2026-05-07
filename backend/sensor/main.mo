@@ -14,6 +14,7 @@
  */
 
 import Array    "mo:core/Array";
+import Debug    "mo:core/Debug";
 import Float    "mo:core/Float";
 import Map      "mo:core/Map";
 import Iter     "mo:core/Iter";
@@ -106,6 +107,7 @@ persistent actor Sensor {
     criticalEvents : Nat;
     jobsCreated    : Nat;
     isPaused       : Bool;
+    errorsByMethod : [(Text, Nat)];
   };
 
   // ─── Stable State ─────────────────────────────────────────────────────────
@@ -117,6 +119,13 @@ persistent actor Sensor {
   private var deviceCounter   : Nat         = 0;
   private var eventCounter    : Nat         = 0;
   private var jobsCreatedCount : Nat        = 0;
+
+  private let errsByMethod : Map.Map<Text, Nat> = Map.empty();
+
+  private func countError(method : Text) {
+    let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
+    Map.add(errsByMethod, Text.compare, method, prev + 1);
+  };
 
   // ─── Stable State ────────────────────────────────────────────────────────
 
@@ -382,18 +391,31 @@ persistent actor Sensor {
   ) : async Result.Result<SensorEvent, Error> {
     switch (requireActive(msg.caller)) { case (#err e) return #err e; case _ {} };
 
-    if (not isGateway(msg.caller) and not isAdmin(msg.caller))
+    if (not isGateway(msg.caller) and not isAdmin(msg.caller)) {
+      Debug.print("sensor.recordEvent: unauthorized caller: " # Principal.toText(msg.caller));
+      countError("recordEvent");
       return #err(#Unauthorized);
+    };
 
-    if (Text.size(rawPayload) > MAX_PAYLOAD_BYTES)
+    if (Text.size(rawPayload) > MAX_PAYLOAD_BYTES) {
+      countError("recordEvent");
       return #err(#InvalidInput("rawPayload exceeds 4096-byte limit"));
+    };
 
     let deviceId = switch (Map.get(externalIdIdx, Text.compare, externalDeviceId)) {
-      case null     { return #err(#NotFound) };
+      case null     {
+        Debug.print("sensor.recordEvent: device not found: " # externalDeviceId);
+        countError("recordEvent");
+        return #err(#NotFound);
+      };
       case (?id)    { id };
     };
     let device = switch (Map.get(devices, Text.compare, deviceId)) {
-      case null  { return #err(#NotFound) };
+      case null  {
+        Debug.print("sensor.recordEvent: internal device missing: " # deviceId);
+        countError("recordEvent");
+        return #err(#NotFound);
+      };
       case (?d)  { d };
     };
 
@@ -528,6 +550,7 @@ persistent actor Sensor {
       criticalEvents = critical;
       jobsCreated    = jobsCreatedCount;
       isPaused;
+      errorsByMethod = Iter.toArray(Map.entries(errsByMethod));
     }
   };
 }
