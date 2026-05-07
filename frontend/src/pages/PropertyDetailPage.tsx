@@ -5,6 +5,7 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
 import { GenerateReportModal }     from "@/components/GenerateReportModal";
+import { InsuranceShareModal }     from "@/components/InsuranceShareModal";
 import { LogJobModal }              from "@/components/LogJobModal";
 import { RequestQuoteModal }        from "@/components/RequestQuoteModal";
 import { InviteContractorModal }    from "@/components/InviteContractorModal";
@@ -64,6 +65,7 @@ type Tab = "timeline" | "jobs" | "rooms" | "documents" | "bills" | "settings";
 
 interface ModalState {
   report:        boolean;
+  insurance:     boolean;
   logJob:        boolean;
   quote:         boolean;
   verify:        boolean;
@@ -77,6 +79,7 @@ interface ModalState {
 
 const MODALS_CLOSED: ModalState = {
   report:        false,
+  insurance:     false,
   logJob:        false,
   quote:         false,
   verify:        false,
@@ -276,6 +279,9 @@ export default function PropertyDetailPage() {
               <>
                 <Button variant="outline" icon={<Share2 size={14} />} onClick={() => setModals((m) => ({ ...m, report: true }))}>
                   Share Report
+                </Button>
+                <Button variant="outline" icon={<Shield size={14} />} onClick={() => setModals((m) => ({ ...m, insurance: true }))}>
+                  Insurance Report
                 </Button>
                 {!fsboRecord?.isFsbo && (
                   <Button
@@ -532,6 +538,10 @@ export default function PropertyDetailPage() {
 
       {modals.report && (
         <GenerateReportModal property={property} onClose={() => setModals((m) => ({ ...m, report: false }))} />
+      )}
+
+      {modals.insurance && (
+        <InsuranceShareModal property={property} onClose={() => setModals((m) => ({ ...m, insurance: false }))} />
       )}
 
       <LogJobModal

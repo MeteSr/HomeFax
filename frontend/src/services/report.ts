@@ -104,6 +104,45 @@ export const idlFactory = ({ IDL }: any) => {
     UnverifiedProperty:  IDL.Null,
   });
 
+  const SensorSummary = IDL.Record({
+    deviceId:    IDL.Text,
+    name:        IDL.Text,
+    source:      IDL.Text,
+    isActive:    IDL.Bool,
+    lastEventAt: IDL.Opt(IDL.Int),
+    eventCount:  IDL.Nat,
+  });
+
+  const AlertSummary = IDL.Record({
+    alertId:         IDL.Text,
+    eventType:       IDL.Text,
+    severity:        IDL.Text,
+    timestamp:       IDL.Int,
+    resolvedByJobId: IDL.Opt(IDL.Text),
+  });
+
+  const RiskProfile = IDL.Record({
+    schemaVersion:    IDL.Text,
+    token:            IDL.Text,
+    propertyId:       IDL.Text,
+    generatedAt:      IDL.Int,
+    expiresAt:        IDL.Opt(IDL.Int),
+    maintenanceScore: IDL.Nat,
+    verificationLevel: IDL.Text,
+    sensorCoverage:   IDL.Vec(SensorSummary),
+    recentAlerts:     IDL.Vec(AlertSummary),
+    openJobs:         IDL.Nat,
+    verifiedJobCount: IDL.Nat,
+    permitCount:      IDL.Nat,
+  });
+
+  const RiskProfileError = IDL.Variant({
+    NotFound:     IDL.Null,
+    Expired:      IDL.Null,
+    Unauthorized: IDL.Null,
+    InvalidInput: IDL.Text,
+  });
+
   return IDL.Service({
     // Params 1-6 match the original interface; 7-11 are new trailing opt args.
     generateReport: IDL.Func(
@@ -124,6 +163,16 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Text],
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
+    ),
+    generateRiskProfile: IDL.Func(
+      [IDL.Text, IDL.Opt(IDL.Nat), IDL.Text],
+      [IDL.Variant({ ok: RiskProfile, err: RiskProfileError })],
+      []
+    ),
+    getRiskProfile: IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ ok: RiskProfile, err: RiskProfileError })],
+      ["query"]
     ),
   });
 };
@@ -220,6 +269,38 @@ export interface ShareLink {
   viewCount:  number;
   isActive:   boolean;
   createdAt:  number;
+}
+
+export interface SensorSummary {
+  deviceId:    string;
+  name:        string;
+  source:      string;
+  isActive:    boolean;
+  lastEventAt: number | null;   // ms, null = no events
+  eventCount:  number;
+}
+
+export interface AlertSummary {
+  alertId:         string;
+  eventType:       string;
+  severity:        string;   // "Critical" | "Warning"
+  timestamp:       number;   // ms
+  resolvedByJobId: string | null;
+}
+
+export interface RiskProfile {
+  schemaVersion:    string;   // "homegentic-risk/1.0"
+  token:            string;
+  propertyId:       string;
+  generatedAt:      number;   // ms
+  expiresAt:        number | null;
+  maintenanceScore: number;   // 0-100
+  verificationLevel: string;
+  sensorCoverage:   SensorSummary[];
+  recentAlerts:     AlertSummary[];
+  openJobs:         number;
+  verifiedJobCount: number;
+  permitCount:      number;
 }
 
 // ─── Adapters ─────────────────────────────────────────────────────────────────
@@ -347,6 +428,36 @@ function jobInputToCanister(j: JobInput) {
   };
 }
 
+function fromRiskProfile(raw: any): RiskProfile {
+  return {
+    schemaVersion:    raw.schemaVersion,
+    token:            raw.token,
+    propertyId:       raw.propertyId,
+    generatedAt:      Number(raw.generatedAt) / 1_000_000,
+    expiresAt:        raw.expiresAt[0] != null ? Number(raw.expiresAt[0]) / 1_000_000 : null,
+    maintenanceScore: Number(raw.maintenanceScore),
+    verificationLevel: raw.verificationLevel,
+    sensorCoverage:   (raw.sensorCoverage as any[]).map((d: any) => ({
+      deviceId:    d.deviceId,
+      name:        d.name,
+      source:      d.source,
+      isActive:    d.isActive,
+      lastEventAt: d.lastEventAt[0] != null ? Number(d.lastEventAt[0]) / 1_000_000 : null,
+      eventCount:  Number(d.eventCount),
+    })),
+    recentAlerts: (raw.recentAlerts as any[]).map((a: any) => ({
+      alertId:         a.alertId,
+      eventType:       a.eventType,
+      severity:        a.severity,
+      timestamp:       Number(a.timestamp) / 1_000_000,
+      resolvedByJobId: a.resolvedByJobId[0] ?? null,
+    })),
+    openJobs:         Number(raw.openJobs),
+    verifiedJobCount: Number(raw.verifiedJobCount),
+    permitCount:      Number(raw.permitCount),
+  };
+}
+
 // ─── Service factory ──────────────────────────────────────────────────────────
 
 function createReportService() {
@@ -446,6 +557,62 @@ function createReportService() {
       const key = Object.keys(result.err)[0];
       throw new Error(key);
     }
+  },
+
+  async generateRiskProfile(
+    propertyId:        string,
+    verificationLevel: string,
+    expiryDays:        number | null
+  ): Promise<RiskProfile> {
+    if (!REPORT_CANISTER_ID) {
+      return {
+        schemaVersion: "homegentic-risk/1.0",
+        token: `RISK_mock_${Date.now()}`,
+        propertyId,
+        generatedAt: Date.now(),
+        expiresAt: expiryDays ? Date.now() + expiryDays * 86_400_000 : null,
+        maintenanceScore: 78,
+        verificationLevel,
+        sensorCoverage: [],
+        recentAlerts: [],
+        openJobs: 0,
+        verifiedJobCount: 0,
+        permitCount: 0,
+      };
+    }
+    const a = await getActor();
+    const result = await a.generateRiskProfile(
+      propertyId,
+      expiryDays ? [BigInt(expiryDays)] : [],
+      verificationLevel
+    );
+    if ("ok" in result) return fromRiskProfile(result.ok);
+    const key = Object.keys(result.err)[0];
+    const val = result.err[key];
+    throw new Error(typeof val === "string" ? val : key);
+  },
+
+  async getRiskProfile(token: string): Promise<RiskProfile> {
+    const a = await getActor();
+    const result = await a.getRiskProfile(token);
+    if ("ok" in result) return fromRiskProfile(result.ok);
+    const key = Object.keys(result.err)[0];
+    if (key === "Expired")  throw new Error("This risk profile has expired");
+    if (key === "NotFound") throw new Error("Risk profile not found");
+    const val = result.err[key];
+    throw new Error(typeof val === "string" ? val : key);
+  },
+
+  riskProfileUrl(token: string): string {
+    return `${window.location.origin}/verify/${token}`;
+  },
+
+  maintenanceGrade(score: number): string {
+    if (score >= 90) return "A";
+    if (score >= 75) return "B";
+    if (score >= 60) return "C";
+    if (score >= 45) return "D";
+    return "F";
   },
 
   shareUrl(token: string, options?: Partial<DisclosureOptions>): string {
