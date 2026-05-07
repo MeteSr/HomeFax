@@ -86,7 +86,7 @@ After completing the PIN flow, run:
 
 ```bash
 curl "https://api.ecobee.com/1/thermostat?json=%7B%22selection%22%3A%7B%22selectionType%22%3A%22registered%22%2C%22selectionMatch%22%3A%22%22%7D%7D" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+  -H "Authorization: Bearer $ECOBEE_ACCESS_TOKEN"
 ```
 
 Look at `thermostatList[0].identifier` — a 12-digit number like `411848373746`.
