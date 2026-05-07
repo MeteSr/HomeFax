@@ -29,6 +29,8 @@ const SensorEventTypeIDL = IDL.Variant({
   LowProduction: IDL.Null,
   BatteryLow: IDL.Null,
   GridOutage: IDL.Null,
+  ApplianceFault: IDL.Null,
+  ApplianceMaintenance: IDL.Null,
 });
 
 const SensorDeviceIDL = IDL.Record({
@@ -51,6 +53,8 @@ const SensorDeviceIDL = IDL.Record({
     HomeAssistant: IDL.Null,
     EnphaseEnvoy: IDL.Null,
     TeslaPowerwall: IDL.Null,
+    LGThinQ: IDL.Null,
+    GESmartHQ: IDL.Null,
   }),
   name: IDL.Text,
   registeredAt: IDL.Int,

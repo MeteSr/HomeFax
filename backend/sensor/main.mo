@@ -44,6 +44,7 @@ persistent actor Sensor {
     #RingAlarm; #HoneywellHome; #RheemEcoNet; #Sense;
     #EmporiaVue; #Rachio; #SmartThings; #HomeAssistant;
     #EnphaseEnvoy; #TeslaPowerwall;
+    #LGThinQ; #GESmartHQ;
   };
 
   public type SensorEventType = {
@@ -57,8 +58,10 @@ persistent actor Sensor {
     #HighTemperature; // Nest/Ecobee informational high
     #SolarFault;      // Enphase inverter error or system offline
     #LowProduction;   // Enphase production near-zero during daylight
-    #BatteryLow;      // Tesla Powerwall charge critically low
-    #GridOutage;      // Tesla Powerwall: grid disconnected (islanded)
+    #BatteryLow;          // Tesla Powerwall charge critically low
+    #GridOutage;          // Tesla Powerwall: grid disconnected (islanded)
+    #ApplianceFault;      // LG ThinQ / GE SmartHQ appliance fault or error code
+    #ApplianceMaintenance; // LG ThinQ / GE SmartHQ maintenance due (filter, descaling …)
   };
 
   public type Severity = { #Info; #Warning; #Critical };
@@ -200,8 +203,10 @@ persistent actor Sensor {
       case (#HvacFilterDue)   { #Info     };
       case (#SolarFault)      { #Critical };
       case (#LowProduction)   { #Warning  };
-      case (#BatteryLow)      { #Critical };
-      case (#GridOutage)      { #Warning  };
+      case (#BatteryLow)          { #Critical };
+      case (#GridOutage)          { #Warning  };
+      case (#ApplianceFault)      { #Warning  };
+      case (#ApplianceMaintenance){ #Info     };
     }
   };
 

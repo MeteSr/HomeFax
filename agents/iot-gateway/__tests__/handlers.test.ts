@@ -1,4 +1,4 @@
-import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent, handleEnphaseEvent, handleTeslaEvent } from "../handlers";
+import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent, handleEnphaseEvent, handleTeslaEvent, handleLGThinQEvent } from "../handlers";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
@@ -7,6 +7,7 @@ import type {
   SmartThingsDeviceEvent,
   EnphaseSystemEvent,
   TeslaPowerwallEvent,
+  LGThinQPCCEvent,
 } from "../types";
 
 const RAW = "{}";
@@ -759,6 +760,86 @@ describe("handleTeslaEvent", () => {
 
     it("returns null when charge is above 20 % with grid connected", () => {
       expect(handleTeslaEvent(teslaEvent({ chargePercent: 50 }), RAW)).toBeNull();
+    });
+  });
+});
+
+// ── handleLGThinQEvent ────────────────────────────────────────────────────────
+
+describe("handleLGThinQEvent", () => {
+  function lgEvent(overrides: Partial<LGThinQPCCEvent>): LGThinQPCCEvent {
+    return {
+      deviceId: "kr.KR.HRA-ADDDCCD0",
+      type:     "FAIL_CODE",
+      code:     "0F",
+      severity: "HIGH",
+      ...overrides,
+    };
+  }
+
+  describe("guard conditions", () => {
+    it("returns null when deviceId is absent", () => {
+      expect(handleLGThinQEvent(lgEvent({ deviceId: "" }), RAW)).toBeNull();
+    });
+
+    it("returns null for an unknown event type", () => {
+      expect(handleLGThinQEvent(lgEvent({ type: "UNKNOWN_TYPE" }), RAW)).toBeNull();
+    });
+  });
+
+  describe("fault events", () => {
+    it("returns ApplianceFault for FAIL_CODE with HIGH severity", () => {
+      const r = handleLGThinQEvent(lgEvent({ type: "FAIL_CODE", severity: "HIGH" }), RAW);
+      expect(r?.eventType).toEqual({ ApplianceFault: null });
+      expect(r?.externalDeviceId).toBe("kr.KR.HRA-ADDDCCD0");
+    });
+
+    it("returns ApplianceFault for FAIL_CODE with MEDIUM severity", () => {
+      const r = handleLGThinQEvent(lgEvent({ type: "FAIL_CODE", severity: "MEDIUM" }), RAW);
+      expect(r?.eventType).toEqual({ ApplianceFault: null });
+    });
+
+    it("returns null for FAIL_CODE with LOW severity (noise suppression)", () => {
+      expect(handleLGThinQEvent(lgEvent({ type: "FAIL_CODE", severity: "LOW" }), RAW)).toBeNull();
+    });
+
+    it("returns ApplianceFault for FAULT type with HIGH severity", () => {
+      const r = handleLGThinQEvent(lgEvent({ type: "FAULT", severity: "HIGH" }), RAW);
+      expect(r?.eventType).toEqual({ ApplianceFault: null });
+    });
+
+    it("handles lowercase type and severity via normalisation", () => {
+      const r = handleLGThinQEvent(lgEvent({ type: "fail_code", severity: "high" }), RAW);
+      expect(r?.eventType).toEqual({ ApplianceFault: null });
+    });
+
+    it("returns ApplianceFault when severity is absent (not LOW)", () => {
+      const r = handleLGThinQEvent(lgEvent({ type: "FAIL_CODE", severity: undefined }), RAW);
+      expect(r?.eventType).toEqual({ ApplianceFault: null });
+    });
+  });
+
+  describe("maintenance events", () => {
+    it("returns ApplianceMaintenance for MAINTENANCE type", () => {
+      const r = handleLGThinQEvent(
+        lgEvent({ type: "MAINTENANCE", code: "FILTER_REPLACE", severity: "LOW" }),
+        RAW
+      );
+      expect(r?.eventType).toEqual({ ApplianceMaintenance: null });
+      expect(r?.externalDeviceId).toBe("kr.KR.HRA-ADDDCCD0");
+    });
+
+    it("returns ApplianceMaintenance regardless of severity for MAINTENANCE type", () => {
+      const r = handleLGThinQEvent(
+        lgEvent({ type: "MAINTENANCE", code: "DESCALE", severity: "HIGH" }),
+        RAW
+      );
+      expect(r?.eventType).toEqual({ ApplianceMaintenance: null });
+    });
+
+    it("handles lowercase maintenance type", () => {
+      const r = handleLGThinQEvent(lgEvent({ type: "maintenance", code: "FILTER" }), RAW);
+      expect(r?.eventType).toEqual({ ApplianceMaintenance: null });
     });
   });
 });
