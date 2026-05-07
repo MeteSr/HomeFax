@@ -1,8 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { assertNoA11yViolations } from "./helpers/a11y";
 
 // Landing page is fully public
 
 test.describe("LandingPage — /", () => {
+  test.afterEach(async ({ page }) => {
+    await assertNoA11yViolations(page);
+  });
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
   });

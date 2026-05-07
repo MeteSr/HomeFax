@@ -1,10 +1,15 @@
 import { test, expect } from "@playwright/test";
+import { assertNoA11yViolations } from "./helpers/a11y";
 
 // Login page is public — no auth injection needed
 
 test.describe("LoginPage — /login", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/login");
+  });
+
+  test.afterEach(async ({ page }) => {
+    await assertNoA11yViolations(page);
   });
 
   // ── Page structure ────────────────────────────────────────────────────────

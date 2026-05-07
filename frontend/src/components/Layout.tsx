@@ -300,6 +300,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 key={link.to}
                 to={link.to}
                 title={!sidebarOpen ? link.label : undefined}
+                aria-current={active ? "page" : undefined}
                 style={{ ...itemBase(active), textDecoration: "none" }}
                 onMouseEnter={(e: React.MouseEvent) => {
                   if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plum;

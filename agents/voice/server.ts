@@ -9,7 +9,7 @@ import { buildMaintenanceSystemPrompt } from "../maintenance/prompts";
 import { HOMEGENTIC_TOOLS } from "./tools";
 import { resolveModel, PROVIDER_JSON_ERROR } from "./provider";
 import { createAnthropicProvider } from "./anthropicProvider";
-import { getCriticalCycleAlerts, checkCycleLevels as getCanisterCycleLevels } from "./monitoringCanister";
+import { getCriticalCycleAlerts, checkCycleLevels as getCanisterCycleLevels, recordFrontendError, type ErrorSummaryInput } from "./monitoringCanister";
 import {
   buildDocumentSystemPrompt,
   normalizeExtraction,
@@ -36,6 +36,49 @@ if (!process.env.ANTHROPIC_API_KEY) {
 }
 
 console.log(`[voice-agent] STRIPE_SECRET_KEY ${process.env.STRIPE_SECRET_KEY ? "✓" : "✗ not set"}`)
+
+// ── Frontend error aggregation (#297) ────────────────────────────────────────
+// In-memory map: fingerprint → rolling aggregation window.
+// Dirty entries are flushed to the monitoring canister every 5 minutes.
+
+interface ErrorAgg {
+  fingerprint : string;
+  message     : string;
+  errorType   : string;
+  count       : number;
+  firstSeen   : number;  // unix ms
+  lastSeen    : number;  // unix ms
+  tierCounts  : Map<string, number>;
+  release?    : string;
+  dirty       : boolean;
+}
+
+const errorAggMap = new Map<string, ErrorAgg>();
+
+async function flushErrorAggregations(): Promise<void> {
+  const dirty: ErrorSummaryInput[] = [];
+  for (const [fp, agg] of errorAggMap) {
+    if (!agg.dirty) continue;
+    dirty.push({
+      fingerprint : fp,
+      message     : agg.message,
+      errorType   : agg.errorType,
+      count       : agg.count,
+      firstSeen   : BigInt(Math.floor(agg.firstSeen * 1_000_000)),
+      lastSeen    : BigInt(Math.floor(agg.lastSeen  * 1_000_000)),
+      tierCounts  : [...agg.tierCounts.entries()],
+      release     : agg.release,
+    });
+    agg.dirty = false;
+    agg.count = 0;  // reset count so next flush only sends the delta
+  }
+  for (const input of dirty) {
+    try { await recordFrontendError(input); } catch { /* best-effort */ }
+  }
+}
+
+// Flush every 5 minutes (fire-and-forget; voice server is stateless on restart)
+setInterval(() => { void flushErrorAggregations(); }, 5 * 60 * 1_000);
 
 // §49 — fail-secure: require VOICE_AGENT_API_KEY in production.
 // All /api/ routes check the x-api-key header against this secret.
@@ -935,6 +978,31 @@ app.post("/api/errors", (req: Request, res: Response): void => {
     ...(tags       && { tags }),
     ...(traceId    && { traceId }),
   }) + "\n");
+
+  // Update in-memory aggregation for canister flush
+  const fp = `${message.slice(0, 100)}::${(stack ?? "").split("\n").find((l) => l.includes("/src/"))?.trim().slice(0, 100) ?? ""}`;
+  const now = Date.now();
+  const existing = errorAggMap.get(fp);
+  if (existing) {
+    existing.count++;
+    existing.lastSeen = now;
+    if (tier) { existing.tierCounts.set(tier, (existing.tierCounts.get(tier) ?? 0) + 1) }
+    existing.dirty = true;
+  } else {
+    const tc = new Map<string, number>();
+    if (tier) tc.set(tier, 1);
+    errorAggMap.set(fp, {
+      fingerprint : fp,
+      message     : message.slice(0, 120),
+      errorType   : (errorType ?? "Error").slice(0, 80),
+      count       : 1,
+      firstSeen   : now,
+      lastSeen    : now,
+      tierCounts  : tc,
+      release     : release,
+      dirty       : true,
+    });
+  }
 
   res.sendStatus(204);
 });

@@ -64,6 +64,8 @@ export interface ErrorReport {
   tags?:           Record<string, string>;
   /** Session trace ID — links this error to voice server and gateway log lines. */
   traceId?:        string;
+  /** Request ID from x-request-id response header — links to a specific voice server call. */
+  requestId?:      string;
 }
 
 // ── Tracker ───────────────────────────────────────────────────────────────────
@@ -115,8 +117,18 @@ class ErrorTracker {
   }
 
   /**
+   * Capture a non-Error string message (Sentry-style `captureMessage`).
+   * Useful for quota-exceeded, bad-state, or business-logic events that
+   * aren't JS exceptions but still need tracking.
+   */
+  captureMessage(message: string, level: ErrorLevel = "info"): void {
+    this.captureError(message, { level, source: "captureMessage" });
+  }
+
+  /**
    * Capture an error and ship it to /api/errors.
    * Deduplication and rate-limiting are applied transparently.
+   * Fatal errors bypass the per-session cap so they always get reported.
    * Never throws — safe to call anywhere, including inside catch blocks.
    */
   captureError(
@@ -125,16 +137,17 @@ class ErrorTracker {
       level?:          ErrorLevel;
       componentStack?: string;
       source?:         string;
+      requestId?:      string;
     } = {},
   ): void {
     try {
-      const { level = "error", componentStack, source } = options;
+      const { level = "error", componentStack, source, requestId } = options;
       const message   = typeof error === "string" ? error : (error.message || String(error));
       const stack     = typeof error === "string" ? undefined : error.stack;
       const errorType = typeof error === "string" ? "Error" : (error.constructor?.name ?? "Error");
 
-      // ── rate limit ──────────────────────────────────────────────────────────
-      if (this.errorCount >= MAX_ERRORS) return;
+      // ── rate limit — fatal errors always bypass ──────────────────────────────
+      if (level !== "fatal" && this.errorCount >= MAX_ERRORS) return;
 
       // ── deduplication ───────────────────────────────────────────────────────
       const fp       = this._fingerprint(message, stack);
@@ -172,6 +185,7 @@ class ErrorTracker {
         breadcrumbs: [...this.breadcrumbs],
         tags:        { source: source ?? "manual" },
         traceId,
+        ...(requestId && { requestId }),
       };
 
       void this._send(report);

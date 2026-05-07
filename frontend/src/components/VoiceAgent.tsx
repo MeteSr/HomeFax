@@ -53,11 +53,16 @@ export function VoiceAgent() {
 
       {/* Speech bubble */}
       {hasBubble && (
-        <div style={{
-          position: "relative", width: "20rem",
-          background: COLORS.plum, border: `1px solid ${COLORS.rule}`,
-          padding: "1rem 1.25rem", borderRadius: RADIUS.card,
-        }}>
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="false"
+          style={{
+            position: "relative", width: "20rem",
+            background: COLORS.plum, border: `1px solid ${COLORS.rule}`,
+            padding: "1rem 1.25rem", borderRadius: RADIUS.card,
+          }}
+        >
           <button
             onClick={reset}
             style={{ position: "absolute", top: "0.75rem", right: "0.75rem", background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, padding: 0, display: "flex" }}

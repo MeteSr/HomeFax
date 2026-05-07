@@ -2,6 +2,8 @@
 // Single source of truth for inline-style components.
 // CSS classes (index.css) use the :root custom properties.
 
+import type React from "react";
+
 export const COLORS = {
   plum:       "#2E2540",   // primary text / headings / CTA fill
   plumMid:    "#6B5B7B",   // muted text, secondary labels
@@ -35,3 +37,21 @@ export const SHADOWS = {
   hover:  "0 8px 24px rgba(46,37,64,0.14)",
   modal:  "0 16px 48px rgba(46,37,64,0.18)",
 } as const;
+
+// ── Accessibility ─────────────────────────────────────────────────────────────
+
+/** Visible focus ring — 4.5:1 contrast against all app backgrounds. */
+export const focusRing = "2px solid #C94C2E";
+
+/** Visually hidden but announced by screen readers (WCAG 1.3.1 / 4.1.2). */
+export const srOnly: React.CSSProperties = {
+  position:   "absolute",
+  width:       1,
+  height:      1,
+  padding:     0,
+  margin:     -1,
+  overflow:   "hidden",
+  clip:       "rect(0,0,0,0)",
+  whiteSpace: "nowrap",
+  border:      0,
+};

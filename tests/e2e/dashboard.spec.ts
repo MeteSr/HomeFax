@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
 import { injectBaselinePhotos } from "./helpers/testData";
+import { assertNoA11yViolations } from "./helpers/a11y";
 
 // Dashboard requires 2+ properties — a single property triggers an immediate
 // redirect to the property detail page (DashboardPage line 83-85).
@@ -71,6 +72,10 @@ test.describe("DashboardPage — /dashboard", () => {
     await setup(page);
     await page.goto("/dashboard");
     await expect(page.getByText("My Properties")).toBeVisible();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await assertNoA11yViolations(page);
   });
 
   // ── Stats panel ─────────────────────────────────────────────────────────────

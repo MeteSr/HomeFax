@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
 import { injectSensorDevices } from "./helpers/testData";
+import { assertNoA11yViolations } from "./helpers/a11y";
 
 async function setup(page: Parameters<typeof injectTestAuth>[0]) {
   await injectTestAuth(page);
@@ -24,6 +25,10 @@ test.describe("SensorPage — /sensor", () => {
     await setup(page);
     await page.goto("/sensors");
     await expect(page.getByRole("heading", { name: /smart home sensors/i })).toBeVisible();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await assertNoA11yViolations(page);
   });
 
   // ── Page structure ───────────────────────────────────────────────────────────

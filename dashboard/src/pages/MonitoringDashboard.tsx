@@ -95,6 +95,24 @@ interface CanisterMetrics {
   memoryCapacity: bigint;
 }
 
+interface ErrorSummary {
+  fingerprint : string;
+  message     : string;
+  errorType   : string;
+  firstSeen   : bigint;
+  lastSeen    : bigint;
+  count       : bigint;
+  tierCounts  : [string, bigint][];
+  release     : [] | [string];
+  resolved    : boolean;
+}
+
+interface FrontendErrorStats {
+  total           : bigint;
+  unresolved      : bigint;
+  topFingerprints : ErrorSummary[];
+}
+
 // ── IDL factories ─────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -131,7 +149,7 @@ const monitoringIdlFactory = ({ IDL: I }: any) => {
   const AlertSeverity = I.Variant({ Critical: I.Null, Warning: I.Null, Info: I.Null });
   const AlertCategory = I.Variant({
     Cycles: I.Null, ErrorRate: I.Null, ResponseTime: I.Null,
-    Memory: I.Null, Milestone: I.Null, TopUp: I.Null,
+    Memory: I.Null, Milestone: I.Null, TopUp: I.Null, Stale: I.Null,
   });
   const Alert = I.Record({
     id:         I.Text,
@@ -176,11 +194,30 @@ const monitoringIdlFactory = ({ IDL: I }: any) => {
     breakEvenUsers: I.Nat,
     calculatedAt:   I.Int,
   });
+  const ErrorSummary = I.Record({
+    fingerprint : I.Text,
+    message     : I.Text,
+    errorType   : I.Text,
+    firstSeen   : I.Int,
+    lastSeen    : I.Int,
+    count       : I.Nat,
+    tierCounts  : I.Vec(I.Tuple(I.Text, I.Nat)),
+    release     : I.Opt(I.Text),
+    resolved    : I.Bool,
+  });
+  const FrontendErrorStats = I.Record({
+    total:           I.Nat,
+    unresolved:      I.Nat,
+    topFingerprints: I.Vec(ErrorSummary),
+  });
   return I.Service({
-    getActiveAlerts:       I.Func([], [I.Vec(Alert)],             ["query"]),
-    getAllCanisterMetrics:  I.Func([], [I.Vec(CanisterMetrics)],   ["query"]),
-    calculateCostMetrics:  I.Func([I.Nat],  [CostMetrics],        ["query"]),
+    getActiveAlerts:        I.Func([], [I.Vec(Alert)],             ["query"]),
+    getAllCanisterMetrics:   I.Func([], [I.Vec(CanisterMetrics)],   ["query"]),
+    calculateCostMetrics:   I.Func([I.Nat],  [CostMetrics],        ["query"]),
     calculateProfitability: I.Func([I.Float64, I.Nat, I.Nat], [ProfitabilityMetrics], ["query"]),
+    getFrontendErrorStats:  I.Func([], [FrontendErrorStats],        ["query"]),
+    getFrontendErrors:      I.Func([I.Nat, I.Nat], [I.Vec(ErrorSummary)], ["query"]),
+    resolveFrontendError:   I.Func([I.Text], [I.Variant({ ok: I.Null, err: I.Variant({ NotFound: I.Null, Unauthorized: I.Null, InvalidInput: I.Text }) })], []),
   });
 };
 
@@ -296,6 +333,8 @@ interface DashData {
   canisters:     CanisterMetrics[];
   costs:         CostMetrics;
   profitability: ProfitabilityMetrics;
+  errorStats:    FrontendErrorStats;
+  recentErrors:  ErrorSummary[];
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -305,6 +344,7 @@ export default function MonitoringDashboard() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
   const [refreshed, setRefreshed] = useState<Date>(new Date());
+  const [resolvingFp, setResolvingFp] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -327,18 +367,23 @@ export default function MonitoringDashboard() {
       type AuthActor = { getUserStats: () => Promise<UserStats> };
       type PaymentActor = { getSubscriptionStats: () => Promise<SubscriptionStats> };
       type MonitoringActor = {
-        getActiveAlerts:       ()                                         => Promise<Alert[]>;
-        getAllCanisterMetrics:  ()                                         => Promise<CanisterMetrics[]>;
-        calculateCostMetrics:  (userCount: bigint)                        => Promise<CostMetrics>;
+        getActiveAlerts:        ()                                         => Promise<Alert[]>;
+        getAllCanisterMetrics:   ()                                         => Promise<CanisterMetrics[]>;
+        calculateCostMetrics:   (userCount: bigint)                        => Promise<CostMetrics>;
         calculateProfitability: (revenue: number, users: bigint, active: bigint) => Promise<ProfitabilityMetrics>;
+        getFrontendErrorStats:  ()                                         => Promise<FrontendErrorStats>;
+        getFrontendErrors:      (from: bigint, limit: bigint)              => Promise<ErrorSummary[]>;
+        resolveFrontendError:   (fp: string)                               => Promise<unknown>;
       };
 
       // First batch — user count needed for cost and profitability calls.
-      const [users, subs, alerts, canisters] = await Promise.all([
+      const [users, subs, alerts, canisters, errorStats, recentErrors] = await Promise.all([
         (authActor    as unknown as AuthActor).getUserStats(),
         (paymentActor as unknown as PaymentActor).getSubscriptionStats(),
         (monitoringActor as unknown as MonitoringActor).getActiveAlerts(),
         (monitoringActor as unknown as MonitoringActor).getAllCanisterMetrics(),
+        (monitoringActor as unknown as MonitoringActor).getFrontendErrorStats(),
+        (monitoringActor as unknown as MonitoringActor).getFrontendErrors(0n, 20n),
       ]);
 
       // Second batch — uses user count from first batch.
@@ -350,7 +395,7 @@ export default function MonitoringDashboard() {
         ),
       ]);
 
-      setData({ users, subs, alerts, canisters, costs, profitability });
+      setData({ users, subs, alerts, canisters, costs, profitability, errorStats, recentErrors });
       setRefreshed(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -570,6 +615,64 @@ export default function MonitoringDashboard() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+
+            {/* ── Frontend Errors (#297) ──────────────────────────────────── */}
+            <div style={{ marginBottom: 40 }}>
+              <SectionHeader icon={<AlertTriangle size={10} />}>
+                Frontend Errors — {Number(data.errorStats.unresolved)} unresolved / {Number(data.errorStats.total)} total
+              </SectionHeader>
+              {data.recentErrors.filter(e => !e.resolved).length === 0 ? (
+                <div style={{ fontSize: "0.75rem", color: C.muted, padding: "16px 0" }}>No unresolved frontend errors.</div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.7rem" }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${C.border}`, color: C.muted }}>
+                      <th style={{ textAlign: "left",  padding: "6px 12px 6px 0", fontWeight: 400 }}>Message</th>
+                      <th style={{ textAlign: "left",  padding: "6px 12px", fontWeight: 400 }}>Type</th>
+                      <th style={{ textAlign: "right", padding: "6px 12px", fontWeight: 400 }}>Count</th>
+                      <th style={{ textAlign: "right", padding: "6px 12px", fontWeight: 400 }}>Last Seen</th>
+                      <th style={{ textAlign: "right", padding: "6px 12px", fontWeight: 400 }}>Release</th>
+                      <th style={{ textAlign: "right", padding: "6px 12px", fontWeight: 400 }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.recentErrors.filter(e => !e.resolved).map((e, i) => (
+                      <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}>
+                        <td style={{ padding: "8px 12px 8px 0", maxWidth: 320, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                            title={e.message}>{e.message}</td>
+                        <td style={{ padding: "8px 12px", color: C.muted }}>{e.errorType}</td>
+                        <td style={{ textAlign: "right", padding: "8px 12px", color: Number(e.count) > 10 ? C.rust : C.text }}>{Number(e.count)}</td>
+                        <td style={{ textAlign: "right", padding: "8px 12px", color: C.muted }}>{new Date(Number(e.lastSeen) / 1_000_000).toLocaleString()}</td>
+                        <td style={{ textAlign: "right", padding: "8px 12px", color: C.muted }}>{e.release[0] ?? "—"}</td>
+                        <td style={{ textAlign: "right", padding: "8px 12px" }}>
+                          <button
+                            onClick={async () => {
+                              setResolvingFp(e.fingerprint);
+                              try {
+                                const agent = await makeAgent();
+                                const monitoringId = process.env.MONITORING_CANISTER_ID;
+                                if (!monitoringId) return;
+                                const actor = Actor.createActor(monitoringIdlFactory, { agent, canisterId: monitoringId }) as any;
+                                await actor.resolveFrontendError(e.fingerprint);
+                                void load();
+                              } finally { setResolvingFp(null); }
+                            }}
+                            disabled={resolvingFp === e.fingerprint}
+                            style={{
+                              background: "none", border: `1px solid ${C.border}`, color: C.text,
+                              padding: "3px 8px", cursor: "pointer", fontSize: "0.6rem",
+                              opacity: resolvingFp === e.fingerprint ? 0.5 : 1,
+                            }}
+                          >
+                            Resolve
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
 

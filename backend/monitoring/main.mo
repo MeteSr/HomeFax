@@ -148,6 +148,37 @@ persistent actor Monitoring {
     cyclesPerCall:  [MethodCyclesSummary];   // 13.1.4 — per-method cost baseline
   };
 
+  // ── Frontend Error Monitoring (#297) ──────────────────────────────────────
+
+  public type ErrorSummary = {
+    fingerprint : Text;
+    message     : Text;
+    errorType   : Text;
+    firstSeen   : Time.Time;
+    lastSeen    : Time.Time;
+    count       : Nat;
+    tierCounts  : [(Text, Nat)];
+    release     : ?Text;
+    resolved    : Bool;
+  };
+
+  public type ErrorSummaryInput = {
+    fingerprint : Text;
+    message     : Text;
+    errorType   : Text;
+    count       : Nat;
+    firstSeen   : Time.Time;
+    lastSeen    : Time.Time;
+    tierCounts  : [(Text, Nat)];
+    release     : ?Text;
+  };
+
+  public type FrontendErrorStats = {
+    total           : Nat;
+    unresolved      : Nat;
+    topFingerprints : [ErrorSummary];
+  };
+
   // ─── Constants ───────────────────────────────────────────────────────────────
 
   // 1 trillion cycles = $1.30 USD
@@ -184,6 +215,9 @@ persistent actor Monitoring {
   private let canisterMetrics = Map.empty<Principal, CanisterMetrics>();
   private let alerts          = Map.empty<Text, Alert>();
   private let cyclesPerCall   = Map.empty<Text, MethodCyclesSummary>();
+
+  private let MAX_ERROR_SUMMARIES : Nat = 500;
+  private let frontendErrors = Map.empty<Text, ErrorSummary>();
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 
@@ -684,6 +718,144 @@ persistent actor Monitoring {
       };
     };
     out
+  };
+
+  // ─── Frontend Error Monitoring (#297) ────────────────────────────────────────
+
+  private func strTrunc(s: Text, maxLen: Nat) : Text {
+    if (Text.size(s) <= maxLen) return s;
+    var result = "";
+    var i = 0;
+    for (c in s.chars()) {
+      if (i < maxLen) { result #= Text.fromChar(c); i += 1 } else return result;
+    };
+    result
+  };
+
+  private func mergeTierCounts(a: [(Text, Nat)], b: [(Text, Nat)]) : [(Text, Nat)] {
+    let m = Map.empty<Text, Nat>();
+    for ((tier, cnt) in a.vals()) { Map.add(m, Text.compare, tier, cnt) };
+    for ((tier, cnt) in b.vals()) {
+      let prev = Option.get(Map.get(m, Text.compare, tier), 0);
+      Map.add(m, Text.compare, tier, prev + cnt);
+    };
+    Iter.toArray(Map.entries(m))
+  };
+
+  private func evictOldestError() {
+    var oldestKey : ?Text = null;
+    var oldestTs  : Int   = 0;
+    var first             = true;
+    for (s in Map.values(frontendErrors)) {
+      if (first or s.lastSeen < oldestTs) {
+        oldestKey := ?s.fingerprint;
+        oldestTs  := s.lastSeen;
+        first     := false;
+      };
+    };
+    switch (oldestKey) {
+      case (?fp) { ignore Map.remove(frontendErrors, Text.compare, fp) };
+      case null  {};
+    };
+  };
+
+  /// Record or merge a frontend error summary from the voice server.
+  /// Unauthenticated — the voice server calls this after aggregating raw reports.
+  /// Cap: 500 entries with LRU eviction.
+  public func recordFrontendError(input: ErrorSummaryInput) : async () {
+    let fp = strTrunc(input.fingerprint, 64);
+    if (Text.size(fp) == 0) return;
+    switch (Map.get(frontendErrors, Text.compare, fp)) {
+      case (?existing) {
+        let updated : ErrorSummary = {
+          fingerprint = existing.fingerprint;
+          message     = existing.message;
+          errorType   = existing.errorType;
+          firstSeen   = if (input.firstSeen < existing.firstSeen) input.firstSeen else existing.firstSeen;
+          lastSeen    = if (input.lastSeen  > existing.lastSeen)  input.lastSeen  else existing.lastSeen;
+          count       = existing.count + input.count;
+          tierCounts  = mergeTierCounts(existing.tierCounts, input.tierCounts);
+          release     = switch (existing.release) { case null { input.release }; case r { r } };
+          resolved    = existing.resolved;
+        };
+        Map.add(frontendErrors, Text.compare, fp, updated);
+      };
+      case null {
+        if (Map.size(frontendErrors) >= MAX_ERROR_SUMMARIES) { evictOldestError() };
+        let summary : ErrorSummary = {
+          fingerprint = fp;
+          message     = strTrunc(input.message,   120);
+          errorType   = strTrunc(input.errorType,  80);
+          firstSeen   = input.firstSeen;
+          lastSeen    = input.lastSeen;
+          count       = input.count;
+          tierCounts  = input.tierCounts;
+          release     = input.release;
+          resolved    = false;
+        };
+        Map.add(frontendErrors, Text.compare, fp, summary);
+      };
+    };
+  };
+
+  public query(msg) func getFrontendErrors(from: Nat, limit: Nat) : async [ErrorSummary] {
+    if (not isAdmin(msg.caller)) return [];
+    let all = Array.sort(
+      Iter.toArray(Map.values(frontendErrors)),
+      func(a: ErrorSummary, b: ErrorSummary) : { #less; #equal; #greater } {
+        if      (a.lastSeen > b.lastSeen) #less
+        else if (a.lastSeen < b.lastSeen) #greater
+        else                              #equal
+      }
+    );
+    var slice : [ErrorSummary] = [];
+    var i = 0;
+    for (item in all.vals()) {
+      if (i >= from and i < from + limit) { slice := Array.concat(slice, [item]) };
+      i += 1;
+    };
+    slice
+  };
+
+  public shared(msg) func resolveFrontendError(fingerprint: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    switch (Map.get(frontendErrors, Text.compare, fingerprint)) {
+      case null { #err(#NotFound) };
+      case (?existing) {
+        Map.add(frontendErrors, Text.compare, fingerprint, {
+          fingerprint = existing.fingerprint;
+          message     = existing.message;
+          errorType   = existing.errorType;
+          firstSeen   = existing.firstSeen;
+          lastSeen    = existing.lastSeen;
+          count       = existing.count;
+          tierCounts  = existing.tierCounts;
+          release     = existing.release;
+          resolved    = true;
+        });
+        #ok(())
+      };
+    }
+  };
+
+  public query(msg) func getFrontendErrorStats() : async FrontendErrorStats {
+    if (not isAdmin(msg.caller)) return { total = 0; unresolved = 0; topFingerprints = [] };
+    var unresolved : Nat = 0;
+    for (s in Map.values(frontendErrors)) {
+      if (not s.resolved) { unresolved += 1 };
+    };
+    let sorted = Array.sort(
+      Iter.toArray(Map.values(frontendErrors)),
+      func(a: ErrorSummary, b: ErrorSummary) : { #less; #equal; #greater } {
+        if (a.count > b.count) #less else if (a.count < b.count) #greater else #equal
+      }
+    );
+    var top : [ErrorSummary] = [];
+    var i = 0;
+    for (item in sorted.vals()) {
+      if (i < 10) { top := Array.concat(top, [item]); i += 1 };
+    };
+    { total = Map.size(frontendErrors); unresolved; topFingerprints = top }
   };
 
   // ─── Admin Functions ──────────────────────────────────────────────────────────
