@@ -344,8 +344,9 @@ export default function QuoteRequestPage() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
                   <div>
-                    <label className="form-label">Min rating (stars)</label>
+                    <label className="form-label" htmlFor="min-rating">Min rating (stars)</label>
                     <select
+                      id="min-rating"
                       className="form-input"
                       value={form.minRating}
                       onChange={(e) => update("minRating", e.target.value)}
@@ -359,8 +360,9 @@ export default function QuoteRequestPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="form-label">Max bids</label>
+                    <label className="form-label" htmlFor="max-bids">Max bids</label>
                     <select
+                      id="max-bids"
                       className="form-input"
                       value={form.maxBids}
                       onChange={(e) => update("maxBids", e.target.value)}
@@ -374,8 +376,9 @@ export default function QuoteRequestPage() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                   <div>
-                    <label className="form-label">Min completed jobs</label>
+                    <label className="form-label" htmlFor="min-jobs-completed">Min completed jobs</label>
                     <input
+                      id="min-jobs-completed"
                       type="number" min="0" placeholder="e.g. 5"
                       className="form-input"
                       value={form.minJobsCompleted}
@@ -383,8 +386,9 @@ export default function QuoteRequestPage() {
                     />
                   </div>
                   <div>
-                    <label className="form-label">Min reviews</label>
+                    <label className="form-label" htmlFor="min-reviews">Min reviews</label>
                     <input
+                      id="min-reviews"
                       type="number" min="0" placeholder="e.g. 3"
                       className="form-input"
                       value={form.minReviews}
