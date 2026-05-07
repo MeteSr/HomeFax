@@ -13,6 +13,7 @@ import { HttpAgent, Actor, ActorSubclass } from "@icp-sdk/core/agent";
 import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
 import { IDL } from "@icp-sdk/core/candid";
 import type { SensorEventType, SensorReading } from "./types";
+import { logger } from "./logger";
 
 // ── IDL for the sensor canister ──────────────────────────────────────────────
 
@@ -55,6 +56,7 @@ const SensorDeviceIDL = IDL.Record({
     TeslaPowerwall: IDL.Null,
     LGThinQ: IDL.Null,
     GESmartHQ: IDL.Null,
+    SolarEdge: IDL.Null,
   }),
   name: IDL.Text,
   registeredAt: IDL.Int,
@@ -135,10 +137,7 @@ function buildIdentity(): Ed25519KeyIdentity {
   // Fallback: generate a random identity (ephemeral — dev only).
   // Always pass a cryptographically secure seed explicitly to avoid
   // CVE-2024-1631 (insecure key generation when no seed is supplied).
-  console.warn(
-    "[iot-gateway] GATEWAY_IDENTITY_SEED not set — using ephemeral identity. " +
-    "Add the gateway principal to the sensor canister before recording events."
-  );
+  logger.warn("iot-gateway", "GATEWAY_IDENTITY_SEED not set — using ephemeral identity; add the gateway principal to the sensor canister before recording events");
   const secureSeed = crypto.getRandomValues(new Uint8Array(32));
   return Ed25519KeyIdentity.generate(secureSeed);
 }
