@@ -77,14 +77,18 @@ function fahrenheitToCelsius(f: number): number {
   return parseFloat(((f - 32) * (5 / 9)).toFixed(1));
 }
 
+const HIGH_TEMP_THRESHOLD_C = 35;
+const HIGH_HUMIDITY_THRESHOLD = 70;
+
 export function handleEcobeeEvent(
   body: EcobeeWebhookEvent,
   raw: string
 ): SensorReading | null {
-  const { thermostatId, alerts } = body;
-  if (!thermostatId || !alerts?.length) return null;
+  const { thermostatId, alerts, runtime } = body;
+  if (!thermostatId) return null;
 
-  for (const alert of alerts) {
+  // Alert-driven events take priority — return on first actionable match.
+  for (const alert of alerts ?? []) {
     switch (alert.alertType) {
       case "lowTemp": {
         const celsius =
@@ -128,7 +132,7 @@ export function handleEcobeeEvent(
           rawPayload: raw,
         };
       case "humidity":
-        if (alert.value !== undefined && alert.value > 70) {
+        if (alert.value !== undefined && alert.value > HIGH_HUMIDITY_THRESHOLD) {
           return {
             externalDeviceId: thermostatId,
             eventType: { HighHumidity: null } as SensorEventType,
@@ -138,6 +142,39 @@ export function handleEcobeeEvent(
           };
         }
         break;
+    }
+  }
+
+  // Runtime threshold checks — belt-and-suspenders for polls without active alerts.
+  // Ecobee reports temperature in 10ths of °F (e.g. 680 = 68.0 °F).
+  if (runtime) {
+    const celsius = fahrenheitToCelsius(runtime.actualTemperature / 10);
+    if (celsius <= PIPE_FREEZE_THRESHOLD_C) {
+      return {
+        externalDeviceId: thermostatId,
+        eventType: { LowTemperature: null } as SensorEventType,
+        value: celsius,
+        unit: "°C",
+        rawPayload: raw,
+      };
+    }
+    if (celsius > HIGH_TEMP_THRESHOLD_C) {
+      return {
+        externalDeviceId: thermostatId,
+        eventType: { HighTemperature: null } as SensorEventType,
+        value: celsius,
+        unit: "°C",
+        rawPayload: raw,
+      };
+    }
+    if (runtime.actualHumidity > HIGH_HUMIDITY_THRESHOLD) {
+      return {
+        externalDeviceId: thermostatId,
+        eventType: { HighHumidity: null } as SensorEventType,
+        value: runtime.actualHumidity,
+        unit: "%RH",
+        rawPayload: raw,
+      };
     }
   }
 
