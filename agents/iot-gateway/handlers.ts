@@ -13,6 +13,8 @@ import type {
   MoenFloWebhookEvent,
   HoneywellDevice,
   SmartThingsDeviceEvent,
+  EnphaseSystemEvent,
+  TeslaPowerwallEvent,
 } from "./types";
 
 // ── Nest ─────────────────────────────────────────────────────────────────────
@@ -246,6 +248,92 @@ export function handleHoneywellHomeEvent(
       eventType: { HighHumidity: null } as SensorEventType,
       value: device.indoorHumidity,
       unit: "%RH",
+      rawPayload: raw,
+    };
+  }
+
+  return null;
+}
+
+// ── Enphase Solar ─────────────────────────────────────────────────────────────
+
+const LOW_PRODUCTION_WATTS = 10; // effectively zero — system offline or all inverters faulted
+
+export function handleEnphaseEvent(
+  event: EnphaseSystemEvent,
+  raw: string
+): SensorReading | null {
+  if (!event.systemSerial) return null;
+
+  const externalDeviceId = event.systemSerial;
+
+  // Any inverter not reporting during daylight indicates a hardware fault.
+  if (event.faultedInverters > 0) {
+    return {
+      externalDeviceId,
+      eventType: { SolarFault: null } as SensorEventType,
+      value: event.faultedInverters,
+      unit: "inverters",
+      rawPayload: raw,
+    };
+  }
+
+  // Production near-zero during daylight — system offline or severely degraded.
+  if (event.isDaylight && event.wNow < LOW_PRODUCTION_WATTS) {
+    return {
+      externalDeviceId,
+      eventType: { LowProduction: null } as SensorEventType,
+      value: event.wNow,
+      unit: "W",
+      rawPayload: raw,
+    };
+  }
+
+  return null;
+}
+
+// ── Tesla Powerwall ───────────────────────────────────────────────────────────
+
+const BATTERY_LOW_THRESHOLD   = 20;  // % — warn below this level
+const GRID_CONNECTED_STATUS   = "SystemGridConnected";
+
+export function handleTeslaEvent(
+  event: TeslaPowerwallEvent,
+  raw: string
+): SensorReading | null {
+  if (!event.gatewaySerial) return null;
+
+  const externalDeviceId = event.gatewaySerial;
+
+  // Hard battery fault takes priority over state-based alerts.
+  if (event.hasBatteryAlerts) {
+    return {
+      externalDeviceId,
+      eventType: { SolarFault: null } as SensorEventType,
+      value: 0,
+      unit: "",
+      rawPayload: raw,
+    };
+  }
+
+  // Grid outage — Powerwall has switched to island mode.
+  if (event.gridStatus !== GRID_CONNECTED_STATUS) {
+    return {
+      externalDeviceId,
+      eventType: { GridOutage: null } as SensorEventType,
+      value: event.chargePercent,
+      unit: "%",
+      rawPayload: raw,
+    };
+  }
+
+  // Battery charge critically low.
+  if (event.chargePercent < BATTERY_LOW_THRESHOLD) {
+    return {
+      externalDeviceId,
+      eventType: { BatteryLow: null } as SensorEventType,
+      value: event.chargePercent,
+      unit: "%",
       rawPayload: raw,
     };
   }

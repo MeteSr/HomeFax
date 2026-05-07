@@ -25,6 +25,10 @@ const SensorEventTypeIDL = IDL.Variant({
   HvacFilterDue: IDL.Null,
   HighHumidity: IDL.Null,
   HighTemperature: IDL.Null,
+  SolarFault: IDL.Null,
+  LowProduction: IDL.Null,
+  BatteryLow: IDL.Null,
+  GridOutage: IDL.Null,
 });
 
 const SensorDeviceIDL = IDL.Record({
@@ -37,6 +41,16 @@ const SensorDeviceIDL = IDL.Record({
     Ecobee: IDL.Null,
     MoenFlo: IDL.Null,
     Manual: IDL.Null,
+    RingAlarm: IDL.Null,
+    HoneywellHome: IDL.Null,
+    RheemEcoNet: IDL.Null,
+    Sense: IDL.Null,
+    EmporiaVue: IDL.Null,
+    Rachio: IDL.Null,
+    SmartThings: IDL.Null,
+    HomeAssistant: IDL.Null,
+    EnphaseEnvoy: IDL.Null,
+    TeslaPowerwall: IDL.Null,
   }),
   name: IDL.Text,
   registeredAt: IDL.Int,

@@ -1,10 +1,12 @@
-import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent } from "../handlers";
+import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent, handleEnphaseEvent, handleTeslaEvent } from "../handlers";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
   HoneywellDevice,
   SmartThingsDeviceEvent,
+  EnphaseSystemEvent,
+  TeslaPowerwallEvent,
 } from "../types";
 
 const RAW = "{}";
@@ -614,6 +616,149 @@ describe("handleSmartThingsEvent", () => {
       expect(handleSmartThingsEvent(
         stEvent({ capability: "thermostatOperatingState", attribute: "thermostatOperatingState", value: "heating", unit: undefined }), RAW
       )).toBeNull();
+    });
+  });
+});
+
+// ── handleEnphaseEvent ────────────────────────────────────────────────────────
+
+describe("handleEnphaseEvent", () => {
+  function enphaseEvent(overrides: Partial<EnphaseSystemEvent> = {}): EnphaseSystemEvent {
+    return {
+      systemSerial:     "123456789012",
+      wNow:             3200,
+      faultedInverters: 0,
+      isDaylight:       true,
+      ...overrides,
+    };
+  }
+
+  describe("guard conditions", () => {
+    it("returns null when systemSerial is absent", () => {
+      expect(handleEnphaseEvent(enphaseEvent({ systemSerial: "" }), RAW)).toBeNull();
+    });
+
+    it("returns null when production is normal and no inverters are faulted", () => {
+      expect(handleEnphaseEvent(enphaseEvent(), RAW)).toBeNull();
+    });
+  });
+
+  describe("SolarFault — faulted inverters", () => {
+    it("returns SolarFault when any inverter has a stale reading", () => {
+      const reading = handleEnphaseEvent(enphaseEvent({ faultedInverters: 2 }), RAW);
+      expect(reading!.eventType).toEqual({ SolarFault: null });
+      expect(reading!.value).toBe(2);
+      expect(reading!.unit).toBe("inverters");
+      expect(reading!.externalDeviceId).toBe("123456789012");
+    });
+
+    it("returns SolarFault even at night when an inverter is faulted", () => {
+      const reading = handleEnphaseEvent(enphaseEvent({ faultedInverters: 1, isDaylight: false }), RAW);
+      expect(reading!.eventType).toEqual({ SolarFault: null });
+    });
+
+    it("SolarFault takes priority over low production", () => {
+      const reading = handleEnphaseEvent(enphaseEvent({ faultedInverters: 3, wNow: 0, isDaylight: true }), RAW);
+      expect(reading!.eventType).toEqual({ SolarFault: null });
+    });
+  });
+
+  describe("LowProduction — near-zero output during daylight", () => {
+    it("returns LowProduction when wNow is below threshold during daylight", () => {
+      const reading = handleEnphaseEvent(enphaseEvent({ wNow: 5, isDaylight: true }), RAW);
+      expect(reading!.eventType).toEqual({ LowProduction: null });
+      expect(reading!.value).toBe(5);
+      expect(reading!.unit).toBe("W");
+    });
+
+    it("returns LowProduction when wNow is exactly 0 during daylight", () => {
+      expect(handleEnphaseEvent(enphaseEvent({ wNow: 0, isDaylight: true }), RAW)!.eventType)
+        .toEqual({ LowProduction: null });
+    });
+
+    it("returns null when production is below threshold but it is not daylight", () => {
+      expect(handleEnphaseEvent(enphaseEvent({ wNow: 0, isDaylight: false }), RAW)).toBeNull();
+    });
+
+    it("returns null when wNow is exactly at the threshold (exclusive)", () => {
+      // LOW_PRODUCTION_WATTS = 10; value of 10 should NOT trigger
+      expect(handleEnphaseEvent(enphaseEvent({ wNow: 10, isDaylight: true }), RAW)).toBeNull();
+    });
+  });
+});
+
+// ── handleTeslaEvent ──────────────────────────────────────────────────────────
+
+describe("handleTeslaEvent", () => {
+  function teslaEvent(overrides: Partial<TeslaPowerwallEvent> = {}): TeslaPowerwallEvent {
+    return {
+      gatewaySerial:    "1118431-00-L",
+      chargePercent:    85,
+      gridStatus:       "SystemGridConnected",
+      hasBatteryAlerts: false,
+      ...overrides,
+    };
+  }
+
+  describe("guard conditions", () => {
+    it("returns null when gatewaySerial is absent", () => {
+      expect(handleTeslaEvent(teslaEvent({ gatewaySerial: "" }), RAW)).toBeNull();
+    });
+
+    it("returns null when grid is connected, battery is healthy, and no alerts", () => {
+      expect(handleTeslaEvent(teslaEvent(), RAW)).toBeNull();
+    });
+  });
+
+  describe("SolarFault — battery alerts (hard fault)", () => {
+    it("returns SolarFault when hasBatteryAlerts is true", () => {
+      const reading = handleTeslaEvent(teslaEvent({ hasBatteryAlerts: true }), RAW);
+      expect(reading!.eventType).toEqual({ SolarFault: null });
+      expect(reading!.externalDeviceId).toBe("1118431-00-L");
+    });
+
+    it("SolarFault takes priority over GridOutage", () => {
+      const reading = handleTeslaEvent(teslaEvent({
+        hasBatteryAlerts: true,
+        gridStatus: "SystemIslandedActive",
+      }), RAW);
+      expect(reading!.eventType).toEqual({ SolarFault: null });
+    });
+  });
+
+  describe("GridOutage — islanded mode", () => {
+    it("returns GridOutage when grid status is SystemIslandedActive", () => {
+      const reading = handleTeslaEvent(teslaEvent({ gridStatus: "SystemIslandedActive" }), RAW);
+      expect(reading!.eventType).toEqual({ GridOutage: null });
+      expect(reading!.value).toBe(85);
+      expect(reading!.unit).toBe("%");
+    });
+
+    it("returns GridOutage for any non-connected grid status", () => {
+      const reading = handleTeslaEvent(teslaEvent({ gridStatus: "SystemTransitionToGrid" }), RAW);
+      expect(reading!.eventType).toEqual({ GridOutage: null });
+    });
+
+    it("GridOutage takes priority over BatteryLow", () => {
+      const reading = handleTeslaEvent(teslaEvent({ gridStatus: "SystemIslandedActive", chargePercent: 5 }), RAW);
+      expect(reading!.eventType).toEqual({ GridOutage: null });
+    });
+  });
+
+  describe("BatteryLow — charge threshold", () => {
+    it("returns BatteryLow when charge is below 20 % and grid is connected", () => {
+      const reading = handleTeslaEvent(teslaEvent({ chargePercent: 15 }), RAW);
+      expect(reading!.eventType).toEqual({ BatteryLow: null });
+      expect(reading!.value).toBe(15);
+      expect(reading!.unit).toBe("%");
+    });
+
+    it("returns null when charge is exactly 20 % (exclusive boundary)", () => {
+      expect(handleTeslaEvent(teslaEvent({ chargePercent: 20 }), RAW)).toBeNull();
+    });
+
+    it("returns null when charge is above 20 % with grid connected", () => {
+      expect(handleTeslaEvent(teslaEvent({ chargePercent: 50 }), RAW)).toBeNull();
     });
   });
 });

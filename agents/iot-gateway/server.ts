@@ -28,6 +28,8 @@ import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywell
 import { recordSensorEvent, getGatewayPrincipal } from "./icp";
 import { startEcobeePoller } from "./pollers/ecobee";
 import { startHoneywellPoller, persistTokenState as persistHoneywellTokens } from "./pollers/honeywellHome";
+import { startEnphasePoller } from "./pollers/enphase";
+import { startTeslaPoller } from "./pollers/teslaGateway";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
@@ -361,10 +363,12 @@ app.get("/health", (_req: Request, res: Response) => {
     ok: true,
     gatewayPrincipal: getGatewayPrincipal(),
     sensorCanisterId: process.env.SENSOR_CANISTER_ID ?? "(not set)",
-    platforms: ["nest", "ecobee", "moen-flo", "smartthings", "honeywell-home"],
+    platforms: ["nest", "ecobee", "moen-flo", "smartthings", "honeywell-home", "enphase", "tesla-powerwall"],
     pollers: {
       ecobee:    !!process.env.ECOBEE_CLIENT_ID,
       honeywell: !!process.env.HONEYWELL_CLIENT_ID,
+      enphase:   !!process.env.ENPHASE_ENVOY_IP,
+      tesla:     !!(process.env.TESLA_EMAIL && process.env.TESLA_POWERWALL_SERIAL),
     },
   });
 });
@@ -381,5 +385,11 @@ app.listen(port, () => {
   }
   if (process.env.HONEYWELL_CLIENT_ID) {
     startHoneywellPoller();
+  }
+  if (process.env.ENPHASE_ENVOY_IP) {
+    startEnphasePoller();
+  }
+  if (process.env.TESLA_EMAIL && process.env.TESLA_POWERWALL_SERIAL) {
+    startTeslaPoller();
   }
 });
