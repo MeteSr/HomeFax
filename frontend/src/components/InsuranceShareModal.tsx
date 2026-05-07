@@ -103,7 +103,7 @@ export function InsuranceShareModal({ property, onClose }: InsuranceShareModalPr
       display: "flex", alignItems: "center", justifyContent: "center",
       zIndex: 1000, padding: "1rem",
     }}>
-      <div style={{
+      <div data-testid="insurance-modal" style={{
         background: UI.paper, border: `1px solid ${UI.rule}`,
         maxWidth: 540, width: "100%", padding: "2rem",
         boxShadow: "0 8px 32px rgba(14,14,12,0.18)",

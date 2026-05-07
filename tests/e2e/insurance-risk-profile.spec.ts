@@ -10,7 +10,8 @@
  * IR.7  "Generate new" resets modal back to the generation form
  *
  * All tests use window.__e2e_* injection — no canister required.
- * Mock mode returns maintenanceScore: 78 → grade "B".
+ * Modal scoped via data-testid="insurance-modal" to avoid ambiguity with
+ * PropertyDetailPage elements that share text ("Sensors", "Verified", etc.).
  */
 
 import { test, expect } from "@playwright/test";
@@ -19,50 +20,30 @@ import { injectSubscription } from "./helpers/testData";
 
 // ─── shared fixtures ──────────────────────────────────────────────────────────
 
-/** Property at verificationLevel "Basic" — Insurance Report button should show. */
 async function injectVerifiedProperty(page: any) {
   await page.addInitScript(() => {
     (window as any).__e2e_properties = [
       {
-        id: 1,
-        owner: "test-e2e-principal",
-        address: "123 Maple Street",
-        city: "Austin",
-        state: "TX",
-        zipCode: "78701",
-        propertyType: "SingleFamily",
-        yearBuilt: 2001,
-        squareFeet: 2400,
-        verificationLevel: "Basic",
-        tier: "Basic",
-        createdAt: 0,
-        updatedAt: 0,
-        isActive: true,
+        id: 1, owner: "test-e2e-principal",
+        address: "123 Maple Street", city: "Austin", state: "TX", zipCode: "78701",
+        propertyType: "SingleFamily", yearBuilt: 2001, squareFeet: 2400,
+        verificationLevel: "Basic", tier: "Basic",
+        createdAt: 0, updatedAt: 0, isActive: true,
       },
     ];
     (window as any).__e2e_jobs = [];
   });
 }
 
-/** Property at verificationLevel "Unverified" — button must be hidden. */
 async function injectUnverifiedProperty(page: any) {
   await page.addInitScript(() => {
     (window as any).__e2e_properties = [
       {
-        id: 1,
-        owner: "test-e2e-principal",
-        address: "123 Maple Street",
-        city: "Austin",
-        state: "TX",
-        zipCode: "78701",
-        propertyType: "SingleFamily",
-        yearBuilt: 2001,
-        squareFeet: 2400,
-        verificationLevel: "Unverified",
-        tier: "Basic",
-        createdAt: 0,
-        updatedAt: 0,
-        isActive: true,
+        id: 1, owner: "test-e2e-principal",
+        address: "123 Maple Street", city: "Austin", state: "TX", zipCode: "78701",
+        propertyType: "SingleFamily", yearBuilt: 2001, squareFeet: 2400,
+        verificationLevel: "Unverified", tier: "Basic",
+        createdAt: 0, updatedAt: 0, isActive: true,
       },
     ];
     (window as any).__e2e_jobs = [];
@@ -101,15 +82,17 @@ test.describe("IR.2 — InsuranceShareModal opens", () => {
   });
 
   test("modal heading 'Insurance Risk Report' is visible", async ({ page }) => {
-    await expect(page.getByText(/insurance risk report/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText(/insurance risk report/i)).toBeVisible();
   });
 
-  test("modal shows the property address", async ({ page }) => {
-    await expect(page.getByText("123 Maple Street")).toBeVisible();
+  test("modal shows 'Share with Carrier' sub-heading", async ({ page }) => {
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByRole("heading", { name: /share with carrier/i })).toBeVisible();
   });
 });
 
-// ── IR.3 — Modal expiry options and helper text ───────────────────────────────
+// ── IR.3 — Modal form content ─────────────────────────────────────────────────
 
 test.describe("IR.3 — Modal form content", () => {
   test.beforeEach(async ({ page }) => {
@@ -121,23 +104,28 @@ test.describe("IR.3 — Modal form content", () => {
   });
 
   test("shows 'Link expiry' label", async ({ page }) => {
-    await expect(page.getByText(/link expiry/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText(/link expiry/i)).toBeVisible();
   });
 
   test("shows expiry option '90 days'", async ({ page }) => {
-    await expect(page.getByRole("button", { name: "90 days" })).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByRole("button", { name: "90 days" })).toBeVisible();
   });
 
   test("shows expiry option '1 year'", async ({ page }) => {
-    await expect(page.getByRole("button", { name: "1 year" })).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByRole("button", { name: "1 year" })).toBeVisible();
   });
 
   test("shows helper text about insurance carrier", async ({ page }) => {
-    await expect(page.getByText(/insurance carrier/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText(/insurance carrier/i)).toBeVisible();
   });
 
   test("shows 'Generate Risk Profile' button", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /generate risk profile/i })).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByRole("button", { name: /generate risk profile/i })).toBeVisible();
   });
 });
 
@@ -150,37 +138,44 @@ test.describe("IR.4 — Score and grade after generating", () => {
     await injectVerifiedProperty(page);
     await page.goto("/properties/1");
     await page.getByRole("button", { name: /insurance report/i }).click();
-    await page.getByRole("button", { name: /generate risk profile/i }).click();
-    // Wait for the score to render (mock returns immediately)
-    await expect(page.getByText(/maintenance score/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await modal.getByRole("button", { name: /generate risk profile/i }).click();
+    await expect(modal.getByText(/maintenance score/i)).toBeVisible();
   });
 
   test("shows 'Maintenance Score' label", async ({ page }) => {
-    await expect(page.getByText(/maintenance score/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText(/maintenance score/i)).toBeVisible();
   });
 
   test("shows score value with /100 suffix", async ({ page }) => {
-    await expect(page.getByText(/\/100/)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText(/\/100/)).toBeVisible();
   });
 
   test("shows 'Grade' label", async ({ page }) => {
-    await expect(page.getByText("Grade")).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText("Grade")).toBeVisible();
   });
 
   test("shows stat chip 'Sensors'", async ({ page }) => {
-    await expect(page.getByText("Sensors")).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText("Sensors")).toBeVisible();
   });
 
   test("shows stat chip 'Open jobs'", async ({ page }) => {
-    await expect(page.getByText("Open jobs")).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText("Open jobs")).toBeVisible();
   });
 
   test("shows stat chip 'Verified'", async ({ page }) => {
-    await expect(page.getByText("Verified")).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText("Verified")).toBeVisible();
   });
 
   test("shows stat chip 'Permits'", async ({ page }) => {
-    await expect(page.getByText("Permits")).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText("Permits")).toBeVisible();
   });
 });
 
@@ -193,16 +188,19 @@ test.describe("IR.5 — Verification link section", () => {
     await injectVerifiedProperty(page);
     await page.goto("/properties/1");
     await page.getByRole("button", { name: /insurance report/i }).click();
-    await page.getByRole("button", { name: /generate risk profile/i }).click();
-    await expect(page.getByText(/maintenance score/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await modal.getByRole("button", { name: /generate risk profile/i }).click();
+    await expect(modal.getByText(/maintenance score/i)).toBeVisible();
   });
 
   test("shows 'Verification link' label", async ({ page }) => {
-    await expect(page.getByText(/verification link/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByText(/verification link/i)).toBeVisible();
   });
 
   test("shows 'Copy' button", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /copy/i })).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByRole("button", { name: /copy/i })).toBeVisible();
   });
 });
 
@@ -215,12 +213,14 @@ test.describe("IR.6 — Download JSON button", () => {
     await injectVerifiedProperty(page);
     await page.goto("/properties/1");
     await page.getByRole("button", { name: /insurance report/i }).click();
-    await page.getByRole("button", { name: /generate risk profile/i }).click();
-    await expect(page.getByText(/maintenance score/i)).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await modal.getByRole("button", { name: /generate risk profile/i }).click();
+    await expect(modal.getByText(/maintenance score/i)).toBeVisible();
   });
 
   test("shows 'Download JSON' button", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /download json/i })).toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await expect(modal.getByRole("button", { name: /download json/i })).toBeVisible();
   });
 });
 
@@ -233,11 +233,13 @@ test.describe("IR.7 — Generate new resets modal", () => {
     await injectVerifiedProperty(page);
     await page.goto("/properties/1");
     await page.getByRole("button", { name: /insurance report/i }).click();
-    await page.getByRole("button", { name: /generate risk profile/i }).click();
-    await expect(page.getByText(/maintenance score/i)).toBeVisible();
-    await page.getByRole("button", { name: /generate new/i }).click();
-    // Back to the generation form
-    await expect(page.getByRole("button", { name: /generate risk profile/i })).toBeVisible();
-    await expect(page.getByText(/maintenance score/i)).not.toBeVisible();
+    const modal = page.locator("[data-testid='insurance-modal']");
+    await modal.getByRole("button", { name: /generate risk profile/i }).click();
+    await expect(modal.getByText(/maintenance score/i)).toBeVisible();
+    await modal.getByRole("button", { name: /generate new/i }).click();
+    // Back to the generation form — the Generate button reappears
+    await expect(modal.getByRole("button", { name: /generate risk profile/i })).toBeVisible();
+    // The score section is gone from the modal
+    await expect(modal.getByText(/maintenance score/i)).not.toBeVisible();
   });
 });
