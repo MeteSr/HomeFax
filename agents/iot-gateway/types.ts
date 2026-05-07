@@ -86,6 +86,25 @@ export interface EcobeeWebhookEvent {
   };
 }
 
+// ── Honeywell Home / Resideo ─────────────────────────────────────────────────
+
+/** Normalized device shape shared between Honeywell thermostats and WLD units. */
+export interface HoneywellDevice {
+  deviceID: string;
+  userDefinedDeviceName: string;
+  deviceType: string; // "Thermostat" | "Water Leak Detector"
+  /** Indoor temperature in °F (thermostats only) */
+  indoorTemperature?: number;
+  /** Indoor relative humidity % (thermostats only) */
+  indoorHumidity?: number;
+  operationStatus?: {
+    /** "Heating" | "Cooling" | "Off" | "Fan Only" | "Fault" */
+    equipmentStatus: string;
+  };
+  /** True when a Water Leak Detector reports water presence */
+  waterPresent?: boolean;
+}
+
 // ── Moen Flo ─────────────────────────────────────────────────────────────────
 export type MoenFloAlertType =
   | "LEAK"

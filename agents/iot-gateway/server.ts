@@ -5,9 +5,10 @@
  * forwards normalized sensor readings to the HomeGentic Sensor canister on ICP.
  *
  * Supported platforms:
- *   POST /webhooks/nest      — Google Nest (SDM API Pub/Sub push)
- *   POST /webhooks/ecobee    — Ecobee thermostat alerts
- *   POST /webhooks/moen-flo  — Moen Flo water-leak detection
+ *   POST /webhooks/nest          — Google Nest (SDM API Pub/Sub push)
+ *   POST /webhooks/ecobee        — Ecobee thermostat alerts
+ *   POST /webhooks/moen-flo      — Moen Flo water-leak detection
+ *   GET  /oauth/callback/honeywell — Honeywell Home OAuth 2.0 callback (initial setup)
  *
  * Webhook authenticity:
  *   - Nest:     Validates the Google-Cloud-Token header against NEST_WEBHOOK_SECRET
@@ -22,13 +23,15 @@ import crypto from "crypto";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent } from "./handlers";
+import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent } from "./handlers";
 import { recordSensorEvent, getGatewayPrincipal } from "./icp";
 import { startEcobeePoller } from "./pollers/ecobee";
+import { startHoneywellPoller, persistTokenState as persistHoneywellTokens } from "./pollers/honeywellHome";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
+  HoneywellDevice,
 } from "./types";
 
 const app = express();
@@ -198,15 +201,80 @@ app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Respons
   }
 });
 
+// ── GET /oauth/callback/honeywell ─────────────────────────────────────────────
+// One-time setup endpoint: exchanges the OAuth authorization code for tokens
+// and persists them so the polling loop can start on the next gateway restart.
+app.get("/oauth/callback/honeywell", async (req: Request, res: Response): Promise<void> => {
+  const code = req.query.code as string | undefined;
+  if (!code) {
+    res.status(400).send("Missing code parameter");
+    return;
+  }
+
+  const clientId     = process.env.HONEYWELL_CLIENT_ID;
+  const clientSecret = process.env.HONEYWELL_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    res.status(500).send("HONEYWELL_CLIENT_ID and HONEYWELL_CLIENT_SECRET must be set in .env");
+    return;
+  }
+
+  const redirectUri = `http://localhost:${port}/oauth/callback/honeywell`;
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  const body = new URLSearchParams({
+    grant_type:   "authorization_code",
+    code,
+    redirect_uri: redirectUri,
+  });
+
+  try {
+    const tokenResp = await fetch("https://api.honeywell.com/oauth2/token", {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/x-www-form-urlencoded",
+        "Authorization": `Basic ${credentials}`,
+      },
+      body: body.toString(),
+    });
+
+    if (!tokenResp.ok) {
+      const text = await tokenResp.text();
+      res.status(502).send(`Honeywell token exchange failed (${tokenResp.status}): ${text}`);
+      return;
+    }
+
+    const data = await tokenResp.json() as {
+      access_token:  string;
+      refresh_token: string;
+      expires_in:    number;
+    };
+
+    persistHoneywellTokens({
+      accessToken:  data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt:    Date.now() + data.expires_in * 1000,
+    });
+
+    console.log("[honeywell] OAuth callback — tokens saved. Restart gateway to start polling.");
+    res.send(
+      "<h2>Honeywell Home connected!</h2>" +
+      "<p>Tokens saved. Restart the IoT gateway to begin polling.</p>"
+    );
+  } catch (err) {
+    console.error("[honeywell] OAuth callback error:", err);
+    res.status(500).send("Internal error during token exchange");
+  }
+});
+
 // ── GET /health ───────────────────────────────────────────────────────────────
 app.get("/health", (_req: Request, res: Response) => {
   res.json({
     ok: true,
     gatewayPrincipal: getGatewayPrincipal(),
     sensorCanisterId: process.env.SENSOR_CANISTER_ID ?? "(not set)",
-    platforms: ["nest", "ecobee", "moen-flo"],
+    platforms: ["nest", "ecobee", "moen-flo", "honeywell-home"],
     pollers: {
-      ecobee: !!process.env.ECOBEE_CLIENT_ID,
+      ecobee:    !!process.env.ECOBEE_CLIENT_ID,
+      honeywell: !!process.env.HONEYWELL_CLIENT_ID,
     },
   });
 });
@@ -220,5 +288,8 @@ app.listen(port, () => {
   // Start polling integrations — each is a no-op when env vars are absent.
   if (process.env.ECOBEE_CLIENT_ID) {
     startEcobeePoller();
+  }
+  if (process.env.HONEYWELL_CLIENT_ID) {
+    startHoneywellPoller();
   }
 });
