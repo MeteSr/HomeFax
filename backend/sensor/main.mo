@@ -45,6 +45,7 @@ persistent actor Sensor {
     #EmporiaVue; #Rachio; #SmartThings; #HomeAssistant;
     #EnphaseEnvoy; #TeslaPowerwall;
     #LGThinQ; #GESmartHQ;
+    #SolarEdge;
   };
 
   public type SensorEventType = {

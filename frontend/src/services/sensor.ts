@@ -7,22 +7,31 @@ const SENSOR_CANISTER_ID = (process.env as any).SENSOR_CANISTER_ID || "";
 
 export const idlFactory = ({ IDL }: any) => {
   const DeviceSource = IDL.Variant({
-    Nest:          IDL.Null, Ecobee:        IDL.Null,
-    MoenFlo:       IDL.Null, Manual:        IDL.Null,
-    RingAlarm:     IDL.Null, HoneywellHome: IDL.Null,
-    RheemEcoNet:   IDL.Null, Sense:         IDL.Null,
-    EmporiaVue:    IDL.Null, Rachio:        IDL.Null,
-    SmartThings:   IDL.Null, HomeAssistant: IDL.Null,
+    Nest:           IDL.Null, Ecobee:        IDL.Null,
+    MoenFlo:        IDL.Null, Manual:        IDL.Null,
+    RingAlarm:      IDL.Null, HoneywellHome: IDL.Null,
+    RheemEcoNet:    IDL.Null, Sense:         IDL.Null,
+    EmporiaVue:     IDL.Null, Rachio:        IDL.Null,
+    SmartThings:    IDL.Null, HomeAssistant: IDL.Null,
+    EnphaseEnvoy:   IDL.Null, TeslaPowerwall: IDL.Null,
+    LGThinQ:        IDL.Null, GESmartHQ:     IDL.Null,
+    SolarEdge:      IDL.Null,
   });
   const SensorEventType = IDL.Variant({
-    WaterLeak:       IDL.Null,
-    LeakDetected:    IDL.Null,
-    FloodRisk:       IDL.Null,
-    LowTemperature:  IDL.Null,
-    HvacAlert:       IDL.Null,
-    HvacFilterDue:   IDL.Null,
-    HighHumidity:    IDL.Null,
-    HighTemperature: IDL.Null,
+    WaterLeak:            IDL.Null,
+    LeakDetected:         IDL.Null,
+    FloodRisk:            IDL.Null,
+    LowTemperature:       IDL.Null,
+    HvacAlert:            IDL.Null,
+    HvacFilterDue:        IDL.Null,
+    HighHumidity:         IDL.Null,
+    HighTemperature:      IDL.Null,
+    SolarFault:           IDL.Null,
+    LowProduction:        IDL.Null,
+    BatteryLow:           IDL.Null,
+    GridOutage:           IDL.Null,
+    ApplianceFault:       IDL.Null,
+    ApplianceMaintenance: IDL.Null,
   });
   const Severity = IDL.Variant({ Info: IDL.Null, Warning: IDL.Null, Critical: IDL.Null });
   const SensorDevice = IDL.Record({
@@ -81,11 +90,15 @@ export const idlFactory = ({ IDL }: any) => {
 export type DeviceSource =
   | "Nest" | "Ecobee" | "MoenFlo" | "Manual"
   | "RingAlarm" | "HoneywellHome" | "RheemEcoNet" | "Sense"
-  | "EmporiaVue" | "Rachio" | "SmartThings" | "HomeAssistant";
+  | "EmporiaVue" | "Rachio" | "SmartThings" | "HomeAssistant"
+  | "EnphaseEnvoy" | "TeslaPowerwall" | "LGThinQ" | "GESmartHQ"
+  | "SolarEdge";
 export type SensorEventType =
   | "WaterLeak" | "LeakDetected" | "FloodRisk"
   | "LowTemperature" | "HvacAlert" | "HvacFilterDue"
-  | "HighHumidity" | "HighTemperature";
+  | "HighHumidity" | "HighTemperature"
+  | "SolarFault" | "LowProduction" | "BatteryLow" | "GridOutage"
+  | "ApplianceFault" | "ApplianceMaintenance";
 export type Severity = "Info" | "Warning" | "Critical";
 
 export interface SensorDevice {
@@ -279,14 +292,20 @@ function createSensorService() {
   /** Human-readable label for an event type. */
   eventLabel(type: SensorEventType): string {
     const labels: Record<SensorEventType, string> = {
-      WaterLeak:       "Water Leak Detected",
-      LeakDetected:    "Possible Leak",
-      FloodRisk:       "Flood Risk Alert",
-      LowTemperature:  "Low Temperature — Pipe Freeze Risk",
-      HvacAlert:       "HVAC System Fault",
-      HvacFilterDue:   "HVAC Filter Due",
-      HighHumidity:    "High Humidity",
-      HighTemperature: "High Temperature",
+      WaterLeak:            "Water Leak Detected",
+      LeakDetected:         "Possible Leak",
+      FloodRisk:            "Flood Risk Alert",
+      LowTemperature:       "Low Temperature — Pipe Freeze Risk",
+      HvacAlert:            "HVAC System Fault",
+      HvacFilterDue:        "HVAC Filter Due",
+      HighHumidity:         "High Humidity",
+      HighTemperature:      "High Temperature",
+      SolarFault:           "Solar Inverter Fault",
+      LowProduction:        "Solar Low Production",
+      BatteryLow:           "Battery Critically Low",
+      GridOutage:           "Grid Outage — Battery Islanded",
+      ApplianceFault:       "Appliance Fault",
+      ApplianceMaintenance: "Appliance Maintenance Due",
     };
     return labels[type] ?? type;
   },
