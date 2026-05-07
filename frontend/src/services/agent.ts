@@ -152,8 +152,8 @@ function fromRawProfile(raw: any): AgentOnChainProfile {
     isVerified:              raw.isVerified,
     homeGenticTransactionCount: Number(raw.homeGenticTransactionCount ?? 0),
     typicalCommissionBps:    Number(raw.typicalCommissionBps ?? 250),
-    createdAt:               Number(raw.createdAt),
-    updatedAt:               Number(raw.updatedAt),
+    createdAt:               Number(raw.createdAt) / 1_000_000,
+    updatedAt:               Number(raw.updatedAt) / 1_000_000,
   };
 }
 
@@ -165,7 +165,7 @@ function fromRawReview(raw: any): AgentReview {
     rating:            Number(raw.rating),
     comment:           raw.comment,
     transactionId:     raw.transactionId,
-    createdAt:         Number(raw.createdAt),
+    createdAt:         Number(raw.createdAt) / 1_000_000,
   };
 }
 

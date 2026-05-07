@@ -81,7 +81,6 @@ export const idlFactory = ({ IDL }: any) => {
     diyJobCount:       IDL.Nat,
     permitCount:       IDL.Nat,
     generatedAt:       IDL.Int,
-    planTier:          IDL.Text,
   });
 
   const ShareLink = IDL.Record({
