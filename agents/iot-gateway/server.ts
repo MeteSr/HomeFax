@@ -24,6 +24,7 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent } from "./handlers";
 import { recordSensorEvent, getGatewayPrincipal } from "./icp";
+import { startEcobeePoller } from "./pollers/ecobee";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
@@ -204,6 +205,9 @@ app.get("/health", (_req: Request, res: Response) => {
     gatewayPrincipal: getGatewayPrincipal(),
     sensorCanisterId: process.env.SENSOR_CANISTER_ID ?? "(not set)",
     platforms: ["nest", "ecobee", "moen-flo"],
+    pollers: {
+      ecobee: !!process.env.ECOBEE_CLIENT_ID,
+    },
   });
 });
 
@@ -212,4 +216,9 @@ app.listen(port, () => {
   console.log(`HomeGentic IoT Gateway → http://localhost:${port}`);
   console.log(`Gateway principal: ${getGatewayPrincipal()}`);
   console.log(`Sensor canister:   ${process.env.SENSOR_CANISTER_ID ?? "(set SENSOR_CANISTER_ID)"}`);
+
+  // Start polling integrations — each is a no-op when env vars are absent.
+  if (process.env.ECOBEE_CLIENT_ID) {
+    startEcobeePoller();
+  }
 });

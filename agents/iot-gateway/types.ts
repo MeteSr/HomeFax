@@ -68,9 +68,18 @@ export interface EcobeeAlert {
   value?: number; // temperature °F or humidity %
 }
 
+export interface EcobeeRuntime {
+  /** 10ths of °F — e.g. 680 = 68.0 °F */
+  actualTemperature: number;
+  /** Relative humidity % */
+  actualHumidity: number;
+}
+
 export interface EcobeeWebhookEvent {
   thermostatId: string;
   alerts?: EcobeeAlert[];
+  /** Populated by the poller from the REST API runtime object. */
+  runtime?: EcobeeRuntime;
   runtimeSensorData?: {
     columns: string[];
     data: string[][];
