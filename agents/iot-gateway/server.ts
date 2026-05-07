@@ -5,9 +5,10 @@
  * forwards normalized sensor readings to the HomeGentic Sensor canister on ICP.
  *
  * Supported platforms:
- *   POST /webhooks/nest          — Google Nest (SDM API Pub/Sub push)
- *   POST /webhooks/ecobee        — Ecobee thermostat alerts
- *   POST /webhooks/moen-flo      — Moen Flo water-leak detection
+ *   POST /webhooks/nest            — Google Nest (SDM API Pub/Sub push)
+ *   POST /webhooks/ecobee          — Ecobee thermostat alerts
+ *   POST /webhooks/moen-flo        — Moen Flo water-leak detection
+ *   POST /webhooks/smartthings     — SmartThings capability events (+ CONFIRMATION lifecycle)
  *   GET  /oauth/callback/honeywell — Honeywell Home OAuth 2.0 callback (initial setup)
  *
  * Webhook authenticity:
@@ -23,7 +24,7 @@ import crypto from "crypto";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent } from "./handlers";
+import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent } from "./handlers";
 import { recordSensorEvent, getGatewayPrincipal } from "./icp";
 import { startEcobeePoller } from "./pollers/ecobee";
 import { startHoneywellPoller, persistTokenState as persistHoneywellTokens } from "./pollers/honeywellHome";
@@ -32,6 +33,7 @@ import type {
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
   HoneywellDevice,
+  SmartThingsWebhookBody,
 } from "./types";
 
 const app = express();
@@ -55,6 +57,13 @@ const ecobeeLimiter = rateLimit({
 const nestLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const smartThingsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 120, // SmartThings hubs can send many device events in bursts
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -95,6 +104,18 @@ function verifyHmac(
   // Header may be "sha256=<hex>" or just "<hex>"
   const receivedHash = sig.startsWith("sha256=") ? sig.slice(7) : sig;
   return timingSafeEqual(expected, receivedHash);
+}
+
+// SmartThings signs requests with base64-encoded HMAC-SHA256 (not hex).
+function verifySmartThingsHmac(req: Request, secret: string | undefined): boolean {
+  if (!secret) return true;
+  const sig = req.headers["x-st-hmac-sha256"] as string | undefined;
+  if (!sig) return false;
+  const raw = (req as Request & { rawBody?: Buffer }).rawBody;
+  if (!raw) return false;
+  const expected = crypto.createHmac("sha256", secret).update(raw).digest("base64");
+  if (expected.length !== sig.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
 }
 
 // ── Logging middleware ────────────────────────────────────────────────────────
@@ -201,6 +222,75 @@ app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Respons
   }
 });
 
+// ── POST /webhooks/smartthings ────────────────────────────────────────────────
+// Handles SmartThings Webhook SmartApp lifecycle events.
+// CONFIRMATION and PING are handled without signature verification; all other
+// lifecycles require X-ST-HMAC-SHA256 to match SMARTTHINGS_WEBHOOK_SECRET.
+app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: Response): Promise<void> => {
+  const body = req.body as SmartThingsWebhookBody;
+
+  // CONFIRMATION — SmartThings verifies endpoint ownership on first registration.
+  // Must GET the confirmationUrl before responding.
+  if (body.lifecycle === "CONFIRMATION") {
+    const confirmationUrl = body.confirmationData?.confirmationUrl;
+    if (!confirmationUrl) {
+      res.status(400).json({ error: "missing confirmationUrl" });
+      return;
+    }
+    try {
+      await fetch(confirmationUrl);
+      console.log("[smartthings] webhook confirmed:", confirmationUrl);
+    } catch (err) {
+      console.error("[smartthings] confirmation fetch failed:", err);
+    }
+    res.json({});
+    return;
+  }
+
+  // PING — periodic liveness check from SmartThings.
+  if (body.lifecycle === "PING") {
+    res.json({});
+    return;
+  }
+
+  // All other lifecycles must have a valid signature.
+  if (!verifySmartThingsHmac(req, process.env.SMARTTHINGS_WEBHOOK_SECRET)) {
+    console.warn("[smartthings] rejected — invalid signature");
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  // INSTALL / UPDATE / UNINSTALL — acknowledge without processing device events.
+  if (body.lifecycle !== "EVENT") {
+    res.json({});
+    return;
+  }
+
+  // EVENT — process each capability state-change event.
+  const events = body.eventData?.events ?? [];
+  let processed = 0;
+
+  for (const e of events) {
+    if (!e.deviceEvent) continue;
+    const raw     = JSON.stringify(e.deviceEvent);
+    const reading = handleSmartThingsEvent(e.deviceEvent, raw);
+    if (!reading) continue;
+
+    const eventName = Object.keys(reading.eventType)[0];
+    console.log(`[smartthings] ${eventName} device=${reading.externalDeviceId}`);
+
+    const result = await recordSensorEvent(reading);
+    if (result.success) {
+      console.log(`[smartthings] recorded eventId=${result.eventId}${result.jobId ? ` jobId=${result.jobId}` : ""}`);
+      processed++;
+    } else {
+      console.error(`[smartthings] canister error: ${result.error}`);
+    }
+  }
+
+  res.json({ status: "processed", count: processed });
+});
+
 // ── GET /oauth/callback/honeywell ─────────────────────────────────────────────
 // One-time setup endpoint: exchanges the OAuth authorization code for tokens
 // and persists them so the polling loop can start on the next gateway restart.
@@ -271,7 +361,7 @@ app.get("/health", (_req: Request, res: Response) => {
     ok: true,
     gatewayPrincipal: getGatewayPrincipal(),
     sensorCanisterId: process.env.SENSOR_CANISTER_ID ?? "(not set)",
-    platforms: ["nest", "ecobee", "moen-flo", "honeywell-home"],
+    platforms: ["nest", "ecobee", "moen-flo", "smartthings", "honeywell-home"],
     pollers: {
       ecobee:    !!process.env.ECOBEE_CLIENT_ID,
       honeywell: !!process.env.HONEYWELL_CLIENT_ID,

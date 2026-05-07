@@ -1,5 +1,5 @@
 /**
- * Webhook payload normalizers for Nest, Ecobee, and Moen Flo.
+ * Webhook payload normalizers for all supported IoT platforms.
  *
  * Each handler validates the incoming payload and returns a SensorReading
  * (or null if the event is not actionable for HomeGentic).
@@ -12,6 +12,7 @@ import type {
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
   HoneywellDevice,
+  SmartThingsDeviceEvent,
 } from "./types";
 
 // ── Nest ─────────────────────────────────────────────────────────────────────
@@ -250,6 +251,98 @@ export function handleHoneywellHomeEvent(
   }
 
   return null;
+}
+
+// ── SmartThings ───────────────────────────────────────────────────────────────
+
+export function handleSmartThingsEvent(
+  event: SmartThingsDeviceEvent,
+  raw: string
+): SensorReading | null {
+  if (!event.deviceId) return null;
+
+  const externalDeviceId = event.deviceId;
+
+  switch (event.capability) {
+    case "temperatureMeasurement": {
+      const raw_val = event.value as number;
+      // SmartThings reports the user's configured unit; convert °F → °C if needed.
+      const celsius = event.unit === "F" ? fahrenheitToCelsius(raw_val) : raw_val;
+      if (celsius <= PIPE_FREEZE_THRESHOLD_C) {
+        return {
+          externalDeviceId,
+          eventType: { LowTemperature: null } as SensorEventType,
+          value: celsius,
+          unit: "°C",
+          rawPayload: raw,
+        };
+      }
+      if (celsius > HIGH_TEMP_THRESHOLD_C) {
+        return {
+          externalDeviceId,
+          eventType: { HighTemperature: null } as SensorEventType,
+          value: celsius,
+          unit: "°C",
+          rawPayload: raw,
+        };
+      }
+      return null;
+    }
+
+    case "relativeHumidityMeasurement": {
+      const humidity = event.value as number;
+      if (humidity > HIGH_HUMIDITY_THRESHOLD) {
+        return {
+          externalDeviceId,
+          eventType: { HighHumidity: null } as SensorEventType,
+          value: humidity,
+          unit: "%RH",
+          rawPayload: raw,
+        };
+      }
+      return null;
+    }
+
+    case "waterSensor":
+      if (event.value === "wet") {
+        return {
+          externalDeviceId,
+          eventType: { WaterLeak: null } as SensorEventType,
+          value: 0,
+          unit: "",
+          rawPayload: raw,
+        };
+      }
+      return null;
+
+    case "filterStatus":
+      if (event.value === "replace") {
+        return {
+          externalDeviceId,
+          eventType: { HvacFilterDue: null } as SensorEventType,
+          value: 0,
+          unit: "",
+          rawPayload: raw,
+        };
+      }
+      return null;
+
+    case "thermostatOperatingState":
+      // "fan only" during heating/cooling season indicates the heat exchanger is bypassed.
+      if (event.value === "fan only") {
+        return {
+          externalDeviceId,
+          eventType: { HvacAlert: null } as SensorEventType,
+          value: 0,
+          unit: "",
+          rawPayload: raw,
+        };
+      }
+      return null;
+
+    default:
+      return null;
+  }
 }
 
 // ── Moen Flo ─────────────────────────────────────────────────────────────────

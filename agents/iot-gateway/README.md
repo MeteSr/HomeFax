@@ -11,6 +11,7 @@ normalized sensor readings to the HomeGentic Sensor canister on ICP.
 | Ecobee | REST polling (3 min) | `ECOBEE_CLIENT_ID` + tokens |
 | Moen Flo | Push webhook | `MOEN_FLO_WEBHOOK_SECRET` |
 | Honeywell Home / Resideo | REST polling (3 min) | `HONEYWELL_CLIENT_ID` + tokens |
+| SmartThings | Push webhook | `SMARTTHINGS_WEBHOOK_SECRET` |
 
 ## Running
 
@@ -106,6 +107,60 @@ sensorService.registerDevice(propertyId, "411848373746", "Ecobee", "Living Room 
 The `externalDeviceId` passed here must match the identifier returned by the Ecobee API.
 
 ---
+
+---
+
+## SmartThings — Webhook SmartApp setup
+
+SmartThings is the highest-leverage integration: a single hub can represent
+dozens of Z-Wave, Zigbee, and Wi-Fi sensors. The gateway receives push events
+for every capability state change — no polling required.
+
+### Prerequisites
+
+1. Sign up at [developer.smartthings.com](https://developer.smartthings.com)
+2. Create a Project → **Automation for the SmartThings App** → **Webhook**
+3. Set the **Target URL** to `https://YOUR_GATEWAY_DOMAIN/webhooks/smartthings`
+4. Copy the **Signing Key** → set as `SMARTTHINGS_WEBHOOK_SECRET` in `.env`
+
+### Step 1 — confirm the webhook endpoint
+
+When you save the Target URL, SmartThings immediately POSTs a `CONFIRMATION` lifecycle
+event. The gateway automatically GETs the `confirmationUrl` in that payload to confirm
+ownership. You should see `[smartthings] webhook confirmed` in the gateway logs.
+
+### Step 2 — subscribe to device capabilities
+
+Install the SmartApp in the **SmartThings mobile app** (Automations → + → Your SmartApps).
+Select which devices to share. The app will subscribe to all supported capabilities
+(`temperatureMeasurement`, `relativeHumidityMeasurement`, `waterSensor`, `filterStatus`,
+`thermostatOperatingState`) on the selected devices.
+
+### Step 3 — find device IDs
+
+```bash
+# Personal Access Token (PAT): https://account.smartthings.com/tokens (scope: r:devices:*)
+curl https://api.smartthings.com/v1/devices \
+  -H "Authorization: Bearer $SMARTTHINGS_ACCESS_TOKEN" \
+  | jq '.items[] | {deviceId, label, type: .deviceTypeName}'
+```
+
+Use the `deviceId` UUID as `externalDeviceId` when registering in HomeGentic:
+
+```ts
+sensorService.registerDevice(propertyId, "abc12345-6789-abcd-ef01-234567890abc", "SmartThings", "Kitchen Leak Sensor")
+```
+
+### Events ingested
+
+| Capability | Condition | Canister event | Severity |
+|---|---|---|---|
+| `temperatureMeasurement` | ≤ 4 °C (converts from °F if `unit === "F"`) | `LowTemperature` | Critical |
+| `temperatureMeasurement` | > 35 °C | `HighTemperature` | Warning |
+| `relativeHumidityMeasurement` | > 70 % | `HighHumidity` | Warning |
+| `waterSensor` | `value === "wet"` | `WaterLeak` | Critical |
+| `filterStatus` | `value === "replace"` | `HvacFilterDue` | Info |
+| `thermostatOperatingState` | `value === "fan only"` | `HvacAlert` | Warning |
 
 ---
 
