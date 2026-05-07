@@ -18,7 +18,9 @@ export type SensorEventType =
   | { SolarFault: null }
   | { LowProduction: null }
   | { BatteryLow: null }
-  | { GridOutage: null };
+  | { GridOutage: null }
+  | { ApplianceFault: null }
+  | { ApplianceMaintenance: null };
 
 // ── Normalized internal representation ───────────────────────────────────────
 export interface SensorReading {
@@ -161,6 +163,39 @@ export interface SmartThingsWebhookBody {
     installedApp?: { installedAppId: string };
     events: Array<{ deviceEvent?: SmartThingsDeviceEvent }>;
   };
+}
+
+// ── LG ThinQ ─────────────────────────────────────────────────────────────────
+
+/** PCC (Proactive Customer Care) callback payload from LG ThinQ. */
+export interface LGThinQPCCEvent {
+  deviceId:    string;
+  deviceType?: string;
+  /** "FAIL_CODE" | "FAULT" | "MAINTENANCE" — upper-cased by LG */
+  type:        string;
+  /** Platform-specific fault or maintenance code, e.g. "0F", "FILTER_REPLACE" */
+  code:        string;
+  /** "HIGH" | "MEDIUM" | "LOW" — present on fault events */
+  severity?:   string;
+  message?:    string;
+}
+
+// ── GE SmartHQ ───────────────────────────────────────────────────────────────
+
+export interface GEAppliance {
+  applianceId:   string;
+  applianceType?: string;
+  nickName?:     string;
+}
+
+export interface GEAttributeValue {
+  value:      string;
+  timestamp?: string;
+}
+
+export interface GEApplianceAttributes {
+  applianceId: string;
+  attributes:  Record<string, GEAttributeValue>;
 }
 
 // ── Moen Flo ─────────────────────────────────────────────────────────────────

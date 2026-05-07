@@ -15,6 +15,7 @@ import type {
   SmartThingsDeviceEvent,
   EnphaseSystemEvent,
   TeslaPowerwallEvent,
+  LGThinQPCCEvent,
 } from "./types";
 
 // ── Nest ─────────────────────────────────────────────────────────────────────
@@ -471,6 +472,44 @@ export function handleMoenFloEvent(
         unit: "L/min",
         rawPayload: raw,
       };
+  }
+
+  return null;
+}
+
+// ── LG ThinQ ─────────────────────────────────────────────────────────────────
+
+export function handleLGThinQEvent(
+  event: LGThinQPCCEvent,
+  raw: string
+): SensorReading | null {
+  if (!event.deviceId) return null;
+
+  const externalDeviceId = event.deviceId;
+  const type     = (event.type     ?? "").toUpperCase();
+  const severity = (event.severity ?? "").toUpperCase();
+
+  // Maintenance events — filter replacement, descaling, cleaning reminders.
+  if (type === "MAINTENANCE") {
+    return {
+      externalDeviceId,
+      eventType: { ApplianceMaintenance: null } as SensorEventType,
+      value: 0,
+      unit: "",
+      rawPayload: raw,
+    };
+  }
+
+  // Fault events — FAIL_CODE or FAULT; skip LOW severity to avoid noise.
+  if (type === "FAIL_CODE" || type === "FAULT") {
+    if (severity === "LOW") return null;
+    return {
+      externalDeviceId,
+      eventType: { ApplianceFault: null } as SensorEventType,
+      value: 0,
+      unit: "",
+      rawPayload: raw,
+    };
   }
 
   return null;

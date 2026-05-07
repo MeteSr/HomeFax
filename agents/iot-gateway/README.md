@@ -14,6 +14,8 @@ normalized sensor readings to the HomeGentic Sensor canister on ICP.
 | SmartThings | Push webhook | `SMARTTHINGS_WEBHOOK_SECRET` |
 | Enphase IQ Gateway | Local LAN polling (60 s) | `ENPHASE_ENVOY_IP` + `ENPHASE_ENVOY_TOKEN` |
 | Tesla Powerwall | Local LAN polling (60 s) | `TESLA_EMAIL` + `TESLA_PASSWORD` |
+| LG ThinQ | Push webhook (PCC API) | `LG_THINQ_PAT` |
+| GE Appliances / SmartHQ | REST polling (5 min) | `GE_CLIENT_ID` + tokens |
 
 ## Running
 
@@ -320,6 +322,104 @@ sensorService.registerDevice(propertyId, "LCC-00D02D123456", "HoneywellHome", "L
 | HVAC `equipmentStatus === "Fault"` or `"Off"` | `HvacAlert` | Warning |
 | `indoorHumidity > 70 %` | `HighHumidity` | Warning |
 | Water Leak Detector `isWaterPresent` | `WaterLeak` | Critical |
+
+---
+
+## Gateway identity setup
+
+## LG ThinQ — PCC webhook setup
+
+LG ThinQ Connect PCC (Proactive Customer Care) sends AI-driven fault and maintenance alerts to a registered callback URL.
+
+### Prerequisites
+
+1. Sign up at [thinq.developer.lge.com](https://thinq.developer.lge.com)
+2. Create an app → generate a **Personal Access Token (PAT)** — a UUID4 string
+3. Copy the PAT → set as `LG_THINQ_PAT` in `.env`
+
+### Step 1 — register your callback URL
+
+In the LG Developer Portal: **My Apps → PCC → Register Callback URL**
+
+Set the URL to `https://YOUR_GATEWAY_DOMAIN/webhooks/lgthinq`
+
+LG will POST fault/maintenance alerts with `Authorization: Bearer <your-PAT>`.
+
+### Step 2 — find your LG device ID
+
+```bash
+curl "https://us.api.lgthinq.com:46030/v1/devices" \
+  -H "x-client-id: YOUR_PAT" \
+  -H "x-message-id: " \
+  -H "x-country-code: US" \
+  -H "x-language-code: en-US" \
+  | jq '.result.item[] | {deviceId, alias, deviceType}'
+```
+
+Use `deviceId` as `externalDeviceId`:
+
+```ts
+sensorService.registerDevice(propertyId, "kr.KR.HRA-ADDDCCD0", "LGThinQ", "LG Refrigerator")
+```
+
+### Events ingested
+
+| Condition | Canister event | Severity |
+|---|---|---|
+| PCC `FAIL_CODE` or `FAULT` with severity HIGH or MEDIUM | `ApplianceFault` | Warning |
+| PCC `MAINTENANCE` (filter, descaling, cleaning) | `ApplianceMaintenance` | Info |
+
+---
+
+## GE Appliances / SmartHQ — OAuth 2.0 setup
+
+GE Appliances (GE, Café, Profile, Monogram, Hotpoint) exposes the SmartHQ Platform API. The integration uses OAuth 2.0 and polls every 5 minutes.
+
+### Prerequisites
+
+1. Apply at [smarthqsolutions.com](https://smarthqsolutions.com/smarthq-platform-api) for API access
+2. Once approved, create an app → note the **Client ID** (`GE_CLIENT_ID`) and **Client Secret** (`GE_CLIENT_SECRET`)
+3. Set the callback URL to `http://localhost:3002/oauth/callback/ge`
+
+### Step 1 — authorize in a browser
+
+Open this URL (replace `YOUR_CLIENT_ID`):
+
+```
+https://api.whrcloud.com/oauth/authorize?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http://localhost:3002/oauth/callback/ge
+```
+
+Log in with your GE account and approve access. The browser redirects to the gateway callback, which saves tokens to `.ge-tokens.json`.
+
+You should see: **"GE SmartHQ connected!"**
+
+### Step 2 — restart to begin polling
+
+```bash
+npm run dev
+```
+
+### Finding your GE appliance ID
+
+```bash
+curl "https://api.whrcloud.com/api/v1/appliance" \
+  -H "Authorization: Bearer $GE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  | jq '.[] | {applianceId, applianceType, nickName}'
+```
+
+Use `applianceId` as `externalDeviceId`:
+
+```ts
+sensorService.registerDevice(propertyId, "YOUR_APPLIANCE_ID", "GESmartHQ", "GE Dishwasher")
+```
+
+### Events ingested
+
+| Condition | Canister event | Severity |
+|---|---|---|
+| Appliance attribute with `ERROR_CODE` or `_FAULT` key is non-zero | `ApplianceFault` | Warning |
+| Appliance attribute with `FILTER_CHANGE` or `MAINTENANCE_DUE` key is `"1"` | `ApplianceMaintenance` | Info |
 
 ---
 

@@ -9,12 +9,15 @@
  *   POST /webhooks/ecobee          — Ecobee thermostat alerts
  *   POST /webhooks/moen-flo        — Moen Flo water-leak detection
  *   POST /webhooks/smartthings     — SmartThings capability events (+ CONFIRMATION lifecycle)
+ *   POST /webhooks/lgthinq         — LG ThinQ PCC fault/maintenance callbacks
  *   GET  /oauth/callback/honeywell — Honeywell Home OAuth 2.0 callback (initial setup)
+ *   GET  /oauth/callback/ge        — GE SmartHQ OAuth 2.0 callback (initial setup)
  *
  * Webhook authenticity:
  *   - Nest:     Validates the Google-Cloud-Token header against NEST_WEBHOOK_SECRET
  *   - Ecobee:   Validates X-Ecobee-Signature HMAC-SHA256 against ECOBEE_WEBHOOK_SECRET
  *   - Moen Flo: Validates X-Moen-Signature HMAC-SHA256 against MOEN_FLO_WEBHOOK_SECRET
+ *   - LG ThinQ: Validates Authorization Bearer against LG_THINQ_PAT
  *
  * GET /health — returns gateway status and the service identity principal
  */
@@ -24,18 +27,20 @@ import crypto from "crypto";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent } from "./handlers";
+import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent, handleLGThinQEvent } from "./handlers";
 import { recordSensorEvent, getGatewayPrincipal } from "./icp";
 import { startEcobeePoller } from "./pollers/ecobee";
 import { startHoneywellPoller, persistTokenState as persistHoneywellTokens } from "./pollers/honeywellHome";
 import { startEnphasePoller } from "./pollers/enphase";
 import { startTeslaPoller } from "./pollers/teslaGateway";
+import { startGEPoller, persistTokenState as persistGETokens } from "./pollers/geSmartHQ";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
   HoneywellDevice,
   SmartThingsWebhookBody,
+  LGThinQPCCEvent,
 } from "./types";
 
 const app = express();
@@ -66,6 +71,13 @@ const nestLimiter = rateLimit({
 const smartThingsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 120, // SmartThings hubs can send many device events in bursts
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const lgThinQLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -357,18 +369,116 @@ app.get("/oauth/callback/honeywell", async (req: Request, res: Response): Promis
   }
 });
 
+// ── POST /webhooks/lgthinq ────────────────────────────────────────────────────
+// LG ThinQ PCC (Proactive Customer Care) fault and maintenance callbacks.
+// Validates the Authorization Bearer header against LG_THINQ_PAT.
+app.post("/webhooks/lgthinq", lgThinQLimiter, async (req: Request, res: Response): Promise<void> => {
+  const bearerToken = (req.headers["authorization"] ?? "").replace(/^Bearer\s+/i, "");
+  const expectedPat = process.env.LG_THINQ_PAT;
+
+  if (expectedPat && bearerToken !== expectedPat) {
+    console.warn("[lgthinq] rejected — invalid PAT");
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const body = req.body as LGThinQPCCEvent;
+  const raw  = JSON.stringify(body);
+
+  const reading = handleLGThinQEvent(body, raw);
+  if (!reading) {
+    res.json({ status: "ignored", reason: "no actionable reading" });
+    return;
+  }
+
+  console.log(`[lgthinq] event: ${Object.keys(reading.eventType)[0]} device=${reading.externalDeviceId}`);
+  const result = await recordSensorEvent(reading);
+
+  if (result.success) {
+    console.log(`[lgthinq] recorded eventId=${result.eventId}${result.jobId ? ` jobId=${result.jobId}` : ""}`);
+    res.json({ status: "recorded", eventId: result.eventId, jobId: result.jobId });
+  } else {
+    console.error(`[lgthinq] canister error: ${result.error}`);
+    res.status(500).json({ status: "error", error: result.error });
+  }
+});
+
+// ── GET /oauth/callback/ge ────────────────────────────────────────────────────
+// One-time setup: exchanges the GE SmartHQ OAuth authorization code for tokens.
+app.get("/oauth/callback/ge", async (req: Request, res: Response): Promise<void> => {
+  const code = req.query.code as string | undefined;
+  if (!code) {
+    res.status(400).send("Missing code parameter");
+    return;
+  }
+
+  const clientId     = process.env.GE_CLIENT_ID;
+  const clientSecret = process.env.GE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    res.status(500).send("GE_CLIENT_ID and GE_CLIENT_SECRET must be set in .env");
+    return;
+  }
+
+  const redirectUri  = `http://localhost:${port}/oauth/callback/ge`;
+  const credentials  = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  const body = new URLSearchParams({
+    grant_type:   "authorization_code",
+    code,
+    redirect_uri: redirectUri,
+  });
+
+  try {
+    const tokenResp = await fetch("https://api.whrcloud.com/oauth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type":  "application/x-www-form-urlencoded",
+        "Authorization": `Basic ${credentials}`,
+      },
+      body: body.toString(),
+    });
+
+    if (!tokenResp.ok) {
+      const text = await tokenResp.text();
+      res.status(502).send(`GE SmartHQ token exchange failed (${tokenResp.status}): ${text}`);
+      return;
+    }
+
+    const data = await tokenResp.json() as {
+      access_token:  string;
+      refresh_token: string;
+      expires_in:    number;
+    };
+
+    persistGETokens({
+      accessToken:  data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt:    Date.now() + data.expires_in * 1000,
+    });
+
+    console.log("[ge] OAuth callback — tokens saved. Restart gateway to start polling.");
+    res.send(
+      "<h2>GE SmartHQ connected!</h2>" +
+      "<p>Tokens saved. Restart the IoT gateway to begin polling.</p>"
+    );
+  } catch (err) {
+    console.error("[ge] OAuth callback error:", err);
+    res.status(500).send("Internal error during token exchange");
+  }
+});
+
 // ── GET /health ───────────────────────────────────────────────────────────────
 app.get("/health", (_req: Request, res: Response) => {
   res.json({
     ok: true,
     gatewayPrincipal: getGatewayPrincipal(),
     sensorCanisterId: process.env.SENSOR_CANISTER_ID ?? "(not set)",
-    platforms: ["nest", "ecobee", "moen-flo", "smartthings", "honeywell-home", "enphase", "tesla-powerwall"],
+    platforms: ["nest", "ecobee", "moen-flo", "smartthings", "honeywell-home", "enphase", "tesla-powerwall", "lgthinq", "ge-smarthq"],
     pollers: {
       ecobee:    !!process.env.ECOBEE_CLIENT_ID,
       honeywell: !!process.env.HONEYWELL_CLIENT_ID,
       enphase:   !!process.env.ENPHASE_ENVOY_IP,
       tesla:     !!(process.env.TESLA_EMAIL && process.env.TESLA_POWERWALL_SERIAL),
+      ge:        !!process.env.GE_CLIENT_ID,
     },
   });
 });
@@ -391,5 +501,8 @@ app.listen(port, () => {
   }
   if (process.env.TESLA_EMAIL && process.env.TESLA_POWERWALL_SERIAL) {
     startTeslaPoller();
+  }
+  if (process.env.GE_CLIENT_ID) {
+    startGEPoller();
   }
 });
