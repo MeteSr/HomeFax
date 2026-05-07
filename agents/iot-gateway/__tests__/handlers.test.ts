@@ -1,9 +1,10 @@
-import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent } from "../handlers";
+import { handleNestEvent, handleEcobeeEvent, handleMoenFloEvent, handleHoneywellHomeEvent, handleSmartThingsEvent } from "../handlers";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
   MoenFloWebhookEvent,
   HoneywellDevice,
+  SmartThingsDeviceEvent,
 } from "../types";
 
 const RAW = "{}";
@@ -480,6 +481,139 @@ describe("handleHoneywellHomeEvent", () => {
         honeywellDevice({ indoorTemperature: 96, indoorHumidity: 80 }), RAW
       );
       expect(reading!.eventType).toEqual({ HighTemperature: null });
+    });
+  });
+});
+
+// ── handleSmartThingsEvent ────────────────────────────────────────────────────
+
+describe("handleSmartThingsEvent", () => {
+  function stEvent(overrides: Partial<SmartThingsDeviceEvent>): SmartThingsDeviceEvent {
+    return {
+      deviceId:   "abc12345-6789-abcd-ef01-234567890abc",
+      capability: "temperatureMeasurement",
+      attribute:  "temperature",
+      value:      22,
+      unit:       "C",
+      ...overrides,
+    };
+  }
+
+  describe("guard conditions", () => {
+    it("returns null when deviceId is absent", () => {
+      expect(handleSmartThingsEvent(stEvent({ deviceId: "" }), RAW)).toBeNull();
+    });
+
+    it("returns null for an unknown capability", () => {
+      expect(handleSmartThingsEvent(stEvent({ capability: "motionSensor", attribute: "motion", value: "active" }), RAW)).toBeNull();
+    });
+  });
+
+  describe("temperatureMeasurement", () => {
+    it("returns LowTemperature when Celsius value is below the freeze threshold", () => {
+      const reading = handleSmartThingsEvent(stEvent({ value: 2, unit: "C" }), RAW);
+      expect(reading!.eventType).toEqual({ LowTemperature: null });
+      expect(reading!.value).toBe(2);
+      expect(reading!.unit).toBe("°C");
+    });
+
+    it("returns LowTemperature at exactly 4 °C (inclusive boundary)", () => {
+      expect(handleSmartThingsEvent(stEvent({ value: 4, unit: "C" }), RAW)!.eventType)
+        .toEqual({ LowTemperature: null });
+    });
+
+    it("returns null when Celsius temperature is just above 4 °C", () => {
+      expect(handleSmartThingsEvent(stEvent({ value: 5, unit: "C" }), RAW)).toBeNull();
+    });
+
+    it("returns HighTemperature when Celsius value exceeds 35", () => {
+      const reading = handleSmartThingsEvent(stEvent({ value: 36, unit: "C" }), RAW);
+      expect(reading!.eventType).toEqual({ HighTemperature: null });
+      expect(reading!.value).toBe(36);
+    });
+
+    it("returns null when Celsius temperature is exactly 35 (exclusive upper boundary)", () => {
+      expect(handleSmartThingsEvent(stEvent({ value: 35, unit: "C" }), RAW)).toBeNull();
+    });
+
+    it("returns null for a normal Celsius temperature", () => {
+      expect(handleSmartThingsEvent(stEvent({ value: 22, unit: "C" }), RAW)).toBeNull();
+    });
+
+    // 33 °F → 0.6 °C ≤ 4 °C
+    it("converts °F to °C and returns LowTemperature for a cold Fahrenheit reading", () => {
+      const reading = handleSmartThingsEvent(stEvent({ value: 33, unit: "F" }), RAW);
+      expect(reading!.eventType).toEqual({ LowTemperature: null });
+      expect(reading!.unit).toBe("°C");
+    });
+
+    // 96 °F → 35.6 °C > 35 °C
+    it("converts °F to °C and returns HighTemperature for a hot Fahrenheit reading", () => {
+      const reading = handleSmartThingsEvent(stEvent({ value: 96, unit: "F" }), RAW);
+      expect(reading!.eventType).toEqual({ HighTemperature: null });
+    });
+  });
+
+  describe("relativeHumidityMeasurement", () => {
+    it("returns HighHumidity when humidity exceeds 70 %", () => {
+      const reading = handleSmartThingsEvent(
+        stEvent({ capability: "relativeHumidityMeasurement", attribute: "humidity", value: 75, unit: "%" }), RAW
+      );
+      expect(reading!.eventType).toEqual({ HighHumidity: null });
+      expect(reading!.value).toBe(75);
+      expect(reading!.unit).toBe("%RH");
+    });
+
+    it("returns null when humidity is exactly 70 % (exclusive boundary)", () => {
+      expect(handleSmartThingsEvent(
+        stEvent({ capability: "relativeHumidityMeasurement", attribute: "humidity", value: 70, unit: "%" }), RAW
+      )).toBeNull();
+    });
+  });
+
+  describe("waterSensor", () => {
+    it("returns WaterLeak when water value is 'wet'", () => {
+      const reading = handleSmartThingsEvent(
+        stEvent({ capability: "waterSensor", attribute: "water", value: "wet", unit: undefined }), RAW
+      );
+      expect(reading!.eventType).toEqual({ WaterLeak: null });
+      expect(reading!.externalDeviceId).toBe("abc12345-6789-abcd-ef01-234567890abc");
+    });
+
+    it("returns null when water value is 'dry'", () => {
+      expect(handleSmartThingsEvent(
+        stEvent({ capability: "waterSensor", attribute: "water", value: "dry", unit: undefined }), RAW
+      )).toBeNull();
+    });
+  });
+
+  describe("filterStatus", () => {
+    it("returns HvacFilterDue when filterStatus is 'replace'", () => {
+      const reading = handleSmartThingsEvent(
+        stEvent({ capability: "filterStatus", attribute: "filterStatus", value: "replace", unit: undefined }), RAW
+      );
+      expect(reading!.eventType).toEqual({ HvacFilterDue: null });
+    });
+
+    it("returns null when filterStatus is 'normal'", () => {
+      expect(handleSmartThingsEvent(
+        stEvent({ capability: "filterStatus", attribute: "filterStatus", value: "normal", unit: undefined }), RAW
+      )).toBeNull();
+    });
+  });
+
+  describe("thermostatOperatingState", () => {
+    it("returns HvacAlert when thermostatOperatingState is 'fan only'", () => {
+      const reading = handleSmartThingsEvent(
+        stEvent({ capability: "thermostatOperatingState", attribute: "thermostatOperatingState", value: "fan only", unit: undefined }), RAW
+      );
+      expect(reading!.eventType).toEqual({ HvacAlert: null });
+    });
+
+    it("returns null when thermostatOperatingState is 'heating' (normal operation)", () => {
+      expect(handleSmartThingsEvent(
+        stEvent({ capability: "thermostatOperatingState", attribute: "thermostatOperatingState", value: "heating", unit: undefined }), RAW
+      )).toBeNull();
     });
   });
 });

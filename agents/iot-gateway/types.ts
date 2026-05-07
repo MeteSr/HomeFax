@@ -105,6 +105,32 @@ export interface HoneywellDevice {
   waterPresent?: boolean;
 }
 
+// ── SmartThings ──────────────────────────────────────────────────────────────
+
+/** A single capability state-change event from the SmartThings webhook payload. */
+export interface SmartThingsDeviceEvent {
+  deviceId:     string;
+  componentId?: string;
+  capability:   string; // e.g. "temperatureMeasurement", "waterSensor"
+  attribute:    string; // e.g. "temperature", "water"
+  value:        unknown; // number for temp/humidity, string for water/filter/hvac state
+  unit?:        string; // "C" | "F" | "%" — present on temperature events
+  stateChange?: boolean;
+}
+
+export interface SmartThingsWebhookBody {
+  lifecycle:        "CONFIRMATION" | "EVENT" | "INSTALL" | "UPDATE" | "UNINSTALL" | "PING";
+  executionId?:     string;
+  confirmationData?: {
+    appId:           string;
+    confirmationUrl: string;
+  };
+  eventData?: {
+    installedApp?: { installedAppId: string };
+    events: Array<{ deviceEvent?: SmartThingsDeviceEvent }>;
+  };
+}
+
 // ── Moen Flo ─────────────────────────────────────────────────────────────────
 export type MoenFloAlertType =
   | "LEAK"
