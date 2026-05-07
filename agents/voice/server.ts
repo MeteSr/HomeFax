@@ -56,24 +56,24 @@ interface ErrorAgg {
 const errorAggMap = new Map<string, ErrorAgg>();
 
 async function flushErrorAggregations(): Promise<void> {
-  const dirty: ErrorSummaryInput[] = [];
-  for (const [fp, agg] of errorAggMap) {
-    if (!agg.dirty) continue;
-    dirty.push({
-      fingerprint : fp,
-      message     : agg.message,
-      errorType   : agg.errorType,
-      count       : agg.count,
-      firstSeen   : BigInt(Math.floor(agg.firstSeen * 1_000_000)),
-      lastSeen    : BigInt(Math.floor(agg.lastSeen  * 1_000_000)),
-      tierCounts  : [...agg.tierCounts.entries()],
-      release     : agg.release,
+  const pendingFlush: ErrorSummaryInput[] = [];
+  for (const [fingerprint, aggregation] of errorAggMap) {
+    if (!aggregation.dirty) continue;
+    pendingFlush.push({
+      fingerprint : fingerprint,
+      message     : aggregation.message,
+      errorType   : aggregation.errorType,
+      count       : aggregation.count,
+      firstSeen   : BigInt(Math.floor(aggregation.firstSeen * 1_000_000)),
+      lastSeen    : BigInt(Math.floor(aggregation.lastSeen  * 1_000_000)),
+      tierCounts  : [...aggregation.tierCounts.entries()],
+      release     : aggregation.release,
     });
-    agg.dirty = false;
-    agg.count = 0;  // reset count so next flush only sends the delta
+    aggregation.dirty = false;
+    aggregation.count = 0;  // reset count so next flush only sends the delta
   }
-  for (const input of dirty) {
-    try { await recordFrontendError(input); } catch { /* best-effort */ }
+  for (const entry of pendingFlush) {
+    try { await recordFrontendError(entry); } catch { /* best-effort */ }
   }
 }
 
@@ -980,25 +980,25 @@ app.post("/api/errors", (req: Request, res: Response): void => {
   }) + "\n");
 
   // Update in-memory aggregation for canister flush
-  const fp = `${message.slice(0, 100)}::${(stack ?? "").split("\n").find((l) => l.includes("/src/"))?.trim().slice(0, 100) ?? ""}`;
+  const fingerprint = `${message.slice(0, 100)}::${(stack ?? "").split("\n").find((line) => line.includes("/src/"))?.trim().slice(0, 100) ?? ""}`;
   const now = Date.now();
-  const existing = errorAggMap.get(fp);
+  const existing = errorAggMap.get(fingerprint);
   if (existing) {
     existing.count++;
     existing.lastSeen = now;
     if (tier) { existing.tierCounts.set(tier, (existing.tierCounts.get(tier) ?? 0) + 1) }
     existing.dirty = true;
   } else {
-    const tc = new Map<string, number>();
-    if (tier) tc.set(tier, 1);
-    errorAggMap.set(fp, {
-      fingerprint : fp,
+    const tierCounts = new Map<string, number>();
+    if (tier) tierCounts.set(tier, 1);
+    errorAggMap.set(fingerprint, {
+      fingerprint : fingerprint,
       message     : message.slice(0, 120),
       errorType   : (errorType ?? "Error").slice(0, 80),
       count       : 1,
       firstSeen   : now,
       lastSeen    : now,
-      tierCounts  : tc,
+      tierCounts  : tierCounts,
       release     : release,
       dirty       : true,
     });

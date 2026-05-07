@@ -126,7 +126,7 @@ export async function recordFrontendError(input: ErrorSummaryInput): Promise<voi
     count       : BigInt(input.count),
     firstSeen   : input.firstSeen,
     lastSeen    : input.lastSeen,
-    tierCounts  : input.tierCounts.map(([t, c]) => [t, BigInt(c)] as [string, bigint]),
+    tierCounts  : input.tierCounts.map(([tier, count]) => [tier, BigInt(count)] as [string, bigint]),
     release     : input.release ? [input.release] : [],
   };
   await actor.recordFrontendError(candid);

@@ -722,39 +722,39 @@ persistent actor Monitoring {
 
   // ─── Frontend Error Monitoring (#297) ────────────────────────────────────────
 
-  private func strTrunc(s: Text, maxLen: Nat) : Text {
-    if (Text.size(s) <= maxLen) return s;
+  private func strTrunc(text: Text, maxLen: Nat) : Text {
+    if (Text.size(text) <= maxLen) return text;
     var result = "";
-    var i = 0;
-    for (c in s.chars()) {
-      if (i < maxLen) { result #= Text.fromChar(c); i += 1 } else return result;
+    var index = 0;
+    for (char in text.chars()) {
+      if (index < maxLen) { result #= Text.fromChar(char); index += 1 } else return result;
     };
     result
   };
 
-  private func mergeTierCounts(a: [(Text, Nat)], b: [(Text, Nat)]) : [(Text, Nat)] {
-    let m = Map.empty<Text, Nat>();
-    for ((tier, cnt) in a.vals()) { Map.add(m, Text.compare, tier, cnt) };
-    for ((tier, cnt) in b.vals()) {
-      let prev = Option.get(Map.get(m, Text.compare, tier), 0);
-      Map.add(m, Text.compare, tier, prev + cnt);
+  private func mergeTierCounts(existing: [(Text, Nat)], incoming: [(Text, Nat)]) : [(Text, Nat)] {
+    let merged = Map.empty<Text, Nat>();
+    for ((tier, count) in existing.vals()) { Map.add(merged, Text.compare, tier, count) };
+    for ((tier, count) in incoming.vals()) {
+      let prev = Option.get(Map.get(merged, Text.compare, tier), 0);
+      Map.add(merged, Text.compare, tier, prev + count);
     };
-    Iter.toArray(Map.entries(m))
+    Iter.toArray(Map.entries(merged))
   };
 
   private func evictOldestError() {
     var oldestKey : ?Text = null;
     var oldestTs  : Int   = 0;
     var first             = true;
-    for (s in Map.values(frontendErrors)) {
-      if (first or s.lastSeen < oldestTs) {
-        oldestKey := ?s.fingerprint;
-        oldestTs  := s.lastSeen;
+    for (summary in Map.values(frontendErrors)) {
+      if (first or summary.lastSeen < oldestTs) {
+        oldestKey := ?summary.fingerprint;
+        oldestTs  := summary.lastSeen;
         first     := false;
       };
     };
     switch (oldestKey) {
-      case (?fp) { ignore Map.remove(frontendErrors, Text.compare, fp) };
+      case (?oldestFingerprint) { ignore Map.remove(frontendErrors, Text.compare, oldestFingerprint) };
       case null  {};
     };
   };
@@ -763,9 +763,9 @@ persistent actor Monitoring {
   /// Unauthenticated — the voice server calls this after aggregating raw reports.
   /// Cap: 500 entries with LRU eviction.
   public func recordFrontendError(input: ErrorSummaryInput) : async () {
-    let fp = strTrunc(input.fingerprint, 64);
-    if (Text.size(fp) == 0) return;
-    switch (Map.get(frontendErrors, Text.compare, fp)) {
+    let normalizedFingerprint = strTrunc(input.fingerprint, 64);
+    if (Text.size(normalizedFingerprint) == 0) return;
+    switch (Map.get(frontendErrors, Text.compare, normalizedFingerprint)) {
       case (?existing) {
         let updated : ErrorSummary = {
           fingerprint = existing.fingerprint;
@@ -778,12 +778,12 @@ persistent actor Monitoring {
           release     = switch (existing.release) { case null { input.release }; case r { r } };
           resolved    = existing.resolved;
         };
-        Map.add(frontendErrors, Text.compare, fp, updated);
+        Map.add(frontendErrors, Text.compare, normalizedFingerprint, updated);
       };
       case null {
         if (Map.size(frontendErrors) >= MAX_ERROR_SUMMARIES) { evictOldestError() };
         let summary : ErrorSummary = {
-          fingerprint = fp;
+          fingerprint = normalizedFingerprint;
           message     = strTrunc(input.message,   120);
           errorType   = strTrunc(input.errorType,  80);
           firstSeen   = input.firstSeen;
@@ -793,7 +793,7 @@ persistent actor Monitoring {
           release     = input.release;
           resolved    = false;
         };
-        Map.add(frontendErrors, Text.compare, fp, summary);
+        Map.add(frontendErrors, Text.compare, normalizedFingerprint, summary);
       };
     };
   };
@@ -802,17 +802,17 @@ persistent actor Monitoring {
     if (not isAdmin(msg.caller)) return [];
     let all = Array.sort(
       Iter.toArray(Map.values(frontendErrors)),
-      func(a: ErrorSummary, b: ErrorSummary) : { #less; #equal; #greater } {
-        if      (a.lastSeen > b.lastSeen) #less
-        else if (a.lastSeen < b.lastSeen) #greater
-        else                              #equal
+      func(lhs: ErrorSummary, rhs: ErrorSummary) : { #less; #equal; #greater } {
+        if      (lhs.lastSeen > rhs.lastSeen) #less
+        else if (lhs.lastSeen < rhs.lastSeen) #greater
+        else                                  #equal
       }
     );
     var slice : [ErrorSummary] = [];
-    var i = 0;
+    var index = 0;
     for (item in all.vals()) {
-      if (i >= from and i < from + limit) { slice := Array.concat(slice, [item]) };
-      i += 1;
+      if (index >= from and index < from + limit) { slice := Array.concat(slice, [item]) };
+      index += 1;
     };
     slice
   };
@@ -841,19 +841,19 @@ persistent actor Monitoring {
   public query(msg) func getFrontendErrorStats() : async FrontendErrorStats {
     if (not isAdmin(msg.caller)) return { total = 0; unresolved = 0; topFingerprints = [] };
     var unresolved : Nat = 0;
-    for (s in Map.values(frontendErrors)) {
-      if (not s.resolved) { unresolved += 1 };
+    for (summary in Map.values(frontendErrors)) {
+      if (not summary.resolved) { unresolved += 1 };
     };
     let sorted = Array.sort(
       Iter.toArray(Map.values(frontendErrors)),
-      func(a: ErrorSummary, b: ErrorSummary) : { #less; #equal; #greater } {
-        if (a.count > b.count) #less else if (a.count < b.count) #greater else #equal
+      func(lhs: ErrorSummary, rhs: ErrorSummary) : { #less; #equal; #greater } {
+        if (lhs.count > rhs.count) #less else if (lhs.count < rhs.count) #greater else #equal
       }
     );
     var top : [ErrorSummary] = [];
-    var i = 0;
+    var index = 0;
     for (item in sorted.vals()) {
-      if (i < 10) { top := Array.concat(top, [item]); i += 1 };
+      if (index < 10) { top := Array.concat(top, [item]); index += 1 };
     };
     { total = Map.size(frontendErrors); unresolved; topFingerprints = top }
   };
