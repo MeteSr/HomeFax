@@ -198,6 +198,20 @@ export interface GEApplianceAttributes {
   attributes:  Record<string, GEAttributeValue>;
 }
 
+// ── SolarEdge ─────────────────────────────────────────────────────────────────
+
+/** Normalized event built by the SolarEdge poller from overview + alerts data. */
+export interface SolarEdgeEvent {
+  /** Numeric site ID — used as externalDeviceId */
+  siteId:          string;
+  /** Current site power in watts (from overview.currentPower.power) */
+  currentPowerW:   number;
+  /** True when a CRITICAL alert is present in the site's active alerts */
+  hasCriticalAlert: boolean;
+  /** True when it is expected sun hours (7am–7pm heuristic) */
+  isDaylight:      boolean;
+}
+
 // ── Moen Flo ─────────────────────────────────────────────────────────────────
 export type MoenFloAlertType =
   | "LEAK"

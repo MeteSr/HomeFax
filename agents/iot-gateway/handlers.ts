@@ -16,6 +16,7 @@ import type {
   EnphaseSystemEvent,
   TeslaPowerwallEvent,
   LGThinQPCCEvent,
+  SolarEdgeEvent,
 } from "./types";
 
 // ── Nest ─────────────────────────────────────────────────────────────────────
@@ -508,6 +509,41 @@ export function handleLGThinQEvent(
       eventType: { ApplianceFault: null } as SensorEventType,
       value: 0,
       unit: "",
+      rawPayload: raw,
+    };
+  }
+
+  return null;
+}
+
+// ── SolarEdge ─────────────────────────────────────────────────────────────────
+
+const SOLAREDGE_LOW_PRODUCTION_WATTS = 10;
+
+export function handleSolarEdgeEvent(
+  event: SolarEdgeEvent,
+  raw: string
+): SensorReading | null {
+  if (!event.siteId) return null;
+
+  const externalDeviceId = event.siteId;
+
+  if (event.hasCriticalAlert) {
+    return {
+      externalDeviceId,
+      eventType: { SolarFault: null } as SensorEventType,
+      value: 0,
+      unit: "",
+      rawPayload: raw,
+    };
+  }
+
+  if (event.isDaylight && event.currentPowerW < SOLAREDGE_LOW_PRODUCTION_WATTS) {
+    return {
+      externalDeviceId,
+      eventType: { LowProduction: null } as SensorEventType,
+      value: event.currentPowerW,
+      unit: "W",
       rawPayload: raw,
     };
   }

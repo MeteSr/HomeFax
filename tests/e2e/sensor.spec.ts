@@ -72,16 +72,37 @@ test.describe("SensorPage — /sensor", () => {
       await expect(page.getByLabel(/device type/i).locator("option", { hasText: /honeywell home/i })).toHaveCount(1);
     });
 
-    test("dropdown includes Rheem EcoNet", async ({ page }) => {
-      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /rheem econet/i })).toHaveCount(1);
+    // Tier D sources are in Connected Accounts, not the modal dropdown
+    test("dropdown does NOT include Rheem EcoNet (moved to Connected Accounts)", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /rheem econet/i })).toHaveCount(0);
     });
 
-    test("dropdown includes Sense Energy Monitor", async ({ page }) => {
-      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /sense energy/i })).toHaveCount(1);
+    test("dropdown does NOT include Sense Energy Monitor (moved to Connected Accounts)", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /sense energy/i })).toHaveCount(0);
     });
 
-    test("dropdown includes Emporia Vue", async ({ page }) => {
-      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /emporia vue/i })).toHaveCount(1);
+    test("dropdown does NOT include Emporia Vue (moved to Connected Accounts)", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /emporia vue/i })).toHaveCount(0);
+    });
+
+    test("dropdown includes SolarEdge Solar", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /solaredge/i })).toHaveCount(1);
+    });
+
+    test("dropdown includes Enphase IQ Gateway", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /enphase/i })).toHaveCount(1);
+    });
+
+    test("dropdown includes Tesla Powerwall", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /tesla powerwall/i })).toHaveCount(1);
+    });
+
+    test("dropdown includes LG ThinQ", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /lg thinq/i })).toHaveCount(1);
+    });
+
+    test("dropdown includes GE SmartHQ", async ({ page }) => {
+      await expect(page.getByLabel(/device type/i).locator("option", { hasText: /ge smarthq/i })).toHaveCount(1);
     });
 
     test("dropdown includes Rachio Smart Sprinkler", async ({ page }) => {
@@ -100,14 +121,38 @@ test.describe("SensorPage — /sensor", () => {
       await expect(page.getByLabel(/device type/i).locator("option", { hasText: /manual entry/i })).toHaveCount(1);
     });
 
-    test("dropdown has 12 source options in total", async ({ page }) => {
+    test("dropdown has 14 source options in total", async ({ page }) => {
       const options = page.getByLabel(/device type/i).locator("option");
-      await expect(options).toHaveCount(12);
+      await expect(options).toHaveCount(14);
     });
 
     test("Cancel button closes the modal", async ({ page }) => {
       await page.getByRole("button", { name: /cancel/i }).click();
       await expect(page.getByRole("heading", { name: /register device/i })).not.toBeVisible();
+    });
+  });
+
+  // ── Connected Accounts section (Tier D — credential-based platforms) ─────────
+
+  test.describe("Connected Accounts section", () => {
+    test("shows 'Connected Accounts' heading", async ({ page }) => {
+      const section = page.locator("[data-testid='connected-accounts']");
+      await expect(section.getByText(/connected accounts/i)).toBeVisible();
+    });
+
+    test("shows Rheem EcoNet entry", async ({ page }) => {
+      const section = page.locator("[data-testid='connected-accounts']");
+      await expect(section.getByText(/rheem econet/i)).toBeVisible();
+    });
+
+    test("shows Sense Energy Monitor entry", async ({ page }) => {
+      const section = page.locator("[data-testid='connected-accounts']");
+      await expect(section.getByText(/sense energy monitor/i)).toBeVisible();
+    });
+
+    test("shows Emporia Vue entry", async ({ page }) => {
+      const section = page.locator("[data-testid='connected-accounts']");
+      await expect(section.getByText(/emporia vue/i)).toBeVisible();
     });
   });
 

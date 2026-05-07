@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wifi, WifiOff, AlertTriangle, Plus, Trash2, Wrench } from "lucide-react";
+import { Wifi, WifiOff, AlertTriangle, Plus, Trash2, Wrench, Key } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
@@ -28,18 +28,24 @@ const UI = {
 };
 
 const SOURCES: { value: string; label: string }[] = [
-  { value: "Nest",          label: "Google Nest"             },
-  { value: "Ecobee",        label: "Ecobee"                  },
-  { value: "MoenFlo",       label: "Moen Flo"                },
-  { value: "RingAlarm",     label: "Ring Alarm"              },
-  { value: "HoneywellHome", label: "Honeywell Home"          },
-  { value: "RheemEcoNet",   label: "Rheem EcoNet"            },
-  { value: "Sense",         label: "Sense Energy Monitor"    },
-  { value: "EmporiaVue",    label: "Emporia Vue"             },
-  { value: "Rachio",        label: "Rachio Smart Sprinkler"  },
-  { value: "SmartThings",   label: "Samsung SmartThings"     },
-  { value: "HomeAssistant", label: "Home Assistant"          },
-  { value: "Manual",        label: "Manual Entry"            },
+  { value: "Nest",           label: "Google Nest"            },
+  { value: "Ecobee",         label: "Ecobee"                 },
+  { value: "MoenFlo",        label: "Moen Flo"               },
+  { value: "RingAlarm",      label: "Ring Alarm"             },
+  { value: "HoneywellHome",  label: "Honeywell Home"         },
+  { value: "Rachio",         label: "Rachio Smart Sprinkler" },
+  { value: "SmartThings",    label: "Samsung SmartThings"    },
+  { value: "HomeAssistant",  label: "Home Assistant"         },
+  { value: "SolarEdge",      label: "SolarEdge Solar"        },
+  { value: "EnphaseEnvoy",   label: "Enphase IQ Gateway"     },
+  { value: "TeslaPowerwall", label: "Tesla Powerwall"        },
+  { value: "LGThinQ",        label: "LG ThinQ"               },
+  { value: "GESmartHQ",      label: "GE SmartHQ"             },
+  { value: "Manual",         label: "Manual Entry"           },
+  // Tier D — credential-only (Rheem, Sense, Emporia) shown in Connected Accounts below
+  { value: "RheemEcoNet",    label: "Rheem EcoNet"           },
+  { value: "Sense",          label: "Sense Energy Monitor"   },
+  { value: "EmporiaVue",     label: "Emporia Vue"            },
 ];
 
 export default function SensorPage() {
@@ -48,8 +54,12 @@ export default function SensorPage() {
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
   const [devices,       setDevices]       = useState<SensorDevice[]>([]);
   const [alerts,        setAlerts]        = useState<SensorEvent[]>([]);
-  const [loading,       setLoading]       = useState(false);
-  const [modalOpen,     setModalOpen]     = useState(false);
+  const [loading,           setLoading]           = useState(false);
+  const [modalOpen,         setModalOpen]         = useState(false);
+  const [connectingAccount, setConnectingAccount] = useState<string | null>(null);
+  const [accountEmail,      setAccountEmail]      = useState("");
+  const [accountPassword,   setAccountPassword]   = useState("");
+  const [accountLoading,    setAccountLoading]    = useState(false);
 
   // Seed the property store when navigating directly to this page
   useEffect(() => {
@@ -86,6 +96,52 @@ export default function SensorPage() {
       toast.success("Device removed");
     } catch {
       toast.error("Could not remove device");
+    }
+  };
+
+  const GATEWAY_URL = (import.meta as any).env?.VITE_IOT_GATEWAY_URL ?? "http://localhost:3002";
+
+  const handleConnectAccount = async (platform: string) => {
+    if (!accountEmail.trim() || !accountPassword.trim()) {
+      toast.error("Email and password are required");
+      return;
+    }
+    if (!selectedPropertyId) {
+      toast.error("Select a property first");
+      return;
+    }
+    setAccountLoading(true);
+    try {
+      const resp = await fetch(`${GATEWAY_URL}/accounts/${platform}`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ email: accountEmail.trim(), password: accountPassword }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json() as { error?: string };
+        throw new Error(err.error ?? `Request failed (${resp.status})`);
+      }
+      const data = await resp.json() as { devices: Array<{ id: string; name: string; type: string }> };
+      const sourceMap: Record<string, string> = { rheem: "RheemEcoNet", sense: "Sense", emporia: "EmporiaVue" };
+      const source = sourceMap[platform] ?? "Manual";
+      let registered = 0;
+      for (const d of data.devices) {
+        try {
+          const device = await sensorService.registerDevice(selectedPropertyId, d.id, source as any, d.name);
+          setDevices((prev) => [...prev, device]);
+          registered++;
+        } catch {
+          // skip duplicates
+        }
+      }
+      toast.success(`${registered} device${registered !== 1 ? "s" : ""} connected`);
+      setConnectingAccount(null);
+      setAccountEmail("");
+      setAccountPassword("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Connection failed");
+    } finally {
+      setAccountLoading(false);
     }
   };
 
@@ -240,6 +296,61 @@ export default function SensorPage() {
           )}
         </div>
 
+        {/* Connected Accounts — Tier D (credential-based platforms) */}
+        <div data-testid="connected-accounts" style={{ marginTop: "2rem" }}>
+          <h2 style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.75rem" }}>
+            Connected Accounts
+          </h2>
+          <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", color: UI.inkLight, marginBottom: "1rem", lineHeight: 1.5 }}>
+            These platforms use email/password credentials. Credentials are stored only in the IoT gateway and are never sent to HomeGentic.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {[
+              { platform: "rheem",   label: "Rheem EcoNet",       desc: "Water heaters and HVAC"    },
+              { platform: "sense",   label: "Sense Energy Monitor", desc: "Whole-home energy usage" },
+              { platform: "emporia", label: "Emporia Vue",         desc: "Circuit-level energy data" },
+            ].map(({ platform, label, desc }) => (
+              <div key={platform} style={{ border: `1px solid ${UI.rule}`, background: COLORS.white }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.875rem 1.25rem" }}>
+                  <div>
+                    <p style={{ fontWeight: 500, fontSize: "0.875rem", marginBottom: "0.1rem" }}>{label}</p>
+                    <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight }}>{desc}</p>
+                  </div>
+                  <button
+                    onClick={() => setConnectingAccount(connectingAccount === platform ? null : platform)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "0.35rem",
+                      padding: "0.4rem 0.85rem", fontFamily: UI.mono, fontSize: "0.6rem",
+                      letterSpacing: "0.08em", textTransform: "uppercase",
+                      background: "none", border: `1px solid ${UI.rule}`, cursor: "pointer", color: UI.ink,
+                    }}
+                  >
+                    <Key size={11} />
+                    {connectingAccount === platform ? "Cancel" : "Connect"}
+                  </button>
+                </div>
+                {connectingAccount === platform && (
+                  <div style={{ borderTop: `1px solid ${UI.rule}`, padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    <input
+                      type="email" value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)}
+                      placeholder="Email address"
+                      style={{ fontFamily: UI.mono, fontSize: "0.875rem", fontWeight: 300, padding: "0.45rem 0.75rem", border: `1px solid ${UI.rule}`, outline: "none" }}
+                    />
+                    <input
+                      type="password" value={accountPassword} onChange={(e) => setAccountPassword(e.target.value)}
+                      placeholder="Password"
+                      style={{ fontFamily: UI.mono, fontSize: "0.875rem", fontWeight: 300, padding: "0.45rem 0.75rem", border: `1px solid ${UI.rule}`, outline: "none" }}
+                    />
+                    <Button onClick={() => handleConnectAccount(platform)} disabled={accountLoading} style={{ alignSelf: "flex-start" }}>
+                      {accountLoading ? "Connecting…" : `Connect ${label}`}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Info callout */}
         <div style={{ marginTop: "2rem", border: `1px solid ${UI.rule}`, padding: "1rem 1.25rem", background: COLORS.white }}>
           <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.5rem", color: UI.inkLight }}>
@@ -247,8 +358,9 @@ export default function SensorPage() {
           </p>
           <p style={{ fontSize: "0.8rem", fontWeight: 300, lineHeight: 1.6, color: UI.inkLight }}>
             Your IoT gateway forwards events from Nest, Ecobee, Moen Flo, Ring Alarm, Honeywell Home,
-            Rheem EcoNet, Sense, Emporia Vue, Rachio, Samsung SmartThings, Home Assistant, and manually
-            entered devices to HomeGentic. Critical events — water leaks, HVAC faults, pipe-freeze risk —
+            Rachio, Samsung SmartThings, Home Assistant, SolarEdge, Enphase, Tesla Powerwall, LG ThinQ,
+            GE SmartHQ, Rheem EcoNet, Sense, Emporia Vue, and manually entered devices to HomeGentic.
+            Critical events — water leaks, HVAC faults, solar outages, pipe-freeze risk —
             automatically open a pending job on your property record so nothing falls through the cracks.
           </p>
         </div>

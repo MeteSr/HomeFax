@@ -34,6 +34,11 @@ import { startHoneywellPoller, persistTokenState as persistHoneywellTokens } fro
 import { startEnphasePoller } from "./pollers/enphase";
 import { startTeslaPoller } from "./pollers/teslaGateway";
 import { startGEPoller, persistTokenState as persistGETokens } from "./pollers/geSmartHQ";
+import { startSolarEdgePoller } from "./pollers/solarEdge";
+import * as ecobeeOAuth      from "./oauth/ecobee";
+import * as honeywellOAuth   from "./oauth/honeywellHome";
+import * as lgThinQOAuth     from "./oauth/lgThinQ";
+import * as geSmartHQOAuth   from "./oauth/geSmartHQ";
 import type {
   NestWebhookEvent,
   EcobeeWebhookEvent,
@@ -466,19 +471,205 @@ app.get("/oauth/callback/ge", async (req: Request, res: Response): Promise<void>
   }
 });
 
+// ── GET /oauth/device/start/:platform ────────────────────────────────────────
+// Tier B device picker: redirect to platform's authorization URL.
+// The `redirect_uri` points back to /oauth/device/callback/:platform.
+app.get("/oauth/device/start/:platform", (req: Request, res: Response): void => {
+  const { platform } = req.params;
+  const redirectUri  = `http://localhost:${port}/oauth/device/callback/${platform}`;
+
+  try {
+    let url: string;
+    switch (platform) {
+      case "ecobee":
+        url = ecobeeOAuth.authUrl(process.env.ECOBEE_CLIENT_ID ?? "", redirectUri);
+        break;
+      case "honeywell":
+        url = honeywellOAuth.authUrl(process.env.HONEYWELL_CLIENT_ID ?? "", redirectUri);
+        break;
+      case "lgthinq":
+        url = lgThinQOAuth.authUrl(process.env.LG_THINQ_CLIENT_ID ?? "", redirectUri);
+        break;
+      case "ge":
+        url = geSmartHQOAuth.authUrl(process.env.GE_CLIENT_ID ?? "", redirectUri);
+        break;
+      default:
+        res.status(400).send("Unknown platform");
+        return;
+    }
+    res.redirect(url);
+  } catch (err) {
+    console.error(`[oauth-device] start error (${platform}):`, err);
+    res.status(500).send("OAuth start error");
+  }
+});
+
+// ── GET /oauth/device/callback/:platform ──────────────────────────────────────
+// Tier B device picker: exchanges the auth code, fetches device list, sends
+// postMessage to the opener popup, then closes itself.
+app.get("/oauth/device/callback/:platform", async (req: Request, res: Response): Promise<void> => {
+  const { platform } = req.params;
+  const code         = req.query.code as string | undefined;
+
+  if (!code) {
+    res.status(400).send("Missing code parameter");
+    return;
+  }
+
+  const redirectUri = `http://localhost:${port}/oauth/device/callback/${platform}`;
+
+  try {
+    let accessToken: string;
+    let devices: Array<{ id: string; name: string; type: string }>;
+
+    switch (platform) {
+      case "ecobee":
+        accessToken = await ecobeeOAuth.exchangeCode(code, process.env.ECOBEE_CLIENT_ID ?? "", redirectUri);
+        devices     = await ecobeeOAuth.fetchDevices(accessToken);
+        break;
+      case "honeywell":
+        accessToken = await honeywellOAuth.exchangeCode(
+          code, process.env.HONEYWELL_CLIENT_ID ?? "",
+          process.env.HONEYWELL_CLIENT_SECRET ?? "", redirectUri
+        );
+        devices = await honeywellOAuth.fetchDevices(accessToken, process.env.HONEYWELL_CLIENT_ID ?? "");
+        break;
+      case "lgthinq":
+        accessToken = await lgThinQOAuth.exchangeCode(
+          code, process.env.LG_THINQ_CLIENT_ID ?? "",
+          process.env.LG_THINQ_CLIENT_SECRET ?? "", redirectUri
+        );
+        devices = await lgThinQOAuth.fetchDevices(accessToken);
+        break;
+      case "ge":
+        accessToken = await geSmartHQOAuth.exchangeCode(
+          code, process.env.GE_CLIENT_ID ?? "",
+          process.env.GE_CLIENT_SECRET ?? "", redirectUri
+        );
+        devices = await geSmartHQOAuth.fetchDevices(accessToken);
+        break;
+      default:
+        res.status(400).send("Unknown platform");
+        return;
+    }
+
+    const payload = JSON.stringify({ type: "oauth-devices", devices });
+    res.send(`<!doctype html>
+<html><body>
+<script>
+  window.opener && window.opener.postMessage(${payload}, "*");
+  window.close();
+</script>
+<p>Connected! This window will close automatically.</p>
+</body></html>`);
+  } catch (err: any) {
+    const errMsg = JSON.stringify({ type: "oauth-devices", error: String(err?.message ?? err) });
+    res.send(`<!doctype html>
+<html><body>
+<script>
+  window.opener && window.opener.postMessage(${errMsg}, "*");
+  window.close();
+</script>
+<p>Authorization failed. This window will close automatically.</p>
+</body></html>`);
+  }
+});
+
+// ── POST /accounts/:platform ──────────────────────────────────────────────────
+// Tier D credential validation: accepts email + password for credential-based
+// platforms (Rheem EcoNet, Sense, Emporia Vue), stores credentials in the
+// gateway process env, and returns the user's device list.
+// Credentials are NEVER forwarded to the ICP canister.
+app.post("/accounts/:platform", async (req: Request, res: Response): Promise<void> => {
+  const { platform } = req.params;
+  const { email, password } = req.body as { email?: string; password?: string };
+
+  if (!email || !password) {
+    res.status(400).json({ error: "email and password are required" });
+    return;
+  }
+
+  try {
+    let devices: Array<{ id: string; name: string; type: string }> = [];
+
+    if (platform === "rheem") {
+      const loginResp = await fetch("https://rheem.clearblade.com/api/v/4/user/auth/login", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", "ClearBlade-SystemKey": "e2e699cb0bb0bbb88fc8858cb5a401" },
+        body:    JSON.stringify({ email, password }),
+        signal:  AbortSignal.timeout(10_000),
+      });
+      if (!loginResp.ok) throw new Error(`Rheem EcoNet login failed (${loginResp.status})`);
+      const loginData = await loginResp.json() as { user_token: string };
+      process.env.RHEEM_ACCESS_TOKEN = loginData.user_token;
+
+      const devResp = await fetch("https://rheem.clearblade.com/api/v/4/data/devices_data", {
+        headers: { "ClearBlade-UserToken": loginData.user_token, "ClearBlade-SystemKey": "e2e699cb0bb0bbb88fc8858cb5a401" },
+        signal:  AbortSignal.timeout(10_000),
+      });
+      if (devResp.ok) {
+        const devData = await devResp.json() as { DATA: Array<{ serial_number: string; location_name?: string; product_type?: string }> };
+        devices = (devData.DATA ?? []).map((d) => ({ id: d.serial_number, name: d.location_name ?? d.serial_number, type: d.product_type ?? "Water Heater" }));
+      }
+
+    } else if (platform === "sense") {
+      const loginResp = await fetch("https://api.sense.com/apiservice/api/v1/authenticate", {
+        method:  "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body:    new URLSearchParams({ email, password }).toString(),
+        signal:  AbortSignal.timeout(10_000),
+      });
+      if (!loginResp.ok) throw new Error(`Sense login failed (${loginResp.status})`);
+      const loginData = await loginResp.json() as { access_token: string; monitors?: Array<{ id: number; serial_number: string }> };
+      process.env.SENSE_ACCESS_TOKEN = loginData.access_token;
+      devices = (loginData.monitors ?? []).map((m) => ({ id: String(m.id), name: `Sense Monitor ${m.serial_number}`, type: "Energy Monitor" }));
+
+    } else if (platform === "emporia") {
+      const loginResp = await fetch("https://auth.emporiaenergy.com/login", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ userName: email, password, rememberMe: false }),
+        signal:  AbortSignal.timeout(10_000),
+      });
+      if (!loginResp.ok) throw new Error(`Emporia Vue login failed (${loginResp.status})`);
+      const loginData = await loginResp.json() as { authToken: string; customerGid?: number };
+      process.env.EMPORIA_ACCESS_TOKEN = loginData.authToken;
+      if (loginData.customerGid) {
+        const devResp = await fetch(`https://api.emporiaenergy.com/customers/${loginData.customerGid}/devices?detailed=true&hierarchy=true`, {
+          headers: { authToken: loginData.authToken },
+          signal:  AbortSignal.timeout(10_000),
+        });
+        if (devResp.ok) {
+          const devData = await devResp.json() as { devices: Array<{ deviceGid: number; locationProperties?: { deviceName?: string } }> };
+          devices = (devData.devices ?? []).map((d) => ({ id: String(d.deviceGid), name: d.locationProperties?.deviceName ?? `Emporia Vue ${d.deviceGid}`, type: "Energy Monitor" }));
+        }
+      }
+    } else {
+      res.status(400).json({ error: "Unknown platform" });
+      return;
+    }
+
+    res.json({ devices });
+  } catch (err: any) {
+    console.error(`[accounts] ${platform} error:`, err);
+    res.status(502).json({ error: err?.message ?? "Login failed" });
+  }
+});
+
 // ── GET /health ───────────────────────────────────────────────────────────────
 app.get("/health", (_req: Request, res: Response) => {
   res.json({
     ok: true,
     gatewayPrincipal: getGatewayPrincipal(),
     sensorCanisterId: process.env.SENSOR_CANISTER_ID ?? "(not set)",
-    platforms: ["nest", "ecobee", "moen-flo", "smartthings", "honeywell-home", "enphase", "tesla-powerwall", "lgthinq", "ge-smarthq"],
+    platforms: ["nest", "ecobee", "moen-flo", "smartthings", "honeywell-home", "enphase", "tesla-powerwall", "lgthinq", "ge-smarthq", "solaredge"],
     pollers: {
       ecobee:    !!process.env.ECOBEE_CLIENT_ID,
       honeywell: !!process.env.HONEYWELL_CLIENT_ID,
       enphase:   !!process.env.ENPHASE_ENVOY_IP,
       tesla:     !!(process.env.TESLA_EMAIL && process.env.TESLA_POWERWALL_SERIAL),
       ge:        !!process.env.GE_CLIENT_ID,
+      solaredge: !!process.env.SOLAREDGE_API_KEY,
     },
   });
 });
@@ -504,5 +695,8 @@ app.listen(port, () => {
   }
   if (process.env.GE_CLIENT_ID) {
     startGEPoller();
+  }
+  if (process.env.SOLAREDGE_API_KEY) {
+    startSolarEdgePoller();
   }
 });
