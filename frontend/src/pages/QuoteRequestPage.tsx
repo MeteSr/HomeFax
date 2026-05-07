@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Send, Zap, User } from "lucide-react";
+import { ArrowLeft, Send, Zap, User, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/Button";
 import { PhotoQuotaDisplay } from "@/components/PhotoQuotaDisplay";
@@ -52,14 +52,19 @@ export default function QuoteRequestPage() {
   const [tierLimit,   setTierLimit]   = useState(3);
   const [propertyJobs, setPropertyJobs] = useState<Job[]>([]);
   const [priceRange,  setPriceRange]  = useState<PriceRange | null>(null);
+  const [showRequirements, setShowRequirements] = useState(false);
   const [form, setForm] = useState({
-    propertyId:  properties[0] ? String(properties[0].id) : "",
-    serviceType: prefill?.serviceType ?? SERVICE_TYPES[0],
-    subCategory: "",
-    urgency:     "medium" as Urgency,
-    description: "",
-    budgetMin:   "",
-    budgetMax:   "",
+    propertyId:       properties[0] ? String(properties[0].id) : "",
+    serviceType:      prefill?.serviceType ?? SERVICE_TYPES[0],
+    subCategory:      "",
+    urgency:          "medium" as Urgency,
+    description:      "",
+    budgetMin:        "",
+    budgetMax:        "",
+    minRating:        "",   // 1–5 stars; maps to trustScore 0–100
+    minJobsCompleted: "",
+    minReviews:       "",
+    maxBids:          "",   // "" | "3" | "5"
   });
 
   useEffect(() => {
@@ -125,9 +130,15 @@ export default function QuoteRequestPage() {
     if (!form.description.trim()) { toast.error("Please describe the work needed"); return; }
     setLoading(true);
     try {
+      // Map 1–5 star rating to 0–100 trust score (1★=20, 2★=40, … 5★=100)
+      const minTrustScore    = form.minRating        ? Number(form.minRating)        * 20 : undefined;
+      const minJobsCompleted = form.minJobsCompleted ? Number(form.minJobsCompleted)      : undefined;
+      const minReviews       = form.minReviews       ? Number(form.minReviews)             : undefined;
+      const maxBids          = form.maxBids          ? Number(form.maxBids)                : undefined;
       const req = await quoteService.createRequest({
         propertyId: form.propertyId, serviceType: form.serviceType,
         urgency: form.urgency, description: form.description,
+        minTrustScore, minJobsCompleted, minReviews, maxBids,
       });
       toast.success("Quote request sent to contractors!");
       navigate(`/quotes/${req.id}`);
@@ -305,6 +316,90 @@ export default function QuoteRequestPage() {
           <div>
             <label className="form-label" htmlFor="description">Describe the work needed *</label>
             <textarea id="description" className="form-input" rows={4} placeholder="Describe the issue or project in detail. Include any relevant measurements, materials, or constraints." value={form.description} onChange={(e) => update("description", e.target.value)} style={{ resize: "vertical" }} />
+          </div>
+
+          {/* Contractor requirements (collapsed by default) */}
+          <div style={{ border: `1px solid ${UI.rule}` }}>
+            <button
+              type="button"
+              onClick={() => setShowRequirements((v) => !v)}
+              style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.875rem 1rem", background: "none", border: "none", cursor: "pointer" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Lock size={12} color={UI.inkLight} />
+                <span style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: UI.inkLight }}>
+                  Contractor requirements
+                </span>
+                <span style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: UI.inkLight }}>(optional)</span>
+              </div>
+              {showRequirements ? <ChevronUp size={13} color={UI.inkLight} /> : <ChevronDown size={13} color={UI.inkLight} />}
+            </button>
+
+            {showRequirements && (
+              <div style={{ borderTop: `1px solid ${UI.rule}`, padding: "1rem" }}>
+                <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, marginBottom: "1rem", lineHeight: 1.6 }}>
+                  Only contractors who meet these minimums will see your request.{" "}
+                  <strong style={{ color: UI.ink }}>Verified contractors are always eligible regardless of these minimums.</strong>
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                  <div>
+                    <label className="form-label">Min rating (stars)</label>
+                    <select
+                      className="form-input"
+                      value={form.minRating}
+                      onChange={(e) => update("minRating", e.target.value)}
+                    >
+                      <option value="">No minimum</option>
+                      <option value="1">1★ or higher</option>
+                      <option value="2">2★ or higher</option>
+                      <option value="3">3★ or higher</option>
+                      <option value="4">4★ or higher</option>
+                      <option value="5">5★ only</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Max bids</label>
+                    <select
+                      className="form-input"
+                      value={form.maxBids}
+                      onChange={(e) => update("maxBids", e.target.value)}
+                    >
+                      <option value="">Unlimited</option>
+                      <option value="3">3 bids</option>
+                      <option value="5">5 bids</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                  <div>
+                    <label className="form-label">Min completed jobs</label>
+                    <input
+                      type="number" min="0" placeholder="e.g. 5"
+                      className="form-input"
+                      value={form.minJobsCompleted}
+                      onChange={(e) => update("minJobsCompleted", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Min reviews</label>
+                    <input
+                      type="number" min="0" placeholder="e.g. 3"
+                      className="form-input"
+                      value={form.minReviews}
+                      onChange={(e) => update("minReviews", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {(form.minRating || form.minJobsCompleted || form.minReviews || form.maxBids) && (
+                  <p style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: UI.rust, marginTop: "0.75rem", lineHeight: 1.6 }}>
+                    Filters active — fewer contractors may qualify. If no bids arrive, consider relaxing the requirements.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <Button loading={loading} disabled={atLimit} onClick={handleSubmit} icon={<Send size={14} />} size="lg" style={{ width: "100%" }}>

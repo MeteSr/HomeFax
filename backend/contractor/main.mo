@@ -403,6 +403,33 @@ persistent actor Contractor {
     )
   };
 
+  /// Lightweight stats query used by the quote canister to check visibility thresholds.
+  /// Returns all fields needed for filtering in a single cross-canister call.
+  public query func getContractorStats(p: Principal) : async ?{
+    trustScore:    Nat;
+    jobsCompleted: Nat;
+    reviewCount:   Nat;
+    isVerified:    Bool;
+    serviceZips:   [Text];
+  } {
+    switch (Map.get(contractors, Principal.compare, p)) {
+      case null { null };
+      case (?profile) {
+        var count = 0;
+        for (r in Map.values(reviews)) {
+          if (r.contractor == p) { count += 1 };
+        };
+        ?{
+          trustScore    = profile.trustScore;
+          jobsCompleted = profile.jobsCompleted;
+          reviewCount   = count;
+          isVerified    = profile.isVerified;
+          serviceZips   = profile.serviceZips;
+        }
+      };
+    }
+  };
+
   // ─── Job-Verified Hook ─────────────────────────────────────────────────────────
 
   /// Called by the Job canister (cross-canister) when a job reaches fully-verified

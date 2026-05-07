@@ -312,6 +312,20 @@ function createContractorService() {
     }));
   },
 
+  async getReviewsForContractor(principalText: string): Promise<{ id: string; rating: number; comment: string; jobId: string; createdAt: number }[]> {
+    if (typeof window !== "undefined" && (window as any).__e2e_properties) return [];
+    const { Principal: P } = await import("@icp-sdk/core/principal");
+    const a = await getActor();
+    const raw = await a.getReviewsForContractor(P.fromText(principalText)) as any[];
+    return raw.map((r: any) => ({
+      id:        r.id,
+      rating:    Number(r.rating),
+      comment:   r.comment,
+      jobId:     r.jobId,
+      createdAt: Number(r.createdAt) / 1_000_000,
+    }));
+  },
+
   async getBySpecialty(specialty: string): Promise<ContractorProfile[]> {
     const a = await getActor();
     const result = await a.getBySpecialty({ [specialty]: null }) as any[];
