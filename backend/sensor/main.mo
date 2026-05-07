@@ -43,6 +43,7 @@ persistent actor Sensor {
     #Nest; #Ecobee; #MoenFlo; #Manual;
     #RingAlarm; #HoneywellHome; #RheemEcoNet; #Sense;
     #EmporiaVue; #Rachio; #SmartThings; #HomeAssistant;
+    #EnphaseEnvoy; #TeslaPowerwall;
   };
 
   public type SensorEventType = {
@@ -54,6 +55,10 @@ persistent actor Sensor {
     #HvacFilterDue;   // Ecobee filter reminder
     #HighHumidity;    // Ecobee > 70 % RH
     #HighTemperature; // Nest/Ecobee informational high
+    #SolarFault;      // Enphase inverter error or system offline
+    #LowProduction;   // Enphase production near-zero during daylight
+    #BatteryLow;      // Tesla Powerwall charge critically low
+    #GridOutage;      // Tesla Powerwall: grid disconnected (islanded)
   };
 
   public type Severity = { #Info; #Warning; #Critical };
@@ -193,6 +198,10 @@ persistent actor Sensor {
       case (#HighTemperature) { #Warning  };
       case (#HighHumidity)    { #Warning  };
       case (#HvacFilterDue)   { #Info     };
+      case (#SolarFault)      { #Critical };
+      case (#LowProduction)   { #Warning  };
+      case (#BatteryLow)      { #Critical };
+      case (#GridOutage)      { #Warning  };
     }
   };
 
@@ -254,7 +263,23 @@ persistent actor Sensor {
           "Technician inspection recommended."
         )
       };
-      // Filter-due and high-humidity/temperature do not auto-create jobs
+      case (#SolarFault) {
+        ?(
+          "Solar System Fault – Inspection Required",
+          #Electrical,
+          "Solar inverter or Enphase Envoy \"" # deviceName # "\" is reporting a fault. " #
+          "Electrical inspection required to restore production."
+        )
+      };
+      case (#BatteryLow) {
+        ?(
+          "Battery Critically Low – Electrical Inspection",
+          #Electrical,
+          "Tesla Powerwall \"" # deviceName # "\" battery is critically low. " #
+          "Inspect the battery system and grid connection."
+        )
+      };
+      // LowProduction, GridOutage, filter-due, high-humidity/temperature do not auto-create jobs
       case _ { null };
     }
   };

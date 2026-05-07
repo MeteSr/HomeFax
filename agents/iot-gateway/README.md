@@ -12,6 +12,8 @@ normalized sensor readings to the HomeGentic Sensor canister on ICP.
 | Moen Flo | Push webhook | `MOEN_FLO_WEBHOOK_SECRET` |
 | Honeywell Home / Resideo | REST polling (3 min) | `HONEYWELL_CLIENT_ID` + tokens |
 | SmartThings | Push webhook | `SMARTTHINGS_WEBHOOK_SECRET` |
+| Enphase IQ Gateway | Local LAN polling (60 s) | `ENPHASE_ENVOY_IP` + `ENPHASE_ENVOY_TOKEN` |
+| Tesla Powerwall | Local LAN polling (60 s) | `TESLA_EMAIL` + `TESLA_PASSWORD` |
 
 ## Running
 
@@ -107,6 +109,87 @@ sensorService.registerDevice(propertyId, "411848373746", "Ecobee", "Living Room 
 The `externalDeviceId` passed here must match the identifier returned by the Ecobee API.
 
 ---
+
+---
+
+## Enphase IQ Gateway / Envoy — local LAN setup
+
+Enphase is the most-installed residential solar inverter in the US. The IQ Gateway sits
+on the homeowner's LAN and exposes a local HTTPS REST API — no cloud dependency, 
+sub-minute data.
+
+> **TLS note:** The Envoy uses a self-signed certificate. Uncomment
+> `NODE_TLS_REJECT_UNAUTHORIZED=0` in `.env` **only** for local-LAN use. Do not set this
+> in a production environment that also makes internet-facing HTTPS requests.
+
+### Step 1 — find your Envoy IP and serial
+
+- Check your router's DHCP list for a device named `IQ Gateway` or `envoy`
+- The serial number is on the white label on the bottom of the hardware
+- Format: 6–12 digit number, e.g. `123456789012`
+
+### Step 2 — obtain a local access token
+
+```bash
+curl -X POST "https://entrez.enphaseenergy.com/tokens" \
+  -H "Content-Type: application/json" \
+  -d '{"user":{"email":"YOUR_EMAIL","password":"YOUR_PASSWORD"},"enphaseUser":"owner","serialNum":"YOUR_SERIAL"}'
+# Copy the returned JWT to ENPHASE_ENVOY_TOKEN in .env
+```
+
+Tokens are valid for ~1 year. Rotate annually using the same command.
+
+### Register in HomeGentic
+
+```ts
+sensorService.registerDevice(propertyId, "YOUR_SERIAL", "EnphaseEnvoy", "Roof Solar System")
+```
+
+### Events ingested
+
+| Condition | Canister event | Severity |
+|---|---|---|
+| Any inverter not reporting within 15 min (daylight) | `SolarFault` | Critical |
+| System producing < 10 W during daylight (7am–7pm) | `LowProduction` | Warning |
+
+---
+
+## Tesla Powerwall — local LAN setup
+
+Tesla does not provide a public cloud API for Powerwall. The local LAN API
+(reverse-engineered, stable since 2019) gives complete battery/grid state.
+
+> **TLS note:** Same self-signed certificate caveat as Enphase above.
+
+### Step 1 — find your gateway IP
+
+- Check your router's DHCP list for `Tesla Energy Gateway` or `teg`
+- Default IP when connected to the gateway's Wi-Fi: `192.168.91.1`
+- Also responds at `teg.local` on most networks
+
+### Step 2 — find your serial number
+
+```bash
+# After gateway is authenticated (token in env)
+curl -k "https://$TESLA_GATEWAY_IP/api/system_status" \
+  -H "Authorization: Bearer $TESLA_ACCESS_TOKEN" | jq '.gateway_id'
+```
+
+Or read it from the QR sticker on the side of the Powerwall Gateway unit.
+
+### Register in HomeGentic
+
+```ts
+sensorService.registerDevice(propertyId, "1118431-00-L", "TeslaPowerwall", "Home Battery")
+```
+
+### Events ingested
+
+| Condition | Canister event | Severity |
+|---|---|---|
+| Battery alerts present (hard fault) | `SolarFault` | Critical |
+| Grid disconnected (`SystemIslandedActive`) | `GridOutage` | Warning |
+| Charge < 20 % | `BatteryLow` | Critical |
 
 ---
 

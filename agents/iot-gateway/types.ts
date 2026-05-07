@@ -14,7 +14,11 @@ export type SensorEventType =
   | { HvacAlert: null }
   | { HvacFilterDue: null }
   | { HighHumidity: null }
-  | { HighTemperature: null };
+  | { HighTemperature: null }
+  | { SolarFault: null }
+  | { LowProduction: null }
+  | { BatteryLow: null }
+  | { GridOutage: null };
 
 // ── Normalized internal representation ───────────────────────────────────────
 export interface SensorReading {
@@ -103,6 +107,34 @@ export interface HoneywellDevice {
   };
   /** True when a Water Leak Detector reports water presence */
   waterPresent?: boolean;
+}
+
+// ── Enphase Solar ─────────────────────────────────────────────────────────────
+
+/** Normalized event built by the Enphase poller from production + inverter data. */
+export interface EnphaseSystemEvent {
+  /** Envoy serial number — used as externalDeviceId */
+  systemSerial:     string;
+  /** Current system-level production in watts */
+  wNow:             number;
+  /** Number of inverters that haven't reported within the stale threshold */
+  faultedInverters: number;
+  /** True when it is daylight hours (heuristic: 7am–7pm local time) */
+  isDaylight:       boolean;
+}
+
+// ── Tesla Powerwall ───────────────────────────────────────────────────────────
+
+/** Normalized event built by the Tesla poller from SOE + grid status data. */
+export interface TeslaPowerwallEvent {
+  /** Gateway serial number — used as externalDeviceId */
+  gatewaySerial:    string;
+  /** Battery state of energy 0–100 % */
+  chargePercent:    number;
+  /** Raw grid status string from the gateway (e.g. "SystemGridConnected") */
+  gridStatus:       string;
+  /** True when the gateway reports any non-informational battery alert */
+  hasBatteryAlerts: boolean;
 }
 
 // ── SmartThings ──────────────────────────────────────────────────────────────
