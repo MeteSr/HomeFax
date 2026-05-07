@@ -297,7 +297,7 @@ export default function SensorPage() {
         </div>
 
         {/* Connected Accounts — Tier D (credential-based platforms) */}
-        <div style={{ marginTop: "2rem" }}>
+        <div data-testid="connected-accounts" style={{ marginTop: "2rem" }}>
           <h2 style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.75rem" }}>
             Connected Accounts
           </h2>
