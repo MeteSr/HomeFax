@@ -217,7 +217,9 @@ updateStatus(2) -> (1)"
 
 exports[`Candid contract snapshots — method arity > report 1`] = `
 "generateReport(11) -> (1)
+generateRiskProfile(3) -> (1)
 getReport(1) -> (1)
+getRiskProfile(1) -> (1) [query]
 listShareLinks(1) -> (1)
 revokeShareLink(1) -> (1)"
 `;

@@ -1436,6 +1436,17 @@ exports[`report IDL factory > full signature snapshot 1`] = `
       "variant {ok:record {snapshotId:text; token:text; expiresAt:opt int; createdAt:int; createdBy:principal; propertyId:text; isActive:bool; viewCount:nat; visibility:variant {BuyerOnly; Public}}; err:variant {UnverifiedProperty; InvalidInput:text; NotFound; Unauthorized; Revoked; Expired}}",
     ],
   },
+  "generateRiskProfile": {
+    "args": [
+      "text",
+      "opt nat",
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:record {sensorCoverage:vec record {source:text; name:text; isActive:bool; deviceId:text; lastEventAt:opt int; eventCount:nat}; token:text; expiresAt:opt int; generatedAt:int; maintenanceScore:nat; propertyId:text; recentAlerts:vec record {alertId:text; resolvedByJobId:opt text; timestamp:int; severity:text; eventType:text}; verificationLevel:text; schemaVersion:text; verifiedJobCount:nat; permitCount:nat; openJobs:nat}; err:variant {InvalidInput:text; NotFound; Unauthorized; Expired}}",
+    ],
+  },
   "getReport": {
     "args": [
       "text",
@@ -1443,6 +1454,17 @@ exports[`report IDL factory > full signature snapshot 1`] = `
     "mode": [],
     "rets": [
       "variant {ok:record {record {snapshotId:text; token:text; expiresAt:opt int; createdAt:int; createdBy:principal; propertyId:text; isActive:bool; viewCount:nat; visibility:variant {BuyerOnly; Public}}; record {snapshotId:text; propertyType:text; city:text; generatedAt:int; generatedBy:principal; jobs:vec record {status:text; serviceType:text; permitNumber:opt text; date:text; description:text; amountCents:nat; isVerified:bool; warrantyMonths:opt nat; isDiy:bool; contractorName:opt text}; squareFeet:nat; propertyId:text; zipCode:text; state:text; totalAmountCents:nat; diyJobCount:nat; address:text; verificationLevel:text; verifiedJobCount:nat; permitCount:nat; yearBuilt:nat; rooms:opt vec record {paintBrand:text; name:text; floorType:text; paintColor:text; fixtureCount:nat; paintCode:text}; recurringServices:vec record {status:text; serviceType:text; lastVisitDate:opt text; providerName:text; totalVisits:nat; frequency:text; startDate:text}}}; err:variant {UnverifiedProperty; InvalidInput:text; NotFound; Unauthorized; Revoked; Expired}}",
+    ],
+  },
+  "getRiskProfile": {
+    "args": [
+      "text",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "variant {ok:record {sensorCoverage:vec record {source:text; name:text; isActive:bool; deviceId:text; lastEventAt:opt int; eventCount:nat}; token:text; expiresAt:opt int; generatedAt:int; maintenanceScore:nat; propertyId:text; recentAlerts:vec record {alertId:text; resolvedByJobId:opt text; timestamp:int; severity:text; eventType:text}; verificationLevel:text; schemaVersion:text; verifiedJobCount:nat; permitCount:nat; openJobs:nat}; err:variant {InvalidInput:text; NotFound; Unauthorized; Expired}}",
     ],
   },
   "listShareLinks": {

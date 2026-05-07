@@ -603,6 +603,325 @@ persistent actor Report {
     #ok(())
   };
 
+  // ─── Risk Profile API (#278) ──────────────────────────────────────────────────
+
+  /// Per-device summary included in RiskProfile.
+  public type SensorSummary = {
+    deviceId:    Text;
+    name:        Text;
+    source:      Text;   // "Nest" | "Ecobee" | …
+    isActive:    Bool;
+    lastEventAt: ?Int;   // ns timestamp, null = no events recorded
+    eventCount:  Nat;
+  };
+
+  /// Per-alert summary (Critical/Warning) included in RiskProfile.
+  public type AlertSummary = {
+    alertId:   Text;
+    eventType: Text;
+    severity:  Text;    // "Critical" | "Warning"
+    timestamp: Int;     // ns
+    resolvedByJobId: ?Text;   // null = still open
+  };
+
+  /// Machine-readable property health report for insurance carrier underwriting.
+  /// Intended for periodic export — always fetched live from job/sensor canisters.
+  public type RiskProfile = {
+    schemaVersion:    Text;   // "homegentic-risk/1.0"
+    token:            Text;
+    propertyId:       Text;
+    generatedAt:      Int;
+    expiresAt:        ?Int;   // null = never
+    maintenanceScore: Nat;    // 0-100
+    verificationLevel: Text;
+    sensorCoverage:   [SensorSummary];
+    recentAlerts:     [AlertSummary];
+    openJobs:         Nat;
+    verifiedJobCount: Nat;
+    permitCount:      Nat;
+  };
+
+  public type RiskProfileError = {
+    #NotFound;
+    #Expired;
+    #Unauthorized;
+    #InvalidInput : Text;
+  };
+
+  // ─── Risk Profile Stable State ───────────────────────────────────────────────
+
+  private var sensorCanisterId : Text = "";
+  private var riskJobCanisterId : Text = "";
+
+  private let riskProfiles = Map.empty<Text, RiskProfile>();
+
+  // ─── Risk Profile Helpers ────────────────────────────────────────────────────
+
+  private func computeMaintenanceScore(
+    alerts:          [AlertSummary],
+    openOldJobCount: Nat,
+    verifiedWithPermit: Nat,
+    hasSensors:      Bool,
+    isVerified:      Bool
+  ) : Nat {
+    var score : Int = 100;
+
+    // −5 per unresolved Critical alert, cap −30
+    var critPenalty : Int = 0;
+    for (a in alerts.vals()) {
+      if (a.severity == "Critical" and a.resolvedByJobId == null) {
+        critPenalty += 5;
+      }
+    };
+    if (critPenalty > 30) { critPenalty := 30 };
+    score -= critPenalty;
+
+    // −3 per open job older than 90 days, cap −20
+    var oldJobPenalty : Int = openOldJobCount * 3;
+    if (oldJobPenalty > 20) { oldJobPenalty := 20 };
+    score -= oldJobPenalty;
+
+    // +5 per verified job with permit, cap +20
+    var permitBonus : Int = verifiedWithPermit * 5;
+    if (permitBonus > 20) { permitBonus := 20 };
+    score += permitBonus;
+
+    // −10 if no sensor coverage
+    if (not hasSensors) { score -= 10 };
+
+    // −15 if unverified
+    if (not isVerified) { score -= 15 };
+
+    // clamp 0–100
+    if (score < 0) { 0 } else if (score > 100) { 100 } else { Int.abs(score) }
+  };
+
+  /// Generate a time-limited risk profile token. Fetches live data from
+  /// job and sensor canisters via cross-canister queries.
+  public shared(msg) func generateRiskProfile(
+    propertyId:     Text,
+    expiryDays:     ?Nat,
+    verificationLevel: Text
+  ) : async Result.Result<RiskProfile, RiskProfileError> {
+    if (Principal.isAnonymous(msg.caller)) return #err(#Unauthorized);
+    if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId required"));
+
+    let now = Time.now();
+    let NINETY_DAYS_NS : Int = 90 * 24 * 3600 * 1_000_000_000;
+
+    // ── Fetch sensor data ───────────────────────────────────────────────────
+    var sensorCoverage : [SensorSummary] = [];
+    var recentAlerts   : [AlertSummary]  = [];
+
+    if (Text.size(sensorCanisterId) > 0) {
+      let sensorActor = actor(sensorCanisterId) : actor {
+        getDevicesForProperty : (Text)        -> async [{
+          id: Text; name: Text; source: { #Nest; #Ecobee; #MoenFlo; #Manual;
+            #RingAlarm; #HoneywellHome; #RheemEcoNet; #Sense;
+            #EmporiaVue; #Rachio; #SmartThings; #HomeAssistant;
+            #EnphaseEnvoy; #TeslaPowerwall; #LGThinQ; #GESmartHQ; };
+          isActive: Bool; registeredAt: Int; propertyId: Text; homeowner: Principal;
+          externalDeviceId: Text;
+        }];
+        getEventsForProperty : (Text, Nat)    -> async [{
+          id: Text; eventType: { #WaterLeak; #LeakDetected; #FloodRisk; #LowTemperature;
+            #HvacAlert; #HvacFilterDue; #HighHumidity; #HighTemperature;
+            #SolarFault; #LowProduction; #BatteryLow; #GridOutage;
+            #ApplianceFault; #ApplianceMaintenance; };
+          timestamp: Int; severity: { #Info; #Warning; #Critical }; jobId: ?Text;
+        }];
+      };
+
+      let rawDevices = await sensorActor.getDevicesForProperty(propertyId);
+      sensorCoverage := Array.map(rawDevices, func(d: {
+        id: Text; name: Text; source: { #Nest; #Ecobee; #MoenFlo; #Manual;
+          #RingAlarm; #HoneywellHome; #RheemEcoNet; #Sense;
+          #EmporiaVue; #Rachio; #SmartThings; #HomeAssistant;
+          #EnphaseEnvoy; #TeslaPowerwall; #LGThinQ; #GESmartHQ; };
+        isActive: Bool; registeredAt: Int; propertyId: Text; homeowner: Principal;
+        externalDeviceId: Text;
+      }) : SensorSummary {
+        let sourceName = switch (d.source) {
+          case (#Nest)            { "Nest"            };
+          case (#Ecobee)          { "Ecobee"          };
+          case (#MoenFlo)         { "MoenFlo"         };
+          case (#Manual)          { "Manual"          };
+          case (#RingAlarm)       { "RingAlarm"       };
+          case (#HoneywellHome)   { "HoneywellHome"   };
+          case (#RheemEcoNet)     { "RheemEcoNet"     };
+          case (#Sense)           { "Sense"           };
+          case (#EmporiaVue)      { "EmporiaVue"      };
+          case (#Rachio)          { "Rachio"          };
+          case (#SmartThings)     { "SmartThings"     };
+          case (#HomeAssistant)   { "HomeAssistant"   };
+          case (#EnphaseEnvoy)    { "EnphaseEnvoy"    };
+          case (#TeslaPowerwall)  { "TeslaPowerwall"  };
+          case (#LGThinQ)         { "LGThinQ"         };
+          case (#GESmartHQ)       { "GESmartHQ"       };
+        };
+        { deviceId = d.id; name = d.name; source = sourceName;
+          isActive = d.isActive; lastEventAt = null; eventCount = 0; }
+      });
+
+      let rawEvents = await sensorActor.getEventsForProperty(propertyId, 50);
+      var alertAcc : [AlertSummary] = [];
+      for (e in rawEvents.vals()) {
+        let sev = switch (e.severity) {
+          case (#Critical) { "Critical" };
+          case (#Warning)  { "Warning"  };
+          case (#Info)     { "" };
+        };
+        if (sev != "") {
+          let evtName = switch (e.eventType) {
+            case (#WaterLeak)            { "WaterLeak"            };
+            case (#LeakDetected)         { "LeakDetected"         };
+            case (#FloodRisk)            { "FloodRisk"            };
+            case (#LowTemperature)       { "LowTemperature"       };
+            case (#HvacAlert)            { "HvacAlert"            };
+            case (#HvacFilterDue)        { "HvacFilterDue"        };
+            case (#HighHumidity)         { "HighHumidity"         };
+            case (#HighTemperature)      { "HighTemperature"      };
+            case (#SolarFault)           { "SolarFault"           };
+            case (#LowProduction)        { "LowProduction"        };
+            case (#BatteryLow)           { "BatteryLow"           };
+            case (#GridOutage)           { "GridOutage"           };
+            case (#ApplianceFault)       { "ApplianceFault"       };
+            case (#ApplianceMaintenance) { "ApplianceMaintenance" };
+          };
+          alertAcc := Array.concat(alertAcc, [{
+            alertId = e.id; eventType = evtName; severity = sev;
+            timestamp = e.timestamp; resolvedByJobId = e.jobId;
+          }]);
+        };
+      };
+      recentAlerts := alertAcc;
+    };
+
+    // ── Fetch job data ──────────────────────────────────────────────────────
+    var openJobs         : Nat = 0;
+    var openOldJobCount  : Nat = 0;
+    var verifiedJobCount : Nat = 0;
+    var permitCount      : Nat = 0;
+    var verifiedWithPermit : Nat = 0;
+
+    if (Text.size(riskJobCanisterId) > 0) {
+      let jobActor = actor(riskJobCanisterId) : actor {
+        getJobsForProperty : (Text) -> async {
+          #ok : [{
+            id: Text; propertyId: Text; homeowner: Principal; contractor: ?Principal;
+            title: Text; serviceType: {
+              #Roofing; #HVAC; #Plumbing; #Electrical;
+              #Painting; #Flooring; #Windows; #Landscaping;
+            };
+            description: Text; contractorName: ?Text; amount: Nat;
+            completedDate: Int; permitNumber: ?Text; warrantyMonths: ?Nat;
+            isDiy: Bool; status: {
+              #Pending; #InProgress; #Completed; #Verified;
+              #PendingHomeownerApproval; #RejectedByHomeowner;
+            };
+            verified: Bool; homeownerSigned: Bool; contractorSigned: Bool;
+            createdAt: Int; sourceQuoteId: ?Text;
+          }];
+          #err : { #NotFound; #Unauthorized; #InvalidInput: Text;
+                   #AlreadyVerified; #TierLimitReached: Text; };
+        };
+      };
+
+      let jobResult = await jobActor.getJobsForProperty(propertyId);
+      switch (jobResult) {
+        case (#err(_)) {};
+        case (#ok(allJobs)) {
+          for (j in allJobs.vals()) {
+            let isOpen = switch (j.status) {
+              case (#Pending)    { true };
+              case (#InProgress) { true };
+              case _ { false };
+            };
+            if (isOpen) {
+              openJobs += 1;
+              if (now - j.createdAt > NINETY_DAYS_NS) {
+                openOldJobCount += 1;
+              };
+            };
+            if (j.verified) {
+              verifiedJobCount += 1;
+              switch (j.permitNumber) {
+                case (?_) {
+                  permitCount += 1;
+                  verifiedWithPermit += 1;
+                };
+                case null {};
+              };
+            };
+          };
+        };
+      };
+    };
+
+    // ── Compute score ───────────────────────────────────────────────────────
+    let hasSensors  = sensorCoverage.size() > 0;
+    let isVerifiedProp = verificationLevel != "Unverified" and verificationLevel != "PendingReview";
+    let score = computeMaintenanceScore(
+      recentAlerts, openOldJobCount, verifiedWithPermit, hasSensors, isVerifiedProp
+    );
+
+    // ── Issue token ─────────────────────────────────────────────────────────
+    let randBytes = await Random.blob();
+    let token = "RISK_" # blobToHex(randBytes);
+
+    let expiresAt : ?Int = switch (expiryDays) {
+      case null    { null };
+      case (?days) { ?(now + (days * 24 * 3600 * 1_000_000_000)) };
+    };
+
+    let profile : RiskProfile = {
+      schemaVersion     = "homegentic-risk/1.0";
+      token;
+      propertyId;
+      generatedAt       = now;
+      expiresAt;
+      maintenanceScore  = score;
+      verificationLevel;
+      sensorCoverage;
+      recentAlerts;
+      openJobs;
+      verifiedJobCount;
+      permitCount;
+    };
+    Map.add(riskProfiles, Text.compare, token, profile);
+    #ok(profile)
+  };
+
+  /// Retrieve a previously generated risk profile by token.
+  public query func getRiskProfile(token: Text) : async Result.Result<RiskProfile, RiskProfileError> {
+    switch (Map.get(riskProfiles, Text.compare, token)) {
+      case null { #err(#NotFound) };
+      case (?p) {
+        switch (p.expiresAt) {
+          case (?exp) {
+            if (Time.now() > exp) { return #err(#Expired) };
+          };
+          case null {};
+        };
+        #ok(p)
+      };
+    }
+  };
+
+  /// Wire the report canister to the sensor canister. Admin only.
+  public shared(msg) func setSensorCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    sensorCanisterId := id;
+    #ok(())
+  };
+
+  /// Wire the report canister to the job canister for risk profile queries. Admin only.
+  public shared(msg) func setRiskJobCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    riskJobCanisterId := id;
+    #ok(())
+  };
+
   // ─── Score Certificate API (4.2.1) ───────────────────────────────────────────
 
   /// Issue an on-chain score certificate. Stores the payload (no personal data)

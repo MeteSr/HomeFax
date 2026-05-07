@@ -503,7 +503,9 @@ describe("report IDL factory", () => {
     const svc = extractService(reportIdlFactory);
     expect(Object.keys(svc).sort()).toEqual([
       "generateReport",
+      "generateRiskProfile",
       "getReport",
+      "getRiskProfile",
       "listShareLinks",
       "revokeShareLink",
     ]);

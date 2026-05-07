@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.5.1"
+DEPLOY_SCRIPT_VERSION="1.5.2"
 ENV=${1:-local}
 
 echo "============================================"
@@ -638,6 +638,14 @@ fi
 if [ -n "$REPORT_ID" ]     && [ -n "$PROPERTY_ID" ]; then
   echo "  Wiring property -> report..."
   icp canister call report     setPropertyCanisterId   "(\"$PROPERTY_ID\")"          -e "$ENV" &
+fi
+if [ -n "$REPORT_ID" ]     && [ -n "$SENSOR_ID" ]; then
+  echo "  Wiring sensor -> report..."
+  icp canister call report     setSensorCanisterId     "(\"$SENSOR_ID\")"            -e "$ENV" &
+fi
+if [ -n "$REPORT_ID" ]     && [ -n "$JOB_ID" ]; then
+  echo "  Wiring job -> report..."
+  icp canister call report     setRiskJobCanisterId    "(\"$JOB_ID\")"              -e "$ENV" &
 fi
 
 wait
