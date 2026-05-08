@@ -32,7 +32,7 @@ export default function PermitCoverageIndicator({ city, state }: Props) {
         fontFamily:    FONTS.sans,
         fontSize:      "0.6rem",
         letterSpacing: "0.08em",
-        color:         available ? COLORS.sage : COLORS.plumMid,
+        color:         available ? COLORS.sageText : COLORS.plumMid,
         marginTop:     "0.5rem",
       }}
     >

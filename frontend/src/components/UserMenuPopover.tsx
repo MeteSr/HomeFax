@@ -84,7 +84,7 @@ export function UserMenuPopover({ displayName, onClose, onUpgrade }: UserMenuPop
         <div style={{ height: "1px", background: COLORS.rule, margin: "0.3rem 0" }} />
 
         <button onClick={() => { onClose(); onUpgrade(); }} style={menuItemStyle} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-          <ArrowUpCircle size={16} style={{ flexShrink: 0, color: COLORS.sage }} />
+          <ArrowUpCircle size={16} style={{ flexShrink: 0, color: COLORS.sageText }} />
           Upgrade plan
         </button>
 

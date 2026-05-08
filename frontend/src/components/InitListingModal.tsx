@@ -200,7 +200,7 @@ export default function InitListingModal({ open, onClose, property, jobs, score 
                 style={{
                   display:    "inline-flex", alignItems: "center", gap: "0.3rem",
                   fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.06em",
-                  color:      generating ? UI.inkLight : COLORS.sage,
+                  color:      generating ? UI.inkLight : COLORS.sageText,
                   background: "none", border: "none", cursor: generating ? "default" : "pointer",
                   padding:    "0.2rem 0",
                 }}

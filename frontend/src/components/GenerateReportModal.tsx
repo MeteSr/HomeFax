@@ -273,12 +273,12 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
           {freshLink && previewStats && (
             <div style={{ border: `1px solid ${COLORS.sage}`, background: COLORS.sageLight, borderRadius: RADIUS.sm, overflow: "hidden" }}>
               <div style={{ padding: "0.75rem 1rem", borderBottom: `1px solid ${COLORS.sageMid}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.sage }}>
+                <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.sageText }}>
                   Link ready to share
                 </span>
                 <button
                   onClick={() => setFreshLink(null)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.sage, padding: 0 }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.sageText, padding: 0 }}
                 >
                   ×
                 </button>
@@ -328,7 +328,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                   </div>
                 ) : (
                   <div style={{ marginTop: "0.75rem", padding: "0.5rem 0.75rem", background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}`, borderRadius: RADIUS.sm, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sage }}>
+                    <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sageText }}>
                       ✓ This link never expires
                     </span>
                   </div>
@@ -368,7 +368,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                               {link.viewCount} view{link.viewCount !== 1 ? "s" : ""}
                             </span>
                             {hiddenCount > 0 && (
-                              <span style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.sage, background: COLORS.sageLight, padding: "0.1rem 0.35rem", border: `1px solid ${COLORS.sageMid}`, borderRadius: RADIUS.sm }}>
+                              <span style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.06em", color: COLORS.sageText, background: COLORS.sageLight, padding: "0.1rem 0.35rem", border: `1px solid ${COLORS.sageMid}`, borderRadius: RADIUS.sm }}>
                                 {hiddenCount} field{hiddenCount > 1 ? "s" : ""} hidden
                               </span>
                             )}
@@ -398,7 +398,7 @@ export function GenerateReportModal({ property, onClose }: GenerateReportModalPr
                               fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
                               border: `1px solid ${copiedToken === link.token ? COLORS.sage : UI.rule}`,
                               borderRadius: RADIUS.sm,
-                              color:  copiedToken === link.token ? COLORS.sage : UI.inkLight,
+                              color:  copiedToken === link.token ? COLORS.sageText : UI.inkLight,
                               background: "none", cursor: "pointer",
                             }}
                           >

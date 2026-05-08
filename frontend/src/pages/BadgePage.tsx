@@ -55,7 +55,7 @@ function ScorePill({ score, grade }: { score: number; grade: string }) {
 
 function VerifiedBadge({ level }: { level: string }) {
   const cfg = level === "Premium"
-    ? { color: COLORS.sage, label: "Premium Verified" }
+    ? { color: COLORS.sageText, label: "Premium Verified" }
     : level === "Basic"
     ? { color: COLORS.plumMid, label: "Basic Verified" }
     : { color: COLORS.plumMid, label: "Self-Reported" };
@@ -272,7 +272,7 @@ export default function BadgePage() {
                   padding: "0.25rem 0.6rem",
                   fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase",
                   border: `1px solid ${copied ? COLORS.sage : UI.rule}`,
-                  color: copied ? COLORS.sage : UI.inkLight,
+                  color: copied ? COLORS.sageText : UI.inkLight,
                   background: "none", cursor: "pointer",
                 }}
               >

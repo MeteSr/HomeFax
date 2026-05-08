@@ -9,6 +9,7 @@
 import { test, expect } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
 import { injectTestProperties, injectSubscription } from "./helpers/testData";
+import { assertNoA11yViolations } from "./helpers/a11y";
 
 test.describe("LN — /listing/new", () => {
   test.beforeEach(async ({ page }) => {
@@ -17,6 +18,10 @@ test.describe("LN — /listing/new", () => {
     await injectSubscription(page, "Basic");
     await page.goto("/listing/new");
     await expect(page.getByRole("heading", { name: /list your home/i })).toBeVisible();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await assertNoA11yViolations(page);
   });
 
   test("LN.1 shows 'List Your Home' heading", async ({ page }) => {

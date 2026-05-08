@@ -65,7 +65,7 @@ function StepIndicator({ step }: { step: number }) {
         </span>
         <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", color: COLORS.plumMid }}>{pct}%</span>
       </div>
-      <div role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+      <div role="progressbar" aria-label="Onboarding progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
         style={{ height: "6px", background: COLORS.rule, borderRadius: 100 }}>
         <div style={{ height: "6px", width: `${pct}%`, background: COLORS.sage, borderRadius: 100, transition: "width 0.35s ease" }} />
       </div>
@@ -293,7 +293,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                     style={addr.state.length === 2 && !isValidUsState(addr.state) ? { borderColor: COLORS.rust } : undefined}
                   />
                   {addr.state.length === 2 && !isValidUsState(addr.state) && (
-                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                    <p style={{ color: COLORS.errorText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                       Valid US state abbreviation required
                     </p>
                   )}
@@ -307,7 +307,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                   style={addr.zipCode && !isValidZip(addr.zipCode) ? { borderColor: COLORS.rust } : undefined}
                 />
                 {addr.zipCode && !isValidZip(addr.zipCode) && (
-                  <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                  <p style={{ color: COLORS.errorText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                     Enter a 5-digit ZIP code
                   </p>
                 )}
@@ -335,7 +335,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                         background: details.propertyType === t ? COLORS.blush : COLORS.white,
                         fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 500,
                         textAlign: "center",
-                        color: details.propertyType === t ? COLORS.rust : COLORS.plumMid,
+                        color: details.propertyType === t ? COLORS.plum : COLORS.plumMid,
                         border: details.propertyType === t ? `1.5px solid ${COLORS.rust}` : "none",
                       }}
                     >
@@ -353,7 +353,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                     onChange={(e) => setDetails((d) => ({ ...d, yearBuilt: e.target.value }))}
                   />
                   {details.yearBuilt && (Number(details.yearBuilt) < 1900 || Number(details.yearBuilt) > new Date().getFullYear()) && (
-                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                    <p style={{ color: COLORS.errorText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                       Year must be between 1900 and {new Date().getFullYear()}
                     </p>
                   )}
@@ -388,7 +388,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
               <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
                 Baseline photos captured
               </span>
-              <span style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: completedCount === BASELINE_SYSTEMS.length ? COLORS.sage : COLORS.plum }}>
+              <span style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: completedCount === BASELINE_SYSTEMS.length ? COLORS.sageText : COLORS.plum }}>
                 {completedCount} <span style={{ fontWeight: 300, color: COLORS.plumMid }}>/ {BASELINE_SYSTEMS.length}</span>
               </span>
             </div>
@@ -481,7 +481,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                   style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plumMid, display: "block", marginTop: "0.25rem" }}
                 />
                 {verify.docFile && (
-                  <p style={{ color: COLORS.sage, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                  <p style={{ color: COLORS.sageText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                     {verify.docFile.name} selected
                   </p>
                 )}
@@ -578,7 +578,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div data-testid="property-wizard-modal" style={{
+      <div data-testid="property-wizard-modal" role="dialog" aria-modal="true" aria-label="Property setup wizard" style={{
         borderRadius: RADIUS.card,
         border: `1px solid ${COLORS.rule}`,
         background: COLORS.white,

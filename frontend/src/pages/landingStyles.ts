@@ -1,7 +1,7 @@
 export const CSS = `
   .hfl * { margin: 0; padding: 0; box-sizing: border-box; }
   .hfl {
-    --sage: #7AAF76; --sage-light: #E5F0E4; --sage-mid: #C4DCC2;
+    --sage: #7AAF76; --sage-text: #3D7339; --sage-light: #E5F0E4; --sage-mid: #C4DCC2;
     --blush: #F0CDBA; --sky: #BAD5E8; --butter: #F5E9BB;
     --plum: #2E2540; --plum-mid: #6B5B7B; --plum-light: #3D3254;
     --white: #FDFCFA; --charcoal: #1E1928; --rule: rgba(46,37,64,0.1);
@@ -20,7 +20,7 @@ export const CSS = `
     font-family: 'Fraunces', serif; font-size: 22px; font-weight: 900;
     color: var(--plum); text-decoration: none; letter-spacing: -0.5px; flex-shrink: 0;
   }
-  .hfl-logo span { color: var(--sage); font-style: italic; font-weight: 300; }
+  .hfl-logo span { color: var(--sage-text); font-style: italic; font-weight: 300; }
   .hfl-nav-links {
     display: flex; gap: 24px; list-style: none;
     margin-left: 32px;
@@ -86,7 +86,7 @@ export const CSS = `
     font-weight: 900; line-height: 1.01; letter-spacing: -2.5px; margin-bottom: 24px;
     animation: hfl-fadeUp .5s .1s ease both;
   }
-  .hfl h1 em { font-style: italic; color: var(--sage); font-weight: 300; }
+  .hfl h1 em { font-style: italic; color: var(--sage-text); font-weight: 300; }
   .hfl-sub {
     font-size: 18px; line-height: 1.75; color: var(--plum-mid);
     max-width: 480px; margin-bottom: 40px;
@@ -171,7 +171,7 @@ export const CSS = `
   .hfl-dc-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .hfl-dc-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: var(--sage-light); border-radius: 10px; font-size: 12px; }
   .hfl-dc-item-l { display: flex; align-items: center; gap: 8px; color: var(--plum); font-weight: 500; }
-  .hfl-status-done { font-size: 11px; font-weight: 600; color: var(--sage); }
+  .hfl-status-done { font-size: 11px; font-weight: 600; color: var(--sage-text); }
   .hfl-status-due  { font-size: 11px; font-weight: 600; color: #D4843A; }
   .hfl-status-ok   { font-size: 11px; font-weight: 600; color: var(--plum-mid); }
   .hfl-dc-ver-row {
@@ -219,7 +219,7 @@ export const CSS = `
   .hfl-section-header { max-width: 600px; margin-bottom: 72px; }
   .hfl-how > .hfl-section-header { padding-left: 0; text-align: center; margin-left: auto; margin-right: auto; }
   .hfl-kicker {
-    font-size: 12px; font-weight: 700; color: var(--sage);
+    font-size: 12px; font-weight: 700; color: var(--sage-text);
     letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
   }
   .hfl h2 {
@@ -227,7 +227,8 @@ export const CSS = `
     font-weight: 900; letter-spacing: -1.5px; line-height: 1.04; margin-bottom: 18px;
     color: var(--plum);
   }
-  .hfl h2 em { font-style: italic; font-weight: 300; color: var(--sage); }
+  .hfl h2 em { font-style: italic; font-weight: 300; color: var(--sage-text); }
+  .hfl-feat-2 .hfl-feat-text h2 em { color: var(--sage); }
   .hfl-sec-sub { font-size: 17px; color: var(--plum-mid); line-height: 1.7; }
   .hfl-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 24px; position: relative; width: 100%; }
   .hfl-flow::before {
@@ -288,8 +289,9 @@ export const CSS = `
   .hfl-feat-check {
     width: 22px; height: 22px; background: var(--sage-light); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: var(--sage); flex-shrink: 0; margin-top: 1px; font-weight: 700;
+    font-size: 11px; color: var(--sage-text); flex-shrink: 0; margin-top: 1px; font-weight: 700;
   }
+  .hfl-feat-2 .hfl-feat-check { color: var(--sage); }
   .hfl-feat-2 .hfl-feat-check { background: rgba(122,175,118,0.25); }
   .hfl-feat-cta {
     display: inline-flex; align-items: center; gap: 8px;
@@ -329,7 +331,7 @@ export const CSS = `
   .hfl-rec-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
   .hfl-rec-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--sage-light); border-radius: 10px; font-size: 12px; }
   .hfl-rec-item-l { display: flex; align-items: center; gap: 8px; color: var(--plum); font-weight: 600; }
-  .hfl-rec-pass { font-size: 11px; font-weight: 700; color: var(--sage); }
+  .hfl-rec-pass { font-size: 11px; font-weight: 700; color: var(--sage-text); }
   .hfl-rec-due { font-size: 11px; font-weight: 700; color: #D4843A; }
   .hfl-rec-footer { padding: 14px 26px; background: var(--sage-light); border-top: 1px solid var(--sage-mid); font-size: 11px; color: var(--plum-mid); font-weight: 600; display: flex; align-items: center; gap: 8px; }
   /* AI panel */
@@ -340,7 +342,7 @@ export const CSS = `
   }
   .hfl-ai-panel-hdr-l { display: flex; align-items: center; gap: 10px; }
   .hfl-ai-panel-name { font-size: 14px; font-weight: 700; color: var(--plum); }
-  .hfl-ai-panel-live { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sage); font-weight: 600; }
+  .hfl-ai-panel-live { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sage-text); font-weight: 600; }
   .hfl-ai-panel-dot { width: 6px; height: 6px; background: var(--sage); border-radius: 50%; animation: hfl-pulse 2s infinite; }
   .hfl-ai-panel-body { padding: 22px; display: flex; flex-direction: column; gap: 16px; }
   .hfl-ai-notice {
@@ -354,7 +356,7 @@ export const CSS = `
   .hfl-ai-user-icon { width: 30px; height: 30px; background: rgba(46,37,64,0.08); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
   .hfl-ai-user-msg p { font-size: 13px; color: var(--plum-mid); line-height: 1.55; font-style: italic; }
   .hfl-ai-reply { background: var(--sage-light); border-radius: 14px; padding: 14px 16px; }
-  .hfl-ai-reply-tag { font-size: 10px; font-weight: 700; color: var(--sage); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .hfl-ai-reply-tag { font-size: 10px; font-weight: 700; color: var(--sage-text); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
   .hfl-ai-reply p { font-size: 13px; color: var(--plum); line-height: 1.6; }
   .hfl-ai-panel-footer {
     padding: 14px 22px; border-top: 1px solid rgba(46,37,64,0.1);
@@ -400,7 +402,7 @@ export const CSS = `
   }
   .hfl-rc-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--plum); margin-bottom: 18px; }
   .hfl-report h2 { color: var(--plum); margin-bottom: 18px; }
-  .hfl-report h2 em { color: var(--sage); font-style: italic; font-weight: 300; }
+  .hfl-report h2 em { color: var(--sage-text); font-style: italic; font-weight: 300; }
   .hfl-report p { font-size: 16px; color: rgba(46,37,64,0.7); line-height: 1.7; margin-bottom: 36px; }
   .hfl-rc-actions { display: flex; gap: 14px; flex-wrap: wrap; }
   .hfl-rc-btn {
@@ -441,7 +443,7 @@ export const CSS = `
   }
   .hfl-fdd-header { position: relative; }
   .hfl-fdd-header h2 { color: var(--plum); margin-bottom: 16px; }
-  .hfl-fdd-header h2 em { color: var(--sage); }
+  .hfl-fdd-header h2 em { color: var(--sage-text); }
   .hfl-fdd-header p { font-size: 16px; color: var(--plum-mid); line-height: 1.7; }
   .hfl-fdd-cols {
     display: flex; flex-direction: column; position: relative;
@@ -468,7 +470,7 @@ export const CSS = `
   }
   .hfl-fdd-tagline {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
-    letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage);
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage-text);
     margin-bottom: 6px;
   }
   .hfl-fdd-desc { font-size: 13px; color: var(--plum-mid); line-height: 1.65; }
@@ -492,13 +494,13 @@ export const CSS = `
     font-family: 'Fraunces', serif; font-size: clamp(26px, 2.8vw, 36px); font-weight: 900;
     color: var(--plum); line-height: 1.15; margin-bottom: 18px;
   }
-  .hfl-tcard-green { color: var(--sage); }
+  .hfl-tcard-green { color: var(--sage-text); }
   .hfl-tcard-text { font-size: 15px; color: var(--plum-mid); line-height: 1.75; margin-bottom: 28px; }
   .hfl-tcard-meta { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
   .hfl-tcard-stars { color: #F4B942; font-size: 17px; letter-spacing: 2px; }
   .hfl-tcard-verified {
     font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--sage); border: 1px solid var(--sage-mid); padding: 3px 9px;
+    color: var(--sage-text); border: 1px solid var(--sage-mid); padding: 3px 9px;
   }
   .hfl-tcard-author { display: flex; align-items: center; gap: 12px; }
   .hfl-tcard-name { font-size: 14px; font-weight: 700; color: var(--plum); }
@@ -563,7 +565,7 @@ export const CSS = `
   }
   .hfl-persona:hover { border-color: var(--sage); box-shadow: 0 12px 36px rgba(46,37,64,0.12); transform: translateY(-4px); }
   .hfl-persona-icon { font-size: 36px; margin-bottom: 16px; }
-  .hfl-persona-role { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--sage); margin-bottom: 8px; }
+  .hfl-persona-role { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--sage-text); margin-bottom: 8px; }
   .hfl-persona-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: var(--plum); margin-bottom: 10px; }
   .hfl-persona-desc { font-size: 13px; color: var(--plum-mid); line-height: 1.6; margin-bottom: 22px; }
   .hfl-persona-cta { font-size: 14px; font-weight: 700; color: var(--plum); display: flex; align-items: center; gap: 6px; }
@@ -579,13 +581,13 @@ export const CSS = `
   }
   .hfl-data-eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(122,175,118,0.18); color: var(--sage);
+    background: rgba(122,175,118,0.18); color: var(--sage-text);
     padding: 6px 16px; border-radius: 100px;
     font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     margin-bottom: 24px;
   }
   .hfl-data h2 { color: var(--plum); letter-spacing: -1px; margin-bottom: 20px; }
-  .hfl-data h2 em { color: var(--sage); }
+  .hfl-data h2 em { color: var(--sage-text); }
   .hfl-data-lead { font-size: 17px; color: var(--plum-mid); line-height: 1.7; margin-bottom: 36px; }
   .hfl-data-cards { display: flex; flex-direction: column; gap: 14px; }
   .hfl-data-card {
@@ -628,7 +630,7 @@ export const CSS = `
   }
   .hfl-tool-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(46,37,64,0.1); }
   .hfl-tool-icon { font-size: 28px; }
-  .hfl-tool-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage); margin-bottom: 2px; }
+  .hfl-tool-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sage-text); margin-bottom: 2px; }
   .hfl-tool-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--plum); line-height: 1.2; }
   .hfl-tool-desc { font-size: 13px; color: var(--plum-mid); line-height: 1.65; flex: 1; }
   .hfl-tool-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--plum); margin-top: 4px; }
@@ -664,7 +666,7 @@ export const CSS = `
   .hfl-sc-tab-row { display: flex; align-items: center; gap: 10px; }
   .hfl-sc-tab-icon { font-size: 16px; flex-shrink: 0; }
   .hfl-sc-tab-title {
-    font-size: 13px; font-weight: 600; color: rgba(253,252,250,0.45); line-height: 1.3;
+    font-size: 13px; font-weight: 600; color: rgba(253,252,250,0.55); line-height: 1.3;
   }
   .hfl-sc-tab-active .hfl-sc-tab-title { color: white; }
   .hfl-sc-progress-track {
@@ -763,7 +765,7 @@ export const CSS = `
   }
   .hfl-footer-logo { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: white; margin-bottom: 14px; display: block; text-decoration: none; }
   .hfl-footer-logo span { color: var(--sage); font-style: italic; font-weight: 300; }
-  .hfl-footer-tagline { font-size: 14px; color: rgba(253,252,250,0.45); line-height: 1.65; max-width: 220px; margin-bottom: 24px; }
+  .hfl-footer-tagline { font-size: 14px; color: rgba(253,252,250,0.6); line-height: 1.65; max-width: 220px; margin-bottom: 24px; }
   .hfl-footer-social { display: flex; gap: 10px; }
   .hfl-footer-social a {
     color: rgba(253,252,250,0.4); transition: color .2s; display: flex; align-items: center;
@@ -773,7 +775,7 @@ export const CSS = `
   .hfl-footer-social a:hover { color: var(--sage); background: rgba(122,175,118,0.15); }
   .hfl-footer-col-title {
     font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-    color: rgba(253,252,250,0.35); margin-bottom: 20px;
+    color: rgba(253,252,250,0.55); margin-bottom: 20px;
   }
   .hfl-footer-col-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
   .hfl-footer-col-links a {
@@ -784,11 +786,11 @@ export const CSS = `
   .hfl-footer-bottom {
     border-top: 1px solid rgba(253,252,250,0.08); padding-top: 24px;
     display: flex; align-items: center; justify-content: space-between;
-    font-size: 13px; color: rgba(253,252,250,0.35);
+    font-size: 13px; color: rgba(253,252,250,0.55);
   }
   .hfl-footer-bottom-links { display: flex; gap: 24px; }
-  .hfl-footer-bottom-links a { color: rgba(253,252,250,0.35); text-decoration: none; transition: color .2s; }
-  .hfl-footer-bottom-links a:hover { color: rgba(253,252,250,0.65); }
+  .hfl-footer-bottom-links a { color: rgba(253,252,250,0.55); text-decoration: none; transition: color .2s; }
+  .hfl-footer-bottom-links a:hover { color: rgba(253,252,250,0.85); }
 
   /* ── ENTRANCE ANIMATIONS ──────────────────────────────────────────────── */
   @keyframes hfl-fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
@@ -944,7 +946,7 @@ export const CSS = `
   .hfl-hb-dot {
     width: 22px; height: 22px; background: var(--sage-light); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 10px; color: var(--sage); flex-shrink: 0; margin-top: 2px; font-weight: 800;
+    font-size: 10px; color: var(--sage-text); flex-shrink: 0; margin-top: 2px; font-weight: 800;
   }
   .hfl-price-anchor {
     font-size: 13px; font-weight: 700; color: var(--plum-mid);

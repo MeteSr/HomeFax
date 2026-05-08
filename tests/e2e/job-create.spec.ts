@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
 import { injectTestProperties, injectSubscription } from "./helpers/testData";
+import { assertNoA11yViolations } from "./helpers/a11y";
 
 test.describe("Job Create — /jobs/new", () => {
   test.beforeEach(async ({ page }) => {
@@ -10,6 +11,10 @@ test.describe("Job Create — /jobs/new", () => {
     await page.goto("/jobs/new");
     // Wait for the form to render (not redirected to /login)
     await expect(page.getByRole("heading", { name: "Log a Job" })).toBeVisible();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await assertNoA11yViolations(page);
   });
 
   // ── DIY toggle ──────────────────────────────────────────────────────────────

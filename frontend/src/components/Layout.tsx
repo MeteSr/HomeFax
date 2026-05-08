@@ -202,7 +202,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     justifyContent:  sidebarOpen ? "flex-start" : "center",
     overflow:        "hidden",
     whiteSpace:      "nowrap",
-    color:           active ? COLORS.sage : COLORS.plumMid,
+    color:           active ? COLORS.plum : COLORS.plumMid,
     background:      active ? COLORS.sageLight : "transparent",
     borderLeft:      active ? `2px solid ${COLORS.sage}` : "2px solid transparent",
     transition:      "color 0.15s, background 0.15s",
@@ -248,12 +248,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 whiteSpace:     "nowrap",
               }}
             >
-              Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
+              Home<span style={{ color: COLORS.sageText, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
             </Link>
           )}
           <button
             onClick={toggleSidebar}
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             style={{
               display:    "flex",
               alignItems: "center",
@@ -300,6 +301,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 key={link.to}
                 to={link.to}
                 title={!sidebarOpen ? link.label : undefined}
+                aria-current={active ? "page" : undefined}
                 style={{ ...itemBase(active), textDecoration: "none" }}
                 onMouseEnter={(e: React.MouseEvent) => {
                   if (!active) (e.currentTarget as HTMLElement).style.color = COLORS.plum;
@@ -325,6 +327,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Activity bell */}
           <button
             onClick={openFeed}
+            aria-label="Activity"
             title={!sidebarOpen ? "Activity" : undefined}
             style={{ ...itemBase(), width: "100%", border: "none", cursor: "pointer" }}
           >
@@ -337,7 +340,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   right:          "-5px",
                   width:          "14px",
                   height:         "14px",
-                  background:     COLORS.sage,
+                  background:     COLORS.sageText,
                   borderRadius:   "50%",
                   display:        "flex",
                   alignItems:     "center",
@@ -428,7 +431,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               flex:           1,
             }}
           >
-            Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
+            Home<span style={{ color: COLORS.sageText, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
           </Link>
 
           {/* Bell */}
@@ -442,7 +445,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <span style={{
                 position: "absolute", top: "4px", right: "4px",
                 width: "14px", height: "14px",
-                background: COLORS.sage, borderRadius: "50%",
+                background: COLORS.sageText, borderRadius: "50%",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: FONTS.sans, fontSize: "0.45rem", color: COLORS.white, fontWeight: 700,
               }}>

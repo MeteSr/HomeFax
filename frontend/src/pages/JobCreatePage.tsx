@@ -158,7 +158,7 @@ export default function JobCreatePage() {
           <div className="job-success-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "4rem", height: "4rem", border: `2px solid ${UI.sage}`, marginBottom: "1.25rem" }}>
             <CheckCircle size={28} color={UI.sage} />
           </div>
-          <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: UI.sage, marginBottom: "0.375rem" }}>
+          <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: COLORS.sageText, marginBottom: "0.375rem" }}>
             Record Locked On-Chain
           </p>
           <h2 style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, marginBottom: "0.5rem" }}>
@@ -224,7 +224,7 @@ export default function JobCreatePage() {
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: UI.rust, marginBottom: "0.5rem" }}>
+        <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: COLORS.sageText, marginBottom: "0.5rem" }}>
           Maintenance Record
         </div>
         <h1 style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, marginBottom: "0.375rem" }}>
@@ -238,8 +238,8 @@ export default function JobCreatePage() {
 
           {!editJob && properties.length > 0 && (
             <div>
-              <label className="form-label">Property *</label>
-              <select className="form-input" value={form.propertyId} onChange={(e) => update("propertyId", e.target.value)}>
+              <label className="form-label" htmlFor="propertyId">Property *</label>
+              <select id="propertyId" className="form-input" value={form.propertyId} onChange={(e) => update("propertyId", e.target.value)}>
                 {properties.map((p) => (
                   <option key={String(p.id)} value={String(p.id)}>{p.address}, {p.city}</option>
                 ))}
@@ -255,7 +255,7 @@ export default function JobCreatePage() {
             {isInsuranceRelevant(form.serviceType) && (
               <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginTop: "0.4rem", padding: "0.35rem 0.6rem", background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}` }}>
                 <ShieldCheck size={11} color={COLORS.sage} />
-                <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage }}>
+                <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sageText }}>
                   Insurance-relevant — this record may support a premium dispute or claim
                 </span>
               </div>
@@ -305,10 +305,10 @@ export default function JobCreatePage() {
               }} />
             </div>
             <div>
-              <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: form.isDiy ? UI.rust : UI.ink, marginBottom: "0.2rem" }}>
+              <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: UI.ink, marginBottom: "0.2rem" }}>
                 I did this myself (DIY)
               </p>
-              <p style={{ fontSize: "0.75rem", color: UI.inkLight, fontWeight: 300 }}>
+              <p style={{ fontSize: "0.75rem", color: form.isDiy ? UI.ink : UI.inkLight, fontWeight: 300 }}>
                 {form.isDiy ? "Your signature verifies this record." : "Toggle on if you performed the work yourself."}
               </p>
             </div>
@@ -330,14 +330,14 @@ export default function JobCreatePage() {
               </div>
             </div>
             <div>
-              <label className="form-label">Date Completed *</label>
-              <input className="form-input" type="date" value={form.date} onChange={(e) => update("date", e.target.value)} />
+              <label className="form-label" htmlFor="dateCompleted">Date Completed *</label>
+              <input id="dateCompleted" className="form-input" type="date" value={form.date} onChange={(e) => update("date", e.target.value)} />
             </div>
           </div>
 
           <div>
-            <label className="form-label">Description</label>
-            <textarea className="form-input" rows={3} placeholder="Describe the work done, materials used..." value={form.description} onChange={(e) => update("description", e.target.value)} style={{ resize: "vertical" }} />
+            <label className="form-label" htmlFor="description">Description</label>
+            <textarea id="description" className="form-input" rows={3} placeholder="Describe the work done, materials used..." value={form.description} onChange={(e) => update("description", e.target.value)} style={{ resize: "vertical" }} />
           </div>
 
           {showPermitField && (

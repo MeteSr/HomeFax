@@ -36,9 +36,20 @@ const idlFactory = ({ IDL }: any) => {
     status:    IDL.Text,
     fromCache: IDL.Bool,
   });
+  const ErrorSummaryInput = IDL.Record({
+    fingerprint : IDL.Text,
+    message     : IDL.Text,
+    errorType   : IDL.Text,
+    count       : IDL.Nat,
+    firstSeen   : IDL.Int,
+    lastSeen    : IDL.Int,
+    tierCounts  : IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat)),
+    release     : IDL.Opt(IDL.Text),
+  });
   return IDL.Service({
     getCriticalCycleAlerts: IDL.Func([], [IDL.Vec(Alert)], ["query"]),
     checkCycleLevels:       IDL.Func([], [IDL.Vec(CycleLevelResult)], []),
+    recordFrontendError:    IDL.Func([ErrorSummaryInput], [], []),
   });
 };
 
@@ -52,6 +63,17 @@ async function getActor(): Promise<any> {
   if (process.env.DFX_NETWORK === "local") await agent.fetchRootKey();
   _actor = Actor.createActor(idlFactory, { agent, canisterId: MONITORING_CANISTER_ID });
   return _actor;
+}
+
+export interface ErrorSummaryInput {
+  fingerprint : string;
+  message     : string;
+  errorType   : string;
+  count       : number;
+  firstSeen   : bigint;  // nanoseconds
+  lastSeen    : bigint;  // nanoseconds
+  tierCounts  : [string, number][];
+  release?    : string;
 }
 
 export interface CycleAlert {
@@ -92,4 +114,20 @@ export async function checkCycleLevels(): Promise<CycleLevelStatus[]> {
     status:    r.status,
     fromCache: r.fromCache,
   }));
+}
+
+export async function recordFrontendError(input: ErrorSummaryInput): Promise<void> {
+  const actor = await getActor();
+  if (!actor) return;
+  const candid = {
+    fingerprint : input.fingerprint,
+    message     : input.message,
+    errorType   : input.errorType,
+    count       : BigInt(input.count),
+    firstSeen   : input.firstSeen,
+    lastSeen    : input.lastSeen,
+    tierCounts  : input.tierCounts.map(([tier, count]) => [tier, BigInt(count)] as [string, bigint]),
+    release     : input.release ? [input.release] : [],
+  };
+  await actor.recordFrontendError(candid);
 }

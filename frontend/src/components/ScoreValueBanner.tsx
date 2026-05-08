@@ -26,7 +26,7 @@ export function ScoreValueBanner({ score, zip, homeValueDollars }: ScoreValueBan
       flexDirection: "column",
       gap:        "0.25rem",
     }}>
-      <div style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sage }}>
+      <div style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sageText }}>
         Documented value · buyer confidence
       </div>
       <div style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: COLORS.plum }}>

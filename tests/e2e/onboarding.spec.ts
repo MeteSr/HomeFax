@@ -1,6 +1,7 @@
 import { test, expect, Page } from "@playwright/test";
 import { injectTestAuth } from "./helpers/auth";
 import { injectRegisterProperty, injectSubscription } from "./helpers/testData";
+import { assertNoA11yViolations } from "./helpers/a11y";
 
 // Helper: fill Step 1 and advance
 async function fillStep1(page: Parameters<typeof injectTestAuth>[0]) {
@@ -34,6 +35,10 @@ test.describe("OnboardingWizard — modal auto-opens on /dashboard", () => {
     await page.goto("/dashboard");
     // Wait for wizard modal to render
     await expect(page.getByText(/step 1 of 6/i)).toBeVisible();
+  });
+
+  test.afterEach(async ({ page }) => {
+    await assertNoA11yViolations(page);
   });
 
   // ── Page structure ──────────────────────────────────────────────────────────

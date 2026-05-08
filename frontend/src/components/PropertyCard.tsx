@@ -7,7 +7,10 @@ export function PropertyCard({ property, onClick, badge }: { property: Property;
   const [hovered, setHovered] = React.useState(false);
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -33,7 +36,7 @@ export function PropertyCard({ property, onClick, badge }: { property: Property;
       </p>
       <div style={{ display: "flex", justifyContent: "space-between", fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.08em", color: COLORS.plumMid }}>
         <span style={{ textTransform: "uppercase" }}>{property.propertyType}</span>
-        <span style={{ color: COLORS.sage }}>View Details →</span>
+        <span style={{ color: COLORS.plumMid }}>View Details →</span>
       </div>
     </div>
   );

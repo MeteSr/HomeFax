@@ -76,7 +76,7 @@ export function BaselinePromptCard({ property, dismissed, onDismiss }: Props) {
         }}
       >
         <CheckCircle size={14} color={COLORS.sage} />
-        <span style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 500, color: COLORS.sage }}>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 500, color: COLORS.sageText }}>
           Baseline photos complete — {property.address}
         </span>
       </div>

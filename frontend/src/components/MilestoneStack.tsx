@@ -7,7 +7,7 @@ const UI = {
   paper:    COLORS.white,
   rule:     COLORS.rule,
   inkLight: COLORS.plumMid,
-  sage:     COLORS.sage,
+  sage:     COLORS.sageText,
   mono:     FONTS.sans,
   serif:    FONTS.serif,
 };
@@ -221,7 +221,7 @@ export function MilestoneStack({
                 fontSize: "0.6rem",
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
-                color: COLORS.sage,
+                color: COLORS.sageText,
                 marginBottom: "0.2rem",
               }}
             >

@@ -117,7 +117,7 @@ export function AddRoomModal({ isOpen, onClose, onSuccess, propertyId }: AddRoom
           <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
             <Home size={15} color={COLORS.sage} />
             <div>
-              <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sage, marginBottom: "0.2rem" }}>
+              <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sageText, marginBottom: "0.2rem" }}>
                 Room Digital Twin
               </p>
               <h2 style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", lineHeight: 1, color: COLORS.plum }}>

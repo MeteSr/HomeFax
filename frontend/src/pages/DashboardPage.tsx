@@ -44,9 +44,9 @@ const UI = {
   ink:      COLORS.plum,
   paper:    "#ffffff",
   rule:     COLORS.rule,
-  rust:     COLORS.sage,       // primary accent: sage replaces rust
+  rust:     COLORS.sageText,   // primary accent: sageText for accessible contrast
   inkLight: COLORS.plumMid,
-  sage:     COLORS.sage,
+  sage:     COLORS.sageText,
   serif:    FONTS.serif,
   mono:     FONTS.sans,
 };
@@ -202,12 +202,12 @@ function AIHeroBar() {
           borderTop: "1px solid #f0f0f0", paddingTop: "0.625rem",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", letterSpacing: "0.04em", color: "#bbb", fontWeight: 400 }}>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", letterSpacing: "0.04em", color: COLORS.plumMid, fontWeight: 400 }}>
             {quotaExhausted ? "Chat mode" : "HomeGentic AI"}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             {(transcript || response || error) && (
-              <button onClick={reset} style={{ background: "none", border: "none", cursor: "pointer", color: "#bbb", display: "flex", padding: 0 }} aria-label="Dismiss">
+              <button onClick={reset} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, display: "flex", padding: 0 }} aria-label="Dismiss">
                 <X size={14} />
               </button>
             )}
@@ -235,7 +235,7 @@ function AIHeroBar() {
                 style={{
                   background: "none", border: "none", padding: "0.25rem",
                   cursor: isProcessing || isSpeaking ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", color: isListening ? COLORS.rust : "#888",
+                  display: "flex", alignItems: "center", color: isListening ? COLORS.rust : COLORS.plumMid,
                   transition: "color 0.15s",
                 }}
               >
@@ -261,7 +261,7 @@ function AIHeroBar() {
               </span>
             </div>
             <div style={{ display: "flex", gap: "0.375rem" }}>
-              <button onClick={confirmProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: COLORS.sage, border: "none", color: "#fff", cursor: "pointer", borderRadius: "0.25rem" }}>
+              <button onClick={confirmProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: COLORS.sageText, border: "none", color: "#fff", cursor: "pointer", borderRadius: "0.25rem" }}>
                 Confirm
               </button>
               <button onClick={dismissProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: "none", border: "1px solid #ddd", color: "#888", cursor: "pointer", borderRadius: "0.25rem" }}>
@@ -336,6 +336,7 @@ function InsightsStrip({ items }: { items: InsightItem[] }) {
           <button
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
             disabled={safeIdx === 0}
+            aria-label="Previous insight"
             style={{ background: "none", border: "none", cursor: safeIdx === 0 ? "default" : "pointer", opacity: safeIdx === 0 ? 0.3 : 1, display: "flex", padding: "0.1rem" }}
           >
             <ChevronLeft size={12} />
@@ -346,6 +347,7 @@ function InsightsStrip({ items }: { items: InsightItem[] }) {
           <button
             onClick={() => setIdx((i) => Math.min(items.length - 1, i + 1))}
             disabled={safeIdx === items.length - 1}
+            aria-label="Next insight"
             style={{ background: "none", border: "none", cursor: safeIdx === items.length - 1 ? "default" : "pointer", opacity: safeIdx === items.length - 1 ? 0.3 : 1, display: "flex", padding: "0.1rem" }}
           >
             <ChevronRight size={12} />
@@ -651,7 +653,7 @@ export default function DashboardPage() {
       content: (
         <div>
           <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.rust, marginBottom: "0.125rem" }}>
-            Home Pulse · <span style={{ opacity: 0.7 }}>{pulseTip.category}</span>
+            Home Pulse · <span style={{ color: COLORS.plumMid }}>{pulseTip.category}</span>
           </p>
           <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.1rem" }}>{pulseTip.headline}</p>
           <p style={{ fontSize: "0.78rem", color: UI.inkLight, fontWeight: 300 }}>{pulseTip.detail}</p>
@@ -739,16 +741,16 @@ export default function DashboardPage() {
             background: COLORS.sageLight, flexWrap: "wrap", borderRadius: RADIUS.sm,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.sage }}>
+              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.sageText }}>
                 Score Up +{delta} pts
               </span>
-              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sage, opacity: 0.75 }}>
+              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sageText }}>
                 {scoreValueChange != null
                   ? `— Your score went from ${prevScore} to ${homegenticScore}. A ${delta}-point increase ≈ $${scoreValueChange.toLocaleString()} in estimated home value.`
                   : `— Your HomeGentic Score is now ${homegenticScore}. Keep logging jobs to grow your record.`}
               </span>
             </div>
-            <button onClick={d.dismissScoreIncrease} style={{ background: "none", border: "none", cursor: "pointer", color: UI.sage, flexShrink: 0 }}>
+            <button onClick={d.dismissScoreIncrease} aria-label="Dismiss score update" style={{ background: "none", border: "none", cursor: "pointer", color: UI.sage, flexShrink: 0 }}>
               <X size={14} />
             </button>
           </div>
@@ -774,7 +776,7 @@ export default function DashboardPage() {
 
               {/* Score gauge */}
               <div style={{ background: COLORS.plum, padding: "1.75rem 1.25rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: `1px solid rgba(122,175,118,0.15)` }}>
-                <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "0.875rem" }}>
+                <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)", marginBottom: "0.875rem" }}>
                   HomeGentic Score
                 </div>
                 <div style={{ position: "relative", width: 120, height: 120 }}>
@@ -784,7 +786,7 @@ export default function DashboardPage() {
                   </svg>
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingBottom: "8px" }}>
                     <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2rem", color: "white", lineHeight: 1 }}>{homegenticScore}</span>
-                    <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
+                    <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em" }}>/100</span>
                   </div>
                 </div>
                 <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>
@@ -809,7 +811,7 @@ export default function DashboardPage() {
                         {stat.value}
                       </div>
                       {stat.sub && (
-                        <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sage, marginTop: "0.3rem", letterSpacing: "0.03em" }}>
+                        <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sageText, marginTop: "0.3rem", letterSpacing: "0.03em" }}>
                           {stat.sub}
                         </div>
                       )}
@@ -920,12 +922,12 @@ export default function DashboardPage() {
                         opacity: homegenticScore >= g ? 0.6 : 1,
                       }}
                     >
-                      <div style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: homegenticScore >= g ? COLORS.sage : UI.ink }}>{g}</div>
+                      <div style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: homegenticScore >= g ? COLORS.sageText : UI.ink }}>{g}</div>
                       <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: UI.inkLight, marginTop: "0.25rem" }}>
                         {g === 60 ? "Good" : g === 75 ? "Great" : g === 88 ? "Excellent" : "Perfect"}
                       </div>
                       {homegenticScore >= g && (
-                        <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: COLORS.sage, marginTop: "0.2rem" }}>✓ Achieved</div>
+                        <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: COLORS.sageText, marginTop: "0.2rem" }}>✓ Achieved</div>
                       )}
                     </button>
                   ))}
@@ -933,7 +935,7 @@ export default function DashboardPage() {
               </div>
             ) : homegenticScore >= scoreGoal ? (
               <div style={{ padding: "1.5rem", textAlign: "center" }}>
-                <p style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", color: COLORS.sage, marginBottom: "0.375rem" }}>
+                <p style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", color: COLORS.sageText, marginBottom: "0.375rem" }}>
                   Goal reached — {homegenticScore}/{scoreGoal} ✓
                 </p>
                 <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, marginBottom: "1rem" }}>
@@ -1007,7 +1009,7 @@ export default function DashboardPage() {
                   <div key={rec.name} style={{ background: COLORS.white, padding: "1.25rem", borderRadius: RADIUS.card, border: `1px solid ${COLORS.rule}`, boxShadow: SHADOWS.card, display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
                       <p style={{ fontSize: "0.875rem", fontWeight: 600, color: UI.ink, lineHeight: 1.2 }}>{rec.name}</p>
-                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.1em", textTransform: "uppercase", color: priorityColor, border: `1px solid ${priorityColor}`, padding: "0.1rem 0.4rem", flexShrink: 0, opacity: 0.8, borderRadius: 100 }}>
+                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.1em", textTransform: "uppercase", color: priorityColor, border: `1px solid ${priorityColor}`, padding: "0.1rem 0.4rem", flexShrink: 0, borderRadius: 100 }}>
                         {rec.priority}
                       </span>
                     </div>
@@ -1159,7 +1161,7 @@ export default function DashboardPage() {
             return (
               <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", width: "100%", maxWidth: "680px", margin: "0 auto 2.5rem", border: `1px solid ${COLORS.rule}`, borderRadius: "1rem", overflow: "hidden", alignItems: "stretch" }}>
                 <div style={{ background: COLORS.plum, padding: "1.75rem 1.25rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: `1px solid rgba(122,175,118,0.15)` }}>
-                  <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "0.875rem" }}>Avg Score</div>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)", marginBottom: "0.875rem" }}>Avg Score</div>
                   <div style={{ position: "relative", width: 120, height: 120 }}>
                     <svg viewBox="0 0 120 120" width="120" height="120">
                       <circle cx={cx2} cy={cy2} r={r2} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${arcLen2} ${circ2 - arcLen2}`} transform={`rotate(135 ${cx2} ${cy2})`} />
@@ -1167,11 +1169,11 @@ export default function DashboardPage() {
                     </svg>
                     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingBottom: "8px" }}>
                       <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2rem", color: "white", lineHeight: 1 }}>{avgScore}</span>
-                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
+                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em" }}>/100</span>
                     </div>
                   </div>
                   <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>{avgGrade}</div>
-                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: "0.25rem" }}>{properties.length} properties</div>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.7)", marginTop: "0.25rem" }}>{properties.length} properties</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {aggStats.map((stat, i, arr) => (
@@ -1179,7 +1181,7 @@ export default function DashboardPage() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.375rem" }}>{stat.label}</div>
                         <div style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: UI.ink }}>{stat.value}</div>
-                        {stat.sub && <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sage, marginTop: "0.3rem", letterSpacing: "0.03em" }}>{stat.sub}</div>}
+                        {stat.sub && <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sageText, marginTop: "0.3rem", letterSpacing: "0.03em" }}>{stat.sub}</div>}
                       </div>
                       <div style={{ color: "rgba(46,37,64,0.2)", flexShrink: 0 }}>{stat.icon}</div>
                     </div>
@@ -1288,7 +1290,7 @@ export default function DashboardPage() {
               <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight }}>
                 Pending Contractor Proposals
               </div>
-              <div style={{ display: "inline-flex", alignItems: "center", padding: "0.1rem 0.5rem", background: COLORS.sage, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", padding: "0.1rem 0.5rem", background: COLORS.sageText, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
                 {pendingProposals.length} awaiting review
               </div>
             </div>
@@ -1336,7 +1338,7 @@ export default function DashboardPage() {
                       style={{
                         display: "flex", alignItems: "center", gap: "0.25rem",
                         fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                        padding: "0.4rem 0.875rem", background: COLORS.sage, color: COLORS.white,
+                        padding: "0.4rem 0.875rem", background: COLORS.sageText, color: COLORS.white,
                         border: "none", cursor: "pointer",
                       }}
                     >
@@ -1400,7 +1402,7 @@ export default function DashboardPage() {
                   Manager Activity
                 </div>
                 {ownerNotifs.some((n) => !n.seen) && (
-                  <div style={{ display: "inline-flex", padding: "0.1rem 0.5rem", background: COLORS.sage, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
+                  <div style={{ display: "inline-flex", padding: "0.1rem 0.5rem", background: COLORS.sageText, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
                     {ownerNotifs.filter((n) => !n.seen).length} new
                   </div>
                 )}
@@ -1557,6 +1559,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => { localStorage.setItem(nextServiceKey, "1"); setNextServiceDismissed(true); }}
+              aria-label="Dismiss next service reminder"
               style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, flexShrink: 0 }}
             >
               <X size={14} />
@@ -1595,6 +1598,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => d.dismissReEngagement(prompt.jobId)}
+              aria-label="Dismiss re-engagement prompt"
               style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, flexShrink: 0 }}
             >
               <X size={14} />
