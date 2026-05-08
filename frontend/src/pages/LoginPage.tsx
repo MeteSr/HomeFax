@@ -45,7 +45,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div style={{ marginBottom: "2rem", textAlign: "center" }}>
           <div style={{ fontFamily: "'Fraunces', serif", fontWeight: 900, fontSize: "1.5rem", letterSpacing: "-0.5px", color: COLORS.plum }}>
-            Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
+            Home<span style={{ color: COLORS.sageText, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
           </div>
         </div>
 
@@ -126,7 +126,7 @@ export default function LoginPage() {
 
           <p style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plumMid, textAlign: "center" }}>
             No account?{" "}
-            <span onClick={login} style={{ color: COLORS.sage, fontWeight: 600, cursor: "pointer" }}>
+            <span onClick={login} style={{ color: COLORS.sageText, fontWeight: 600, cursor: "pointer" }}>
               Create one free →
             </span>
           </p>

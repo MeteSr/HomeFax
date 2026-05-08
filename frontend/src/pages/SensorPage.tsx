@@ -21,7 +21,7 @@ const UI = {
   ink:      COLORS.plum,
   paper:    COLORS.white,
   rule:     COLORS.rule,
-  rust:     COLORS.sage,
+  rust:     COLORS.sageText,
   inkLight: COLORS.plumMid,
   serif:    FONTS.serif,
   mono:     FONTS.sans,

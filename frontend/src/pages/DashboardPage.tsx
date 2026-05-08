@@ -44,9 +44,9 @@ const UI = {
   ink:      COLORS.plum,
   paper:    "#ffffff",
   rule:     COLORS.rule,
-  rust:     COLORS.sage,       // primary accent: sage replaces rust
+  rust:     COLORS.sageText,   // primary accent: sageText for accessible contrast
   inkLight: COLORS.plumMid,
-  sage:     COLORS.sage,
+  sage:     COLORS.sageText,
   serif:    FONTS.serif,
   mono:     FONTS.sans,
 };
@@ -261,7 +261,7 @@ function AIHeroBar() {
               </span>
             </div>
             <div style={{ display: "flex", gap: "0.375rem" }}>
-              <button onClick={confirmProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: COLORS.sage, border: "none", color: "#fff", cursor: "pointer", borderRadius: "0.25rem" }}>
+              <button onClick={confirmProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: COLORS.sageText, border: "none", color: "#fff", cursor: "pointer", borderRadius: "0.25rem" }}>
                 Confirm
               </button>
               <button onClick={dismissProposal} style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", padding: "0.3rem 0.875rem", background: "none", border: "1px solid #ddd", color: "#888", cursor: "pointer", borderRadius: "0.25rem" }}>
@@ -742,7 +742,7 @@ export default function DashboardPage() {
               <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.sage }}>
                 Score Up +{delta} pts
               </span>
-              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sage, opacity: 0.75 }}>
+              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sageText, opacity: 0.75 }}>
                 {scoreValueChange != null
                   ? `— Your score went from ${prevScore} to ${homegenticScore}. A ${delta}-point increase ≈ $${scoreValueChange.toLocaleString()} in estimated home value.`
                   : `— Your HomeGentic Score is now ${homegenticScore}. Keep logging jobs to grow your record.`}
@@ -787,11 +787,11 @@ export default function DashboardPage() {
                     <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
                   </div>
                 </div>
-                <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>
+                <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sageText, marginTop: "0.625rem" }}>
                   {textGrade}
                 </div>
                 {delta !== 0 && (
-                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: delta > 0 ? COLORS.sage : COLORS.blush, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: delta > 0 ? COLORS.sageText : COLORS.blush, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
                     {delta > 0 ? "↑" : "↓"} {Math.abs(delta)} pts this month
                   </div>
                 )}
@@ -809,7 +809,7 @@ export default function DashboardPage() {
                         {stat.value}
                       </div>
                       {stat.sub && (
-                        <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sage, marginTop: "0.3rem", letterSpacing: "0.03em" }}>
+                        <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sageText, marginTop: "0.3rem", letterSpacing: "0.03em" }}>
                           {stat.sub}
                         </div>
                       )}
@@ -920,12 +920,12 @@ export default function DashboardPage() {
                         opacity: homegenticScore >= g ? 0.6 : 1,
                       }}
                     >
-                      <div style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: homegenticScore >= g ? COLORS.sage : UI.ink }}>{g}</div>
+                      <div style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, color: homegenticScore >= g ? COLORS.sageText : UI.ink }}>{g}</div>
                       <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: UI.inkLight, marginTop: "0.25rem" }}>
                         {g === 60 ? "Good" : g === 75 ? "Great" : g === 88 ? "Excellent" : "Perfect"}
                       </div>
                       {homegenticScore >= g && (
-                        <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: COLORS.sage, marginTop: "0.2rem" }}>✓ Achieved</div>
+                        <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: COLORS.sageText, marginTop: "0.2rem" }}>✓ Achieved</div>
                       )}
                     </button>
                   ))}
@@ -933,7 +933,7 @@ export default function DashboardPage() {
               </div>
             ) : homegenticScore >= scoreGoal ? (
               <div style={{ padding: "1.5rem", textAlign: "center" }}>
-                <p style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", color: COLORS.sage, marginBottom: "0.375rem" }}>
+                <p style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", color: COLORS.sageText, marginBottom: "0.375rem" }}>
                   Goal reached — {homegenticScore}/{scoreGoal} ✓
                 </p>
                 <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, marginBottom: "1rem" }}>
@@ -1170,7 +1170,7 @@ export default function DashboardPage() {
                       <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
                     </div>
                   </div>
-                  <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>{avgGrade}</div>
+                  <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sageText, marginTop: "0.625rem" }}>{avgGrade}</div>
                   <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: "0.25rem" }}>{properties.length} properties</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
@@ -1179,7 +1179,7 @@ export default function DashboardPage() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight, marginBottom: "0.375rem" }}>{stat.label}</div>
                         <div style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, color: UI.ink }}>{stat.value}</div>
-                        {stat.sub && <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sage, marginTop: "0.3rem", letterSpacing: "0.03em" }}>{stat.sub}</div>}
+                        {stat.sub && <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: COLORS.sageText, marginTop: "0.3rem", letterSpacing: "0.03em" }}>{stat.sub}</div>}
                       </div>
                       <div style={{ color: "rgba(46,37,64,0.2)", flexShrink: 0 }}>{stat.icon}</div>
                     </div>
@@ -1288,7 +1288,7 @@ export default function DashboardPage() {
               <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.inkLight }}>
                 Pending Contractor Proposals
               </div>
-              <div style={{ display: "inline-flex", alignItems: "center", padding: "0.1rem 0.5rem", background: COLORS.sage, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", padding: "0.1rem 0.5rem", background: COLORS.sageText, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
                 {pendingProposals.length} awaiting review
               </div>
             </div>
@@ -1336,7 +1336,7 @@ export default function DashboardPage() {
                       style={{
                         display: "flex", alignItems: "center", gap: "0.25rem",
                         fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase",
-                        padding: "0.4rem 0.875rem", background: COLORS.sage, color: COLORS.white,
+                        padding: "0.4rem 0.875rem", background: COLORS.sageText, color: COLORS.white,
                         border: "none", cursor: "pointer",
                       }}
                     >
@@ -1400,7 +1400,7 @@ export default function DashboardPage() {
                   Manager Activity
                 </div>
                 {ownerNotifs.some((n) => !n.seen) && (
-                  <div style={{ display: "inline-flex", padding: "0.1rem 0.5rem", background: COLORS.sage, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
+                  <div style={{ display: "inline-flex", padding: "0.1rem 0.5rem", background: COLORS.sageText, color: "#fff", fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 100 }}>
                     {ownerNotifs.filter((n) => !n.seen).length} new
                   </div>
                 )}

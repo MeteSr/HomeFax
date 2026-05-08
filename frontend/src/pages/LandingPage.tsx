@@ -369,7 +369,7 @@ export default function LandingPage() {
                         </div>
                         <div style={{ textAlign: "right" as const }}>
                           <div style={{ fontWeight: 700, color: "var(--plum)" }}>{c.rating}</div>
-                          {c.verified && <div style={{ fontSize: 10, color: "var(--sage)", fontWeight: 700 }}>✓ Verified</div>}
+                          {c.verified && <div style={{ fontSize: 10, color: "var(--sage-text)", fontWeight: 700 }}>✓ Verified</div>}
                         </div>
                       </div>
                     ))}
@@ -381,7 +381,7 @@ export default function LandingPage() {
                       <div style={{ display: "flex", gap: 6 }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: "var(--plum)", background: "rgba(46,37,64,0.08)", borderRadius: 100, padding: "3px 10px" }}>$420</span>
                         <span style={{ fontSize: 11, fontWeight: 700, color: "var(--plum)", background: "rgba(46,37,64,0.08)", borderRadius: 100, padding: "3px 10px" }}>$395</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--sage)", background: "rgba(122,175,118,0.2)", borderRadius: 100, padding: "3px 10px" }}>$380 ✦ lowest</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--sage-text)", background: "rgba(122,175,118,0.2)", borderRadius: 100, padding: "3px 10px" }}>$380 ✦ lowest</span>
                       </div>
                     </div>
                     <div style={{ fontSize: 11, color: "var(--plum-mid)", fontWeight: 600, padding: "4px 0 0", display: "flex", alignItems: "center", gap: 8 }}>
@@ -522,7 +522,7 @@ export default function LandingPage() {
                     ${annual ? plan.annual : plan.monthly}<span className="hfl-plan-period">/{annual ? "yr" : "mo"}</span>
                   </div>
                   {annual && (
-                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.7rem", color: "var(--sage)", marginTop: "-20px", marginBottom: "20px", fontWeight: 600 }}>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "0.7rem", color: "var(--sage-text)", marginTop: "-20px", marginBottom: "20px", fontWeight: 600 }}>
                       ${(plan.annual / 12).toFixed(2)}/mo billed annually
                     </div>
                   )}

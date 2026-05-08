@@ -119,7 +119,7 @@ export function RequestQuoteModal({ isOpen, onClose, onSuccess, properties, pref
           flexShrink: 0,
         }}>
           <div>
-            <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sage, marginBottom: "0.2rem" }}>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sageText, marginBottom: "0.2rem" }}>
               Contractor Network
             </p>
             <h2 style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", lineHeight: 1, color: COLORS.plum }}>
@@ -180,7 +180,7 @@ export function RequestQuoteModal({ isOpen, onClose, onSuccess, properties, pref
                         transition: "border-color 0.15s, background 0.15s",
                       }}
                     >
-                      <div style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 600, color: form.urgency === opt.value ? COLORS.sage : COLORS.plum, marginBottom: "0.15rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <div style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 600, color: form.urgency === opt.value ? COLORS.sageText : COLORS.plum, marginBottom: "0.15rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
                         {opt.value === "emergency" && <Zap size={10} />}
                         {opt.label}
                       </div>
