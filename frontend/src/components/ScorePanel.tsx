@@ -164,7 +164,7 @@ export function ScorePanel({
             padding: "0.4rem 0.875rem",
             border: `1px solid ${COLORS.sage}`,
             background: "none",
-            color: COLORS.sageText,
+            color: COLORS.sage,
             cursor: "pointer",
             borderRadius: RADIUS.sm,
           }}
