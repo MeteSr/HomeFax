@@ -11,6 +11,7 @@
 
 import { handleSolarEdgeEvent } from "../handlers";
 import { recordSensorEvent } from "../icp";
+import { logger } from "../logger";
 import type { SolarEdgeEvent } from "../types";
 
 const SOLAREDGE_API = "https://monitoringapi.solaredge.com";
@@ -62,7 +63,11 @@ export async function pollOnce(config: SolarEdgeConfig): Promise<void> {
   ]);
 
   if (!overviewResp.ok) {
-    console.error(`[solaredge-poller] overview fetch failed (${overviewResp.status}): ${await overviewResp.text()}`);
+    logger.error("solaredge-poller", "overview fetch failed", {
+      siteId: config.siteId,
+      status: overviewResp.status,
+      body:   await overviewResp.text(),
+    });
     return;
   }
 
@@ -89,16 +94,16 @@ export async function pollOnce(config: SolarEdgeConfig): Promise<void> {
   if (!reading) return;
 
   const eventName = Object.keys(reading.eventType)[0];
-  console.log(`[solaredge-poller] ${eventName} siteId=${config.siteId} power=${currentPowerW}W`);
+  logger.info("solaredge-poller", eventName, { siteId: config.siteId, powerW: currentPowerW });
 
   const result = await recordSensorEvent(reading);
   if (result.success) {
-    console.log(
-      `[solaredge-poller] recorded eventId=${result.eventId}` +
-      (result.jobId ? ` jobId=${result.jobId}` : "")
-    );
+    logger.info("solaredge-poller", "recorded", {
+      eventId: result.eventId,
+      ...(result.jobId ? { jobId: result.jobId } : {}),
+    });
   } else {
-    console.error(`[solaredge-poller] canister error: ${result.error}`);
+    logger.error("solaredge-poller", "canister error", { error: result.error });
   }
 }
 
@@ -112,9 +117,7 @@ export async function pollOnce(config: SolarEdgeConfig): Promise<void> {
 export function startSolarEdgePoller(intervalMs = 15 * 60 * 1000): () => void {
   const config = loadConfig();
   if (!config) {
-    console.warn(
-      "[solaredge-poller] SOLAREDGE_API_KEY or SOLAREDGE_SITE_ID not set — poller disabled"
-    );
+    logger.warn("solaredge-poller", "SOLAREDGE_API_KEY or SOLAREDGE_SITE_ID not set — poller disabled");
     return () => {};
   }
 
@@ -126,7 +129,7 @@ export function startSolarEdgePoller(intervalMs = 15 * 60 * 1000): () => void {
     try {
       await pollOnce(config);
     } catch (err) {
-      console.error("[solaredge-poller] tick error:", err);
+      logger.error("solaredge-poller", "tick error", { error: String(err) });
     } finally {
       if (!stopped) {
         timer = setTimeout(tick, intervalMs);
@@ -134,12 +137,12 @@ export function startSolarEdgePoller(intervalMs = 15 * 60 * 1000): () => void {
     }
   }
 
-  console.log(`[solaredge-poller] starting — siteId=${config.siteId} interval=${intervalMs / 1000}s`);
+  logger.info("solaredge-poller", "starting", { siteId: config.siteId, intervalSec: intervalMs / 1000 });
   tick();
 
   return () => {
     stopped = true;
     if (timer) clearTimeout(timer);
-    console.log("[solaredge-poller] stopped");
+    logger.info("solaredge-poller", "stopped");
   };
 }

@@ -19,6 +19,7 @@ import type { ChatRequest } from "./types";
 import type { MaintenanceContext } from "../maintenance/prompts";
 import { checkAndRecord, TIER_LIMITS } from "./agentLimiter";
 import type { SubscriptionTier } from "./agentLimiter";
+import { logger } from "./logger";
 // NOTE: Email (Resend), permits, price-benchmark, forecast, check, report-request
 // and lookup-year-built are handled by the ai_proxy Motoko canister.
 // This relay handles only the 6 Claude AI endpoints.
@@ -32,10 +33,10 @@ if (!process.env.ANTHROPIC_API_KEY) {
   if (process.env.NODE_ENV === "production") {
     throw new Error("ANTHROPIC_API_KEY env var must be set in production");
   }
-  console.warn("[voice-agent] ANTHROPIC_API_KEY not set — Claude API calls will fail");
+  logger.warn("voice-agent", "ANTHROPIC_API_KEY not set — Claude API calls will fail");
 }
 
-console.log(`[voice-agent] STRIPE_SECRET_KEY ${process.env.STRIPE_SECRET_KEY ? "✓" : "✗ not set"}`)
+logger.info("voice-agent", "env check", { stripe_key: !!process.env.STRIPE_SECRET_KEY });
 
 // ── Frontend error aggregation (#297) ────────────────────────────────────────
 // In-memory map: fingerprint → rolling aggregation window.
@@ -88,7 +89,7 @@ if (!VOICE_API_KEY) {
   if (process.env.NODE_ENV === "production") {
     throw new Error("VOICE_AGENT_API_KEY env var must be set in production");
   }
-  console.warn("[voice-agent] VOICE_AGENT_API_KEY not set — API endpoints are unprotected (dev only)");
+  logger.warn("voice-agent", "VOICE_AGENT_API_KEY not set — API endpoints are unprotected (dev only)");
 }
 
 // 14.3.3 — fail-secure: require FRONTEND_ORIGIN in production
@@ -97,7 +98,7 @@ if (!allowedOrigin) {
   if (process.env.NODE_ENV === "production") {
     throw new Error("FRONTEND_ORIGIN env var must be set in production");
   }
-  console.warn("[voice-agent] FRONTEND_ORIGIN not set — accepting any localhost origin (dev only)");
+  logger.warn("voice-agent", "FRONTEND_ORIGIN not set — accepting any localhost origin (dev only)");
 }
 // In production: exact match against FRONTEND_ORIGIN.
 // In dev: accept any localhost port so Vite (:5173), CRA (:3000), etc. all work.
@@ -1306,9 +1307,9 @@ app.post("/api/stripe/verify-session", async (req: Request, res: Response) => {
     if (principal) {
       try {
         await activateInCanister(principal, tier, months);
-        console.log(`[stripe] activated ${tier}/${billing} for ${principal}`);
+        logger.info("stripe", "subscription activated", { tier, billing, principal });
       } catch (e) {
-        console.warn(`[stripe] canister activation skipped: ${(e as Error).message}`);
+        logger.warn("stripe", "canister activation skipped", { error: (e as Error).message });
       }
     }
 
@@ -1372,9 +1373,9 @@ app.post("/api/stripe/verify-subscription", async (req: Request, res: Response) 
     if (principal) {
       try {
         await activateInCanister(principal, tier, months);
-        console.log(`[stripe] subscription activated ${tier}/${billing} for ${principal}`);
+        logger.info("stripe", "subscription activated", { tier, billing, principal });
       } catch (e) {
-        console.warn(`[stripe] canister activation skipped: ${(e as Error).message}`);
+        logger.warn("stripe", "canister activation skipped", { error: (e as Error).message });
       }
     }
 
@@ -1459,9 +1460,9 @@ app.post("/api/stripe/verify-credit-purchase", async (req: Request, res: Respons
 
     try {
       await grantAgentCredits(principal, packSize);
-      console.log(`[stripe] granted ${packSize} agent credits to ${principal}`);
+      logger.info("stripe", "agent credits granted", { packSize, principal });
     } catch (e) {
-      console.warn(`[stripe] credit grant skipped: ${(e as Error).message}`);
+      logger.warn("stripe", "credit grant skipped", { error: (e as Error).message });
     }
 
     res.json({ type: "agent_credits", packSize, principal });
@@ -1552,7 +1553,7 @@ app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
         const principal = (sub.metadata?.icp_principal ?? "") as string;
         if (principal) {
           try { await revertPrincipalToFree(principal); }
-          catch (e) { console.warn(`[stripe-webhook] revert failed: ${(e as Error).message}`); }
+          catch (e) { logger.warn("stripe-webhook", "revert failed", { event: "subscription.deleted", error: (e as Error).message }); }
         }
         break;
       }
@@ -1564,7 +1565,7 @@ app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
           const principal = (sub.metadata?.icp_principal ?? "") as string;
           if (principal) {
             try { await revertPrincipalToFree(principal); }
-            catch (e) { console.warn(`[stripe-webhook] revert failed: ${(e as Error).message}`); }
+            catch (e) { logger.warn("stripe-webhook", "revert failed", { event: "subscription.updated", error: (e as Error).message }); }
           }
         }
         break;
@@ -1579,7 +1580,7 @@ app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
         ) as string;
         if (principal) {
           try { await revertPrincipalToFree(principal); }
-          catch (e) { console.warn(`[stripe-webhook] payment_failed revert: ${(e as Error).message}`); }
+          catch (e) { logger.warn("stripe-webhook", "payment_failed revert failed", { error: (e as Error).message }); }
         }
         break;
       }
@@ -1603,17 +1604,15 @@ app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
         const months  = billing === "Yearly" ? 12 : 1;
         if (principal && tier) {
           try { await activateInCanister(principal, tier, months); }
-          catch (e) { console.warn(`[stripe-webhook] activate failed: ${(e as Error).message}`); }
+          catch (e) { logger.warn("stripe-webhook", "activate failed", { error: (e as Error).message }); }
         }
         break;
       }
       default:
-        process.stdout.write(JSON.stringify({
-          ts: new Date().toISOString(), event: "stripe_webhook_unhandled", type: event.type,
-        }) + "\n");
+        logger.info("stripe-webhook", "unhandled event", { type: event.type });
     }
   } catch (err) {
-    console.error(`[stripe-webhook] handler error: ${(err as Error).message}`);
+    logger.error("stripe-webhook", "handler error", { error: (err as Error).message });
     res.status(500).json({ error: "Internal webhook handler error" });
     return;
   }
@@ -1682,8 +1681,7 @@ export { app };
 
 const httpServer = process.env.NODE_ENV !== "test"
   ? app.listen(port, () => {
-      console.log(`HomeGentic voice agent proxy → http://localhost:${port}`);
-      console.log(`Accepting requests from ${origin}`);
+      logger.info("voice-agent", "started", { port, origin: String(origin) });
     })
   : null;
 
@@ -1692,14 +1690,14 @@ const httpServer = process.env.NODE_ENV !== "test"
 // exiting.  Without this a SIGTERM (deploy, container restart) kills open SSE
 // connections mid-stream, causing the frontend to show a hard error.
 function shutdown(signal: string): void {
-  console.log(`[voice-agent] ${signal} received — shutting down gracefully`);
+  logger.info("voice-agent", "shutting down gracefully", { signal });
   httpServer?.close(() => {
-    console.log("[voice-agent] all connections closed — exiting");
+    logger.info("voice-agent", "all connections closed — exiting");
     process.exit(0);
   });
   // Force-exit after 10 s so a hung stream never blocks a deploy indefinitely.
   setTimeout(() => {
-    console.error("[voice-agent] forced exit after 10 s");
+    logger.error("voice-agent", "forced exit after 10 s timeout");
     process.exit(1);
   }, 10_000).unref();
 }
