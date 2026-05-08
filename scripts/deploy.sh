@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.7.0"
+DEPLOY_SCRIPT_VERSION="1.7.1"
 ENV=${1:-local}
 
 echo "============================================"
@@ -561,6 +561,7 @@ QUOTE_ID=$(icp canister status quote -e "$ENV" --id-only 2>/dev/null || echo "")
 SENSOR_ID=$(icp canister status sensor -e "$ENV" --id-only 2>/dev/null || echo "")
 REPORT_ID=$(icp canister status report -e "$ENV" --id-only 2>/dev/null || echo "")
 BILLS_ID=$(icp canister status bills -e "$ENV" --id-only 2>/dev/null || echo "")
+AUTH_ID=$(icp canister status auth -e "$ENV" --id-only 2>/dev/null || echo "")
 AUDIT_ID=$(icp canister status audit -e "$ENV" --id-only 2>/dev/null || echo "")
 
 if [ -n "$JOB_ID" ]      && [ -n "$PAYMENT_ID" ];    then
@@ -700,15 +701,17 @@ fi
 # Wire audit canister: register source canisters as trusted writers, then give
 # each source canister the audit canister ID so it can call log().
 if [ -n "$AUDIT_ID" ]; then
-  for src_canister in auth payment property report photo; do
-    src_id=$(icp canister status "$src_canister" -e "$ENV" --id-only 2>/dev/null || echo "")
-    if [ -n "$src_id" ]; then
-      echo "  audit: trusting $src_canister ($src_id)..."
-      icp canister call audit addTrustedCanister "(principal \"$src_id\")" -e "$ENV" 2>/dev/null &
-      echo "  $src_canister: wiring audit canister ($AUDIT_ID)..."
-      icp canister call "$src_canister" setAuditCanisterId "(principal \"$AUDIT_ID\")" -e "$ENV" 2>/dev/null &
-    fi
-  done
+  [ -n "$AUTH_ID" ]     && icp canister call audit addTrustedCanister "(principal \"$AUTH_ID\")"     -e "$ENV" 2>/dev/null &
+  [ -n "$PAYMENT_ID" ]  && icp canister call audit addTrustedCanister "(principal \"$PAYMENT_ID\")"  -e "$ENV" 2>/dev/null &
+  [ -n "$PROPERTY_ID" ] && icp canister call audit addTrustedCanister "(principal \"$PROPERTY_ID\")" -e "$ENV" 2>/dev/null &
+  [ -n "$REPORT_ID" ]   && icp canister call audit addTrustedCanister "(principal \"$REPORT_ID\")"   -e "$ENV" 2>/dev/null &
+  [ -n "$PHOTO_ID" ]    && icp canister call audit addTrustedCanister "(principal \"$PHOTO_ID\")"    -e "$ENV" 2>/dev/null &
+
+  [ -n "$AUTH_ID" ]     && icp canister call auth     setAuditCanisterId "(principal \"$AUDIT_ID\")" -e "$ENV" 2>/dev/null &
+  [ -n "$PAYMENT_ID" ]  && icp canister call payment  setAuditCanisterId "(principal \"$AUDIT_ID\")" -e "$ENV" 2>/dev/null &
+  [ -n "$PROPERTY_ID" ] && icp canister call property setAuditCanisterId "(principal \"$AUDIT_ID\")" -e "$ENV" 2>/dev/null &
+  [ -n "$REPORT_ID" ]   && icp canister call report   setAuditCanisterId "(principal \"$AUDIT_ID\")" -e "$ENV" 2>/dev/null &
+  [ -n "$PHOTO_ID" ]    && icp canister call photo    setAuditCanisterId "(principal \"$AUDIT_ID\")" -e "$ENV" 2>/dev/null &
 fi
 
 wait

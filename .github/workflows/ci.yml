@@ -141,7 +141,7 @@ jobs:
           # fails on dfx 0.24.x with "dfx metadata not found" for the II canister.
           dfx deploy auth --argument "(principal \"$DEPLOYER\")"
           for canister in ai_proxy property job contractor quote payment photo \
-            monitoring market report maintenance sensor listing agent bills recurring; do
+            monitoring market report maintenance sensor listing agent bills recurring audit; do
             dfx deploy "$canister"
           done
 
@@ -153,6 +153,7 @@ jobs:
           dfx canister call payment grantSubscription "(principal \"$DEPLOYER\", variant { Pro })"
 
           # ── Wire inter-canister IDs ──────────────────────────────────────────
+          AUTH_ID=$(dfx canister id auth)
           PAYMENT_ID=$(dfx canister id payment)
           PROPERTY_ID=$(dfx canister id property)
           PHOTO_ID=$(dfx canister id photo)
@@ -163,6 +164,7 @@ jobs:
           REPORT_ID=$(dfx canister id report)
           BILLS_ID=$(dfx canister id bills)
           MAINTENANCE_ID=$(dfx canister id maintenance)
+          AUDIT_ID=$(dfx canister id audit)
 
           dfx canister call job         setPaymentCanisterId    "(\"$PAYMENT_ID\")"
           dfx canister call property    setPaymentCanisterId    "(principal \"$PAYMENT_ID\")"
@@ -199,6 +201,19 @@ jobs:
           dfx canister call property   addTrustedCanister "(principal \"$QUOTE_ID\")"
           dfx canister call property   addTrustedCanister "(principal \"$REPORT_ID\")"
           dfx canister call job        addTrustedCanister "(principal \"$SENSOR_ID\")"
+
+          # ── Audit canister wiring ────────────────────────────────────────────
+          dfx canister call audit addAdmin "(principal \"$DEPLOYER\")"
+          dfx canister call audit addTrustedCanister "(principal \"$AUTH_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$PAYMENT_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$PROPERTY_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$REPORT_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$PHOTO_ID\")"
+          dfx canister call auth     setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call payment  setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call property setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call report   setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call photo    setAuditCanisterId "(principal \"$AUDIT_ID\")"
 
       - name: Run backend tests
         run: bash scripts/test-backend.sh
@@ -252,7 +267,7 @@ jobs:
 
           dfx deploy auth --argument "(principal \"$DEPLOYER\")"
           for canister in ai_proxy property job contractor quote payment photo \
-            monitoring market report maintenance sensor listing agent bills recurring; do
+            monitoring market report maintenance sensor listing agent bills recurring audit; do
             dfx deploy "$canister"
           done
 
@@ -265,6 +280,7 @@ jobs:
           # and would hit the Basic (3) or Pro (10) cap. Principal: fixed seed[0]=42 in setup.ts.
           dfx canister call payment grantSubscription "(principal \"qxmov-duod5-ahrw6-wydp4-lppe4-ljtvj-7zvu3-qke5i-umwsv-vcb7g-mqe\", variant { Premium })"
 
+          AUTH_ID=$(dfx canister id auth)
           PAYMENT_ID=$(dfx canister id payment)
           PROPERTY_ID=$(dfx canister id property)
           PHOTO_ID=$(dfx canister id photo)
@@ -274,6 +290,7 @@ jobs:
           SENSOR_ID=$(dfx canister id sensor)
           REPORT_ID=$(dfx canister id report)
           MAINTENANCE_ID=$(dfx canister id maintenance)
+          AUDIT_ID=$(dfx canister id audit)
 
           dfx canister call job         setPaymentCanisterId    "(\"$PAYMENT_ID\")"
           dfx canister call property    setPaymentCanisterId    "(principal \"$PAYMENT_ID\")"
@@ -308,6 +325,19 @@ jobs:
           dfx canister call property   addTrustedCanister "(principal \"$QUOTE_ID\")"
           dfx canister call property   addTrustedCanister "(principal \"$REPORT_ID\")"
           dfx canister call job        addTrustedCanister "(principal \"$SENSOR_ID\")"
+
+          # ── Audit canister wiring ────────────────────────────────────────────
+          dfx canister call audit addAdmin "(principal \"$DEPLOYER\")"
+          dfx canister call audit addTrustedCanister "(principal \"$AUTH_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$PAYMENT_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$PROPERTY_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$REPORT_ID\")"
+          dfx canister call audit addTrustedCanister "(principal \"$PHOTO_ID\")"
+          dfx canister call auth     setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call payment  setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call property setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call report   setAuditCanisterId "(principal \"$AUDIT_ID\")"
+          dfx canister call photo    setAuditCanisterId "(principal \"$AUDIT_ID\")"
 
       - name: Run integration tests
         run: npm run test:integration
