@@ -127,7 +127,7 @@ function verifyHmac(
   headerName: string,
   secret: string | undefined
 ): boolean {
-  if (!secret) return true; // secret not configured — skip in dev
+  if (!secret) return false;
   const sig = req.headers[headerName.toLowerCase()] as string | undefined;
   if (!sig) return false;
   const raw = (req as Request & { rawBody?: Buffer }).rawBody;
@@ -140,7 +140,7 @@ function verifyHmac(
 
 // SmartThings signs requests with base64-encoded HMAC-SHA256 (not hex).
 function verifySmartThingsHmac(req: Request, secret: string | undefined): boolean {
-  if (!secret) return true;
+  if (!secret) return false;
   const sig = req.headers["x-st-hmac-sha256"] as string | undefined;
   if (!sig) return false;
   const raw = (req as Request & { rawBody?: Buffer }).rawBody;
@@ -171,7 +171,7 @@ app.post("/webhooks/nest", nestLimiter, async (req: Request, res: Response): Pro
   const expected = process.env.NEST_WEBHOOK_SECRET;
 
   const reqId = (req as RequestWithId).reqId;
-  if (expected && token !== expected) {
+  if (!expected || token !== expected) {
     logger.warn("nest", "rejected — invalid token", { reqId });
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -408,7 +408,7 @@ app.post("/webhooks/lgthinq", lgThinQLimiter, async (req: Request, res: Response
   const bearerToken = (req.headers["authorization"] ?? "").replace(/^Bearer\s+/i, "");
   const expectedPat = process.env.LG_THINQ_PAT;
 
-  if (expectedPat && bearerToken !== expectedPat) {
+  if (!expectedPat || bearerToken !== expectedPat) {
     logger.warn("lgthinq", "rejected — invalid PAT", { reqId });
     res.status(401).json({ error: "Unauthorized" });
     return;

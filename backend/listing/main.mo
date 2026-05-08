@@ -572,6 +572,13 @@ persistent actor Listing {
     #ok(())
   };
 
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
+    #ok(())
+  };
+
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := true;

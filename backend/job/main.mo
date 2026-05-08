@@ -654,6 +654,13 @@ persistent actor Job {
     #ok(())
   };
 
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
+    #ok(())
+  };
+
   /// Register a canister principal as trusted for inter-canister calls.
   /// Trusted canisters bypass per-principal rate limiting and may call
   /// restricted functions (e.g. createSensorJob). Admin only.

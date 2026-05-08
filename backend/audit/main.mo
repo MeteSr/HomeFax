@@ -59,6 +59,13 @@ persistent actor Audit {
     #ok(())
   };
 
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    admins := Array.filter<Principal>(admins, func(a) { a != target });
+    #ok(())
+  };
+
   /// Register a canister principal allowed to call `log()`.
   public shared(msg) func addTrustedCanister(canisterId : Principal) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);

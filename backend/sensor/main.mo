@@ -155,6 +155,11 @@ persistent actor Sensor {
   private var maxUpdatesPerMin : Nat = 30;
   private let ONE_MINUTE_NS       : Int = 60_000_000_000;
 
+  /// Per-device last auto-job creation timestamp (internal device ID → nanoseconds).
+  /// Transient: resets on upgrade — acceptable, it is a DoS guard not business logic.
+  private transient let lastCriticalJobNs : Map.Map<Text, Int> = Map.empty();
+  private let CRITICAL_JOB_COOLDOWN_NS : Int = 60 * 60 * 1_000_000_000;  // 1 hour
+
   private func tryConsumeUpdateSlot(caller: Principal) : Bool {
     if (isAdmin(caller)) return true;
     let key = Principal.toText(caller);
@@ -423,26 +428,33 @@ persistent actor Sensor {
     let eventId  = nextEventId();
     let now      = Time.now();
 
-    // Auto-create a pending job for critical events
+    // Auto-create a pending job for critical events (max one per device per hour).
     var maybeJobId : ?Text = null;
     if (isCritical(severity) and Text.size(jobCanisterId) > 0) {
       switch (jobDetailsFor(eventType, device.name)) {
         case (?(title, svcType, desc)) {
-          let jobActor = actor(jobCanisterId) : actor {
-            createSensorJob : (
-              Text, Principal, Text, JobServiceType, Text
-            ) -> async Result.Result<Text, Text>;
-          };
-          let res = await jobActor.createSensorJob(
-            device.propertyId,
-            device.homeowner,
-            title,
-            svcType,
-            desc
-          );
-          switch res {
-            case (#ok id)  { maybeJobId := ?id; jobsCreatedCount += 1 };
-            case (#err _)  {};   // job creation failed — still record the event
+          let lastT = Option.get(Map.get(lastCriticalJobNs, Text.compare, deviceId), 0);
+          if (now - lastT >= CRITICAL_JOB_COOLDOWN_NS) {
+            let jobActor = actor(jobCanisterId) : actor {
+              createSensorJob : (
+                Text, Principal, Text, JobServiceType, Text
+              ) -> async Result.Result<Text, Text>;
+            };
+            let res = await jobActor.createSensorJob(
+              device.propertyId,
+              device.homeowner,
+              title,
+              svcType,
+              desc
+            );
+            switch res {
+              case (#ok id)  {
+                maybeJobId := ?id;
+                jobsCreatedCount += 1;
+                Map.add(lastCriticalJobNs, Text.compare, deviceId, now);
+              };
+              case (#err _)  {};   // job creation failed — still record the event
+            };
           };
         };
         case null {};
@@ -518,6 +530,13 @@ persistent actor Sensor {
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
+    #ok(())
+  };
+
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 

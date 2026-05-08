@@ -101,7 +101,9 @@ persistent actor class Auth(initDeployer : Principal) {
 
   private func countError(method : Text) {
     let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
-    Map.add(errsByMethod, Text.compare, method, prev + 1);
+    if (prev < 999_999) {
+      Map.add(errsByMethod, Text.compare, method, prev + 1);
+    };
   };
 
   // ─── Ingress Inspection ───────────────────────────────────────────────────────
@@ -185,6 +187,14 @@ persistent actor class Auth(initDeployer : Principal) {
       admins := Array.concat(admins, [newAdmin]);
     };
     try { ignore await auditLog("AdminAdded", ?newAdmin, "caller=" # Principal.toText(msg.caller)) } catch _ {};
+    #ok(())
+  };
+
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    admins := Array.filter<Principal>(admins, func(a) { a != target });
+    try { ignore await auditLog("AdminRemoved", ?target, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 
