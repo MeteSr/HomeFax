@@ -22,6 +22,7 @@ import fs from "fs";
 import path from "path";
 import { handleHoneywellHomeEvent } from "../handlers";
 import { recordSensorEvent } from "../icp";
+import { logger } from "../logger";
 import type { HoneywellDevice } from "../types";
 
 const HONEYWELL_API     = "https://api.honeywell.com";
@@ -46,7 +47,7 @@ export function loadTokenState(): TokenState | null {
         return parsed;
       }
     } catch {
-      console.warn("[honeywell-poller] corrupted token file — falling back to env vars");
+      logger.warn("honeywell-poller", "corrupted token file — falling back to env vars");
     }
   }
 
@@ -65,7 +66,7 @@ export function persistTokenState(state: TokenState): void {
   try {
     fs.writeFileSync(TOKENS_FILE, JSON.stringify(state, null, 2), "utf8");
   } catch (err) {
-    console.warn("[honeywell-poller] failed to persist tokens:", err);
+    logger.warn("honeywell-poller", "failed to persist tokens", { error: String(err) });
   }
   process.env.HONEYWELL_ACCESS_TOKEN  = state.accessToken;
   process.env.HONEYWELL_REFRESH_TOKEN = state.refreshToken;
@@ -111,7 +112,7 @@ export async function refreshTokens(state: TokenState): Promise<TokenState> {
   };
 
   persistTokenState(newState);
-  console.log(`[honeywell-poller] tokens refreshed — next expiry in ${Math.round(data.expires_in / 60)} min`);
+  logger.info("honeywell-poller", "tokens refreshed", { expiresInMin: Math.round(data.expires_in / 60) });
   return newState;
 }
 
@@ -146,7 +147,7 @@ interface HoneywellWldApiDevice {
 export async function pollOnce(state: TokenState): Promise<void> {
   const clientId = process.env.HONEYWELL_CLIENT_ID;
   if (!clientId) {
-    console.error("[honeywell-poller] HONEYWELL_CLIENT_ID not set — skipping poll");
+    logger.error("honeywell-poller", "HONEYWELL_CLIENT_ID not set — skipping poll");
     return;
   }
 
@@ -161,9 +162,10 @@ export async function pollOnce(state: TokenState): Promise<void> {
       { headers: { Authorization: `Bearer ${state.accessToken}` } }
     );
     if (!locResp.ok) {
-      console.error(
-        `[honeywell-poller] locations fetch failed (${locResp.status}): ${await locResp.text()}`
-      );
+      logger.error("honeywell-poller", "locations fetch failed", {
+        status: locResp.status,
+        body:   await locResp.text(),
+      });
       return;
     }
     const locs = await locResp.json() as HoneywellLocation[];
@@ -188,10 +190,11 @@ async function pollThermostats(
   );
 
   if (!resp.ok) {
-    console.error(
-      `[honeywell-poller] thermostats fetch failed (${resp.status}) ` +
-      `for location ${locationId}: ${await resp.text()}`
-    );
+    logger.error("honeywell-poller", "thermostats fetch failed", {
+      status:     resp.status,
+      locationId,
+      body:       await resp.text(),
+    });
     return;
   }
 
@@ -223,10 +226,11 @@ async function pollWaterLeakDetectors(
   if (!resp.ok) {
     // 404 is expected when the location has no WLD devices — suppress to keep logs clean.
     if (resp.status !== 404) {
-      console.error(
-        `[honeywell-poller] WLD fetch failed (${resp.status}) ` +
-        `for location ${locationId}: ${await resp.text()}`
-      );
+      logger.error("honeywell-poller", "WLD fetch failed", {
+        status:     resp.status,
+        locationId,
+        body:       await resp.text(),
+      });
     }
     return;
   }
@@ -249,18 +253,19 @@ async function processDevice(device: HoneywellDevice): Promise<void> {
   if (!reading) return;
 
   const eventName = Object.keys(reading.eventType)[0];
-  console.log(
-    `[honeywell-poller] ${eventName} device=${device.deviceID} (${device.userDefinedDeviceName})`
-  );
+  logger.info("honeywell-poller", eventName, {
+    deviceId:   device.deviceID,
+    deviceName: device.userDefinedDeviceName,
+  });
 
   const result = await recordSensorEvent(reading);
   if (result.success) {
-    console.log(
-      `[honeywell-poller] recorded eventId=${result.eventId}` +
-      (result.jobId ? ` jobId=${result.jobId}` : "")
-    );
+    logger.info("honeywell-poller", "recorded", {
+      eventId: result.eventId,
+      ...(result.jobId ? { jobId: result.jobId } : {}),
+    });
   } else {
-    console.error(`[honeywell-poller] canister error: ${result.error}`);
+    logger.error("honeywell-poller", "canister error", { error: result.error });
   }
 }
 
@@ -275,9 +280,7 @@ async function processDevice(device: HoneywellDevice): Promise<void> {
 export function startHoneywellPoller(intervalMs = 3 * 60 * 1000): () => void {
   const initial = loadTokenState();
   if (!initial) {
-    console.warn(
-      "[honeywell-poller] HONEYWELL_ACCESS_TOKEN or HONEYWELL_REFRESH_TOKEN not set — poller disabled"
-    );
+    logger.warn("honeywell-poller", "HONEYWELL_ACCESS_TOKEN or HONEYWELL_REFRESH_TOKEN not set — poller disabled");
     return () => {};
   }
 
@@ -291,7 +294,7 @@ export function startHoneywellPoller(intervalMs = 3 * 60 * 1000): () => void {
       currentState = await ensureFreshToken(currentState);
       await pollOnce(currentState);
     } catch (err) {
-      console.error("[honeywell-poller] tick error:", err);
+      logger.error("honeywell-poller", "tick error", { error: String(err) });
     } finally {
       if (!stopped) {
         timer = setTimeout(tick, intervalMs);
@@ -299,12 +302,12 @@ export function startHoneywellPoller(intervalMs = 3 * 60 * 1000): () => void {
     }
   }
 
-  console.log(`[honeywell-poller] starting — interval=${intervalMs / 1000}s`);
+  logger.info("honeywell-poller", "starting", { intervalSec: intervalMs / 1000 });
   tick();
 
   return () => {
     stopped = true;
     if (timer) clearTimeout(timer);
-    console.log("[honeywell-poller] stopped");
+    logger.info("honeywell-poller", "stopped");
   };
 }

@@ -20,6 +20,7 @@
 import fs from "fs";
 import path from "path";
 import { recordSensorEvent } from "../icp";
+import { logger } from "../logger";
 import type { SensorEventType, SensorReading, GEAppliance, GEApplianceAttributes } from "../types";
 
 const GE_API         = "https://api.whrcloud.com";
@@ -44,7 +45,7 @@ export function loadTokenState(): GETokenState | null {
         return parsed;
       }
     } catch {
-      console.warn("[ge-poller] corrupted token file — falling back to env vars");
+      logger.warn("ge-poller", "corrupted token file — falling back to env vars");
     }
   }
 
@@ -63,7 +64,7 @@ export function persistTokenState(state: GETokenState): void {
   try {
     fs.writeFileSync(TOKENS_FILE, JSON.stringify(state, null, 2), "utf8");
   } catch (err) {
-    console.warn("[ge-poller] failed to persist tokens:", err);
+    logger.warn("ge-poller", "failed to persist tokens", { error: String(err) });
   }
   process.env.GE_ACCESS_TOKEN  = state.accessToken;
   process.env.GE_REFRESH_TOKEN = state.refreshToken;
@@ -108,7 +109,7 @@ export async function refreshTokens(state: GETokenState): Promise<GETokenState> 
   };
 
   persistTokenState(newState);
-  console.log(`[ge-poller] tokens refreshed — next expiry in ${Math.round(data.expires_in / 60)} min`);
+  logger.info("ge-poller", "tokens refreshed", { expiresInMin: Math.round(data.expires_in / 60) });
   return newState;
 }
 
@@ -167,7 +168,10 @@ export async function pollOnce(state: GETokenState): Promise<void> {
   // 1. Fetch appliance list.
   const listResp = await fetch(`${GE_API}/api/v1/appliance`, { headers });
   if (!listResp.ok) {
-    console.error(`[ge-poller] appliance list failed (${listResp.status}): ${await listResp.text()}`);
+    logger.error("ge-poller", "appliance list failed", {
+      status: listResp.status,
+      body:   await listResp.text(),
+    });
     return;
   }
 
@@ -186,10 +190,11 @@ export async function pollOnce(state: GETokenState): Promise<void> {
     if (!attrResp.ok) {
       // 404 is expected for unconfigured appliance types — suppress.
       if (attrResp.status !== 404) {
-        console.error(
-          `[ge-poller] attribute fetch failed for ${applianceId} ` +
-          `(${attrResp.status}): ${await attrResp.text()}`
-        );
+        logger.error("ge-poller", "attribute fetch failed", {
+          applianceId,
+          status: attrResp.status,
+          body:   await attrResp.text(),
+        });
       }
       continue;
     }
@@ -203,16 +208,16 @@ export async function pollOnce(state: GETokenState): Promise<void> {
 
     const eventName = Object.keys(reading.eventType)[0];
     const label     = appliance.nickName ?? applianceId;
-    console.log(`[ge-poller] ${eventName} appliance=${applianceId} (${label})`);
+    logger.info("ge-poller", eventName, { applianceId, applianceName: label });
 
     const result = await recordSensorEvent(reading);
     if (result.success) {
-      console.log(
-        `[ge-poller] recorded eventId=${result.eventId}` +
-        (result.jobId ? ` jobId=${result.jobId}` : "")
-      );
+      logger.info("ge-poller", "recorded", {
+        eventId: result.eventId,
+        ...(result.jobId ? { jobId: result.jobId } : {}),
+      });
     } else {
-      console.error(`[ge-poller] canister error: ${result.error}`);
+      logger.error("ge-poller", "canister error", { error: result.error });
     }
   }
 }
@@ -226,7 +231,7 @@ export async function pollOnce(state: GETokenState): Promise<void> {
 export function startGEPoller(intervalMs = 5 * 60 * 1000): () => void {
   const initial = loadTokenState();
   if (!initial) {
-    console.warn("[ge-poller] GE_ACCESS_TOKEN or GE_REFRESH_TOKEN not set — poller disabled");
+    logger.warn("ge-poller", "GE_ACCESS_TOKEN or GE_REFRESH_TOKEN not set — poller disabled");
     return () => {};
   }
 
@@ -240,7 +245,7 @@ export function startGEPoller(intervalMs = 5 * 60 * 1000): () => void {
       currentState = await ensureFreshToken(currentState);
       await pollOnce(currentState);
     } catch (err) {
-      console.error("[ge-poller] tick error:", err);
+      logger.error("ge-poller", "tick error", { error: String(err) });
     } finally {
       if (!stopped) {
         timer = setTimeout(tick, intervalMs);
@@ -248,12 +253,12 @@ export function startGEPoller(intervalMs = 5 * 60 * 1000): () => void {
     }
   }
 
-  console.log(`[ge-poller] starting — interval=${intervalMs / 1000}s`);
+  logger.info("ge-poller", "starting", { intervalSec: intervalMs / 1000 });
   tick();
 
   return () => {
     stopped = true;
     if (timer) clearTimeout(timer);
-    console.log("[ge-poller] stopped");
+    logger.info("ge-poller", "stopped");
   };
 }

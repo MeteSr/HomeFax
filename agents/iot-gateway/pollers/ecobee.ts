@@ -21,6 +21,7 @@ import fs from "fs";
 import path from "path";
 import { handleEcobeeEvent } from "../handlers";
 import { recordSensorEvent } from "../icp";
+import { logger } from "../logger";
 import type { EcobeeWebhookEvent, EcobeeAlert } from "../types";
 
 const ECOBEE_API        = "https://api.ecobee.com";
@@ -46,7 +47,7 @@ export function loadTokenState(): TokenState | null {
         return parsed;
       }
     } catch {
-      console.warn("[ecobee-poller] corrupted token file — falling back to env vars");
+      logger.warn("ecobee-poller", "corrupted token file — falling back to env vars");
     }
   }
 
@@ -65,7 +66,7 @@ export function persistTokenState(state: TokenState): void {
   try {
     fs.writeFileSync(TOKENS_FILE, JSON.stringify(state, null, 2), "utf8");
   } catch (err) {
-    console.warn("[ecobee-poller] failed to persist tokens:", err);
+    logger.warn("ecobee-poller", "failed to persist tokens", { error: String(err) });
   }
   // Keep process.env in sync so other callers (e.g. tests) see current values.
   process.env.ECOBEE_ACCESS_TOKEN  = state.accessToken;
@@ -100,7 +101,7 @@ export async function refreshTokens(state: TokenState): Promise<TokenState> {
   };
 
   persistTokenState(newState);
-  console.log(`[ecobee-poller] tokens refreshed — next expiry in ${Math.round(data.expires_in / 60)} min`);
+  logger.info("ecobee-poller", "tokens refreshed", { expiresInMin: Math.round(data.expires_in / 60) });
   return newState;
 }
 
@@ -143,7 +144,7 @@ export async function pollOnce(state: TokenState): Promise<void> {
   });
 
   if (!resp.ok) {
-    console.error(`[ecobee-poller] poll failed (${resp.status}): ${await resp.text()}`);
+    logger.error("ecobee-poller", "poll failed", { status: resp.status, body: await resp.text() });
     return;
   }
 
@@ -161,16 +162,16 @@ export async function pollOnce(state: TokenState): Promise<void> {
     if (!reading) continue;
 
     const eventName = Object.keys(reading.eventType)[0];
-    console.log(`[ecobee-poller] ${eventName} device=${therm.identifier} (${therm.name})`);
+    logger.info("ecobee-poller", eventName, { deviceId: therm.identifier, deviceName: therm.name });
 
     const result = await recordSensorEvent(reading);
     if (result.success) {
-      console.log(
-        `[ecobee-poller] recorded eventId=${result.eventId}` +
-        (result.jobId ? ` jobId=${result.jobId}` : "")
-      );
+      logger.info("ecobee-poller", "recorded", {
+        eventId: result.eventId,
+        ...(result.jobId ? { jobId: result.jobId } : {}),
+      });
     } else {
-      console.error(`[ecobee-poller] canister error: ${result.error}`);
+      logger.error("ecobee-poller", "canister error", { error: result.error });
     }
   }
 }
@@ -186,9 +187,7 @@ export async function pollOnce(state: TokenState): Promise<void> {
 export function startEcobeePoller(intervalMs = 3 * 60 * 1000): () => void {
   const initial = loadTokenState();
   if (!initial) {
-    console.warn(
-      "[ecobee-poller] ECOBEE_ACCESS_TOKEN or ECOBEE_REFRESH_TOKEN not set — poller disabled"
-    );
+    logger.warn("ecobee-poller", "ECOBEE_ACCESS_TOKEN or ECOBEE_REFRESH_TOKEN not set — poller disabled");
     return () => {};
   }
 
@@ -202,7 +201,7 @@ export function startEcobeePoller(intervalMs = 3 * 60 * 1000): () => void {
       currentState = await ensureFreshToken(currentState);
       await pollOnce(currentState);
     } catch (err) {
-      console.error("[ecobee-poller] tick error:", err);
+      logger.error("ecobee-poller", "tick error", { error: String(err) });
     } finally {
       if (!stopped) {
         timer = setTimeout(tick, intervalMs);
@@ -210,12 +209,12 @@ export function startEcobeePoller(intervalMs = 3 * 60 * 1000): () => void {
     }
   }
 
-  console.log(`[ecobee-poller] starting — interval=${intervalMs / 1000}s`);
+  logger.info("ecobee-poller", "starting", { intervalSec: intervalMs / 1000 });
   tick(); // run immediately, then on each interval
 
   return () => {
     stopped = true;
     if (timer) clearTimeout(timer);
-    console.log("[ecobee-poller] stopped");
+    logger.info("ecobee-poller", "stopped");
   };
 }

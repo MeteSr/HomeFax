@@ -21,6 +21,7 @@ import fs from "fs";
 import path from "path";
 import { handleTeslaEvent } from "../handlers";
 import { recordSensorEvent } from "../icp";
+import { logger } from "../logger";
 import type { TeslaPowerwallEvent } from "../types";
 
 const DEFAULT_GATEWAY_IP = "192.168.91.1";
@@ -44,7 +45,7 @@ export function loadSession(): TeslaSession | null {
         return parsed;
       }
     } catch {
-      console.warn("[tesla-poller] corrupted session file — will re-authenticate");
+      logger.warn("tesla-poller", "corrupted session file — will re-authenticate");
     }
   }
 
@@ -60,7 +61,7 @@ export function persistSession(session: TeslaSession): void {
   try {
     fs.writeFileSync(SESSION_FILE, JSON.stringify(session, null, 2), "utf8");
   } catch (err) {
-    console.warn("[tesla-poller] failed to persist session:", err);
+    logger.warn("tesla-poller", "failed to persist session", { error: String(err) });
   }
   process.env.TESLA_ACCESS_TOKEN = session.token;
 }
@@ -99,7 +100,7 @@ export async function login(): Promise<TeslaSession> {
   };
 
   persistSession(session);
-  console.log("[tesla-poller] authenticated — session cached for 30 days");
+  logger.info("tesla-poller", "authenticated — session cached for 30 days");
   return session;
 }
 
@@ -126,7 +127,7 @@ export async function pollOnce(session: TeslaSession): Promise<TeslaSession> {
   const serial = process.env.TESLA_POWERWALL_SERIAL;
 
   if (!serial) {
-    console.error("[tesla-poller] TESLA_POWERWALL_SERIAL not set — skipping poll");
+    logger.error("tesla-poller", "TESLA_POWERWALL_SERIAL not set — skipping poll");
     return session;
   }
 
@@ -142,12 +143,16 @@ export async function pollOnce(session: TeslaSession): Promise<TeslaSession> {
 
   // On 401, signal that re-authentication is needed
   if (soeResp.status === 401) {
-    console.warn("[tesla-poller] session expired — will re-authenticate on next tick");
+    logger.warn("tesla-poller", "session expired — will re-authenticate on next tick");
     return { ...session, expiresAt: 0 };
   }
 
   if (!soeResp.ok) {
-    console.error(`[tesla-poller] SOE fetch failed (${soeResp.status}): ${await soeResp.text()}`);
+    logger.error("tesla-poller", "SOE fetch failed", {
+      serial,
+      status: soeResp.status,
+      body:   await soeResp.text(),
+    });
     return session;
   }
 
@@ -159,7 +164,11 @@ export async function pollOnce(session: TeslaSession): Promise<TeslaSession> {
   });
 
   if (!gridResp.ok) {
-    console.error(`[tesla-poller] grid status fetch failed (${gridResp.status}): ${await gridResp.text()}`);
+    logger.error("tesla-poller", "grid status fetch failed", {
+      serial,
+      status: gridResp.status,
+      body:   await gridResp.text(),
+    });
     return session;
   }
 
@@ -177,18 +186,20 @@ export async function pollOnce(session: TeslaSession): Promise<TeslaSession> {
   if (!reading) return session;
 
   const eventName = Object.keys(reading.eventType)[0];
-  console.log(
-    `[tesla-poller] ${eventName} serial=${serial} charge=${soe.percentage.toFixed(1)}% grid=${grid.grid_status}`
-  );
+  logger.info("tesla-poller", eventName, {
+    serial,
+    chargePercent: soe.percentage,
+    gridStatus:    grid.grid_status,
+  });
 
   const result = await recordSensorEvent(reading);
   if (result.success) {
-    console.log(
-      `[tesla-poller] recorded eventId=${result.eventId}` +
-      (result.jobId ? ` jobId=${result.jobId}` : "")
-    );
+    logger.info("tesla-poller", "recorded", {
+      eventId: result.eventId,
+      ...(result.jobId ? { jobId: result.jobId } : {}),
+    });
   } else {
-    console.error(`[tesla-poller] canister error: ${result.error}`);
+    logger.error("tesla-poller", "canister error", { error: result.error });
   }
 
   return session;
@@ -207,9 +218,7 @@ export function startTeslaPoller(intervalMs = 60_000): () => void {
   const serial   = process.env.TESLA_POWERWALL_SERIAL;
 
   if (!email || !password || !serial) {
-    console.warn(
-      "[tesla-poller] TESLA_EMAIL, TESLA_PASSWORD, or TESLA_POWERWALL_SERIAL not set — poller disabled"
-    );
+    logger.warn("tesla-poller", "TESLA_EMAIL, TESLA_PASSWORD, or TESLA_POWERWALL_SERIAL not set — poller disabled");
     return () => {};
   }
 
@@ -223,7 +232,7 @@ export function startTeslaPoller(intervalMs = 60_000): () => void {
       currentSession  = await ensureSession(currentSession);
       currentSession  = await pollOnce(currentSession);
     } catch (err) {
-      console.error("[tesla-poller] tick error:", err);
+      logger.error("tesla-poller", "tick error", { error: String(err) });
     } finally {
       if (!stopped) {
         timer = setTimeout(tick, intervalMs);
@@ -231,12 +240,12 @@ export function startTeslaPoller(intervalMs = 60_000): () => void {
     }
   }
 
-  console.log(`[tesla-poller] starting — ip=${ip} serial=${serial} interval=${intervalMs / 1000}s`);
+  logger.info("tesla-poller", "starting", { ip, serial, intervalSec: intervalMs / 1000 });
   tick();
 
   return () => {
     stopped = true;
     if (timer) clearTimeout(timer);
-    console.log("[tesla-poller] stopped");
+    logger.info("tesla-poller", "stopped");
   };
 }

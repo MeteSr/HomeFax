@@ -18,6 +18,7 @@
 
 import { handleEnphaseEvent } from "../handlers";
 import { recordSensorEvent } from "../icp";
+import { logger } from "../logger";
 import type { EnphaseSystemEvent } from "../types";
 
 const ENVOY_API            = "https"; // scheme prefix — full URL built at call time
@@ -71,7 +72,11 @@ export async function pollOnce(config: EnphaseConfig): Promise<void> {
   });
 
   if (!prodResp.ok) {
-    console.error(`[enphase-poller] production fetch failed (${prodResp.status}): ${await prodResp.text()}`);
+    logger.error("enphase-poller", "production fetch failed", {
+      serial: config.serial,
+      status: prodResp.status,
+      body:   await prodResp.text(),
+    });
     return;
   }
 
@@ -84,7 +89,11 @@ export async function pollOnce(config: EnphaseConfig): Promise<void> {
   });
 
   if (!invResp.ok) {
-    console.error(`[enphase-poller] inverters fetch failed (${invResp.status}): ${await invResp.text()}`);
+    logger.error("enphase-poller", "inverters fetch failed", {
+      serial: config.serial,
+      status: invResp.status,
+      body:   await invResp.text(),
+    });
     return;
   }
 
@@ -109,16 +118,20 @@ export async function pollOnce(config: EnphaseConfig): Promise<void> {
   if (!reading) return;
 
   const eventName = Object.keys(reading.eventType)[0];
-  console.log(`[enphase-poller] ${eventName} serial=${config.serial} wNow=${production.wNow}W faulted=${faultedInverters}`);
+  logger.info("enphase-poller", eventName, {
+    serial:           config.serial,
+    powerW:           production.wNow,
+    faultedInverters,
+  });
 
   const result = await recordSensorEvent(reading);
   if (result.success) {
-    console.log(
-      `[enphase-poller] recorded eventId=${result.eventId}` +
-      (result.jobId ? ` jobId=${result.jobId}` : "")
-    );
+    logger.info("enphase-poller", "recorded", {
+      eventId: result.eventId,
+      ...(result.jobId ? { jobId: result.jobId } : {}),
+    });
   } else {
-    console.error(`[enphase-poller] canister error: ${result.error}`);
+    logger.error("enphase-poller", "canister error", { error: result.error });
   }
 }
 
@@ -131,9 +144,7 @@ export async function pollOnce(config: EnphaseConfig): Promise<void> {
 export function startEnphasePoller(intervalMs = 60_000): () => void {
   const config = loadConfig();
   if (!config) {
-    console.warn(
-      "[enphase-poller] ENPHASE_ENVOY_IP, ENPHASE_ENVOY_TOKEN, or ENPHASE_SERIAL not set — poller disabled"
-    );
+    logger.warn("enphase-poller", "ENPHASE_ENVOY_IP, ENPHASE_ENVOY_TOKEN, or ENPHASE_SERIAL not set — poller disabled");
     return () => {};
   }
 
@@ -145,7 +156,7 @@ export function startEnphasePoller(intervalMs = 60_000): () => void {
     try {
       await pollOnce(config);
     } catch (err) {
-      console.error("[enphase-poller] tick error:", err);
+      logger.error("enphase-poller", "tick error", { error: String(err) });
     } finally {
       if (!stopped) {
         timer = setTimeout(tick, intervalMs);
@@ -153,12 +164,16 @@ export function startEnphasePoller(intervalMs = 60_000): () => void {
     }
   }
 
-  console.log(`[enphase-poller] starting — ip=${config.ip} serial=${config.serial} interval=${intervalMs / 1000}s`);
+  logger.info("enphase-poller", "starting", {
+    ip:          config.ip,
+    serial:      config.serial,
+    intervalSec: intervalMs / 1000,
+  });
   tick();
 
   return () => {
     stopped = true;
     if (timer) clearTimeout(timer);
-    console.log("[enphase-poller] stopped");
+    logger.info("enphase-poller", "stopped");
   };
 }
