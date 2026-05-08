@@ -180,7 +180,7 @@ export function RegisterDeviceModal({ isOpen, onClose, onSuccess, propertyId }: 
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
+      <div role="dialog" aria-modal="true" aria-label="Register device" style={{
         background: COLORS.white, width: "100%", maxWidth: "30rem",
         borderRadius: RADIUS.card, padding: "1.75rem",
         boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
@@ -191,7 +191,7 @@ export function RegisterDeviceModal({ isOpen, onClose, onSuccess, propertyId }: 
           <h2 style={{ fontFamily: UI.serif, fontWeight: 700, fontSize: "1.1rem", color: UI.ink }}>
             Register Device
           </h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, padding: "0.25rem" }}>
+          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, padding: "0.25rem" }}>
             <X size={16} />
           </button>
         </div>
@@ -209,8 +209,9 @@ export function RegisterDeviceModal({ isOpen, onClose, onSuccess, propertyId }: 
 
           {/* Device name */}
           <div>
-            <label style={labelStyle}>Device Name</label>
+            <label htmlFor="register-device-name" style={labelStyle}>Device Name</label>
             <input
+              id="register-device-name"
               type="text" value={form.name} onChange={set("name")}
               placeholder={isTierB && pickedDevice ? pickedDevice.name : "e.g. Basement Water Sensor"}
               style={inputStyle}
@@ -297,8 +298,9 @@ export function RegisterDeviceModal({ isOpen, onClose, onSuccess, propertyId }: 
           {isTierC && (
             <>
               <div>
-                <label style={labelStyle}>Local IP Address</label>
+                <label htmlFor="register-device-lan-ip" style={labelStyle}>Local IP Address</label>
                 <input
+                  id="register-device-lan-ip"
                   type="text" value={lanIp} onChange={(e) => setLanIp(e.target.value)}
                   placeholder="192.168.1.42"
                   style={inputStyle}
@@ -308,8 +310,9 @@ export function RegisterDeviceModal({ isOpen, onClose, onSuccess, propertyId }: 
                 </p>
               </div>
               <div>
-                <label style={labelStyle}>Serial Number</label>
+                <label htmlFor="register-device-serial" style={labelStyle}>Serial Number</label>
                 <input
+                  id="register-device-serial"
                   type="text" value={form.externalDeviceId} onChange={set("externalDeviceId")}
                   placeholder={source === "TeslaPowerwall" ? "e.g. 1232100-00-J--T..." : "e.g. 202201..."}
                   style={inputStyle}
@@ -324,8 +327,9 @@ export function RegisterDeviceModal({ isOpen, onClose, onSuccess, propertyId }: 
           {/* ── Tier A: ID field with optional help text ── */}
           {!isTierB && !isTierC && (
             <div>
-              <label style={labelStyle}>Device / Site ID</label>
+              <label htmlFor="register-device-external-id" style={labelStyle}>Device / Site ID</label>
               <input
+                id="register-device-external-id"
                 type="text" value={form.externalDeviceId} onChange={set("externalDeviceId")}
                 placeholder={help?.format ?? "e.g. DEVICE-ABC-12345"}
                 style={inputStyle}

@@ -285,7 +285,7 @@ export default function SensorPage() {
                   </Badge>
                   <button
                     onClick={() => handleDeactivate(device.id)}
-                    title="Remove device"
+                    aria-label={`Remove ${device.name}`}
                     style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, padding: "0.25rem" }}
                   >
                     <Trash2 size={14} />
