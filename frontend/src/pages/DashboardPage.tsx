@@ -748,7 +748,7 @@ export default function DashboardPage() {
                   : `— Your HomeGentic Score is now ${homegenticScore}. Keep logging jobs to grow your record.`}
               </span>
             </div>
-            <button onClick={d.dismissScoreIncrease} style={{ background: "none", border: "none", cursor: "pointer", color: UI.sage, flexShrink: 0 }}>
+            <button onClick={d.dismissScoreIncrease} aria-label="Dismiss score update" style={{ background: "none", border: "none", cursor: "pointer", color: UI.sage, flexShrink: 0 }}>
               <X size={14} />
             </button>
           </div>
@@ -1557,6 +1557,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => { localStorage.setItem(nextServiceKey, "1"); setNextServiceDismissed(true); }}
+              aria-label="Dismiss next service reminder"
               style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, flexShrink: 0 }}
             >
               <X size={14} />
@@ -1595,6 +1596,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => d.dismissReEngagement(prompt.jobId)}
+              aria-label="Dismiss re-engagement prompt"
               style={{ background: "none", border: "none", cursor: "pointer", color: UI.inkLight, flexShrink: 0 }}
             >
               <X size={14} />

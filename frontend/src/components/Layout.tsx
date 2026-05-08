@@ -202,7 +202,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     justifyContent:  sidebarOpen ? "flex-start" : "center",
     overflow:        "hidden",
     whiteSpace:      "nowrap",
-    color:           active ? COLORS.sage : COLORS.plumMid,
+    color:           active ? COLORS.plum : COLORS.plumMid,
     background:      active ? COLORS.sageLight : "transparent",
     borderLeft:      active ? `2px solid ${COLORS.sage}` : "2px solid transparent",
     transition:      "color 0.15s, background 0.15s",

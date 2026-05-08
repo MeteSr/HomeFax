@@ -65,7 +65,7 @@ function StepIndicator({ step }: { step: number }) {
         </span>
         <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", color: COLORS.plumMid }}>{pct}%</span>
       </div>
-      <div role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+      <div role="progressbar" aria-label="Onboarding progress" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
         style={{ height: "6px", background: COLORS.rule, borderRadius: 100 }}>
         <div style={{ height: "6px", width: `${pct}%`, background: COLORS.sage, borderRadius: 100, transition: "width 0.35s ease" }} />
       </div>
