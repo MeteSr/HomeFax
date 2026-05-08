@@ -202,12 +202,12 @@ function AIHeroBar() {
           borderTop: "1px solid #f0f0f0", paddingTop: "0.625rem",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", letterSpacing: "0.04em", color: "#bbb", fontWeight: 400 }}>
+          <span style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", letterSpacing: "0.04em", color: COLORS.plumMid, fontWeight: 400 }}>
             {quotaExhausted ? "Chat mode" : "HomeGentic AI"}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             {(transcript || response || error) && (
-              <button onClick={reset} style={{ background: "none", border: "none", cursor: "pointer", color: "#bbb", display: "flex", padding: 0 }} aria-label="Dismiss">
+              <button onClick={reset} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.plumMid, display: "flex", padding: 0 }} aria-label="Dismiss">
                 <X size={14} />
               </button>
             )}
@@ -336,6 +336,7 @@ function InsightsStrip({ items }: { items: InsightItem[] }) {
           <button
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
             disabled={safeIdx === 0}
+            aria-label="Previous insight"
             style={{ background: "none", border: "none", cursor: safeIdx === 0 ? "default" : "pointer", opacity: safeIdx === 0 ? 0.3 : 1, display: "flex", padding: "0.1rem" }}
           >
             <ChevronLeft size={12} />
@@ -346,6 +347,7 @@ function InsightsStrip({ items }: { items: InsightItem[] }) {
           <button
             onClick={() => setIdx((i) => Math.min(items.length - 1, i + 1))}
             disabled={safeIdx === items.length - 1}
+            aria-label="Next insight"
             style={{ background: "none", border: "none", cursor: safeIdx === items.length - 1 ? "default" : "pointer", opacity: safeIdx === items.length - 1 ? 0.3 : 1, display: "flex", padding: "0.1rem" }}
           >
             <ChevronRight size={12} />
@@ -774,7 +776,7 @@ export default function DashboardPage() {
 
               {/* Score gauge */}
               <div style={{ background: COLORS.plum, padding: "1.75rem 1.25rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: `1px solid rgba(122,175,118,0.15)` }}>
-                <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "0.875rem" }}>
+                <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)", marginBottom: "0.875rem" }}>
                   HomeGentic Score
                 </div>
                 <div style={{ position: "relative", width: 120, height: 120 }}>
@@ -784,14 +786,14 @@ export default function DashboardPage() {
                   </svg>
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingBottom: "8px" }}>
                     <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2rem", color: "white", lineHeight: 1 }}>{homegenticScore}</span>
-                    <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
+                    <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em" }}>/100</span>
                   </div>
                 </div>
-                <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sageText, marginTop: "0.625rem" }}>
+                <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>
                   {textGrade}
                 </div>
                 {delta !== 0 && (
-                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: delta > 0 ? COLORS.sageText : COLORS.blush, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: delta > 0 ? COLORS.sage : COLORS.blush, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
                     {delta > 0 ? "↑" : "↓"} {Math.abs(delta)} pts this month
                   </div>
                 )}
@@ -1007,7 +1009,7 @@ export default function DashboardPage() {
                   <div key={rec.name} style={{ background: COLORS.white, padding: "1.25rem", borderRadius: RADIUS.card, border: `1px solid ${COLORS.rule}`, boxShadow: SHADOWS.card, display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
                       <p style={{ fontSize: "0.875rem", fontWeight: 600, color: UI.ink, lineHeight: 1.2 }}>{rec.name}</p>
-                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.1em", textTransform: "uppercase", color: priorityColor, border: `1px solid ${priorityColor}`, padding: "0.1rem 0.4rem", flexShrink: 0, opacity: 0.8, borderRadius: 100 }}>
+                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.1em", textTransform: "uppercase", color: priorityColor, border: `1px solid ${priorityColor}`, padding: "0.1rem 0.4rem", flexShrink: 0, borderRadius: 100 }}>
                         {rec.priority}
                       </span>
                     </div>
@@ -1159,7 +1161,7 @@ export default function DashboardPage() {
             return (
               <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", width: "100%", maxWidth: "680px", margin: "0 auto 2.5rem", border: `1px solid ${COLORS.rule}`, borderRadius: "1rem", overflow: "hidden", alignItems: "stretch" }}>
                 <div style={{ background: COLORS.plum, padding: "1.75rem 1.25rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: `1px solid rgba(122,175,118,0.15)` }}>
-                  <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: "0.875rem" }}>Avg Score</div>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.5rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.75)", marginBottom: "0.875rem" }}>Avg Score</div>
                   <div style={{ position: "relative", width: 120, height: 120 }}>
                     <svg viewBox="0 0 120 120" width="120" height="120">
                       <circle cx={cx2} cy={cy2} r={r2} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" strokeLinecap="round" strokeDasharray={`${arcLen2} ${circ2 - arcLen2}`} transform={`rotate(135 ${cx2} ${cy2})`} />
@@ -1167,11 +1169,11 @@ export default function DashboardPage() {
                     </svg>
                     <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingBottom: "8px" }}>
                       <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2rem", color: "white", lineHeight: 1 }}>{avgScore}</span>
-                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.4)", letterSpacing: "0.06em" }}>/100</span>
+                      <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em" }}>/100</span>
                     </div>
                   </div>
-                  <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sageText, marginTop: "0.625rem" }}>{avgGrade}</div>
-                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.3)", marginTop: "0.25rem" }}>{properties.length} properties</div>
+                  <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>{avgGrade}</div>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: "rgba(255,255,255,0.7)", marginTop: "0.25rem" }}>{properties.length} properties</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {aggStats.map((stat, i, arr) => (
