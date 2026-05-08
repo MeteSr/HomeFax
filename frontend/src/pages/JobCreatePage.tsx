@@ -255,7 +255,7 @@ export default function JobCreatePage() {
             {isInsuranceRelevant(form.serviceType) && (
               <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginTop: "0.4rem", padding: "0.35rem 0.6rem", background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}` }}>
                 <ShieldCheck size={11} color={COLORS.sage} />
-                <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage }}>
+                <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sageText }}>
                   Insurance-relevant — this record may support a premium dispute or claim
                 </span>
               </div>

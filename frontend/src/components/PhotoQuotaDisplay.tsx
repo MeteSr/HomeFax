@@ -21,7 +21,7 @@ export function PhotoQuotaDisplay({
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
         <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>Photos Used</span>
-        <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", fontWeight: 600, color: pct > 80 ? COLORS.plum : COLORS.sage }}>
+        <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", fontWeight: 600, color: pct > 80 ? COLORS.plum : COLORS.sageText }}>
           {used}/{limit}
         </span>
       </div>
@@ -42,7 +42,7 @@ export function PhotoQuotaDisplay({
           <button
             onClick={onUpgrade}
             style={{
-              color: COLORS.sage,
+              color: COLORS.sageText,
               textDecoration: "underline",
               background: "none",
               border: "none",

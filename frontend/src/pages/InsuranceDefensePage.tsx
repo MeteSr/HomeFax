@@ -206,7 +206,7 @@ export default function InsuranceDefensePage() {
                   {sensorDevices.length === 0 ? (
                     <p style={{ fontSize: "0.8rem", color: COLORS.plumMid, fontFamily: FONTS.sans }}>
                       No smart devices registered.{" "}
-                      <button onClick={() => navigate("/sensors")} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.sage, fontFamily: FONTS.sans, fontSize: "0.7rem", textDecoration: "underline" }}>
+                      <button onClick={() => navigate("/sensors")} style={{ background: "none", border: "none", cursor: "pointer", color: COLORS.sageText, fontFamily: FONTS.sans, fontSize: "0.7rem", textDecoration: "underline" }}>
                         Add sensors →
                       </button>
                     </p>
@@ -302,7 +302,7 @@ export default function InsuranceDefensePage() {
                       <div key={prog.insurer + prog.programName} style={{ border: `1px solid ${COLORS.rule}`, padding: "0.875rem", background: COLORS.white }}>
                         <p style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.plumMid, marginBottom: "0.2rem" }}>{prog.insurer}</p>
                         <p style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 600, color: COLORS.plum, marginBottom: "0.2rem" }}>{prog.programName}</p>
-                        <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sage, marginBottom: "0.375rem" }}>{prog.estimatedDiscount}</p>
+                        <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sageText, marginBottom: "0.375rem" }}>{prog.estimatedDiscount}</p>
                         <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", color: COLORS.plumMid, lineHeight: 1.4 }}>{prog.notes}</p>
                       </div>
                     ))}

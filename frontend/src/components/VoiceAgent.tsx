@@ -153,7 +153,7 @@ export function VoiceAgent() {
           )}
 
           {error && (
-            <p style={{ fontFamily: UI.mono, fontSize: "0.7rem", color: COLORS.sage }}>{error}</p>
+            <p style={{ fontFamily: UI.mono, fontSize: "0.7rem", color: COLORS.sageText }}>{error}</p>
           )}
         </div>
       )}
@@ -178,7 +178,7 @@ export function VoiceAgent() {
               {showHistory && (
                 <button
                   onClick={(e) => { e.stopPropagation(); clearHistory(); setShowHistory(false); }}
-                  style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sage, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                  style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.sageText, background: "none", border: "none", cursor: "pointer", padding: 0 }}
                 >
                   Clear
                 </button>
@@ -200,7 +200,7 @@ export function VoiceAgent() {
                     : <XCircle    size={11} color={COLORS.sage}  style={{ flexShrink: 0, marginTop: "0.1rem" }} />
                   }
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: action.success ? COLORS.sage : COLORS.plumMid, marginBottom: "0.1rem" }}>
+                    <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", letterSpacing: "0.08em", textTransform: "uppercase", color: action.success ? COLORS.sageText : COLORS.plumMid, marginBottom: "0.1rem" }}>
                       {action.label}
                     </div>
                     <div style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.plumMid, lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

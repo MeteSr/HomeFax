@@ -388,7 +388,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
               <span style={{ fontFamily: FONTS.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.plumMid }}>
                 Baseline photos captured
               </span>
-              <span style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: completedCount === BASELINE_SYSTEMS.length ? COLORS.sage : COLORS.plum }}>
+              <span style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: completedCount === BASELINE_SYSTEMS.length ? COLORS.sageText : COLORS.plum }}>
                 {completedCount} <span style={{ fontWeight: 300, color: COLORS.plumMid }}>/ {BASELINE_SYSTEMS.length}</span>
               </span>
             </div>
@@ -481,7 +481,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                   style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", color: COLORS.plumMid, display: "block", marginTop: "0.25rem" }}
                 />
                 {verify.docFile && (
-                  <p style={{ color: COLORS.sage, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                  <p style={{ color: COLORS.sageText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                     {verify.docFile.name} selected
                   </p>
                 )}

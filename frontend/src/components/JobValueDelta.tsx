@@ -27,7 +27,7 @@ export function JobValueDelta({ serviceType, currentScore }: JobValueDeltaProps)
       alignItems: "center",
       gap:        "0.75rem",
     }}>
-      <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", color: COLORS.sage }}>
+      <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", color: COLORS.sageText }}>
         +{fmt(delta)}
       </span>
       <span style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.06em", color: COLORS.plumMid }}>

@@ -77,7 +77,7 @@ export function ScorePanel({
             fontFamily: UI.mono,
             fontSize: "0.65rem",
             fontWeight: 700,
-            color: delta > 0 ? COLORS.sage : COLORS.blush,
+            color: delta > 0 ? COLORS.sageText : COLORS.blush,
             background: "rgba(255,255,255,0.1)",
             padding: "0.2rem 0.6rem",
             borderRadius: RADIUS.pill,
@@ -101,7 +101,7 @@ export function ScorePanel({
             fontSize: "0.6rem",
             letterSpacing: "0.1em",
             textTransform: "uppercase",
-            color: COLORS.sage,
+            color: COLORS.sageText,
             border: `1px solid ${COLORS.sage}60`,
             padding: "0.25rem 0.625rem",
             borderRadius: RADIUS.pill,
@@ -132,7 +132,7 @@ export function ScorePanel({
               fontSize: "0.55rem",
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              color: COLORS.sage,
+              color: COLORS.sageText,
               marginBottom: "0.3rem",
             }}
           >
@@ -164,7 +164,7 @@ export function ScorePanel({
             padding: "0.4rem 0.875rem",
             border: `1px solid ${COLORS.sage}`,
             background: "none",
-            color: COLORS.sage,
+            color: COLORS.sageText,
             cursor: "pointer",
             borderRadius: RADIUS.sm,
           }}

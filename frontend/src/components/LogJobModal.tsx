@@ -132,7 +132,7 @@ export function LogJobModal({ isOpen, onClose, onSuccess, properties, prefill }:
           flexShrink: 0,
         }}>
           <div>
-            <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sage, marginBottom: "0.2rem" }}>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.7rem", fontWeight: 600, color: COLORS.sageText, marginBottom: "0.2rem" }}>
               Maintenance Record
             </p>
             <h2 style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.25rem", lineHeight: 1, color: COLORS.plum }}>
@@ -160,7 +160,7 @@ export function LogJobModal({ isOpen, onClose, onSuccess, properties, prefill }:
             }}>
               <CheckCircle size={24} color={COLORS.sage} />
             </div>
-            <p style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 600, color: COLORS.sage, marginBottom: "0.375rem" }}>
+            <p style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 600, color: COLORS.sageText, marginBottom: "0.375rem" }}>
               Record Locked On-Chain
             </p>
             <p style={{ fontFamily: FONTS.sans, fontSize: "0.875rem", color: COLORS.plumMid, marginBottom: "1.5rem" }}>
@@ -226,7 +226,7 @@ export function LogJobModal({ isOpen, onClose, onSuccess, properties, prefill }:
                   {isInsuranceRelevant(form.serviceType) && (
                     <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", marginTop: "0.4rem", padding: "0.35rem 0.6rem", background: COLORS.sageLight, border: `1px solid ${COLORS.sageMid}`, borderRadius: RADIUS.sm }}>
                       <ShieldCheck size={11} color={COLORS.sage} />
-                      <span style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 500, color: COLORS.sage }}>
+                      <span style={{ fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 500, color: COLORS.sageText }}>
                         Insurance-relevant record
                       </span>
                     </div>
@@ -257,7 +257,7 @@ export function LogJobModal({ isOpen, onClose, onSuccess, properties, prefill }:
                   <div style={{ width: "2.25rem", height: "1.25rem", background: form.isDiy ? COLORS.sage : COLORS.rule, borderRadius: 100, position: "relative", flexShrink: 0 }}>
                     <div style={{ position: "absolute", top: "0.125rem", left: form.isDiy ? "1.125rem" : "0.125rem", width: "1rem", height: "1rem", background: COLORS.white, borderRadius: 100, transition: "left 0.15s" }} />
                   </div>
-                  <p style={{ fontFamily: FONTS.sans, fontSize: "0.85rem", fontWeight: 500, color: form.isDiy ? COLORS.sage : COLORS.plum }}>
+                  <p style={{ fontFamily: FONTS.sans, fontSize: "0.85rem", fontWeight: 500, color: form.isDiy ? COLORS.sageText : COLORS.plum }}>
                     {form.isDiy ? "DIY — I did this myself" : "I hired a contractor"}
                   </p>
                 </div>
@@ -320,7 +320,7 @@ export function LogJobModal({ isOpen, onClose, onSuccess, properties, prefill }:
                 {/* Full-page escape hatch (for photo uploads) */}
                 <p style={{ fontFamily: FONTS.sans, fontSize: "0.8rem", fontWeight: 300, color: COLORS.plumMid, textAlign: "center" }}>
                   Need to attach photos?{" "}
-                  <a href="/jobs/new" style={{ color: COLORS.sage, textDecoration: "underline" }}>
+                  <a href="/jobs/new" style={{ color: COLORS.sageText, textDecoration: "underline" }}>
                     Open full form <ArrowRight size={10} style={{ display: "inline", verticalAlign: "middle" }} />
                   </a>
                 </p>

@@ -13,7 +13,7 @@ const UI = {
 };
 
 const STATUS_STYLE: Record<string, { color: string; bg: string }> = {
-  Active:    { color: COLORS.sage,     bg: COLORS.sageLight },
+  Active:    { color: COLORS.sageText, bg: COLORS.sageLight },
   Paused:    { color: COLORS.plumMid,  bg: COLORS.butter    },
   Cancelled: { color: COLORS.plumMid,  bg: COLORS.white     },
 };

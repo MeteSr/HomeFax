@@ -428,7 +428,7 @@ export default function CheckoutPage() {
             fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.2rem",
             letterSpacing: "-0.5px", color: COLORS.plum, textDecoration: "none",
           }}>
-            Home<span style={{ color: COLORS.sage, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
+            Home<span style={{ color: COLORS.sageText, fontStyle: "italic", fontWeight: 300 }}>Gentic</span>
           </Link>
           <Link to="/pricing" style={{
             fontFamily: FONTS.sans, fontSize: "0.65rem", letterSpacing: "0.08em",
@@ -472,7 +472,7 @@ export default function CheckoutPage() {
             <div style={{ marginBottom: "32px" }}>
               <span style={{
                 fontFamily: FONTS.serif, fontWeight: 900, fontSize: "1.5rem",
-                color: COLORS.sage,
+                color: COLORS.sageText,
               }}>
                 {price}
               </span>
@@ -524,7 +524,7 @@ export default function CheckoutPage() {
                   fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.06em",
                   color: "rgba(253,252,250,0.4)", textTransform: "uppercase",
                 }}>
-                  <span style={{ color: COLORS.sage, fontSize: "0.5rem" }}>✦</span>
+                  <span style={{ color: COLORS.sageText, fontSize: "0.5rem" }}>✦</span>
                   {t}
                 </div>
               ))}
@@ -556,7 +556,7 @@ export default function CheckoutPage() {
                     <p style={{
                       fontFamily: FONTS.sans, fontSize: "0.6rem", fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "0.08em",
-                      color: COLORS.sage, margin: 0,
+                      color: COLORS.sageText, margin: 0,
                     }}>
                       Identity verified
                     </p>

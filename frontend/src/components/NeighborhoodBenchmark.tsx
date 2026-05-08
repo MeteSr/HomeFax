@@ -78,7 +78,7 @@ export function NeighborhoodBenchmark({ zipCode, score }: Props) {
             fontFamily: FONTS.sans,
             fontSize: "0.75rem",
             fontWeight: 500,
-            color: COLORS.sage,
+            color: COLORS.sageText,
             background: "none",
             border: "none",
             cursor: "pointer",

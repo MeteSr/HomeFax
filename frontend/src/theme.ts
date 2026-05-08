@@ -8,7 +8,8 @@ export const COLORS = {
   plum:       "#2E2540",   // primary text / headings / CTA fill
   plumMid:    "#6B5B7B",   // muted text, secondary labels
   plumDark:   "#1E1928",   // deep emphasis
-  sage:       "#7AAF76",   // success / accent / active state
+  sage:       "#7AAF76",   // success / accent / active state (backgrounds + borders only)
+  sageText:   "#3D7339",   // sage-family text — 5.7:1 on white, passes WCAG AA
   sageMid:    "#C4DCC2",   // borders on sage surfaces
   sageLight:  "#E5F0E4",   // surface tint / background cards
   blush:      "#F0CDBA",   // warm accent surface (quotes, offers)
