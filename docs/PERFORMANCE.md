@@ -29,3 +29,46 @@ npx lighthouse http://localhost:4173 --output=json --output-path=./lighthouse-re
 ## Core Web Vitals — field data
 
 Once deployed, monitor real-user metrics via Google Search Console → Core Web Vitals report.
+
+---
+
+## Backend / API Performance
+
+Baselines established via k6 load tests in `tests/k6/`.  Thresholds are enforced in
+`.github/workflows/load-test.yml` — a breached threshold fails the CI step.
+
+### Voice Agent (`POST /api/chat`, `POST /api/agent`)
+
+| Endpoint | p50 | p95 | Max error rate |
+|---|---|---|---|
+| `POST /api/chat` | < 800 ms | < 2 s | < 1 % |
+| `POST /api/agent` (no tool calls) | < 1 s | < 3 s | < 1 % |
+| `GET /health` | < 10 ms | < 50 ms | < 0.1 % |
+
+Measured with `tests/k6/voice-chat.js` (20 VU, 1 min hold, `MOCK_ANTHROPIC=1`).
+
+### IoT Gateway (`POST /webhooks/*`)
+
+| Endpoint | p50 | p95 | Max error rate |
+|---|---|---|---|
+| `POST /webhooks/nest` | < 50 ms | < 300 ms | < 0.1 % |
+| `POST /webhooks/ecobee` | < 50 ms | < 300 ms | < 0.1 % |
+| `POST /webhooks/moen-flo` | < 50 ms | < 300 ms | < 0.1 % |
+| `GET /health` | < 5 ms | < 50 ms | < 0.01 % |
+
+Measured with `tests/k6/iot-gateway-load.js` (`webhook_burst` scenario, 100 VU, `SENSOR_CANISTER_ID=dummy`).
+429 responses from the rate limiter are excluded from error-rate calculations.
+
+### Running the load tests locally
+
+```bash
+# Start services
+cd agents/voice       && MOCK_ANTHROPIC=1 npm run dev &
+cd agents/iot-gateway && SENSOR_CANISTER_ID=dummy npm run dev &
+
+# Run tests
+k6 run tests/k6/voice-chat.js
+k6 run tests/k6/iot-gateway-load.js
+```
+
+See `tests/k6/README.md` for full setup instructions and result interpretation.

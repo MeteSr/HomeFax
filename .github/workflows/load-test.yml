@@ -1,0 +1,82 @@
+name: Load Tests
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  load-test:
+    name: k6 load tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            agents/voice/package-lock.json
+            agents/iot-gateway/package-lock.json
+
+      - name: Install k6
+        run: |
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | \
+            sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Install voice agent dependencies
+        run: cd agents/voice && npm ci
+
+      - name: Install IoT gateway dependencies
+        run: cd agents/iot-gateway && npm ci
+
+      - name: Start voice agent
+        env:
+          ANTHROPIC_API_KEY: mock-key
+          MOCK_ANTHROPIC: "1"
+          SENSOR_CANISTER_ID: dummy
+          VOICE_AGENT_PORT: "3001"
+          FRONTEND_ORIGIN: http://localhost:3000
+        run: |
+          cd agents/voice && npm run dev &
+          npx --yes wait-on@latest http://localhost:3001/health --timeout 30000
+
+      - name: Start IoT gateway
+        env:
+          SENSOR_CANISTER_ID: dummy
+          IOT_GATEWAY_PORT: "3002"
+        run: |
+          cd agents/iot-gateway && npm run dev &
+          npx --yes wait-on@latest http://localhost:3002/health --timeout 30000
+
+      # Scenario 1: voice chat throughput (~2 min in CI)
+      - name: Run voice chat load test
+        env:
+          VOICE_AGENT_URL: http://localhost:3001
+          MOCK_ANTHROPIC: "1"
+        run: k6 run --out json=results-voice.json tests/k6/voice-chat.js
+
+      # Scenario 2: IoT gateway webhook burst + polling steady + spike (~7 min in CI)
+      - name: Run IoT gateway load test
+        env:
+          IOT_GATEWAY_URL: http://localhost:3002
+        run: k6 run --out json=results-iot.json tests/k6/iot-gateway-load.js
+
+      - name: Upload load test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results-${{ github.run_id }}
+          path: results-*.json
+          retention-days: 30
