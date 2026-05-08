@@ -32,7 +32,7 @@ export default function LoginPage() {
   const { isLoading } = useAuthStore();
 
   return (
-    <div style={{
+    <main style={{
       minHeight: "100vh",
       display: "flex",
       alignItems: "center",
@@ -169,6 +169,6 @@ export default function LoginPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

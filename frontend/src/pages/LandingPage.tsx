@@ -134,6 +134,8 @@ export default function LandingPage() {
           </div>
         </nav>
 
+        <main>
+
         {/* ── Social Proof Bar ────────────────────────────────────────────── */}
         <div className="hfl-proof-bar">
           <span className="hfl-proof-stars">★★★★★</span>
@@ -583,6 +585,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        </main>
 
         {/* ── Footer ──────────────────────────────────────────────────────── */}
         <footer className="hfl-footer">

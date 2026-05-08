@@ -238,8 +238,8 @@ export default function JobCreatePage() {
 
           {!editJob && properties.length > 0 && (
             <div>
-              <label className="form-label">Property *</label>
-              <select className="form-input" value={form.propertyId} onChange={(e) => update("propertyId", e.target.value)}>
+              <label className="form-label" htmlFor="propertyId">Property *</label>
+              <select id="propertyId" className="form-input" value={form.propertyId} onChange={(e) => update("propertyId", e.target.value)}>
                 {properties.map((p) => (
                   <option key={String(p.id)} value={String(p.id)}>{p.address}, {p.city}</option>
                 ))}
@@ -330,14 +330,14 @@ export default function JobCreatePage() {
               </div>
             </div>
             <div>
-              <label className="form-label">Date Completed *</label>
-              <input className="form-input" type="date" value={form.date} onChange={(e) => update("date", e.target.value)} />
+              <label className="form-label" htmlFor="dateCompleted">Date Completed *</label>
+              <input id="dateCompleted" className="form-input" type="date" value={form.date} onChange={(e) => update("date", e.target.value)} />
             </div>
           </div>
 
           <div>
-            <label className="form-label">Description</label>
-            <textarea className="form-input" rows={3} placeholder="Describe the work done, materials used..." value={form.description} onChange={(e) => update("description", e.target.value)} style={{ resize: "vertical" }} />
+            <label className="form-label" htmlFor="description">Description</label>
+            <textarea id="description" className="form-input" rows={3} placeholder="Describe the work done, materials used..." value={form.description} onChange={(e) => update("description", e.target.value)} style={{ resize: "vertical" }} />
           </div>
 
           {showPermitField && (

@@ -254,6 +254,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <button
             onClick={toggleSidebar}
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
             style={{
               display:    "flex",
               alignItems: "center",
