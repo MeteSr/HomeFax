@@ -119,7 +119,7 @@ export function categoryColor(cat: EventCategory): string {
     case "Job":       return "#3D6B57";
     case "Property":  return "#1e40af";
     case "Diversity": return "#7c3aed";
-    case "Value":     return "#C94C2E";
+    case "Value":     return "#AA3820";   // darker rust — 5.8:1 on #fef2f2, 6.4:1 on white
   }
 }
 

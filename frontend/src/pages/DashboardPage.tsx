@@ -789,11 +789,11 @@ export default function DashboardPage() {
                     <span style={{ fontFamily: UI.mono, fontSize: "0.5rem", color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em" }}>/100</span>
                   </div>
                 </div>
-                <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sageText, marginTop: "0.625rem" }}>
+                <div style={{ fontFamily: FONTS.serif, fontWeight: 700, fontSize: "1rem", color: COLORS.sage, marginTop: "0.625rem" }}>
                   {textGrade}
                 </div>
                 {delta !== 0 && (
-                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: delta > 0 ? COLORS.sageText : COLORS.errorText, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
+                  <div style={{ fontFamily: UI.mono, fontSize: "0.55rem", color: delta > 0 ? COLORS.sage : COLORS.blush, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
                     {delta > 0 ? "↑" : "↓"} {Math.abs(delta)} pts this month
                   </div>
                 )}
