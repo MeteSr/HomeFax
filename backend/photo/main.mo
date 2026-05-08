@@ -85,6 +85,7 @@ persistent actor Photo {
   private var isPaused: Bool = false;
   private var pauseExpiryNs: ?Int = null;
   private var adminListEntries: [Principal] = [];
+  private var auditCanisterId : ?Principal  = null;
   /// Payment canister ID — set post-deploy via setPaymentCanisterId().
   /// When set, uploadPhoto() cross-calls getTierForPrincipal() instead of
   /// reading the local tierGrants map.
@@ -451,6 +452,7 @@ persistent actor Photo {
           createdAt   = existing.createdAt;
         };
         Map.add(photos, Text.compare, photoId, updated);
+        try { ignore await auditLog("PhotoApproved", ?existing.owner, "photoId=" # photoId # " caller=" # Principal.toText(msg.caller)) } catch _ {};
         #ok(updated)
       };
     }
@@ -516,7 +518,26 @@ persistent actor Photo {
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
+    try { ignore await auditLog("AdminAdded", ?newAdmin, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
+  };
+
+  public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    auditCanisterId := ?id;
+    #ok(())
+  };
+
+  private func auditLog(action : Text, subject : ?Principal, detail : Text) : async () {
+    switch (auditCanisterId) {
+      case null {};
+      case (?aid) {
+        let a : actor {
+          log : (Text, Text, ?Principal, Text) -> async { #ok : Nat; #err : { #NotAuthorized; #InvalidInput : Text } }
+        } = actor(Principal.toText(aid));
+        try { ignore await a.log("photo", action, subject, detail) } catch _ {};
+      };
+    };
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
@@ -526,6 +547,7 @@ persistent actor Photo {
       case null    { null };
       case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
     };
+    try { ignore await auditLog("CanisterPaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 
@@ -533,6 +555,7 @@ persistent actor Photo {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     isPaused := false;
     pauseExpiryNs := null;
+    try { ignore await auditLog("CanisterUnpaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 

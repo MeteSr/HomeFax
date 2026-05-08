@@ -235,8 +235,9 @@ persistent actor Payment {
   };
 
   // Admin
-  private var adminEntries     : [Principal] = [];
-  private var adminInitialized : Bool        = false;
+  private var adminEntries      : [Principal]  = [];
+  private var adminInitialized  : Bool         = false;
+  private var auditCanisterId   : ?Principal   = null;
   // ── Ingress inspection ────────────────────────────────────────────────────
   /// Reject anonymous callers and zero-byte payloads before execution.
   /// Empty payload cannot be valid Candid for any method that takes a struct
@@ -340,6 +341,24 @@ persistent actor Payment {
 
   public query func isAdminPrincipal(p: Principal) : async Bool {
     isAdmin(p)
+  };
+
+  public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    auditCanisterId := ?id;
+    #ok(())
+  };
+
+  private func auditLog(action : Text, subject : ?Principal, detail : Text) : async () {
+    switch (auditCanisterId) {
+      case null {};
+      case (?aid) {
+        let a : actor {
+          log : (Text, Text, ?Principal, Text) -> async { #ok : Nat; #err : { #NotAuthorized; #InvalidInput : Text } }
+        } = actor(Principal.toText(aid));
+        try { ignore await a.log("payment", action, subject, detail) } catch _ {};
+      };
+    };
   };
 
   /// Configure the canister IDs that receive setTier calls when a subscription
@@ -837,6 +856,7 @@ persistent actor Payment {
     };
     Map.add(subscriptions, Principal.compare, userPrincipal, sub);
     await propagateTier(userPrincipal, tier);
+    try { ignore await auditLog("TierActivated", ?userPrincipal, "months=" # Nat.toText(months) # " caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(sub)
   };
 
@@ -858,6 +878,7 @@ persistent actor Payment {
     };
     Map.add(subscriptions, Principal.compare, principal, sub);
     await propagateTier(principal, tier);
+    try { ignore await auditLog("TierGranted", ?principal, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(sub)
   };
 

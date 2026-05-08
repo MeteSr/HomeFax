@@ -87,6 +87,7 @@ persistent actor class Auth(initDeployer : Principal) {
   // initDeployer is set atomically at install time — no open window for a
   // first-caller race. On upgrade, stable storage restores the existing value.
   private var admins: [Principal] = [initDeployer];
+  private var auditCanisterId : ?Principal = null;
 
   /// Per-principal update-call rate limiting (cycle-drain protection).
   private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
@@ -183,6 +184,7 @@ persistent actor class Auth(initDeployer : Principal) {
     if (not isAdmin(newAdmin)) {
       admins := Array.concat(admins, [newAdmin]);
     };
+    try { ignore await auditLog("AdminAdded", ?newAdmin, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 
@@ -194,6 +196,7 @@ persistent actor class Auth(initDeployer : Principal) {
       case null    { null };
       case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
     };
+    try { ignore await auditLog("CanisterPaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 
@@ -202,7 +205,26 @@ persistent actor class Auth(initDeployer : Principal) {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
+    try { ignore await auditLog("CanisterUnpaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
+  };
+
+  public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    auditCanisterId := ?id;
+    #ok(())
+  };
+
+  private func auditLog(action : Text, subject : ?Principal, detail : Text) : async () {
+    switch (auditCanisterId) {
+      case null {};
+      case (?aid) {
+        let a : actor {
+          log : (Text, Text, ?Principal, Text) -> async { #ok : Nat; #err : { #NotAuthorized; #InvalidInput : Text } }
+        } = actor(Principal.toText(aid));
+        try { ignore await a.log("auth", action, subject, detail) } catch _ {};
+      };
+    };
   };
 
   // ─── Validation Helpers ───────────────────────────────────────────────────────

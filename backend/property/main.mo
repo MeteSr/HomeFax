@@ -288,6 +288,7 @@ persistent actor Property {
   private var admins                   : [Principal] = [];
   private var adminInitialized         : Bool        = false;
   private var trustedCanisterEntries   : [Principal] = [];
+  private var auditCanisterId          : ?Principal  = null;
   /// Payment canister ID — set post-deploy via setPaymentCanisterId().
   /// When set, registerProperty() cross-calls getTierForPrincipal() instead of
   /// reading the local tierGrants map.
@@ -757,6 +758,7 @@ persistent actor Property {
           isActive            = existing.isActive;
         };
         Map.add(properties, Text.compare, id, updated);
+        try { ignore await auditLog("PropertyVerified", ?existing.owner, "propertyId=" # id # " caller=" # Principal.toText(msg.caller)) } catch _ {};
         #ok(updated)
       };
     }
@@ -1311,7 +1313,26 @@ persistent actor Property {
     if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
     admins := Array.concat(admins, [newAdmin]);
     adminInitialized := true;
+    try { ignore await auditLog("AdminAdded", ?newAdmin, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
+  };
+
+  public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    auditCanisterId := ?id;
+    #ok(())
+  };
+
+  private func auditLog(action : Text, subject : ?Principal, detail : Text) : async () {
+    switch (auditCanisterId) {
+      case null {};
+      case (?aid) {
+        let a : actor {
+          log : (Text, Text, ?Principal, Text) -> async { #ok : Nat; #err : { #NotAuthorized; #InvalidInput : Text } }
+        } = actor(Principal.toText(aid));
+        try { ignore await a.log("property", action, subject, detail) } catch _ {};
+      };
+    };
   };
 
   /// Register a canister principal as trusted for inter-canister calls.
@@ -1341,6 +1362,7 @@ persistent actor Property {
       case null    { null };
       case (?secs) { ?(Time.now() + secs * 1_000_000_000) };
     };
+    try { ignore await auditLog("CanisterPaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 
@@ -1348,6 +1370,7 @@ persistent actor Property {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
+    try { ignore await auditLog("CanisterUnpaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 
