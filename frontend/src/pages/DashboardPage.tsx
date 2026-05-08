@@ -235,7 +235,7 @@ function AIHeroBar() {
                 style={{
                   background: "none", border: "none", padding: "0.25rem",
                   cursor: isProcessing || isSpeaking ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", color: isListening ? COLORS.rust : "#888",
+                  display: "flex", alignItems: "center", color: isListening ? COLORS.rust : COLORS.plumMid,
                   transition: "color 0.15s",
                 }}
               >

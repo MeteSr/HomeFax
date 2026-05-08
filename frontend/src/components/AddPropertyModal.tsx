@@ -293,7 +293,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                     style={addr.state.length === 2 && !isValidUsState(addr.state) ? { borderColor: COLORS.rust } : undefined}
                   />
                   {addr.state.length === 2 && !isValidUsState(addr.state) && (
-                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                    <p style={{ color: COLORS.errorText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                       Valid US state abbreviation required
                     </p>
                   )}
@@ -307,7 +307,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                   style={addr.zipCode && !isValidZip(addr.zipCode) ? { borderColor: COLORS.rust } : undefined}
                 />
                 {addr.zipCode && !isValidZip(addr.zipCode) && (
-                  <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                  <p style={{ color: COLORS.errorText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                     Enter a 5-digit ZIP code
                   </p>
                 )}
@@ -335,7 +335,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                         background: details.propertyType === t ? COLORS.blush : COLORS.white,
                         fontFamily: FONTS.sans, fontSize: "0.75rem", fontWeight: 500,
                         textAlign: "center",
-                        color: details.propertyType === t ? COLORS.rust : COLORS.plumMid,
+                        color: details.propertyType === t ? COLORS.plum : COLORS.plumMid,
                         border: details.propertyType === t ? `1.5px solid ${COLORS.rust}` : "none",
                       }}
                     >
@@ -353,7 +353,7 @@ export default function AddPropertyModal({ open, onClose }: Props) {
                     onChange={(e) => setDetails((d) => ({ ...d, yearBuilt: e.target.value }))}
                   />
                   {details.yearBuilt && (Number(details.yearBuilt) < 1900 || Number(details.yearBuilt) > new Date().getFullYear()) && (
-                    <p style={{ color: COLORS.rust, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
+                    <p style={{ color: COLORS.errorText, fontSize: "0.7rem", marginTop: "0.25rem", fontFamily: FONTS.sans }}>
                       Year must be between 1900 and {new Date().getFullYear()}
                     </p>
                   )}

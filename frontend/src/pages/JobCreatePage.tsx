@@ -158,7 +158,7 @@ export default function JobCreatePage() {
           <div className="job-success-icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "4rem", height: "4rem", border: `2px solid ${UI.sage}`, marginBottom: "1.25rem" }}>
             <CheckCircle size={28} color={UI.sage} />
           </div>
-          <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: UI.sage, marginBottom: "0.375rem" }}>
+          <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.18em", textTransform: "uppercase", color: COLORS.sageText, marginBottom: "0.375rem" }}>
             Record Locked On-Chain
           </p>
           <h2 style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.5rem", lineHeight: 1, marginBottom: "0.5rem" }}>
@@ -305,7 +305,7 @@ export default function JobCreatePage() {
               }} />
             </div>
             <div>
-              <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: form.isDiy ? UI.rust : UI.ink, marginBottom: "0.2rem" }}>
+              <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: UI.ink, marginBottom: "0.2rem" }}>
                 I did this myself (DIY)
               </p>
               <p style={{ fontSize: "0.75rem", color: UI.inkLight, fontWeight: 300 }}>

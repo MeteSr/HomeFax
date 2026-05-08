@@ -17,7 +17,8 @@ export const COLORS = {
   butter:     "#F5E9BB",   // highlight surface (warranties, milestones)
   white:      "#FDFCFA",   // page background
   rule:       "#D4CFC8",   // borders / dividers
-  rust:       "#C94C2E",   // error / destructive states
+  rust:       "#C94C2E",   // error / destructive states — use as accent/border only
+  errorText:  "#AA3820",   // error text — 6.4:1 on white, passes WCAG AA at small sizes
 } as const;
 
 export const FONTS = {

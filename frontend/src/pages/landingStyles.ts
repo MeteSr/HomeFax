@@ -666,7 +666,7 @@ export const CSS = `
   .hfl-sc-tab-row { display: flex; align-items: center; gap: 10px; }
   .hfl-sc-tab-icon { font-size: 16px; flex-shrink: 0; }
   .hfl-sc-tab-title {
-    font-size: 13px; font-weight: 600; color: rgba(253,252,250,0.45); line-height: 1.3;
+    font-size: 13px; font-weight: 600; color: rgba(253,252,250,0.55); line-height: 1.3;
   }
   .hfl-sc-tab-active .hfl-sc-tab-title { color: white; }
   .hfl-sc-progress-track {
@@ -765,7 +765,7 @@ export const CSS = `
   }
   .hfl-footer-logo { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 900; color: white; margin-bottom: 14px; display: block; text-decoration: none; }
   .hfl-footer-logo span { color: var(--sage); font-style: italic; font-weight: 300; }
-  .hfl-footer-tagline { font-size: 14px; color: rgba(253,252,250,0.45); line-height: 1.65; max-width: 220px; margin-bottom: 24px; }
+  .hfl-footer-tagline { font-size: 14px; color: rgba(253,252,250,0.6); line-height: 1.65; max-width: 220px; margin-bottom: 24px; }
   .hfl-footer-social { display: flex; gap: 10px; }
   .hfl-footer-social a {
     color: rgba(253,252,250,0.4); transition: color .2s; display: flex; align-items: center;
@@ -775,7 +775,7 @@ export const CSS = `
   .hfl-footer-social a:hover { color: var(--sage); background: rgba(122,175,118,0.15); }
   .hfl-footer-col-title {
     font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
-    color: rgba(253,252,250,0.35); margin-bottom: 20px;
+    color: rgba(253,252,250,0.55); margin-bottom: 20px;
   }
   .hfl-footer-col-links { list-style: none; display: flex; flex-direction: column; gap: 12px; }
   .hfl-footer-col-links a {
@@ -786,11 +786,11 @@ export const CSS = `
   .hfl-footer-bottom {
     border-top: 1px solid rgba(253,252,250,0.08); padding-top: 24px;
     display: flex; align-items: center; justify-content: space-between;
-    font-size: 13px; color: rgba(253,252,250,0.35);
+    font-size: 13px; color: rgba(253,252,250,0.55);
   }
   .hfl-footer-bottom-links { display: flex; gap: 24px; }
-  .hfl-footer-bottom-links a { color: rgba(253,252,250,0.35); text-decoration: none; transition: color .2s; }
-  .hfl-footer-bottom-links a:hover { color: rgba(253,252,250,0.65); }
+  .hfl-footer-bottom-links a { color: rgba(253,252,250,0.55); text-decoration: none; transition: color .2s; }
+  .hfl-footer-bottom-links a:hover { color: rgba(253,252,250,0.85); }
 
   /* ── ENTRANCE ANIMATIONS ──────────────────────────────────────────────── */
   @keyframes hfl-fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
