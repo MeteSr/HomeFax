@@ -6,7 +6,7 @@ const UI = {
   ink:      COLORS.plum,
   rule:     COLORS.rule,
   inkLight: COLORS.plumMid,
-  sage:     COLORS.sage,
+  sage:     COLORS.sageText,
   mono:     FONTS.sans,
   serif:    FONTS.serif,
 };
@@ -118,7 +118,6 @@ export function MarketIntelPanel({
                   border: `1px solid ${priorityColor(rec.priority)}`,
                   padding: "0.1rem 0.4rem",
                   flexShrink: 0,
-                  opacity: 0.8,
                   borderRadius: RADIUS.pill,
                 }}
               >

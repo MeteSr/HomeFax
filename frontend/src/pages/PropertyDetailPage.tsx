@@ -286,7 +286,7 @@ export default function PropertyDetailPage() {
                 {!fsboRecord?.isFsbo && (
                   <Button
                     variant="outline"
-                    style={{ borderColor: COLORS.sage, color: COLORS.sage }}
+                    style={{ borderColor: COLORS.sageText, color: COLORS.sageText }}
                     onClick={() => setModals((m) => ({ ...m, listing: true }))}
                   >
                     List Your Home
@@ -427,7 +427,7 @@ export default function PropertyDetailPage() {
                 <div>
                   {actions.map((action, i) => (
                     <div key={i} style={{ padding: "0.75rem 1.25rem", borderBottom: i < actions.length - 1 ? `1px solid ${COLORS.rule}` : "none", display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
-                      <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sage, marginTop: "0.1rem", flexShrink: 0 }}>→</span>
+                      <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sageText, marginTop: "0.1rem", flexShrink: 0 }}>→</span>
                       <span style={{ fontFamily: UI.mono, fontSize: "0.65rem", color: UI.ink, lineHeight: 1.5 }}>{action}</span>
                     </div>
                   ))}
@@ -514,7 +514,7 @@ export default function PropertyDetailPage() {
               style={{
                 padding: "0.625rem 1.25rem",
                 fontFamily: FONTS.sans, fontSize: "0.875rem", fontWeight: tab === t.key ? 600 : 400,
-                color: tab === t.key ? COLORS.sage : COLORS.plumMid,
+                color: tab === t.key ? COLORS.sageText : COLORS.plumMid,
                 background: "none",
                 border: "none",
                 borderBottom: tab === t.key ? `2px solid ${COLORS.sage}` : "2px solid transparent",

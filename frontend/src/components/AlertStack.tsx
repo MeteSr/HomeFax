@@ -9,7 +9,7 @@ const UI = {
   paper:    COLORS.white,
   rule:     COLORS.rule,
   inkLight: COLORS.plumMid,
-  sage:     COLORS.sage,
+  sage:     COLORS.sageText,
   mono:     FONTS.sans,
 };
 
