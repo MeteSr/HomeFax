@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.6.0"
+DEPLOY_SCRIPT_VERSION="1.7.0"
 ENV=${1:-local}
 
 echo "============================================"
@@ -202,7 +202,7 @@ fi
 #   non-local — three-phase: create (sequential) → build (sequential) → install
 #               (sequential). Sequential builds avoid concurrent writes to local.ids.json.
 
-CANISTERS=(auth property job contractor quote payment photo report maintenance market sensor monitoring listing agent recurring bills ai_proxy)
+CANISTERS=(auth property job contractor quote payment photo report maintenance market sensor monitoring listing agent recurring bills ai_proxy audit)
 LOG_DIR=$(mktemp -d /tmp/icp-deploy-XXXXXX)
 trap 'rm -rf "$LOG_DIR"' EXIT
 DEPLOY_PRINCIPAL=$(icp identity principal)
@@ -530,7 +530,7 @@ echo "============================================"
 DEPLOYER=$(icp identity principal)
 echo "  Deployer principal: $DEPLOYER"
 
-ADMIN_CANISTERS=(property job contractor quote photo report maintenance market sensor listing agent recurring bills monitoring)
+ADMIN_CANISTERS=(property job contractor quote photo report maintenance market sensor listing agent recurring bills monitoring audit)
 
 for canister in "${ADMIN_CANISTERS[@]}"; do
   echo "  $canister: adding deployer as admin..."
@@ -561,6 +561,7 @@ QUOTE_ID=$(icp canister status quote -e "$ENV" --id-only 2>/dev/null || echo "")
 SENSOR_ID=$(icp canister status sensor -e "$ENV" --id-only 2>/dev/null || echo "")
 REPORT_ID=$(icp canister status report -e "$ENV" --id-only 2>/dev/null || echo "")
 BILLS_ID=$(icp canister status bills -e "$ENV" --id-only 2>/dev/null || echo "")
+AUDIT_ID=$(icp canister status audit -e "$ENV" --id-only 2>/dev/null || echo "")
 
 if [ -n "$JOB_ID" ]      && [ -n "$PAYMENT_ID" ];    then
   echo "  Wiring payment -> job..."
@@ -696,6 +697,20 @@ if [ -n "$SENSOR_ID" ] && [ -n "$JOB_ID" ]; then
   icp canister call job addTrustedCanister "(principal \"$SENSOR_ID\")"       -e "$ENV" 2>/dev/null &
 fi
 
+# Wire audit canister: register source canisters as trusted writers, then give
+# each source canister the audit canister ID so it can call log().
+if [ -n "$AUDIT_ID" ]; then
+  for src_canister in auth payment property report photo; do
+    src_id=$(icp canister status "$src_canister" -e "$ENV" --id-only 2>/dev/null || echo "")
+    if [ -n "$src_id" ]; then
+      echo "  audit: trusting $src_canister ($src_id)..."
+      icp canister call audit addTrustedCanister "(principal \"$src_id\")" -e "$ENV" 2>/dev/null &
+      echo "  $src_canister: wiring audit canister ($AUDIT_ID)..."
+      icp canister call "$src_canister" setAuditCanisterId "(principal \"$AUDIT_ID\")" -e "$ENV" 2>/dev/null &
+    fi
+  done
+fi
+
 wait
 
 # ── AI Proxy canister — wire API keys from environment ────────────────────────
@@ -766,7 +781,7 @@ echo "============================================"
 FREEZE_CANISTERS=(
   auth property job contractor quote payment photo
   report maintenance market sensor monitoring listing
-  agent recurring bills ai_proxy
+  agent recurring bills ai_proxy audit
 )
 FREEZE_THRESHOLD=2592000  # 30 days in seconds
 if command -v dfx >/dev/null 2>&1; then

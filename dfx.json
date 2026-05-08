@@ -72,6 +72,10 @@
       "main": "backend/recurring/main.mo",
       "type": "motoko"
     },
+    "audit": {
+      "main": "backend/audit/main.mo",
+      "type": "motoko"
+    },
     "frontend": {
       "dependencies": [
         "auth", "property", "job", "contractor", "quote", "payment",
