@@ -308,7 +308,7 @@ export default function JobCreatePage() {
               <p style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.1em", textTransform: "uppercase", color: UI.ink, marginBottom: "0.2rem" }}>
                 I did this myself (DIY)
               </p>
-              <p style={{ fontSize: "0.75rem", color: UI.inkLight, fontWeight: 300 }}>
+              <p style={{ fontSize: "0.75rem", color: form.isDiy ? UI.ink : UI.inkLight, fontWeight: 300 }}>
                 {form.isDiy ? "Your signature verifies this record." : "Toggle on if you performed the work yourself."}
               </p>
             </div>
