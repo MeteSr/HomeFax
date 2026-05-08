@@ -133,7 +133,7 @@ Upgrade when you're ready. Cancel anytime.
                 position: "relative",
               }}>
                 {isPopular && (
-                  <div style={{ display: "inline-flex", alignItems: "center", background: COLORS.sage, color: COLORS.white, padding: "3px 12px", borderRadius: 100, fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", background: COLORS.sage, color: COLORS.plum, padding: "3px 12px", borderRadius: 100, fontSize: "0.7rem", fontWeight: 600, marginBottom: "0.75rem" }}>
                     Most Popular
                   </div>
                 )}
@@ -144,7 +144,7 @@ Upgrade when you're ready. Cancel anytime.
                   <span style={{ fontFamily: FONTS.serif, fontWeight: 900, fontSize: "2.5rem", lineHeight: 1, color: isPopular ? COLORS.white : COLORS.plum }}>
                     ${plan.price}
                   </span>
-                  <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: COLORS.plumMid }}>/{plan.period}</span>
+                  <span style={{ fontFamily: FONTS.sans, fontSize: "0.65rem", color: isPopular ? COLORS.sageLight : COLORS.plumMid }}>/{plan.period}</span>
                   {plan.period === "year" && (
                     <div style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", color: isPopular ? COLORS.sageLight : COLORS.sageText, marginTop: "0.25rem", letterSpacing: "0.04em" }}>
                       ${(plan.price / 12).toFixed(2)}/mo billed annually
@@ -187,7 +187,7 @@ Upgrade when you're ready. Cancel anytime.
                   variant={isPopular ? "secondary" : "outline"}
                   style={{
                     width: "100%",
-                    ...(isPopular && { backgroundColor: COLORS.sage, color: COLORS.white, borderColor: COLORS.sage }),
+                    ...(isPopular && { backgroundColor: COLORS.sage, color: COLORS.plum, borderColor: COLORS.sage }),
                     ...(plan.tier === "Basic"   && { backgroundColor: COLORS.plum, color: COLORS.white, borderColor: COLORS.plum }),
                     ...(plan.tier === "Premium" && { backgroundColor: COLORS.plumDark, color: COLORS.white, borderColor: COLORS.sage, borderWidth: "2px" }),
                   }}

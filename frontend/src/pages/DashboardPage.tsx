@@ -653,7 +653,7 @@ export default function DashboardPage() {
       content: (
         <div>
           <p style={{ fontFamily: FONTS.sans, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.rust, marginBottom: "0.125rem" }}>
-            Home Pulse · <span style={{ opacity: 0.7 }}>{pulseTip.category}</span>
+            Home Pulse · <span style={{ color: COLORS.plumMid }}>{pulseTip.category}</span>
           </p>
           <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.1rem" }}>{pulseTip.headline}</p>
           <p style={{ fontSize: "0.78rem", color: UI.inkLight, fontWeight: 300 }}>{pulseTip.detail}</p>
