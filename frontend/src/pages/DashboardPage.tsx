@@ -741,10 +741,10 @@ export default function DashboardPage() {
             background: COLORS.sageLight, flexWrap: "wrap", borderRadius: RADIUS.sm,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: UI.sage }}>
+              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.sageText }}>
                 Score Up +{delta} pts
               </span>
-              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sageText, opacity: 0.75 }}>
+              <span style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: COLORS.sageText }}>
                 {scoreValueChange != null
                   ? `— Your score went from ${prevScore} to ${homegenticScore}. A ${delta}-point increase ≈ $${scoreValueChange.toLocaleString()} in estimated home value.`
                   : `— Your HomeGentic Score is now ${homegenticScore}. Keep logging jobs to grow your record.`}

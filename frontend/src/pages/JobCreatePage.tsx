@@ -224,7 +224,7 @@ export default function JobCreatePage() {
           <ArrowLeft size={14} /> Back
         </button>
 
-        <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: UI.rust, marginBottom: "0.5rem" }}>
+        <div style={{ fontFamily: UI.mono, fontSize: "0.65rem", letterSpacing: "0.18em", textTransform: "uppercase", color: COLORS.sageText, marginBottom: "0.5rem" }}>
           Maintenance Record
         </div>
         <h1 style={{ fontFamily: UI.serif, fontWeight: 900, fontSize: "1.75rem", lineHeight: 1, marginBottom: "0.375rem" }}>

@@ -62,8 +62,9 @@ export function ConstructionPhotoUpload({
       <PhotoQuotaDisplay {...quota} onUpgrade={onUpgradeQuota} />
 
       <div>
-        <label className="form-label">Document Type</label>
+        <label className="form-label" htmlFor="docType">Document Type</label>
         <select
+          id="docType"
           value={docType}
           onChange={(e) => setDocType(e.target.value)}
           className="form-input"
@@ -92,7 +93,7 @@ export function ConstructionPhotoUpload({
         <p style={{ fontFamily: UI.mono, fontSize: "0.7rem", color: UI.inkLight }}>
           Drag files here or click to browse
         </p>
-        <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, marginTop: "0.25rem", opacity: 0.7 }}>
+        <p style={{ fontFamily: UI.mono, fontSize: "0.6rem", color: UI.inkLight, marginTop: "0.25rem" }}>
           PNG, JPG, PDF, HEIC up to 10 MB each
         </p>
         <input
