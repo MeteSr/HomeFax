@@ -38,6 +38,7 @@ import { idlFactory as sensorIdlFactory }      from "../../services/sensor";
 import { idlFactory as maintenanceIdlFactory } from "../../services/maintenance";
 import { idlFactory as agentIdlFactory }       from "../../services/agent";
 import { idlFactory as billsIdlFactory }       from "../../services/billService";
+import { idlFactory as aiProxyIdlFactory }     from "../../services/aiProxy";
 
 // ── Helper ─���──────────────────────────────────────────────────────────────────
 
@@ -431,6 +432,7 @@ describe("contractor IDL factory", () => {
       "register",
       "setJobCanisterId",
       "submitReview",
+      "updateNotificationPrefs",
       "updateProfile",
       "verifyContractor",
     ]);
@@ -686,5 +688,53 @@ describe("bills IDL factory", () => {
 
   it("full signature snapshot", () => {
     expect(extractService(billsIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── Contractor notification preferences (#279) ────────────────────────────────
+
+describe("contractor IDL factory — notification preferences (#279)", () => {
+  it("exposes updateNotificationPrefs method", () => {
+    const svc = extractService(contractorIdlFactory);
+    expect(Object.keys(svc)).toContain("updateNotificationPrefs");
+  });
+
+  it("updateNotificationPrefs is an update call (not query)", () => {
+    const svc = extractService(contractorIdlFactory);
+    expect(svc.updateNotificationPrefs.mode).not.toContain("query");
+  });
+
+  it("ContractorProfile includes notifyEmail, notifyPush, alertZips fields in snapshot", () => {
+    expect(extractService(contractorIdlFactory)).toMatchSnapshot();
+  });
+});
+
+// ── ai_proxy IDL factory ──────────────────────────────────────────────────────
+
+describe("ai_proxy IDL factory", () => {
+  it("exposes the expected methods", () => {
+    const svc = extractService(aiProxyIdlFactory);
+    const methods = Object.keys(svc).sort();
+    expect(methods).toContain("sendEmail");
+    expect(methods).toContain("sendInviteEmail");
+    expect(methods).toContain("sendJobMatchEmail");
+  });
+
+  it("sendJobMatchEmail is an update call (not query)", () => {
+    const svc = extractService(aiProxyIdlFactory);
+    expect(svc.sendJobMatchEmail.mode).not.toContain("query");
+  });
+
+  it("sendJobMatchEmail takes contractorEmail, jobId, serviceType, zipCode args", () => {
+    const svc = extractService(aiProxyIdlFactory);
+    // 4 positional args: to, jobId, serviceType, zipCode
+    expect(svc.sendJobMatchEmail.args).toHaveLength(4);
+    svc.sendJobMatchEmail.args.forEach((arg: string) => {
+      expect(arg).toContain("text");
+    });
+  });
+
+  it("full signature snapshot", () => {
+    expect(extractService(aiProxyIdlFactory)).toMatchSnapshot();
   });
 });

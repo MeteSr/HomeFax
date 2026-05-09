@@ -745,6 +745,51 @@ persistent actor AiProxy {
     )
   };
 
+  /// Notify a contractor that a new job matching their specialties and zip code is available.
+  /// Called by the job canister (cross-canister) after a new job is created.
+  ///
+  /// Args: contractorEmail, jobId, serviceType, zipCode
+  public shared(msg) func sendJobMatchEmail(
+    contractorEmail : Text,
+    jobId           : Text,
+    serviceType     : Text,
+    zipCode         : Text,
+  ) : async Result.Result<Text, Error> {
+    if (not isTrustedCanister(msg.caller) and not isAdmin(msg.caller))
+      return #err(#NotAuthorized);
+    if (Text.size(resendApiKey) == 0) return #err(#KeyNotConfigured);
+
+    let html =
+      "<!DOCTYPE html><html><body style=\"font-family:'IBM Plex Sans',Arial,sans-serif;background:#F4F1EB;margin:0;padding:2rem;\">" #
+      "<div style=\"max-width:480px;margin:0 auto;background:#fff;border:1px solid #C8C3B8;padding:2rem;\">" #
+      "<p style=\"font-family:Georgia,serif;font-size:1.5rem;font-weight:900;margin:0 0 1.5rem;color:#2E2540;\">Home<span style=\"color:#5A7A5A;\">Gentic</span></p>" #
+      "<p style=\"color:#2E2540;margin-bottom:1rem;\">A new job matching your trade is available near you.</p>" #
+      "<div style=\"background:#F0F4F0;border:1px solid #C8C3B8;padding:1rem;margin-bottom:1.5rem;\">" #
+      "<table style=\"width:100%;border-collapse:collapse;font-size:0.875rem;color:#2E2540;\">" #
+      "<tr><td style=\"padding:0.375rem 0;color:#7A7268;width:40%;\">Service</td><td><strong>" # serviceType # "</strong></td></tr>" #
+      "<tr><td style=\"padding:0.375rem 0;color:#7A7268;\">Zip Code</td><td><strong>" # zipCode # "</strong></td></tr>" #
+      "<tr><td style=\"padding:0.375rem 0;color:#7A7268;\">Job ID</td><td>" # jobId # "</td></tr>" #
+      "</table></div>" #
+      "<p style=\"color:#7A7268;font-size:0.75rem;margin-top:1.5rem;line-height:1.6;\">Log in to HomeGentic to view details and submit a quote.</p>" #
+      "<hr style=\"border:none;border-top:1px solid #C8C3B8;margin:1.5rem 0;\"/>" #
+      "<p style=\"color:#7A7268;font-size:0.7rem;\">HomeGentic - Verified Home History - Internet Computer blockchain</p>" #
+      "</div></body></html>";
+
+    let textBody =
+      "A new " # serviceType # " job is available in " # zipCode # ".\n\n" #
+      "Job ID: " # jobId # "\n\n" #
+      "Log in to HomeGentic to view details and submit a quote.";
+
+    await sendEmail(
+      contractorEmail,
+      "New " # serviceType # " job available in " # zipCode,
+      html,
+      ?textBody,
+      null,
+      null,
+    )
+  };
+
   // ── Admin functions ────────────────────────────────────────────────────────
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
