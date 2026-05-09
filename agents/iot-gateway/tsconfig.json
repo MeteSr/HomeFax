@@ -8,7 +8,12 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@icp-sdk/core/agent": ["./node_modules/@icp-sdk/core/lib/cjs/agent/index.d.ts"],
+      "@icp-sdk/core/identity": ["./node_modules/@icp-sdk/core/lib/cjs/identity/index.d.ts"],
+      "@icp-sdk/core/candid": ["./node_modules/@icp-sdk/core/lib/cjs/candid/index.d.ts"]
+    }
   },
   "include": ["*.ts"],
   "exclude": ["dist", "node_modules"]

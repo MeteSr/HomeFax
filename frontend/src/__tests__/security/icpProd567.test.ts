@@ -219,16 +219,15 @@ describe("PROD.8 — deploy.sh wires tier propagation from payment to property/q
   });
 });
 
-// ── SEC.2 — updateCallLimits is transient (resets on upgrade, prevents unbounded growth) ──
+// ── SEC.2 — updateCallLimits is stable (survives upgrades, prevents reset-to-bypass attack) ──
 
-describe("SEC.2 — updateCallLimits declared as transient var in every canister", () => {
+describe("SEC.2 — updateCallLimits declared as stable let in every canister", () => {
   // In a `persistent actor`, all `let`/`var` declarations are implicitly stable.
-  // The rate-limit sliding-window map grows with every unique caller and is
-  // never pruned — if left stable it accumulates across upgrades indefinitely.
-  // `transient` resets the map to Map.empty() on every canister upgrade,
-  // which is the correct behaviour for an in-memory rate-limit window.
-  // `transient let` is preferred over `transient var` for Map bindings because
-  // Map is mutated in-place (Motoko M0244: "var never reassigned, use let").
+  // updateCallLimits must NOT be `transient` so that a forced canister upgrade
+  // cannot be used to reset rate-limit windows and bypass cycle-drain protection.
+  // The map is keyed by Principal+method and bounded by active callers — unbounded
+  // growth is not a concern in practice.
+  // `private let` (stable) is the correct declaration; `transient let` is forbidden.
 
   const backendDirs = readdirSync(resolve(ROOT, "backend")).filter((d) => {
     try {
@@ -239,29 +238,25 @@ describe("SEC.2 — updateCallLimits declared as transient var in every canister
     }
   });
 
-  it("every canister that declares updateCallLimits uses 'transient let' or 'transient var'", () => {
+  it("every canister that declares updateCallLimits uses stable 'private let' (not transient)", () => {
     for (const dir of backendDirs) {
       const src = readFileSync(resolve(ROOT, "backend", dir, "main.mo"), "utf-8");
-      if (!src.includes("updateCallLimits")) continue; // canister has no rate limiter — skip
+      if (!src.includes("updateCallLimits")) continue;
       expect(
         src,
-        `backend/${dir}/main.mo: updateCallLimits must be 'transient let' (or 'transient var') to reset on upgrade`
-      ).toMatch(/transient\s+(?:let|var)\s+updateCallLimits/);
+        `backend/${dir}/main.mo: updateCallLimits must be stable 'private let' — not transient`
+      ).not.toMatch(/transient\s+(?:let|var)\s+updateCallLimits/);
     }
   });
 
-  it("no canister uses bare 'var updateCallLimits' or bare 'let updateCallLimits' (would persist across upgrades)", () => {
+  it("every canister that declares updateCallLimits uses 'let' not 'var' (Map is mutated in-place)", () => {
     for (const dir of backendDirs) {
       const src = readFileSync(resolve(ROOT, "backend", dir, "main.mo"), "utf-8");
-      // Must NOT match `var/let updateCallLimits` without `transient` in front
+      if (!src.includes("updateCallLimits")) continue;
       expect(
         src,
-        `backend/${dir}/main.mo: updateCallLimits must not be plain 'var' (use transient let)`
-      ).not.toMatch(/(?<!transient\s)(?<!\w)var\s+updateCallLimits/);
-      expect(
-        src,
-        `backend/${dir}/main.mo: updateCallLimits must not be plain 'let' (use transient let)`
-      ).not.toMatch(/(?<!transient\s)(?<!\w)let\s+updateCallLimits/);
+        `backend/${dir}/main.mo: updateCallLimits must be declared with 'let', not 'var'`
+      ).toMatch(/private\s+let\s+updateCallLimits/);
     }
   });
 });

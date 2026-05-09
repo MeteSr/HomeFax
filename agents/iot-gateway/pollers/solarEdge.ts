@@ -127,7 +127,7 @@ export function startSolarEdgePoller(intervalMs = 15 * 60 * 1000): () => void {
   async function tick(): Promise<void> {
     if (stopped) return;
     try {
-      await pollOnce(config);
+      await pollOnce(config!);
     } catch (err) {
       logger.error("solaredge-poller", "tick error", { error: String(err) });
     } finally {

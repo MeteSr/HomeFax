@@ -162,6 +162,101 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+// ── Payload validators ───────────────────────────────────────────────────────
+// Runtime schema checks applied after HMAC verification. Return an error string
+// on the first failed constraint, or null when the payload is acceptable.
+
+function isStr(v: unknown, max: number): boolean {
+  return typeof v === "string" && v.length > 0 && v.length <= max;
+}
+function isOptStr(v: unknown, max: number): boolean {
+  return v == null || (typeof v === "string" && v.length <= max);
+}
+function isFiniteNum(v: unknown, min: number, max: number): boolean {
+  return typeof v === "number" && isFinite(v) && v >= min && v <= max;
+}
+function isOptFiniteNum(v: unknown, min: number, max: number): boolean {
+  return v == null || isFiniteNum(v, min, max);
+}
+
+function validateNestPayload(body: unknown): string | null {
+  if (!body || typeof body !== "object") return "body must be an object";
+  const b = body as Record<string, unknown>;
+  if (!isStr(b.eventId, 128)) return "eventId missing or too long";
+  if (!isStr(b.timestamp, 64)) return "timestamp missing or too long";
+  const ru = b.resourceUpdate as Record<string, unknown> | undefined;
+  if (!ru || typeof ru !== "object") return "resourceUpdate missing";
+  if (!isStr(ru.name, 256)) return "resourceUpdate.name missing or too long";
+  const traits = ru.traits as Record<string, unknown> | undefined;
+  if (traits) {
+    const t = traits["sdm.devices.traits.Temperature"] as Record<string, unknown> | undefined;
+    if (t && !isOptFiniteNum(t.ambientTemperatureCelsius, -100, 100))
+      return "ambientTemperatureCelsius out of range";
+    const h = traits["sdm.devices.traits.Humidity"] as Record<string, unknown> | undefined;
+    if (h && !isOptFiniteNum(h.ambientHumidityPercent, 0, 100))
+      return "ambientHumidityPercent out of range";
+  }
+  return null;
+}
+
+function validateEcobeePayload(body: unknown): string | null {
+  if (!body || typeof body !== "object") return "body must be an object";
+  const b = body as Record<string, unknown>;
+  if (!isStr(b.thermostatId, 64)) return "thermostatId missing or too long";
+  const alerts = b.alerts as unknown[] | undefined;
+  if (alerts != null) {
+    if (!Array.isArray(alerts) || alerts.length > 100) return "alerts must be an array of at most 100 entries";
+    for (const a of alerts) {
+      if (!a || typeof a !== "object") return "each alert must be an object";
+      const al = a as Record<string, unknown>;
+      if (!isOptStr(al.message, 500)) return "alert.message too long";
+      if (!isOptFiniteNum(al.value, -200, 200)) return "alert.value out of range";
+    }
+  }
+  const rt = b.runtime as Record<string, unknown> | undefined;
+  if (rt) {
+    if (!isOptFiniteNum(rt.actualTemperature, -2000, 2000)) return "runtime.actualTemperature out of range";
+    if (!isOptFiniteNum(rt.actualHumidity, 0, 100)) return "runtime.actualHumidity out of range";
+  }
+  return null;
+}
+
+function validateMoenFloPayload(body: unknown): string | null {
+  if (!body || typeof body !== "object") return "body must be an object";
+  const b = body as Record<string, unknown>;
+  if (!isStr(b.deviceId, 128)) return "deviceId missing or too long";
+  if (!isStr(b.alertType, 64)) return "alertType missing or too long";
+  if (!isStr(b.timestamp, 64)) return "timestamp missing or too long";
+  const sev = b.severity;
+  if (sev !== "critical" && sev !== "warning" && sev !== "info") return "severity must be critical|warning|info";
+  if (!isOptFiniteNum(b.flowRateLpm, 0, 10_000)) return "flowRateLpm out of range";
+  if (!isOptFiniteNum(b.pressurePsi, 0, 1_000)) return "pressurePsi out of range";
+  if (!isOptStr(b.message, 500)) return "message too long";
+  return null;
+}
+
+function validateSmartThingsEvent(e: unknown): string | null {
+  if (!e || typeof e !== "object") return "event must be an object";
+  const ev = e as Record<string, unknown>;
+  if (!isStr(ev.deviceId, 128)) return "deviceEvent.deviceId missing or too long";
+  if (!isStr(ev.capability, 128)) return "deviceEvent.capability missing or too long";
+  if (!isStr(ev.attribute, 128)) return "deviceEvent.attribute missing or too long";
+  if (typeof ev.value === "string" && ev.value.length > 256) return "deviceEvent.value string too long";
+  if (typeof ev.value === "number" && !isFinite(ev.value)) return "deviceEvent.value is non-finite";
+  return null;
+}
+
+function validateLGThinQPayload(body: unknown): string | null {
+  if (!body || typeof body !== "object") return "body must be an object";
+  const b = body as Record<string, unknown>;
+  if (!isStr(b.deviceId, 128)) return "deviceId missing or too long";
+  if (!isStr(b.type, 64)) return "type missing or too long";
+  if (!isStr(b.code, 64)) return "code missing or too long";
+  if (!isOptStr(b.severity, 16)) return "severity too long";
+  if (!isOptStr(b.message, 500)) return "message too long";
+  return null;
+}
+
 // ── POST /webhooks/nest ───────────────────────────────────────────────────────
 // Google SDM API sends Pub/Sub push messages here.
 // Validates the Google-Cloud-Token bearer token.
@@ -177,6 +272,12 @@ app.post("/webhooks/nest", nestLimiter, async (req: Request, res: Response): Pro
     return;
   }
 
+  const nestErr = validateNestPayload(req.body);
+  if (nestErr) {
+    logger.warn("nest", `rejected — invalid payload: ${nestErr}`, { reqId });
+    res.status(400).json({ error: nestErr });
+    return;
+  }
   const body = req.body as NestWebhookEvent;
   const raw = JSON.stringify(body);
 
@@ -210,6 +311,12 @@ app.post("/webhooks/ecobee", ecobeeLimiter, async (req: Request, res: Response):
     return;
   }
 
+  const ecobeeErr = validateEcobeePayload(req.body);
+  if (ecobeeErr) {
+    logger.warn("ecobee", `rejected — invalid payload: ${ecobeeErr}`, { reqId });
+    res.status(400).json({ error: ecobeeErr });
+    return;
+  }
   const body = req.body as EcobeeWebhookEvent;
   const raw = JSON.stringify(body);
 
@@ -243,6 +350,12 @@ app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Respons
     return;
   }
 
+  const moenErr = validateMoenFloPayload(req.body);
+  if (moenErr) {
+    logger.warn("moen-flo", `rejected — invalid payload: ${moenErr}`, { reqId });
+    res.status(400).json({ error: moenErr });
+    return;
+  }
   const body = req.body as MoenFloWebhookEvent;
   const raw = JSON.stringify(body);
 
@@ -316,6 +429,11 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
 
   for (const e of events) {
     if (!e.deviceEvent) continue;
+    const stErr = validateSmartThingsEvent(e.deviceEvent);
+    if (stErr) {
+      logger.warn("smartthings", `skipped event — invalid payload: ${stErr}`, { reqId });
+      continue;
+    }
     const raw     = JSON.stringify(e.deviceEvent);
     const reading = handleSmartThingsEvent(e.deviceEvent, raw);
     if (!reading) continue;
@@ -414,6 +532,12 @@ app.post("/webhooks/lgthinq", lgThinQLimiter, async (req: Request, res: Response
     return;
   }
 
+  const lgErr = validateLGThinQPayload(req.body);
+  if (lgErr) {
+    logger.warn("lgthinq", `rejected — invalid payload: ${lgErr}`, { reqId });
+    res.status(400).json({ error: lgErr });
+    return;
+  }
   const body = req.body as LGThinQPCCEvent;
   const raw  = JSON.stringify(body);
 

@@ -394,7 +394,7 @@ persistent actor Property {
 
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
 
-  private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
   private transient var rateLimitSweepTick : Nat = 0;
   /// Admin-adjustable rate limit — default 30/min.
   private var maxUpdatesPerMin : Nat = 30;
