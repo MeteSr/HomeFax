@@ -140,7 +140,7 @@ persistent actor Contractor {
 
   // ─── Update-call rate limit (cycle-drain protection) ────────────────────────
 
-  private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
   /// Admin-adjustable rate limit — default 30/min.
   private var maxUpdatesPerMin : Nat = 30;
   private let ONE_MINUTE_NS       : Int = 60_000_000_000;
@@ -353,6 +353,18 @@ persistent actor Contractor {
     if (args.serviceZips.size() > 50) return #err(#InvalidInput("serviceZips cannot exceed 50 entries"));
     for (zip in args.serviceZips.vals()) {
       if (not validateZip(zip)) return #err(#InvalidInput("serviceZips: '" # zip # "' is not a valid 5-digit zip code"));
+    };
+    switch (args.bio) {
+      case (?b) { if (Text.size(b) > 1000) return #err(#InvalidInput("bio exceeds 1000 characters")) };
+      case null {};
+    };
+    switch (args.licenseNumber) {
+      case (?l) { if (Text.size(l) > 50) return #err(#InvalidInput("licenseNumber exceeds 50 characters")) };
+      case null {};
+    };
+    switch (args.serviceArea) {
+      case (?s) { if (Text.size(s) > 200) return #err(#InvalidInput("serviceArea exceeds 200 characters")) };
+      case null {};
     };
 
     switch (Map.get(contractors, Principal.compare, msg.caller)) {

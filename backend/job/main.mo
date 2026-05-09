@@ -149,7 +149,7 @@ persistent actor Job {
 
   // ─── Rate Limit (cycle-drain protection, §enterprise/#46) ────────────────────
 
-  private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
 
   /// Admin-adjustable rate limit — default 30/min.
   private var maxUpdatesPerMin : Nat = 30;

@@ -90,7 +90,7 @@ persistent actor class Auth(initDeployer : Principal) {
   private var auditCanisterId : ?Principal = null;
 
   /// Per-principal update-call rate limiting (cycle-drain protection).
-  private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
 
   // ─── Stable State ────────────────────────────────────────────────────────────
 

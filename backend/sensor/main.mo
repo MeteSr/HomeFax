@@ -150,14 +150,14 @@ persistent actor Sensor {
 
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
 
-  private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
   /// Admin-adjustable rate limit — default 30/min.
   private var maxUpdatesPerMin : Nat = 30;
   private let ONE_MINUTE_NS       : Int = 60_000_000_000;
 
   /// Per-device last auto-job creation timestamp (internal device ID → nanoseconds).
   /// Transient: resets on upgrade — acceptable, it is a DoS guard not business logic.
-  private transient let lastCriticalJobNs : Map.Map<Text, Int> = Map.empty();
+  private let lastCriticalJobNs : Map.Map<Text, Int> = Map.empty();
   private let CRITICAL_JOB_COOLDOWN_NS : Int = 60 * 60 * 1_000_000_000;  // 1 hour
 
   private func tryConsumeUpdateSlot(caller: Principal) : Bool {

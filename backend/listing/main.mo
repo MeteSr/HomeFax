@@ -119,7 +119,7 @@ persistent actor Listing {
 
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
 
-  private transient let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private let updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty();
   /// Admin-adjustable rate limit — default 30/min.
   private var maxUpdatesPerMin : Nat = 30;
   private let ONE_MINUTE_NS       : Int = 60_000_000_000;
@@ -508,6 +508,10 @@ persistent actor Listing {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
     if (Text.size(listing.propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
     if (listing.listPriceCents == 0)        return #err(#InvalidInput("listPriceCents must be positive"));
+    switch (listing.description) {
+      case (?d) { if (Text.size(d) > 5000) return #err(#InvalidInput("description exceeds 5000 characters")) };
+      case null {};
+    };
     // Stamp the caller as the owner regardless of what was passed in the record.
     let stamped : PublicFsboListing = {
       propertyId        = listing.propertyId;

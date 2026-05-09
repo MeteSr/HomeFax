@@ -95,21 +95,19 @@ const ResultEventIDL = IDL.Variant({
   err: ErrorIDL,
 });
 
-function sensorIdlFactory(): IDL.InterfaceFactory {
-  return IDL.Service({
-    recordEvent: IDL.Func(
-      [
-        IDL.Text,           // externalDeviceId
-        SensorEventTypeIDL, // eventType
-        IDL.Float64,        // value
-        IDL.Text,           // unit
-        IDL.Text,           // rawPayload
-      ],
-      [ResultEventIDL],
-      []  // update call
-    ),
-  });
-}
+const sensorIdlFactory: IDL.InterfaceFactory = (_idl) => IDL.Service({
+  recordEvent: IDL.Func(
+    [
+      IDL.Text,           // externalDeviceId
+      SensorEventTypeIDL, // eventType
+      IDL.Float64,        // value
+      IDL.Text,           // unit
+      IDL.Text,           // rawPayload
+    ],
+    [ResultEventIDL],
+    []  // update call
+  ),
+});
 
 // ── Actor interface ───────────────────────────────────────────────────────────
 

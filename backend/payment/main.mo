@@ -257,7 +257,7 @@ persistent actor Payment {
 
   // ─── Rate Limit (cycle-drain protection) ────────────────────────────────────
 
-  private transient let updateCallLimits        : Map.Map<Text, (Nat, Int)> = Map.empty();
+  private let updateCallLimits        : Map.Map<Text, (Nat, Int)> = Map.empty();
   // CallerGuard: prevents concurrent subscribe() calls from the same principal
   private transient let activeSubscribers       : Map.Map<Text, Bool>       = Map.empty();
   private var maxUpdatesPerMin        : Nat = 30;

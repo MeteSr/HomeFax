@@ -154,7 +154,7 @@ export function startEnphasePoller(intervalMs = 60_000): () => void {
   async function tick(): Promise<void> {
     if (stopped) return;
     try {
-      await pollOnce(config);
+      await pollOnce(config!);
     } catch (err) {
       logger.error("enphase-poller", "tick error", { error: String(err) });
     } finally {
