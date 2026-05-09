@@ -503,6 +503,23 @@ persistent actor Report {
 
   // ─── Share Link Management ────────────────────────────────────────────────────
 
+  /// Returns true if the property has at least one active, non-expired share link
+  /// with Public visibility. Called cross-canister by the listing canister to
+  /// populate hasPublicReport in FSBO listings without exposing the full link list.
+  public query func hasActivePublicShareLink(propertyId: Text) : async Bool {
+    let now = Time.now();
+    var found = false;
+    for (l in Map.values(links)) {
+      if (l.propertyId == propertyId and l.isActive and l.visibility == #Public) {
+        switch (l.expiresAt) {
+          case null   { found := true };
+          case (?exp) { if (now < exp) found := true };
+        };
+      };
+    };
+    found
+  };
+
   /// List all share links the caller created for a property.
   public shared(msg) func listShareLinks(propertyId: Text) : async [ShareLink] {
     Iter.toArray(Iter.filter(Map.values(links), func(l: ShareLink) : Bool {

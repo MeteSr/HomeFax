@@ -305,6 +305,9 @@ describe("listing IDL factory", () => {
       "listActiveFsboListings",
       "removeListingPhoto",
       "reorderListingPhotos",
+      "setJobCanisterId",
+      "setPropertyCanisterId",
+      "setReportCanisterId",
       "submitProposal",
     ]);
   });
@@ -506,6 +509,7 @@ describe("report IDL factory", () => {
       "generateRiskProfile",
       "getReport",
       "getRiskProfile",
+      "hasActivePublicShareLink",
       "listShareLinks",
       "revokeShareLink",
     ]);

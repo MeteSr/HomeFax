@@ -394,6 +394,19 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
       res.status(400).json({ error: "missing confirmationUrl" });
       return;
     }
+    // SSRF guard: only allow https requests to the SmartThings API host.
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(confirmationUrl);
+    } catch {
+      res.status(400).json({ error: "invalid confirmationUrl" });
+      return;
+    }
+    if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "api.smartthings.com") {
+      logger.warn("smartthings", "rejected CONFIRMATION — confirmationUrl not on api.smartthings.com", { reqId });
+      res.status(400).json({ error: "confirmationUrl must be https://api.smartthings.com/..." });
+      return;
+    }
     try {
       await fetch(confirmationUrl);
       logger.info("smartthings", "webhook confirmed", { reqId, confirmationUrl });

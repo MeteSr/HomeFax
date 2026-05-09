@@ -182,6 +182,9 @@ jobs:
           dfx canister call report      setPropertyCanisterId   "(\"$PROPERTY_ID\")"
           dfx canister call report      setSensorCanisterId     "(\"$SENSOR_ID\")"
           dfx canister call report      setRiskJobCanisterId    "(\"$JOB_ID\")"
+          dfx canister call listing     setPropertyCanisterId   "(\"$PROPERTY_ID\")"
+          dfx canister call listing     setJobCanisterId        "(\"$JOB_ID\")"
+          dfx canister call listing     setReportCanisterId     "(\"$REPORT_ID\")"
 
           # ── Tier propagation wiring ──────────────────────────────────────────
           dfx canister call property addAdmin "(principal \"$PAYMENT_ID\")"
@@ -308,6 +311,9 @@ jobs:
           dfx canister call report      setPropertyCanisterId   "(\"$PROPERTY_ID\")"
           dfx canister call report      setSensorCanisterId     "(\"$SENSOR_ID\")"
           dfx canister call report      setRiskJobCanisterId    "(\"$JOB_ID\")"
+          dfx canister call listing     setPropertyCanisterId   "(\"$PROPERTY_ID\")"
+          dfx canister call listing     setJobCanisterId        "(\"$JOB_ID\")"
+          dfx canister call listing     setReportCanisterId     "(\"$REPORT_ID\")"
 
           dfx canister call property addAdmin "(principal \"$PAYMENT_ID\")"
           dfx canister call quote    addAdmin "(principal \"$PAYMENT_ID\")"
