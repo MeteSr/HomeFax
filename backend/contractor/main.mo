@@ -56,6 +56,9 @@ persistent actor Contractor {
     jobsCompleted: Nat;
     isVerified:    Bool;
     createdAt:     Int;
+    notifyEmail:   ?Text;   // override email for job-match notifications (null = use profile email)
+    notifyPush:    ?Bool;   // opt-in to mobile push for new job matches
+    alertZips:     [Text];  // subset of serviceZips to receive alerts for (empty = all serviceZips)
   };
 
   /// On-chain credential minted when a job is fully verified.
@@ -95,6 +98,12 @@ persistent actor Contractor {
     licenseNumber: ?Text;
     serviceArea:   ?Text;
     serviceZips:   [Text];  // 5-digit zip codes; empty = serve all (opt-in)
+  };
+
+  public type NotificationPrefsArgs = {
+    notifyEmail: ?Text;
+    notifyPush:  ?Bool;
+    alertZips:   [Text];
   };
 
   public type Error = {
@@ -279,6 +288,9 @@ persistent actor Contractor {
       jobsCompleted = 0;
       isVerified    = false;
       createdAt     = Time.now();
+      notifyEmail   = null;
+      notifyPush    = null;
+      alertZips     = [];
     };
     Map.add(contractors, Principal.compare, msg.caller, profile);
     #ok(profile)
@@ -384,6 +396,9 @@ persistent actor Contractor {
           jobsCompleted = existing.jobsCompleted;
           isVerified    = existing.isVerified;
           createdAt     = existing.createdAt;
+          notifyEmail   = existing.notifyEmail;
+          notifyPush    = existing.notifyPush;
+          alertZips     = existing.alertZips;
         };
         Map.add(contractors, Principal.compare, msg.caller, updated);
         #ok(updated)
@@ -488,6 +503,9 @@ persistent actor Contractor {
           jobsCompleted = existing.jobsCompleted + 1;
           isVerified    = existing.isVerified;
           createdAt     = existing.createdAt;
+          notifyEmail   = existing.notifyEmail;
+          notifyPush    = existing.notifyPush;
+          alertZips     = existing.alertZips;
         };
         Map.add(contractors, Principal.compare, contractorPrincipal, updated);
         #ok(())
@@ -534,8 +552,53 @@ persistent actor Contractor {
           jobsCompleted = existing.jobsCompleted;
           isVerified    = true;
           createdAt     = existing.createdAt;
+          notifyEmail   = existing.notifyEmail;
+          notifyPush    = existing.notifyPush;
+          alertZips     = existing.alertZips;
         };
         Map.add(contractors, Principal.compare, c, updated);
+        #ok(updated)
+      };
+    }
+  };
+
+  /// Update a contractor's notification preferences (email override, push opt-in, alert zips).
+  /// Caller must be the contractor themselves.
+  public shared(msg) func updateNotificationPrefs(args: NotificationPrefsArgs) : async Result.Result<ContractorProfile, Error> {
+    switch (requireActive(msg.caller)) { case (#err e) return #err e; case _ {} };
+    if (args.alertZips.size() > 50) return #err(#InvalidInput("alertZips cannot exceed 50 entries"));
+    for (zip in args.alertZips.vals()) {
+      if (not validateZip(zip)) return #err(#InvalidInput("alertZips: '" # zip # "' is not a valid 5-digit zip code"));
+    };
+    switch (args.notifyEmail) {
+      case (?e) {
+        if (Text.size(e) > 254) return #err(#InvalidInput("notifyEmail exceeds 254 characters"));
+        if (not Text.contains(e, #text "@")) return #err(#InvalidInput("notifyEmail must contain @"));
+      };
+      case null {};
+    };
+    switch (Map.get(contractors, Principal.compare, msg.caller)) {
+      case null { #err(#NotFound) };
+      case (?existing) {
+        let updated: ContractorProfile = {
+          id            = existing.id;
+          name          = existing.name;
+          specialties   = existing.specialties;
+          email         = existing.email;
+          phone         = existing.phone;
+          bio           = existing.bio;
+          licenseNumber = existing.licenseNumber;
+          serviceArea   = existing.serviceArea;
+          serviceZips   = existing.serviceZips;
+          trustScore    = existing.trustScore;
+          jobsCompleted = existing.jobsCompleted;
+          isVerified    = existing.isVerified;
+          createdAt     = existing.createdAt;
+          notifyEmail   = args.notifyEmail;
+          notifyPush    = args.notifyPush;
+          alertZips     = args.alertZips;
+        };
+        Map.add(contractors, Principal.compare, msg.caller, updated);
         #ok(updated)
       };
     }

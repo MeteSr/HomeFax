@@ -113,7 +113,10 @@ Owns property registration, ownership verification, transfers, and room/fixture 
 | `getReviewsForContractor` | query | `(Principal)` | All reviews for a contractor |
 | `recordJobVerified` | update | `(...)` | Trusted: increment verified job count |
 | `getCredentials` | query | `(Principal)` | Verified job credentials for a contractor |
+| `updateNotificationPrefs` | update | `(NotificationPrefsArgs)` | Update job-match notification settings; `NotificationPrefsArgs = { notifyEmail: ?Text, notifyPush: ?Bool, alertZips: [Text] }` |
 | `verifyContractor` | update | `(Principal)` | Admin: mark contractor as verified |
+
+**ContractorProfile new fields (after #279):** `notifyEmail: ?Text` (override email for alerts; null = use profile email), `notifyPush: ?Bool` (opt-in to mobile push), `alertZips: [Text]` (subset of serviceZips to receive alerts for; empty = all serviceZips).
 
 **Admin / Lifecycle:** `addAdmin(Principal)` · `setUpdateRateLimit(Nat)` · `setJobCanisterId(Text)` · `setContractorCanisterId(Text)` · `addTrustedCanister(Principal)` · `removeTrustedCanister(Principal)` · `pause(?Nat)` · `unpause()`
 
@@ -319,3 +322,25 @@ Realtor profiles and performance tracking.
 | `getVisitLogs` | query | `(serviceId: Text)` | All visit logs for a service |
 
 **Admin / Lifecycle:** `addAdmin(Principal)` · `setUpdateRateLimit(Nat)` · `pause(?Nat)` · `unpause()`
+
+---
+
+## AI Proxy Canister
+
+Handles IC HTTP outcalls: permit imports (ArcGIS / OpenPermit) and transactional email (Resend). All email methods require the Resend API key to be set via `setResendApiKey`.
+
+| Method | Type | Signature | Description |
+|---|---|---|---|
+| `sendEmail` | update | `(to, subject, htmlBody, textBody?: Text, replyTo?: Text, fromName?: Text)` | Send a transactional email via Resend |
+| `sendInviteEmail` | update | `(to, contractorName?: Text, propertyAddress, serviceType, amount?: Nat, verifyUrl)` | Branded contractor job co-sign invite |
+| `sendJobMatchEmail` | update | `(contractorEmail, jobId, serviceType, zipCode)` | Notify a contractor of a new job match; trusted-canister-only |
+| `getPriceBenchmark` | query | `(serviceType, zipCode)` | Price benchmark lookup |
+| `instantForecast` | query | `(address, yearBuilt, sqFt?: Text, state)` | 10-year maintenance forecast |
+| `importPermits` | update | `(propertyId, address, lat, lng)` | Fetch + import permits from ArcGIS/OpenPermit |
+| `emailUsage` | query | `()` | Resend usage summary |
+| `getKeyStatus` | query | `()` | Which API keys are configured |
+| `getMetrics` | query | `()` | Canister metrics |
+
+**`sendJobMatchEmail` caller restriction:** only principals added via `addTrustedCanister` or admins may call this. The job canister is wired as a trusted canister during deploy.
+
+**Admin / Lifecycle:** `addAdmin(Principal)` · `setResendApiKey(Text)` · `setResendFromAddress(Text)` · `setOpenPermitApiKey(Text)` · `addTrustedCanister(Principal)` · `removeTrustedCanister(Principal)` · `setUpdateRateLimit(Nat)` · `pause(?Nat)` · `unpause()`

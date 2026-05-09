@@ -26,6 +26,14 @@ export const idlFactory = ({ IDL }: any) => {
     jobsCompleted: IDL.Nat,
     isVerified:    IDL.Bool,
     createdAt:     IDL.Int,
+    notifyEmail:   IDL.Opt(IDL.Text),
+    notifyPush:    IDL.Opt(IDL.Bool),
+    alertZips:     IDL.Vec(IDL.Text),
+  });
+  const NotificationPrefsArgs = IDL.Record({
+    notifyEmail: IDL.Opt(IDL.Text),
+    notifyPush:  IDL.Opt(IDL.Bool),
+    alertZips:   IDL.Vec(IDL.Text),
   });
   const RegisterArgs = IDL.Record({
     name:        IDL.Text,
@@ -117,6 +125,11 @@ export const idlFactory = ({ IDL }: any) => {
     ),
     verifyContractor: IDL.Func(
       [IDL.Principal],
+      [IDL.Variant({ ok: ContractorProfile, err: Error })],
+      []
+    ),
+    updateNotificationPrefs: IDL.Func(
+      [NotificationPrefsArgs],
       [IDL.Variant({ ok: ContractorProfile, err: Error })],
       []
     ),

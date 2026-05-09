@@ -64,6 +64,11 @@ export const idlFactory = ({ IDL }: any) => {
       [ResultTextError],
       []
     ),
+    sendJobMatchEmail  : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [ResultTextError],
+      []
+    ),
 
     // ── Admin ────────────────────────────────────────────────────────────────
     addAdmin            : IDL.Func([IDL.Principal], [ResultOkError], []),

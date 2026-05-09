@@ -229,6 +229,50 @@ Max response: 200 tokens, 2–3 sentences, tuned for speech rhythm.
 
 ---
 
+## Notification Relay
+
+A standalone Node/Express server at `agents/notifications/` (port 3002 locally) fans out push
+notifications to registered devices and browsers. ICP canisters cannot initiate outbound
+HTTP, so this relay bridges the gap.
+
+### Channels
+
+| Channel | Transport | Store | Dispatcher |
+|---|---|---|---|
+| Mobile (iOS) | APNs | `store.ts` | `apns.ts` |
+| Mobile (Android) | FCM | `store.ts` | `fcm.ts` |
+| Browser (any) | VAPID Web Push | `vapidStore.ts` | `vapidDispatcher.ts` |
+
+### Endpoints
+
+| Endpoint | Description |
+|---|---|
+| `GET  /api/push/vapid-public-key` | Returns the VAPID public key for browser `PushManager.subscribe()` |
+| `POST /api/push/vapid-subscribe` | Register a browser `PushSubscription` (`{ principal, subscription }`) |
+| `POST /api/push/vapid-unsubscribe` | Remove a subscription by endpoint URL (`{ endpoint }`) |
+| `POST /api/push/register` | Register an Expo/APNs/FCM device token (`{ principal, token, platform }`) |
+| `POST /api/push/unregister` | Remove a device token (`{ token }`) |
+| `POST /api/push/send` | Internal: fan-out to all devices + browsers for a principal; requires `x-internal-key` header in production |
+
+### VAPID key setup (first-time only)
+
+```bash
+node -e "const wp=require('web-push'); const k=wp.generateVAPIDKeys(); console.log(k)"
+```
+
+Add the generated keys to `.env`:
+```
+VAPID_PUBLIC_KEY=<base64url public key>
+VAPID_PRIVATE_KEY=<base64url private key>
+VAPID_SUBJECT=mailto:admin@homegentic.io
+```
+
+### Job-match notifications (#279)
+
+When a new job is created, the job canister cross-calls `ai_proxy.sendJobMatchEmail` for each contractor whose `specialties` + `alertZips` (or `serviceZips` if `alertZips` is empty) overlap the job. `ai_proxy` sends a branded HTML email via Resend. Contractors opt in to email alerts via `contractor.updateNotificationPrefs(notifyEmail, notifyPush, alertZips)`.
+
+---
+
 ## Public-Facing Pages (No Login Required)
 
 These pages are designed for buyers, curious homeowners, and SEO — they
@@ -322,6 +366,7 @@ frontend/
 
 agents/
   voice/          — Node/Express proxy for Claude API (port 3001)
+  notifications/  — Push notification relay: Expo (APNs/FCM) + VAPID web push (port 3002)
   iot-gateway/    — IoT event ingestion (scaffolded)
 
 tests/
@@ -339,7 +384,8 @@ docs/             — ARCHITECTURE.md, API.md, DEPLOYMENT.md, SECURITY.md, BACKL
 ```bash
 make dev          # replica + all 17 canisters + frontend in one command
 make frontend     # Vite dev server only (:5173)
-cd agents/voice && npm run dev   # voice proxy (:3001)
+cd agents/voice && npm run dev           # voice proxy (:3001)
+cd agents/notifications && npm run dev   # push notification relay (:3002)
 
 cd frontend && npm run test:unit          # Vitest unit tests
 npm run test:e2e                          # Playwright E2E (needs replica + frontend)
