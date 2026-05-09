@@ -108,6 +108,7 @@ listActiveFsboListings(0) -> (1) [query]
 removeListingPhoto(2) -> (1)
 reorderListingPhotos(2) -> (1)
 setJobCanisterId(1) -> (1)
+setMarketCanisterId(1) -> (1)
 setPropertyCanisterId(1) -> (1)
 setReportCanisterId(1) -> (1)
 submitProposal(11) -> (1)"

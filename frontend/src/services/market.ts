@@ -56,6 +56,9 @@ const neighbourhoodIdlFactory = ({ IDL }: any) => {
     getZipStats:              IDL.Func([IDL.Text],                               [Result_ZipStats],      ["query"]),
     getNeighborhoodPublicKey: IDL.Func([],                                       [IDL.Vec(IDL.Nat8)],   []),
     getMyScoreEncrypted:      IDL.Func([IDL.Vec(IDL.Nat8)],                      [Result_ScoreEnvelope],[]),
+    computePropertyScore:     IDL.Func([IDL.Text],                               [IDL.Opt(IDL.Nat)],    []),
+    setPropertyCanisterId:    IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
+    setJobCanisterId:         IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
   });
 };
 

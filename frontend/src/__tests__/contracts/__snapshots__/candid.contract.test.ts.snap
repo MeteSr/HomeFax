@@ -686,6 +686,15 @@ exports[`listing IDL factory > full signature snapshot 1`] = `
       "variant {ok; err:variant {InvalidInput:text; DeadlinePassed; NotFound; NotAuthorized; AlreadyCancelled}}",
     ],
   },
+  "setMarketCanisterId": {
+    "args": [
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {InvalidInput:text; DeadlinePassed; NotFound; NotAuthorized; AlreadyCancelled}}",
+    ],
+  },
   "setPropertyCanisterId": {
     "args": [
       "text",

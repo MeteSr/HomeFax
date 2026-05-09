@@ -306,6 +306,7 @@ describe("listing IDL factory", () => {
       "removeListingPhoto",
       "reorderListingPhotos",
       "setJobCanisterId",
+      "setMarketCanisterId",
       "setPropertyCanisterId",
       "setReportCanisterId",
       "submitProposal",

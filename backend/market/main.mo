@@ -182,6 +182,9 @@ persistent actor MarketIntelligence {
   private var isPaused:          Bool = false;
   private var pauseExpiryNs:     ?Int = null;
   private var adminListEntries: [Principal] = [];
+  /// Canister IDs for computePropertyScore — set post-deploy via setXxxCanisterId().
+  private var propCanisterId : Text = "";
+  private var jobCanisterId  : Text = "";
   // ─── Stable State ────────────────────────────────────────────────────────────
 
   private let snapshots  = Map.empty<Text, MarketSnapshot>();
@@ -572,6 +575,42 @@ persistent actor MarketIntelligence {
     )
   };
 
+  // ─── On-Chain Property Score ─────────────────────────────────────────────────
+
+  /// Compute the composite HomeGentic score (0-100) for a property by fetching
+  /// its job history and yearBuilt cross-canister, then applying the same
+  /// maintenance/modernization/verification formula used in analyzeCompetitivePosition.
+  ///
+  /// Returns null when either canister is not yet wired, the property is not found,
+  /// or the job list is empty (score would be 0, indistinguishable from no data).
+  /// Listing canister calls this during activateFsboListing so the FSBO buyer index
+  /// always shows an authoritative on-chain score rather than a caller-supplied value.
+  public shared func computePropertyScore(propertyId: Text) : async ?Nat {
+    if (propCanisterId == "" or jobCanisterId == "") return null;
+
+    let propActor = actor(propCanisterId) : actor {
+      getPropertyYearBuilt : query (Text) -> async ?Nat;
+    };
+    let jobActor = actor(jobCanisterId) : actor {
+      getJobSnapshotsForProperty : query (Text) -> async [JobSnapshot];
+    };
+
+    let yearBuilt = switch (await propActor.getPropertyYearBuilt(propertyId)) {
+      case null    { return null };
+      case (?y)    { y };
+    };
+
+    let snapshots = await jobActor.getJobSnapshotsForProperty(propertyId);
+    if (snapshots.size() == 0) return null;
+
+    let score = compositeScore(
+      maintenanceScore(snapshots),
+      modernizationScore(snapshots, yearBuilt),
+      verificationDepth(snapshots),
+    );
+    ?score
+  };
+
   // ─── Market Snapshot Management ───────────────────────────────────────────────
 
   /// Push a zip-level market snapshot. Admin only.
@@ -730,6 +769,20 @@ persistent actor MarketIntelligence {
   };
 
   // ─── Admin Functions ──────────────────────────────────────────────────────────
+
+  /// Wire the property canister for yearBuilt lookups in computePropertyScore.
+  public shared(msg) func setPropertyCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    propCanisterId := id;
+    #ok(())
+  };
+
+  /// Wire the job canister for job-snapshot lookups in computePropertyScore.
+  public shared(msg) func setJobCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    jobCanisterId := id;
+    #ok(())
+  };
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {

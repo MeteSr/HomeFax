@@ -44,6 +44,17 @@ persistent actor Job {
     #RejectedByHomeowner;        // homeowner declined — kept briefly for audit, then pruned
   };
 
+  /// Lightweight job summary consumed by the market canister's computePropertyScore.
+  /// serviceType is serialised to Text so the market canister avoids importing the
+  /// ServiceType variant; completedDate is converted to a calendar year.
+  public type JobSnapshot = {
+    serviceType:   Text;
+    completedYear: Nat;
+    amountCents:   Nat;
+    isDiy:         Bool;
+    isVerified:    Bool;
+  };
+
   public type Job = {
     id: Text;
     propertyId: Text;
@@ -338,6 +349,34 @@ persistent actor Job {
       Iter.filter(Map.values(jobs), func(j: Job) : Bool { j.propertyId == propertyId })
     );
     #ok(matches)
+  };
+
+  /// Returns a lightweight snapshot of all jobs for a property, suitable for
+  /// cross-canister consumption by the market canister's computePropertyScore.
+  public query func getJobSnapshotsForProperty(propertyId: Text) : async [JobSnapshot] {
+    let secsPerYear : Nat = 31_536_000;
+    Iter.toArray(Iter.map<Job, JobSnapshot>(
+      Iter.filter(Map.values(jobs), func(j: Job) : Bool { j.propertyId == propertyId }),
+      func(j: Job) : JobSnapshot {
+        let secsSince1970 = Int.abs(j.completedDate) / 1_000_000_000;
+        {
+          serviceType   = switch (j.serviceType) {
+            case (#HVAC)        "HVAC";
+            case (#Roofing)     "Roofing";
+            case (#Plumbing)    "Plumbing";
+            case (#Electrical)  "Electrical";
+            case (#Painting)    "Painting";
+            case (#Flooring)    "Flooring";
+            case (#Windows)     "Windows";
+            case (#Landscaping) "Landscaping";
+          };
+          completedYear = 1970 + secsSince1970 / secsPerYear;
+          amountCents   = j.amount;
+          isDiy         = j.isDiy;
+          isVerified    = j.verified;
+        }
+      }
+    ))
   };
 
   /// 3.3.2 — Unauthenticated public read: returns all jobs whose homeowner field
