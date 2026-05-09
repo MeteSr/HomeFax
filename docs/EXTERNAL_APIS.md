@@ -15,6 +15,7 @@ and where in the codebase each integration lives.
 | [Google Maps / Places](#3-google-maps--places) | Address autocomplete | `VITE_GOOGLE_MAPS_API_KEY` | Paid (per-request) | No — falls back to plain input |
 | [Google Fonts](#4-google-fonts) | Typography CDN | None | Free | No — fonts degrade gracefully |
 | [Firebase FCM](#5-firebase-cloud-messaging-fcm) | Mobile push notifications | `FCM_PROJECT_ID`, `FCM_SERVICE_ACCOUNT_JSON` | Free | No |
+| [VAPID Web Push](#5b-vapid-web-push) | Browser push notifications | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Free (self-hosted keys) | No |
 | [Google Nest SDM](#6-google-nest-sdm) | Thermostat webhooks | `NEST_WEBHOOK_SECRET` | Free | No |
 | [Ecobee](#7-ecobee) | Thermostat webhooks | `ECOBEE_WEBHOOK_SECRET` | Free | No |
 | [Moen Flo](#8-moen-flo) | Water sensor webhooks | `MOEN_FLO_WEBHOOK_SECRET` | Free | No |
@@ -230,6 +231,29 @@ See https://firebase.google.com/pricing
 
 **Notes:** The service account JSON should be kept server-side only and never
 committed to the repo.
+
+---
+
+## 5b. VAPID Web Push
+
+**Purpose:** Delivers push notifications to browsers (Chrome, Firefox, Edge, Safari 16.4+) without a native app. Uses the W3C Web Push protocol with VAPID authentication.
+
+**Env vars:** `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+
+**Pricing:** Free — keys are generated locally, no third-party service required.
+
+**Used in:**
+- `agents/notifications/vapidStore.ts` — browser subscription registry (endpoint-keyed)
+- `agents/notifications/vapidDispatcher.ts` — web-push fan-out; evicts 410 Gone subscriptions
+- `agents/notifications/server.ts` — `GET /api/push/vapid-public-key`, `POST /api/push/vapid-subscribe`, `POST /api/push/vapid-unsubscribe`
+- npm package: `web-push` (VAPID key generation + `sendNotification`)
+
+**Key generation (run once, store in `.env`):**
+```bash
+node -e "const wp=require('web-push'); const k=wp.generateVAPIDKeys(); console.log(JSON.stringify(k,null,2))"
+```
+
+**Notes:** VAPID keys are stable — regenerating them invalidates all existing browser subscriptions. The private key must remain server-side only.
 
 ---
 

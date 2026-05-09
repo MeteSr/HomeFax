@@ -96,6 +96,41 @@ planned local integration test path.
 Railway redeploys automatically on every push to `main`. No manual steps needed
 unless environment variables change.
 
+---
+
+## Notification Relay (Railway)
+
+The notification relay (`agents/notifications/`) is a separate Railway service.
+Deploy it as a second Railway service in the same project, pointing to `agents/notifications/Dockerfile`
+(or `Dockerfile` at repo root if a multi-service setup).
+
+### Required environment variables
+
+| Variable | Description |
+|---|---|
+| `NODE_ENV` | `production` |
+| `FRONTEND_ORIGIN` | Exact origin of the frontend canister (no trailing slash) |
+| `NOTIFICATIONS_PORT` | Port to listen on (Railway sets `PORT` automatically) |
+| `VAPID_PUBLIC_KEY` | Base64url VAPID public key (generate with `web-push`) |
+| `VAPID_PRIVATE_KEY` | Base64url VAPID private key — keep secret |
+| `VAPID_SUBJECT` | `mailto:` or URL identifying the sender (e.g. `mailto:admin@homegentic.io`) |
+| `INTERNAL_API_KEY` | Shared secret required in `x-internal-key` header on `POST /api/push/send` |
+| `APNS_KEY_ID` | Apple APNs Auth Key ID (for iOS push) |
+| `APNS_TEAM_ID` | Apple Team ID |
+| `APNS_PRIVATE_KEY` | APNs `.p8` private key content |
+| `FCM_PROJECT_ID` | Firebase project ID (for Android push) |
+| `FCM_SERVICE_ACCOUNT_JSON` | Firebase service account JSON (for Android push) |
+
+VAPID keys are stable — regenerate only if the private key is compromised (invalidates all existing browser subscriptions).
+
+### Generate VAPID keys (first-time only)
+
+```bash
+cd agents/notifications && node -e "const wp=require('web-push'); const k=wp.generateVAPIDKeys(); console.log(JSON.stringify(k,null,2))"
+```
+
+---
+
 ## Mainnet Deployment
 
 ```bash
