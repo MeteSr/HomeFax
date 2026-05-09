@@ -38,6 +38,14 @@ private transient var updateCallLimits : Map.Map<Text, (Nat, Int)> = Map.empty()
 SEC.2 tests assert that no canister uses bare `var updateCallLimits` (which
 would persist across upgrades in a `persistent actor`).
 
+**Known limitation — window resets on upgrade (H-2):** Because
+`updateCallLimits` is `transient`, every canister upgrade clears all
+per-principal sliding windows. A principal that was mid-window at upgrade
+time gets a fresh quota immediately after the upgrade completes. This is an
+accepted tradeoff: the window provides cycle-drain protection in steady
+state; the reset is bounded to the brief upgrade window and is preferable
+to unbounded stable-memory growth from accumulating stale principal entries.
+
 ## TOCTOU / CallerGuard (payment.subscribe)
 
 `payment.subscribe()` makes two sequential inter-canister `await` calls

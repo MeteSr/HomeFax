@@ -1317,6 +1317,13 @@ persistent actor Property {
     #ok(())
   };
 
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    admins := Array.filter<Principal>(admins, func(a) { a != target });
+    #ok(())
+  };
+
   public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     auditCanisterId := ?id;

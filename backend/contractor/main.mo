@@ -543,6 +543,13 @@ persistent actor Contractor {
     #ok(())
   };
 
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    admins := Array.filter<Principal>(admins, func(a) { a != target });
+    #ok(())
+  };
+
   /// Register a canister principal as trusted for inter-canister calls.
   /// Trusted canisters (job) bypass per-principal rate limiting. Admin only.
   public shared(msg) func addTrustedCanister(p: Principal) : async Result.Result<(), Error> {

@@ -339,6 +339,24 @@ persistent actor Payment {
     #ok(())
   };
 
+  /// Add a new admin principal (existing admin only).
+  public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    if (not isAdmin(newAdmin)) {
+      adminEntries := Array.concat(adminEntries, [newAdmin]);
+    };
+    try { ignore await auditLog("AdminAdded", ?newAdmin, "caller=" # Principal.toText(msg.caller)) } catch _ {};
+    #ok(())
+  };
+
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    adminEntries := Array.filter<Principal>(adminEntries, func(a) { a != target });
+    try { ignore await auditLog("AdminRemoved", ?target, "caller=" # Principal.toText(msg.caller)) } catch _ {};
+    #ok(())
+  };
+
   public query func isAdminPrincipal(p: Principal) : async Bool {
     isAdmin(p)
   };

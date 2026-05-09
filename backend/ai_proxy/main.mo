@@ -756,6 +756,13 @@ persistent actor AiProxy {
     #ok(())
   };
 
+  /// Remove an existing admin principal (existing admin only).
+  public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
+    #ok(())
+  };
+
   public shared(msg) func setResendApiKey(key: Text) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#Unauthorized);
     resendApiKey := key;
