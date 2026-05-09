@@ -9,6 +9,7 @@
 import Array     "mo:core/Array";
 import Blob      "mo:core/Blob";
 import Debug     "mo:core/Debug";
+import Int       "mo:core/Int";
 import Map       "mo:core/Map";
 import Iter      "mo:core/Iter";
 import Nat       "mo:core/Nat";

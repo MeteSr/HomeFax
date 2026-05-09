@@ -174,6 +174,37 @@ describe.skip("registerProperty — duplicate address detection", () => {
   });
 });
 
+// ─── getPropertyYearBuilt ────────────────────────────────────────────────────
+
+describe.skipIf(!deployed)("getPropertyYearBuilt — cross-canister query IDL", () => {
+  let registeredId: string;
+  const YEAR_BUILT = 1998;
+
+  beforeAll(async () => {
+    const prop = await propertyService.registerProperty({
+      ...BASE,
+      address:   addr("year-built"),
+      yearBuilt: YEAR_BUILT,
+    });
+    registeredId = prop.id;
+  });
+
+  it("returns the yearBuilt for a registered property", async () => {
+    const year = await propertyService.getPropertyYearBuilt(registeredId);
+    expect(year).toBe(YEAR_BUILT);
+  });
+
+  it("returns null for an unknown property ID", async () => {
+    const year = await propertyService.getPropertyYearBuilt("DOES_NOT_EXIST_99999");
+    expect(year).toBeNull();
+  });
+
+  it("returns a numeric value (not a bigint)", async () => {
+    const year = await propertyService.getPropertyYearBuilt(registeredId);
+    expect(typeof year).toBe("number");
+  });
+});
+
 // ─── Tier enforcement ─────────────────────────────────────────────────────────
 // Skipped in integration: the CI test identity is granted Premium (20-property limit),
 // so the per-tier property cap cannot be exercised here without a dedicated Free identity.

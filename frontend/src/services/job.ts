@@ -180,6 +180,17 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
     ),
+    getJobSnapshotsForProperty: IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(IDL.Record({
+        serviceType:   IDL.Text,
+        completedYear: IDL.Nat,
+        amountCents:   IDL.Nat,
+        isDiy:         IDL.Bool,
+        isVerified:    IDL.Bool,
+      }))],
+      ["query"]
+    ),
     setPropertyCanisterId: IDL.Func(
       [IDL.Text],
       [IDL.Variant({ ok: IDL.Null, err: Error })],
@@ -191,6 +202,14 @@ export const idlFactory = ({ IDL }: any) => {
 // ─── TypeScript types ─────────────────────────────────────────────────────────
 
 export type JobStatus = "pending" | "in_progress" | "completed" | "verified" | "pending_homeowner_approval" | "rejected_by_homeowner";
+
+export interface JobSnapshot {
+  serviceType:   string;
+  completedYear: number;
+  amountCents:   number;
+  isDiy:         boolean;
+  isVerified:    boolean;
+}
 
 export interface Job {
   id: string;
@@ -303,6 +322,30 @@ function createJobService() {
     const result = await a.getJobsForProperty(propertyId);
     if ("ok" in result) return (result.ok as any[]).map(fromJob);
     throw new Error(Object.keys(result.err)[0]);
+  },
+
+  async getJobSnapshotsForProperty(propertyId: string): Promise<JobSnapshot[]> {
+    if (typeof window !== "undefined" && (window as any).__e2e_jobs) {
+      const year = new Date().getFullYear();
+      return ((window as any).__e2e_jobs as any[])
+        .filter((j: any) => String(j.propertyId) === String(propertyId))
+        .map((j: any) => ({
+          serviceType:   j.serviceType as string,
+          completedYear: j.date ? parseInt(j.date.split("-")[0], 10) : year,
+          amountCents:   j.amount as number,
+          isDiy:         j.isDiy as boolean,
+          isVerified:    j.status === "verified",
+        }));
+    }
+    const a = await getActor();
+    const snapshots = await a.getJobSnapshotsForProperty(propertyId);
+    return (snapshots as any[]).map((s: any) => ({
+      serviceType:   s.serviceType as string,
+      completedYear: Number(s.completedYear),
+      amountCents:   Number(s.amountCents),
+      isDiy:         s.isDiy as boolean,
+      isVerified:    s.isVerified as boolean,
+    }));
   },
 
   async getAll(): Promise<Job[]> {
