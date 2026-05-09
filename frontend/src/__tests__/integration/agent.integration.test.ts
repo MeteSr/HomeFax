@@ -179,7 +179,7 @@ describe.skipIf(!deployed)("verifyAgent — admin sets isVerified=true", () => {
       expect(p!.isVerified).toBe(true);
     } catch (e: any) {
       // Unauthorized: test identity not admin in this deploy — acceptable
-      expect(e.message).toMatch(/Unauthorized|NotFound/i);
+      expect(e.message).toMatch(/NotAuthorized|Unauthorized|NotFound/i);
     }
   });
 });

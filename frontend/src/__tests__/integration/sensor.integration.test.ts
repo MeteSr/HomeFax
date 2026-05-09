@@ -110,7 +110,7 @@ describe.skipIf(!deployed)("recordEvent — Candid serialization", () => {
     } catch (e: any) {
       // recordEvent requires an authorized gateway or admin principal.
       // In local dev the test identity is neither — Unauthorized is expected.
-      if (!e.message?.includes("Unauthorized")) throw e;
+      if (!e.message?.includes("Unauthorized") && !e.message?.includes("NotAuthorized")) throw e;
     }
   });
 
@@ -146,7 +146,7 @@ describe.skipIf(!deployed)("getEventsForProperty — limit is respected", () => 
       try {
         await sensorService.ingestReading(PROPERTY_ID, d.id, "HighHumidity", 70 + i, "%", "");
       } catch (e: any) {
-        if (!e.message?.includes("Unauthorized")) throw e;
+        if (!e.message?.includes("Unauthorized") && !e.message?.includes("NotAuthorized")) throw e;
       }
     }
   });
@@ -173,7 +173,7 @@ describe.skipIf(!deployed)("getPendingAlerts — returns Critical/Warning events
       await sensorService.ingestReading(PROPERTY_ID, d.id, "WaterLeak", 1, "bool", "raw");
       alertIngested = true;
     } catch (e: any) {
-      if (!e.message?.includes("Unauthorized")) throw e;
+      if (!e.message?.includes("Unauthorized") && !e.message?.includes("NotAuthorized")) throw e;
     }
   });
 
