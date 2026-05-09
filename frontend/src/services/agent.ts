@@ -62,7 +62,7 @@ export const idlFactory = ({ IDL }: any) => {
     transactionId: IDL.Text,
   });
   const Error = IDL.Variant({
-    NotFound: IDL.Null, AlreadyExists: IDL.Null, Unauthorized: IDL.Null,
+    NotFound: IDL.Null, AlreadyExists: IDL.Null, NotAuthorized: IDL.Null,
     Paused: IDL.Null, RateLimitExceeded: IDL.Null, DuplicateReview: IDL.Null,
     InvalidInput: IDL.Text,
   });

@@ -181,7 +181,7 @@ describe.skipIf(!deployed)("verifyContractor — admin flag", () => {
       expect(result.isVerified).toBe(true);
     } catch (e: any) {
       // Unauthorized: test identity is not admin — acceptable in non-seeded deploys
-      expect(e.message).toMatch(/Unauthorized|NotFound/i);
+      expect(e.message).toMatch(/NotAuthorized|Unauthorized|NotFound/i);
     }
   });
 });

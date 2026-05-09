@@ -45,7 +45,7 @@ const neighbourhoodIdlFactory = ({ IDL }: any) => {
   });
   const Error = IDL.Variant({
     NotFound:     IDL.Null,
-    Unauthorized: IDL.Null,
+    NotAuthorized: IDL.Null,
     InvalidInput: IDL.Text,
   });
   const Result_StoredScore   = IDL.Variant({ ok: StoredScore,   err: Error });

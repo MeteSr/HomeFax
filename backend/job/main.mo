@@ -68,7 +68,7 @@ persistent actor Job {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput: Text;
     #AlreadyVerified;
     #TierLimitReached: Text;
@@ -199,7 +199,7 @@ persistent actor Job {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
@@ -368,7 +368,7 @@ persistent actor Job {
         if (existing.verified) return #err(#AlreadyVerified);
         if (not isAdmin(msg.caller)) {
           let ok = await checkPropertyAuth(existing.propertyId, existing.homeowner, msg.caller, true);
-          if (not ok) return #err(#Unauthorized);
+          if (not ok) return #err(#NotAuthorized);
         };
 
         let updated: Job = {
@@ -408,7 +408,7 @@ persistent actor Job {
       case (?existing) {
         if (existing.verified) return #err(#AlreadyVerified);
         let authOk = await checkPropertyAuth(existing.propertyId, existing.homeowner, msg.caller, true);
-        if (not authOk) return #err(#Unauthorized);
+        if (not authOk) return #err(#NotAuthorized);
         if (existing.isDiy) return #err(#InvalidInput("Cannot link contractor to a DIY job"));
 
         let updated: Job = {
@@ -467,7 +467,7 @@ persistent actor Job {
         if (not isHomeowner and not isContractor) {
           Debug.print("job.verifyJob: unauthorized: " # Principal.toText(caller) # " job=" # jobId);
           countError("verifyJob");
-          return #err(#Unauthorized);
+          return #err(#NotAuthorized);
         };
 
         let newHomeownerSigned  = existing.homeownerSigned  or isHomeowner;
@@ -610,7 +610,7 @@ persistent actor Job {
   /// Wire the job canister to the contractor canister so trust scores
   /// auto-increment on job verification. Must be called once post-deploy.
   public shared(msg) func setContractorCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     contrCanisterId := id;
     #ok(())
   };
@@ -618,7 +618,7 @@ persistent actor Job {
   /// Wire the job canister to the property canister for ownership verification.
   /// Must be called once after both canisters are deployed.
   public shared(msg) func setPropertyCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     propCanisterId := id;
     #ok(())
   };
@@ -626,27 +626,27 @@ persistent actor Job {
   /// Wire the job canister to the payment canister for tier-based cap enforcement.
   /// Must be called once after both canisters are deployed.
   public shared(msg) func setPaymentCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     payCanisterId := id;
     #ok(())
   };
 
   /// Authorize a Sensor canister principal to call createSensorJob().
   public shared(msg) func addSensorCanister(sensor: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     authorizedSensors := Array.concat(authorizedSensors, [sensor]);
     #ok(())
   };
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
-    if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -656,7 +656,7 @@ persistent actor Job {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
@@ -665,7 +665,7 @@ persistent actor Job {
   /// Trusted canisters bypass per-principal rate limiting and may call
   /// restricted functions (e.g. createSensorJob). Admin only.
   public shared(msg) func addTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isTrustedCanister(p)) {
       trustedCanisterEntries := Array.concat(trustedCanisterEntries, [p]);
     };
@@ -673,7 +673,7 @@ persistent actor Job {
   };
 
   public shared(msg) func removeTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     trustedCanisterEntries := Array.filter<Principal>(trustedCanisterEntries, func(t) { t != p });
     #ok(())
   };
@@ -683,7 +683,7 @@ persistent actor Job {
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -693,7 +693,7 @@ persistent actor Job {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())
@@ -823,7 +823,7 @@ persistent actor Job {
     };
 
     let invOk = await checkPropertyAuth(job.propertyId, job.homeowner, msg.caller, true);
-    if (not invOk) return #err(#Unauthorized);
+    if (not invOk) return #err(#NotAuthorized);
     if (job.isDiy)                   return #err(#InvalidInput("DIY jobs do not require contractor signature"));
     if (job.contractorSigned)        return #err(#InvalidInput("Contractor has already signed this job"));
 
@@ -1036,7 +1036,7 @@ persistent actor Job {
     };
 
     let approveOk = await checkPropertyAuth(existing.propertyId, existing.homeowner, msg.caller, true);
-    if (not approveOk) return #err(#Unauthorized);
+    if (not approveOk) return #err(#NotAuthorized);
     if (existing.status != #PendingHomeownerApproval) return #err(#InvalidInput("Job is not pending approval"));
 
     let updated : Job = {
@@ -1075,7 +1075,7 @@ persistent actor Job {
     };
 
     let rejectOk = await checkPropertyAuth(existing.propertyId, existing.homeowner, msg.caller, true);
-    if (not rejectOk) return #err(#Unauthorized);
+    if (not rejectOk) return #err(#NotAuthorized);
     if (existing.status != #PendingHomeownerApproval) return #err(#InvalidInput("Job is not pending approval"));
 
     Map.remove(jobs, Text.compare, jobId);

@@ -143,7 +143,7 @@ persistent actor Report {
     #NotFound;
     #Expired;
     #Revoked;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput      : Text;
     /// Caller attempted to share a report for an unverified property.
     /// The property must reach #Basic or #Premium before a share link
@@ -223,7 +223,7 @@ persistent actor Report {
 
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       // 14.4.4 — auto-expire timed pauses
       switch (pauseExpiryNs) {
@@ -516,7 +516,7 @@ persistent actor Report {
       case null { #err(#NotFound) };
       case (?link) {
         if (link.createdBy != msg.caller and not isAdmin(msg.caller))
-          return #err(#Unauthorized);
+          return #err(#NotAuthorized);
         let revoked : ShareLink = {
           token            = link.token;
           snapshotId       = link.snapshotId;
@@ -545,20 +545,20 @@ persistent actor Report {
   /// Must be called once after both canisters are deployed.
   /// Once set, generateReport() enforces the verification gate.
   public shared(msg) func setPropertyCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     propCanisterId := id;
     #ok(())
   };
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
-    if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -569,13 +569,14 @@ persistent actor Report {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    try { ignore await auditLog("AuditCanisterSet", ?id, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     auditCanisterId := ?id;
     #ok(())
   };
@@ -595,15 +596,16 @@ persistent actor Report {
   /// Register a canister principal as trusted for inter-canister calls.
   /// Trusted canisters bypass per-principal rate limiting. Admin only.
   public shared(msg) func addTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isTrustedCanister(p)) {
       trustedCanisterEntries := Array.concat(trustedCanisterEntries, [p]);
     };
+    try { ignore await auditLog("TrustedCanisterAdded", ?p, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 
   public shared(msg) func removeTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     trustedCanisterEntries := Array.filter<Principal>(trustedCanisterEntries, func(t) { t != p });
     #ok(())
   };
@@ -615,7 +617,7 @@ persistent actor Report {
   /// Pause the canister. Pass durationSeconds = null for an indefinite pause.
   /// 14.4.4 — timed pauses auto-expire without requiring admin action.
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -626,7 +628,7 @@ persistent actor Report {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     try { ignore await auditLog("CanisterUnpaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};
@@ -674,7 +676,7 @@ persistent actor Report {
   public type RiskProfileError = {
     #NotFound;
     #Expired;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput : Text;
   };
 
@@ -733,7 +735,7 @@ persistent actor Report {
     expiryDays:     ?Nat,
     verificationLevel: Text
   ) : async Result.Result<RiskProfile, RiskProfileError> {
-    if (Principal.isAnonymous(msg.caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(msg.caller)) return #err(#NotAuthorized);
     if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId required"));
 
     let now = Time.now();
@@ -940,14 +942,14 @@ persistent actor Report {
 
   /// Wire the report canister to the sensor canister. Admin only.
   public shared(msg) func setSensorCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     sensorCanisterId := id;
     #ok(())
   };
 
   /// Wire the report canister to the job canister for risk profile queries. Admin only.
   public shared(msg) func setRiskJobCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     riskJobCanisterId := id;
     #ok(())
   };

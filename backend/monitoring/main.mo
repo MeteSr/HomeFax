@@ -126,7 +126,7 @@ persistent actor Monitoring {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput: Text;
   };
 
@@ -255,7 +255,7 @@ persistent actor Monitoring {
   };
 
   private func _requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
@@ -533,7 +533,7 @@ persistent actor Monitoring {
     canisterId: ?Principal,
     message: Text
   ) : async Result.Result<Alert, Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (Text.size(message) == 0)   return #err(#InvalidInput("message cannot be empty"));
     if (Text.size(message) > 2000) return #err(#InvalidInput("message exceeds 2000 characters"));
     let id = nextAlertId();
@@ -626,7 +626,7 @@ persistent actor Monitoring {
   /// Register a canister for cycle-level polling via checkCycleLevels().
   /// Admin-only. Safe to call multiple times — updates name if already registered.
   public shared(msg) func registerCanister(id: Principal, name: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (Text.size(name) == 0)   return #err(#InvalidInput("name cannot be empty"));
     // Remove existing entry for this id if present, then append.
     let filtered = Array.filter<TrackedCanister>(
@@ -638,7 +638,7 @@ persistent actor Monitoring {
 
   /// Remove a canister from the polling registry. Admin-only.
   public shared(msg) func unregisterCanister(id: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     trackedCanisterEntries := Array.filter<TrackedCanister>(
       trackedCanisterEntries, func(c) { c.id != id }
     );
@@ -652,7 +652,7 @@ persistent actor Monitoring {
 
   /// Update the low-cycle alert threshold. Default: 1T cycles. Admin-only.
   public shared(msg) func setLowCycleThreshold(threshold: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     lowCycleThresholdT := threshold;
     #ok(())
   };
@@ -818,7 +818,7 @@ persistent actor Monitoring {
   };
 
   public shared(msg) func resolveFrontendError(fingerprint: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     switch (Map.get(frontendErrors, Text.compare, fingerprint)) {
       case null { #err(#NotFound) };
       case (?existing) {
@@ -862,14 +862,14 @@ persistent actor Monitoring {
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
-      return #err(#Unauthorized);
+      return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -878,13 +878,13 @@ persistent actor Monitoring {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -894,7 +894,7 @@ persistent actor Monitoring {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())

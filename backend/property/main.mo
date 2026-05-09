@@ -1326,6 +1326,7 @@ persistent actor Property {
 
   public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    try { ignore await auditLog("AuditCanisterSet", ?id, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     auditCanisterId := ?id;
     #ok(())
   };
@@ -1349,6 +1350,7 @@ persistent actor Property {
     if (not isTrustedCanister(p)) {
       trustedCanisterEntries := Array.concat(trustedCanisterEntries, [p]);
     };
+    try { ignore await auditLog("TrustedCanisterAdded", ?p, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     #ok(())
   };
 

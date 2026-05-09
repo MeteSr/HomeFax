@@ -115,7 +115,7 @@ persistent actor Quote {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput: Text;
   };
 
@@ -198,7 +198,7 @@ persistent actor Quote {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
@@ -613,7 +613,7 @@ persistent actor Quote {
           case null { return #err(#NotFound) };
           case (?req) {
             let acceptOk = await checkPropertyAuth(req.propertyId, req.homeowner, msg.caller, true);
-            if (not acceptOk) return #err(#Unauthorized);
+            if (not acceptOk) return #err(#NotAuthorized);
             if (req.status == #Accepted or req.status == #Closed)
               return #err(#InvalidInput("Request is already closed"));
             if (req.status == #Cancelled)
@@ -685,7 +685,7 @@ persistent actor Quote {
       case null { #err(#NotFound) };
       case (?req) {
         let closeOk = await checkPropertyAuth(req.propertyId, req.homeowner, msg.caller, true);
-        if (not closeOk) return #err(#Unauthorized);
+        if (not closeOk) return #err(#NotAuthorized);
         if (req.status == #Accepted or req.status == #Closed)
           return #err(#InvalidInput("Request is already closed"));
         if (req.status == #Cancelled)
@@ -724,7 +724,7 @@ persistent actor Quote {
       case null { #err(#NotFound) };
       case (?req) {
         let cancelOk = await checkPropertyAuth(req.propertyId, req.homeowner, msg.caller, true);
-        if (not cancelOk) return #err(#Unauthorized);
+        if (not cancelOk) return #err(#NotAuthorized);
         switch (req.status) {
           case (#Open or #Quoted) {};
           case (#Accepted)  { return #err(#InvalidInput("Cannot cancel an accepted request")) };
@@ -915,7 +915,7 @@ persistent actor Quote {
       case null { return #err(#NotFound) };
       case (?req) {
         let revealOk = await checkPropertyAuth(req.propertyId, req.homeowner, msg.caller, true);
-        if (not revealOk) return #err(#Unauthorized);
+        if (not revealOk) return #err(#NotAuthorized);
 
         // Enforce: window must be closed before reveal
         switch (req.closeAt) {
@@ -996,7 +996,7 @@ persistent actor Quote {
   /// Called by an admin when a user's subscription changes.
   /// This is the only authoritative source for tier limits — callers cannot spoof.
   public shared(msg) func setTier(user: Principal, tier: SubscriptionTier) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     Map.add(tierGrants, Text.compare, Principal.toText(user), tier);
     #ok(())
   };
@@ -1004,7 +1004,7 @@ persistent actor Quote {
   /// Wire the quote canister to the payment canister for live tier enforcement.
   /// Must be called once after both canisters are deployed.
   public shared(msg) func setPaymentCanisterId(id: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     payCanisterId := Principal.toText(id);
     #ok(())
   };
@@ -1012,7 +1012,7 @@ persistent actor Quote {
   /// Wire the quote canister to the contractor canister for service-area filtering.
   /// When set, getOpenRequestsForMe() queries the contractor's serviceZips before filtering.
   public shared(msg) func setContractorCanisterId(id: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     contrCanisterId := Principal.toText(id);
     #ok(())
   };
@@ -1021,14 +1021,14 @@ persistent actor Quote {
   /// When set, quote creation uses the property owner's tier when the caller
   /// is a delegated manager.  Must be called once after both canisters are deployed.
   public shared(msg) func setPropertyCanisterId(id: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     propCanisterId := Principal.toText(id);
     #ok(())
   };
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
@@ -1036,7 +1036,7 @@ persistent actor Quote {
   /// Add an admin. First caller is bootstrapped without a check.
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
-      return #err(#Unauthorized);
+      return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -1045,13 +1045,13 @@ persistent actor Quote {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -1061,7 +1061,7 @@ persistent actor Quote {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())

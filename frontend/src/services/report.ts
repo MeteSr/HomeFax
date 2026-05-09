@@ -99,7 +99,7 @@ export const idlFactory = ({ IDL }: any) => {
     NotFound:            IDL.Null,
     Expired:             IDL.Null,
     Revoked:             IDL.Null,
-    Unauthorized:        IDL.Null,
+    NotAuthorized:       IDL.Null,
     InvalidInput:        IDL.Text,
     UnverifiedProperty:  IDL.Null,
   });
@@ -137,10 +137,10 @@ export const idlFactory = ({ IDL }: any) => {
   });
 
   const RiskProfileError = IDL.Variant({
-    NotFound:     IDL.Null,
-    Expired:      IDL.Null,
-    Unauthorized: IDL.Null,
-    InvalidInput: IDL.Text,
+    NotFound:      IDL.Null,
+    Expired:       IDL.Null,
+    NotAuthorized: IDL.Null,
+    InvalidInput:  IDL.Text,
   });
 
   return IDL.Service({

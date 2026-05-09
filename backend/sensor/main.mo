@@ -95,7 +95,7 @@ persistent actor Sensor {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput : Text;
     #AlreadyExists;
   };
@@ -183,7 +183,7 @@ persistent actor Sensor {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
@@ -352,7 +352,7 @@ persistent actor Sensor {
       case null { #err(#NotFound) };
       case (?d) {
         if (d.homeowner != msg.caller and not isAdmin(msg.caller))
-          return #err(#Unauthorized);
+          return #err(#NotAuthorized);
         let updated : SensorDevice = {
           id               = d.id;
           propertyId       = d.propertyId;
@@ -399,7 +399,7 @@ persistent actor Sensor {
     if (not isGateway(msg.caller) and not isAdmin(msg.caller)) {
       Debug.print("sensor.recordEvent: unauthorized caller: " # Principal.toText(msg.caller));
       countError("recordEvent");
-      return #err(#Unauthorized);
+      return #err(#NotAuthorized);
     };
 
     if (Text.size(rawPayload) > MAX_PAYLOAD_BYTES) {
@@ -505,28 +505,28 @@ persistent actor Sensor {
   /// Set the Job canister ID (text principal). Admin only.
   /// Must be called once after both canisters are deployed.
   public shared(msg) func setJobCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     jobCanisterId := id;
     #ok(())
   };
 
   /// Authorize an IoT gateway identity to call recordEvent().
   public shared(msg) func addGateway(gw: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     authorizedGateways := Array.concat(authorizedGateways, [gw]);
     #ok(())
   };
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
-      return #err(#Unauthorized);
+      return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -535,13 +535,13 @@ persistent actor Sensor {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -551,7 +551,7 @@ persistent actor Sensor {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())

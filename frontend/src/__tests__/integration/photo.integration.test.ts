@@ -126,7 +126,7 @@ describe.skipIf(!deployed)("deletePhoto — removes record", () => {
     } catch (e: any) {
       // Unauthorized when propCanisterId is configured and the test property
       // doesn't exist in the property canister — expected in local integration runs.
-      if (e.message === "Unauthorized") return;
+      if (e.message === "NotAuthorized" || e.message === "Unauthorized") return;
       throw e;
     }
 

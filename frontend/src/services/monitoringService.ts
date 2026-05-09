@@ -52,7 +52,7 @@ export const idlFactory = ({ IDL }: any) => {
   });
   const Error = IDL.Variant({
     NotFound:     IDL.Null,
-    Unauthorized: IDL.Null,
+    NotAuthorized: IDL.Null,
     InvalidInput: IDL.Text,
   });
   const ResultUnit = IDL.Variant({ ok: IDL.Null, err: Error });
