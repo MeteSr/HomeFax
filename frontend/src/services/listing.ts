@@ -44,6 +44,10 @@ export const idlFactory = ({ IDL }: any) => {
     NotFound: IDL.Null, NotAuthorized: IDL.Null, InvalidInput: IDL.Text,
     AlreadyCancelled: IDL.Null, DeadlinePassed: IDL.Null,
   });
+  const PanoramaEntry = IDL.Record({
+    roomLabel: IDL.Text,
+    photoId:   IDL.Text,
+  });
   const PublicFsboListing = IDL.Record({
     propertyId:        IDL.Text,
     homeowner:         IDL.Principal,
@@ -147,10 +151,26 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Null, err: Error })],
       []
     ),
+    addPanorama: IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Variant({ ok: IDL.Null, err: Error })],
+      []
+    ),
+    getPanoramas: IDL.Func([IDL.Text], [IDL.Vec(PanoramaEntry)], ["query"]),
+    removePanorama: IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Variant({ ok: IDL.Null, err: Error })],
+      []
+    ),
   });
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface PanoramaEntry {
+  roomLabel: string;
+  photoId:   string;
+}
 
 export type BidRequestStatus  = "Open" | "Awarded" | "Cancelled";
 export type ProposalStatus    = "Pending" | "Accepted" | "Rejected" | "Withdrawn";
@@ -474,8 +494,10 @@ function createListingService() {
   let _counterSeq = 0;
   let _offerSeq   = 0;
   // propertyId → ordered photo IDs (mock path only)
-  const listingPhotoMap:    Map<string, string[]> = new Map();
-  const listingPhotoOwners: Map<string, string>   = new Map();
+  const listingPhotoMap:    Map<string, string[]>        = new Map();
+  const listingPhotoOwners: Map<string, string>          = new Map();
+  // propertyId → ordered panorama entries (mock path only)
+  const panoramaMap:        Map<string, PanoramaEntry[]> = new Map();
 
   async function getActor() {
     if (_actor) return _actor;
@@ -497,6 +519,7 @@ function createListingService() {
     _offerSeq   = 0;
     listingPhotoMap.clear();
     listingPhotoOwners.clear();
+    panoramaMap.clear();
   },
 
   // ── createBidRequest ────────────────────────────────────────────────────────
@@ -676,6 +699,33 @@ function createListingService() {
   async reorderListingPhotos(propertyId: string, photoIds: string[]): Promise<void> {
     const actor = await getActor();
     const result = await actor.reorderListingPhotos(propertyId, photoIds);
+    if ("err" in result) throw new Error(JSON.stringify(result.err));
+  },
+
+  // ── Panoramas (issue #308) ────────────────────────────────────────────────────
+
+  async addPanorama(propertyId: string, roomLabel: string, photoId: string): Promise<void> {
+    if (!LISTING_CANISTER_ID) return;
+    const actor = await getActor();
+    const result = await actor.addPanorama(propertyId, roomLabel, photoId);
+    if ("err" in result) throw new Error(JSON.stringify(result.err));
+  },
+
+  async getPanoramas(propertyId: string): Promise<PanoramaEntry[]> {
+    if (typeof window !== "undefined" && (window as any).__e2e_panoramas) {
+      const map = (window as any).__e2e_panoramas as Record<string, PanoramaEntry[]>;
+      return map[propertyId] ?? [];
+    }
+    if (!LISTING_CANISTER_ID) return [];
+    const actor = await getActor();
+    const raw = (await actor.getPanoramas(propertyId)) as Array<{ roomLabel: string; photoId: string }>;
+    return raw.map((r) => ({ roomLabel: r.roomLabel, photoId: r.photoId }));
+  },
+
+  async removePanorama(propertyId: string, roomLabel: string): Promise<void> {
+    if (!LISTING_CANISTER_ID) return;
+    const actor = await getActor();
+    const result = await actor.removePanorama(propertyId, roomLabel);
     if ("err" in result) throw new Error(JSON.stringify(result.err));
   },
 

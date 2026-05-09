@@ -36,8 +36,19 @@ if (typeof window.matchMedia !== "function") {
 // HTMLCanvasElement.getContext() stub — jsdom doesn't implement canvas rendering.
 // Without this, any component that touches <canvas> (e.g. QR-code libraries,
 // chart renderers) floods stderr with "Not implemented" warnings.
+// WebGL contexts return a minimal truthy stub so WebGL-detection code (like
+// PlayCanvas360Viewer) treats the environment as WebGL-capable; explicit
+// no-WebGL tests override this in their own beforeEach.
 if (typeof HTMLCanvasElement !== "undefined") {
-  HTMLCanvasElement.prototype.getContext = () => null;
+  // @ts-expect-error — test stub; returns a minimal truthy object for WebGL
+  // contexts so WebGL-detection code treats jsdom as WebGL-capable, while
+  // explicit no-WebGL tests override this in their own beforeEach.
+  HTMLCanvasElement.prototype.getContext = (contextType: string) => {
+    if (contextType === "webgl" || contextType === "experimental-webgl") {
+      return { isContextLost: () => false };
+    }
+    return null;
+  };
 }
 
 // window.indexedDB stub — jsdom provides no IDB implementation.
