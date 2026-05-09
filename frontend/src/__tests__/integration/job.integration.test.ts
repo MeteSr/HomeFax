@@ -294,3 +294,59 @@ describe.skipIf(!deployed)("createInviteToken / getJobByInviteToken — token li
     expect(signed.contractorSigned).toBe(true);
   });
 });
+
+// ─── getJobSnapshotsForProperty ───────────────────────────────────────────────
+
+describe.skipIf(!deployed)("getJobSnapshotsForProperty — cross-canister snapshot IDL", () => {
+  const propId = pid("snapshots");
+  let createdJobId: string;
+
+  beforeAll(async () => {
+    const job = await jobService.create({
+      ...BASE,
+      propertyId:    propId,
+      serviceType:   "HVAC",
+      amount:        150_000,
+      date:          "2023-08-10",
+      isDiy:         false,
+      contractorName: "Snapshot LLC",
+    });
+    createdJobId = job.id;
+  });
+
+  it("returns at least one snapshot for a property with jobs", async () => {
+    const snaps = await jobService.getJobSnapshotsForProperty(propId);
+    expect(snaps.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("serviceType is a plain Text string (not a Candid variant)", async () => {
+    const snaps = await jobService.getJobSnapshotsForProperty(propId);
+    const snap = snaps.find((s) => s.serviceType === "HVAC");
+    expect(snap).toBeDefined();
+  });
+
+  it("completedYear is a 4-digit number", async () => {
+    const snaps = await jobService.getJobSnapshotsForProperty(propId);
+    for (const s of snaps) {
+      expect(s.completedYear).toBeGreaterThanOrEqual(1970);
+      expect(s.completedYear).toBeLessThanOrEqual(new Date().getFullYear() + 1);
+    }
+  });
+
+  it("amountCents survives Nat round-trip", async () => {
+    const snaps = await jobService.getJobSnapshotsForProperty(propId);
+    const snap = snaps.find((s) => s.serviceType === "HVAC");
+    expect(snap!.amountCents).toBe(150_000);
+  });
+
+  it("isDiy is boolean false for contractor job", async () => {
+    const snaps = await jobService.getJobSnapshotsForProperty(propId);
+    const snap = snaps.find((s) => s.serviceType === "HVAC");
+    expect(snap!.isDiy).toBe(false);
+  });
+
+  it("returns empty array for a property with no jobs", async () => {
+    const snaps = await jobService.getJobSnapshotsForProperty(pid("empty-snaps"));
+    expect(snaps).toEqual([]);
+  });
+});

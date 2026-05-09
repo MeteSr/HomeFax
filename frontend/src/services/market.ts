@@ -56,6 +56,9 @@ const neighbourhoodIdlFactory = ({ IDL }: any) => {
     getZipStats:              IDL.Func([IDL.Text],                               [Result_ZipStats],      ["query"]),
     getNeighborhoodPublicKey: IDL.Func([],                                       [IDL.Vec(IDL.Nat8)],   []),
     getMyScoreEncrypted:      IDL.Func([IDL.Vec(IDL.Nat8)],                      [Result_ScoreEnvelope],[]),
+    computePropertyScore:     IDL.Func([IDL.Text],                               [IDL.Opt(IDL.Nat)],    []),
+    setPropertyCanisterId:    IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
+    setJobCanisterId:         IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
   });
 };
 
@@ -146,6 +149,18 @@ export async function getMyScoreEncrypted(
     zipCode:      result.ok.zipCode,
     updatedAt:    result.ok.updatedAt,
   };
+}
+
+/**
+ * Compute the on-chain composite score for a property.
+ * Calls market.computePropertyScore — returns null when the market canister
+ * is not yet wired to property/job canisters, or when there are no jobs.
+ */
+export async function computePropertyScore(propertyId: string): Promise<number | null> {
+  const actor = await getNeighbourhoodActor();
+  const result: any[] = await actor.computePropertyScore(propertyId);
+  if (result.length === 0) return null;
+  return Number(result[0]);
 }
 
 // ─── Input types (mirror the canister) ────────────────────────────────────────

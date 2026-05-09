@@ -421,6 +421,17 @@ exports[`job IDL factory > full signature snapshot 1`] = `
       "variant {ok:record {completedDate:int; title:text; serviceType:variant {HVAC; Plumbing; Painting; Landscaping; Windows; Electrical; Flooring; Roofing}; expiresAt:int; alreadySigned:bool; jobId:text; description:text; propertyAddress:text; amount:nat; contractorName:opt text}; err:variant {InvalidInput:text; NotFound; NotAuthorized; AlreadyVerified}}",
     ],
   },
+  "getJobSnapshotsForProperty": {
+    "args": [
+      "text",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {serviceType:text; completedYear:nat; amountCents:nat; isVerified:bool; isDiy:bool}",
+    ],
+  },
   "getJobsForProperty": {
     "args": [
       "text",
@@ -678,6 +689,15 @@ exports[`listing IDL factory > full signature snapshot 1`] = `
     ],
   },
   "setJobCanisterId": {
+    "args": [
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {InvalidInput:text; DeadlinePassed; NotFound; NotAuthorized; AlreadyCancelled}}",
+    ],
+  },
+  "setMarketCanisterId": {
     "args": [
       "text",
     ],
@@ -1175,6 +1195,17 @@ exports[`property IDL factory > full signature snapshot 1`] = `
     ],
     "rets": [
       "opt principal",
+    ],
+  },
+  "getPropertyYearBuilt": {
+    "args": [
+      "text",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "opt nat",
     ],
   },
   "getVerificationLevel": {

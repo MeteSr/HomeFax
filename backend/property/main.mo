@@ -813,6 +813,15 @@ persistent actor Property {
     }
   };
 
+  /// Returns the year a property was built, or null if not found.
+  /// Called cross-canister by the market canister's computePropertyScore.
+  public query func getPropertyYearBuilt(id: Text) : async ?Nat {
+    switch (Map.get(properties, Text.compare, id)) {
+      case null  { null };
+      case (?p)  { ?p.yearBuilt };
+    }
+  };
+
   /// Returns the owner Principal of a property, or null if not found.
   /// Called cross-canister by the Job canister (14.2.1) to verify that
   /// the homeowner stored on a sensor device actually owns the property

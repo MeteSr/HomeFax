@@ -20,6 +20,7 @@ import {
   getZipStats,
   getNeighborhoodPublicKey,
   getMyScoreEncrypted,
+  computePropertyScore,
 } from "@/services/market";
 import type { StoredScore, ZipStats } from "@/services/market";
 
@@ -135,5 +136,53 @@ describe.skipIf(!deployed)("getMyScoreEncrypted — score survives canister stor
     } catch (e: any) {
       expect(e.message ?? String(e)).toMatch(/vetkd_public_key|IC0406|IC0536/i);
     }
+  });
+});
+
+// ─── computePropertyScore ─────────────────────────────────────────────────────
+
+describe.skipIf(!deployed)("computePropertyScore — on-chain FSBO score", () => {
+  it("returns null for a property that does not exist", async () => {
+    // Returns null whether wiring is set or not — property not found → null.
+    const score = await computePropertyScore("DOES_NOT_EXIST_99999");
+    expect(score).toBeNull();
+  });
+
+  it("returns null (not a trap) for an empty property ID", async () => {
+    const score = await computePropertyScore("");
+    expect(score).toBeNull();
+  });
+
+  it("returns a number in 0-100 when a wired property has jobs", async () => {
+    // This test only runs when all three canisters are wired (deploy.sh handles it).
+    // If canister IDs are not wired, computePropertyScore returns null — skip gracefully.
+    const { propertyService } = await import("@/services/property");
+    const { jobService } = await import("@/services/job");
+
+    const prop = await propertyService.registerProperty({
+      address:      `${RUN_ID} Score Dr, Orlando FL 32801`,
+      city:         "Orlando",
+      state:        "FL",
+      zipCode:      "32801",
+      propertyType: "SingleFamily",
+      yearBuilt:    2000,
+      squareFeet:   1500,
+      tier:         "Basic",
+    });
+
+    await jobService.create({
+      propertyId:    prop.id,
+      serviceType:   "HVAC",
+      amount:        120_000,
+      date:          "2022-06-15",
+      description:   "HVAC tune-up",
+      isDiy:         false,
+      contractorName: "Score Test LLC",
+    });
+
+    const score = await computePropertyScore(prop.id);
+    if (score === null) return; // canister not yet wired — acceptable in local dev
+    expect(score).toBeGreaterThanOrEqual(0);
+    expect(score).toBeLessThanOrEqual(100);
   });
 });

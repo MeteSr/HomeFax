@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.7.2"
+DEPLOY_SCRIPT_VERSION="1.7.3"
 ENV=${1:-local}
 
 echo "============================================"
@@ -561,6 +561,7 @@ QUOTE_ID=$(icp canister status quote -e "$ENV" --id-only 2>/dev/null || echo "")
 SENSOR_ID=$(icp canister status sensor -e "$ENV" --id-only 2>/dev/null || echo "")
 REPORT_ID=$(icp canister status report -e "$ENV" --id-only 2>/dev/null || echo "")
 LISTING_ID=$(icp canister status listing -e "$ENV" --id-only 2>/dev/null || echo "")
+MARKET_ID=$(icp canister status market -e "$ENV" --id-only 2>/dev/null || echo "")
 BILLS_ID=$(icp canister status bills -e "$ENV" --id-only 2>/dev/null || echo "")
 AUTH_ID=$(icp canister status auth -e "$ENV" --id-only 2>/dev/null || echo "")
 AUDIT_ID=$(icp canister status audit -e "$ENV" --id-only 2>/dev/null || echo "")
@@ -661,6 +662,18 @@ fi
 if [ -n "$LISTING_ID" ]    && [ -n "$REPORT_ID" ]; then
   echo "  Wiring report -> listing (trust signals)..."
   icp canister call listing    setReportCanisterId     "(\"$REPORT_ID\")"           -e "$ENV" &
+fi
+if [ -n "$LISTING_ID" ]    && [ -n "$MARKET_ID" ]; then
+  echo "  Wiring market -> listing (on-chain score)..."
+  icp canister call listing    setMarketCanisterId     "(\"$MARKET_ID\")"           -e "$ENV" &
+fi
+if [ -n "$MARKET_ID" ]     && [ -n "$PROPERTY_ID" ]; then
+  echo "  Wiring property -> market (score computation)..."
+  icp canister call market     setPropertyCanisterId   "(\"$PROPERTY_ID\")"         -e "$ENV" &
+fi
+if [ -n "$MARKET_ID" ]     && [ -n "$JOB_ID" ]; then
+  echo "  Wiring job -> market (score computation)..."
+  icp canister call market     setJobCanisterId        "(\"$JOB_ID\")"              -e "$ENV" &
 fi
 
 wait

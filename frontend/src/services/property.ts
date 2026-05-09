@@ -157,6 +157,7 @@ export const idlFactory = ({ IDL }: any) => {
     getOwnerNotifications: IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Vec(OwnerNotification), err: Error })], ["query"]),
     dismissNotifications: IDL.Func([IDL.Text], [IDL.Variant({ ok: IDL.Null, err: Error })], []),
     isAuthorized: IDL.Func([IDL.Text, IDL.Principal, IDL.Bool], [IDL.Bool], ["query"]),
+    getPropertyYearBuilt: IDL.Func([IDL.Text], [IDL.Opt(IDL.Nat)], ["query"]),
   });
 };
 
@@ -456,6 +457,15 @@ export const propertyService = {
     const result: any[] = await a.getPropertyOwner(propertyId);
     if (!result[0]) return null;
     return result[0].toText();
+  },
+
+  /** Returns the year a property was built, or null if the property does not exist.
+   *  Called cross-canister by the market canister's computePropertyScore. */
+  async getPropertyYearBuilt(propertyId: string): Promise<number | null> {
+    const a = await getActor();
+    const result: any[] = await a.getPropertyYearBuilt(propertyId);
+    if (result.length === 0) return null;
+    return Number(result[0]);
   },
 
   async getOwnershipHistory(propertyId: string): Promise<TransferRecord[]> {

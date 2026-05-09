@@ -79,6 +79,7 @@ getCertificationData(1) -> (1) [query]
 getJob(1) -> (1) [query]
 getJobByInviteToken(1) -> (1) [query]
 getJobsForProperty(1) -> (1) [query]
+getJobSnapshotsForProperty(1) -> (1) [query]
 getJobsPendingMySignature(0) -> (1) [query]
 getMetrics(0) -> (1) [query]
 getPendingProposals(0) -> (1) [query]
@@ -108,6 +109,7 @@ listActiveFsboListings(0) -> (1) [query]
 removeListingPhoto(2) -> (1)
 reorderListingPhotos(2) -> (1)
 setJobCanisterId(1) -> (1)
+setMarketCanisterId(1) -> (1)
 setPropertyCanisterId(1) -> (1)
 setReportCanisterId(1) -> (1)
 submitProposal(11) -> (1)"
@@ -177,6 +179,7 @@ getProperty(1) -> (1) [query]
 getPropertyLimitForTier(1) -> (1) [query]
 getPropertyManagers(1) -> (1) [query]
 getPropertyOwner(1) -> (1) [query]
+getPropertyYearBuilt(1) -> (1) [query]
 getVerificationLevel(1) -> (1) [query]
 initiateTransfer(1) -> (1)
 inviteManager(3) -> (1)

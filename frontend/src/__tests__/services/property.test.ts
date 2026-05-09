@@ -31,6 +31,7 @@ const mockActor = {
   getOwnerNotifications:     vi.fn(),
   dismissNotifications:      vi.fn(),
   isAuthorized:              vi.fn(),
+  getPropertyYearBuilt:      vi.fn(),
 };
 
 vi.mock("@/services/actor", () => ({
@@ -642,5 +643,33 @@ describe("propertyService", () => {
       const result = await propertyService.isAuthorized("1", "some-principal", false);
       expect(typeof result).toBe("boolean");
     });
+  });
+});
+
+// ─── getPropertyYearBuilt ─────────────────────────────────────────────────────
+
+describe("propertyService.getPropertyYearBuilt", () => {
+  it("returns null when the canister returns an empty Opt (property not found)", async () => {
+    mockActor.getPropertyYearBuilt.mockResolvedValue([]);
+    const result = await propertyService.getPropertyYearBuilt("unknown-id");
+    expect(result).toBeNull();
+  });
+
+  it("returns the numeric yearBuilt when the canister returns a Some(Nat)", async () => {
+    mockActor.getPropertyYearBuilt.mockResolvedValue([BigInt(1998)]);
+    const result = await propertyService.getPropertyYearBuilt("prop-1");
+    expect(result).toBe(1998);
+  });
+
+  it("returns 0 when yearBuilt is 0 (edge case — not null)", async () => {
+    mockActor.getPropertyYearBuilt.mockResolvedValue([BigInt(0)]);
+    const result = await propertyService.getPropertyYearBuilt("prop-zero");
+    expect(result).toBe(0);
+  });
+
+  it("calls the canister with the correct propertyId", async () => {
+    mockActor.getPropertyYearBuilt.mockResolvedValue([BigInt(2005)]);
+    await propertyService.getPropertyYearBuilt("specific-prop");
+    expect(mockActor.getPropertyYearBuilt).toHaveBeenCalledWith("specific-prop");
   });
 });

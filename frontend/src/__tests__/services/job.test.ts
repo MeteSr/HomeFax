@@ -184,6 +184,24 @@ const mockJobActor = {
     _mockJobs.splice(idx, 1);
     return { ok: null };
   }),
+
+  getJobSnapshotsForProperty: vi.fn(async (propertyId: string) => {
+    const secsPerYear = 31_536_000;
+    return _mockJobs
+      .filter((j) => j.propertyId === propertyId)
+      .map((j) => {
+        const secsSince1970 = Number(j.completedDate) / 1_000_000;
+        const completedYear = 1970 + Math.floor(secsSince1970 / secsPerYear);
+        const serviceTypeKey = Object.keys(j.serviceType)[0];
+        return {
+          serviceType:   serviceTypeKey,
+          completedYear: BigInt(completedYear),
+          amountCents:   j.amount,
+          isDiy:         j.isDiy,
+          isVerified:    j.verified,
+        };
+      });
+  }),
 };
 
 vi.mock("@/services/actor", () => ({
@@ -792,5 +810,53 @@ describe("jobToInput (report adapter)", () => {
     expect(withExtras.warrantyMonths).toBe(24);
     expect(noExtras.permitNumber).toBeUndefined();
     expect(noExtras.warrantyMonths).toBeUndefined();
+  });
+});
+
+// ─── getJobSnapshotsForProperty ────────────────────────────────────────────────
+
+describe("jobService.getJobSnapshotsForProperty", () => {
+  it("returns empty array when property has no jobs", async () => {
+    const snapshots = await jobService.getJobSnapshotsForProperty("prop-no-jobs");
+    expect(snapshots).toEqual([]);
+  });
+
+  it("returns a snapshot for each job belonging to the property", async () => {
+    await jobService.create({ propertyId: "prop-snap", serviceType: "HVAC",    amount: 120_000, date: "2023-06-15", description: "", isDiy: false, contractorName: "X" });
+    await jobService.create({ propertyId: "prop-snap", serviceType: "Roofing", amount: 800_000, date: "2022-04-01", description: "", isDiy: false, contractorName: "Y" });
+    await jobService.create({ propertyId: "other-prop", serviceType: "Plumbing", amount: 50_000, date: "2024-01-01", description: "", isDiy: true });
+
+    const snapshots = await jobService.getJobSnapshotsForProperty("prop-snap");
+    expect(snapshots).toHaveLength(2);
+    expect(snapshots.every((s) => typeof s.serviceType === "string")).toBe(true);
+    expect(snapshots.every((s) => typeof s.completedYear === "number")).toBe(true);
+    expect(snapshots.every((s) => typeof s.amountCents === "number")).toBe(true);
+    expect(snapshots.every((s) => typeof s.isDiy === "boolean")).toBe(true);
+    expect(snapshots.every((s) => typeof s.isVerified === "boolean")).toBe(true);
+  });
+
+  it("serviceType is a plain string (not a Candid variant object)", async () => {
+    await jobService.create({ propertyId: "prop-stype", serviceType: "Electrical", amount: 30_000, date: "2024-01-01", description: "", isDiy: false, contractorName: "Z" });
+
+    const snapshots = await jobService.getJobSnapshotsForProperty("prop-stype");
+    expect(snapshots[0].serviceType).toBe("Electrical");
+  });
+
+  it("isVerified reflects verified status", async () => {
+    const job = await jobService.create({ propertyId: "prop-verify", serviceType: "HVAC", amount: 10_000, date: "2024-01-01", description: "", isDiy: true });
+    await jobService.verifyJob(job.id);
+
+    const snapshots = await jobService.getJobSnapshotsForProperty("prop-verify");
+    expect(snapshots[0].isVerified).toBe(true);
+  });
+
+  it("does not include jobs from other properties", async () => {
+    await jobService.create({ propertyId: "prop-a", serviceType: "HVAC",    amount: 5_000, date: "2024-01-01", description: "", isDiy: true });
+    await jobService.create({ propertyId: "prop-b", serviceType: "Roofing", amount: 5_000, date: "2024-01-01", description: "", isDiy: true });
+
+    const snapsA = await jobService.getJobSnapshotsForProperty("prop-a");
+    const snapsB = await jobService.getJobSnapshotsForProperty("prop-b");
+    expect(snapsA).toHaveLength(1);
+    expect(snapsB).toHaveLength(1);
   });
 });

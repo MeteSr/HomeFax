@@ -106,6 +106,7 @@ persistent actor Listing {
   private var propCanisterId   : Text = "";
   private var jobCanisterId    : Text = "";
   private var reportCanisterId : Text = "";
+  private var marketCanisterId : Text = "";
 
   // ─── Stable State ────────────────────────────────────────────────────────────
 
@@ -565,6 +566,14 @@ persistent actor Listing {
       resolvedHasPublicReport := await reportActor.hasActivePublicShareLink(listing.propertyId);
     };
 
+    var resolvedScore : ?Nat = null;
+    if (marketCanisterId != "") {
+      let marketActor = actor(marketCanisterId) : actor {
+        computePropertyScore : (Text) -> async ?Nat;
+      };
+      resolvedScore := await marketActor.computePropertyScore(listing.propertyId);
+    };
+
     // Stamp the caller as the owner; replace all trust signals with authoritative values.
     let stamped : PublicFsboListing = {
       propertyId        = listing.propertyId;
@@ -581,7 +590,7 @@ persistent actor Listing {
       bedrooms          = listing.bedrooms;
       bathrooms         = listing.bathrooms;
       verificationLevel = resolvedVerificationLevel;
-      score             = null;   // no scoring canister — cannot be caller-supplied
+      score             = resolvedScore;
       verifiedJobCount  = resolvedVerifiedJobCount;
       description       = listing.description;
       photoUrl          = listing.photoUrl;
@@ -631,6 +640,13 @@ persistent actor Listing {
   public shared(msg) func setReportCanisterId(id: Text) : async Result.Result<(), Error> {
     if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     reportCanisterId := id;
+    #ok(())
+  };
+
+  /// Wire the market canister for on-chain score computation.
+  public shared(msg) func setMarketCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    marketCanisterId := id;
     #ok(())
   };
 
