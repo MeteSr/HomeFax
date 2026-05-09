@@ -83,7 +83,7 @@ persistent actor Bills {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput : Text;
     #TierLimitReached : Text;
   };
@@ -127,7 +127,7 @@ persistent actor Bills {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       // 14.4.4 — auto-expire timed pauses
       switch (pauseExpiryNs) {
@@ -362,7 +362,7 @@ persistent actor Bills {
       case null { #err(#NotFound) };
       case (?b) {
         if (not Principal.equal(b.homeowner, msg.caller) and not isAdmin(msg.caller)) {
-          return #err(#Unauthorized)
+          return #err(#NotAuthorized)
         };
         ignore Map.delete(bills, Text.compare, id);
         #ok(())
@@ -373,20 +373,20 @@ persistent actor Bills {
   // ─── Admin ────────────────────────────────────────────────────────────────────
 
   public shared(msg) func setPaymentCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     payCanisterId := id;
     #ok(())
   };
 
   /// Grant a tier override for a principal (dev / support use).
   public shared(msg) func grantTier(p: Principal, tier: SubscriptionTier) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     Map.add(tierGrants, Text.compare, Principal.toText(p), tier);
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
-    if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -396,13 +396,13 @@ persistent actor Bills {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null { null };
@@ -412,7 +412,7 @@ persistent actor Bills {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())

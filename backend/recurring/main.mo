@@ -77,7 +77,7 @@ persistent actor Recurring {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput : Text;
     #AlreadyCancelled;
   };
@@ -137,7 +137,7 @@ persistent actor Recurring {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
@@ -239,7 +239,7 @@ persistent actor Recurring {
       case null { #err(#NotFound) };
       case (?existing) {
         if (existing.homeowner != msg.caller and not isAdmin(msg.caller))
-          return #err(#Unauthorized);
+          return #err(#NotAuthorized);
 
         switch (existing.status) {
           case (#Cancelled) { return #err(#AlreadyCancelled) };
@@ -281,7 +281,7 @@ persistent actor Recurring {
       case null { #err(#NotFound) };
       case (?existing) {
         if (existing.homeowner != msg.caller and not isAdmin(msg.caller))
-          return #err(#Unauthorized);
+          return #err(#NotAuthorized);
 
         let updated : RecurringService = {
           id                 = existing.id;
@@ -323,7 +323,7 @@ persistent actor Recurring {
       case null { #err(#NotFound) };
       case (?svc) {
         if (svc.homeowner != msg.caller and not isAdmin(msg.caller))
-          return #err(#Unauthorized);
+          return #err(#NotAuthorized);
 
         let id  = nextVisitId();
         let now = Time.now();
@@ -359,13 +359,13 @@ persistent actor Recurring {
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
-    if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -375,13 +375,13 @@ persistent actor Recurring {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -391,7 +391,7 @@ persistent actor Recurring {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())

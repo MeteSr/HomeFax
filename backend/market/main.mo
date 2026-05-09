@@ -132,7 +132,7 @@ persistent actor MarketIntelligence {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #InvalidInput: Text;
   };
 
@@ -278,7 +278,7 @@ persistent actor MarketIntelligence {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
@@ -583,7 +583,7 @@ persistent actor MarketIntelligence {
     trend:              { #Rising; #Stable; #Declining }
   ) : async Result.Result<MarketSnapshot, Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (Text.size(zipCode) == 0)  return #err(#InvalidInput("zipCode cannot be empty"));
     if (Text.size(zipCode) > 20)  return #err(#InvalidInput("zipCode exceeds 20 characters"));
 
@@ -619,7 +619,7 @@ persistent actor MarketIntelligence {
     zipCode:   Text,
   ) : async Result.Result<StoredScore, Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
-    if (Principal.isAnonymous(msg.caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(msg.caller)) return #err(#NotAuthorized);
     if (Text.size(zipCode) == 0 or Text.size(zipCode) > 20)
       return #err(#InvalidInput("zipCode must be 1-20 characters"));
 
@@ -707,7 +707,7 @@ persistent actor MarketIntelligence {
   ) : async Result.Result<ScoreEnvelope, Error> {
     // Capture caller before await — required per vetKeys skill guidance.
     let caller = msg.caller;
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
 
     let stored = switch (Map.get(scoreStore, Principal.compare, caller)) {
       case null    { return #err(#NotFound) };
@@ -733,14 +733,14 @@ persistent actor MarketIntelligence {
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
-      return #err(#Unauthorized);
+      return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -749,13 +749,13 @@ persistent actor MarketIntelligence {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -765,7 +765,7 @@ persistent actor MarketIntelligence {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())

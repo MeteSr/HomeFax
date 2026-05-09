@@ -18,7 +18,7 @@ const AI_PROXY_CANISTER_ID = (process.env as any).AI_PROXY_CANISTER_ID || "";
 
 export const idlFactory = ({ IDL }: any) => {
   const Error = IDL.Variant({
-    Unauthorized:     IDL.Null,
+    NotAuthorized:    IDL.Null,
     NotFound:         IDL.Null,
     InvalidInput:     IDL.Text,
     RateLimited:      IDL.Null,

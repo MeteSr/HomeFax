@@ -41,7 +41,7 @@ export const idlFactory = ({ IDL }: any) => {
     createdAt:             IDL.Int,
   });
   const Error = IDL.Variant({
-    NotFound: IDL.Null, Unauthorized: IDL.Null, InvalidInput: IDL.Text,
+    NotFound: IDL.Null, NotAuthorized: IDL.Null, InvalidInput: IDL.Text,
     AlreadyCancelled: IDL.Null, DeadlinePassed: IDL.Null,
   });
   const PublicFsboListing = IDL.Record({

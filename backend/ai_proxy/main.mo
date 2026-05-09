@@ -33,7 +33,7 @@ persistent actor AiProxy {
   // ── Types ──────────────────────────────────────────────────────────────────
 
   public type Error = {
-    #Unauthorized;
+    #NotAuthorized;
     #NotFound;
     #InvalidInput : Text;
     #RateLimited;
@@ -142,7 +142,7 @@ persistent actor AiProxy {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() >= expiry) { isPaused := false } else { return #err(#Paused) } };
@@ -748,7 +748,7 @@ persistent actor AiProxy {
   // ── Admin functions ────────────────────────────────────────────────────────
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
-    if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -758,25 +758,25 @@ persistent actor AiProxy {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func setResendApiKey(key: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     resendApiKey := key;
     #ok(())
   };
 
   public shared(msg) func setOpenPermitApiKey(key: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     openPermitApiKey := key;
     #ok(())
   };
 
   public shared(msg) func setResendFromAddress(addr: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     resendFromAddress := addr;
     #ok(())
   };
@@ -790,7 +790,7 @@ persistent actor AiProxy {
   };
 
   public shared(msg) func addTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isTrustedCanister(p)) {
       trustedCanisterEntries := Array.concat(trustedCanisterEntries, [p]);
     };
@@ -798,7 +798,7 @@ persistent actor AiProxy {
   };
 
   public shared(msg) func removeTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     trustedCanisterEntries := Array.filter<Principal>(trustedCanisterEntries, func(t) { t != p });
     #ok(())
   };
@@ -808,13 +808,13 @@ persistent actor AiProxy {
   };
 
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -824,7 +824,7 @@ persistent actor AiProxy {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused      := false;
     pauseExpiryNs := null;
     #ok(())

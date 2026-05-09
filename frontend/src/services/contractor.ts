@@ -55,7 +55,7 @@ export const idlFactory = ({ IDL }: any) => {
   const Error = IDL.Variant({
     NotFound:          IDL.Null,
     AlreadyExists:     IDL.Null,
-    Unauthorized:      IDL.Null,
+    NotAuthorized:     IDL.Null,
     Paused:            IDL.Null,
     RateLimitExceeded: IDL.Null,
     InvalidInput:      IDL.Text,

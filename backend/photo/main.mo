@@ -66,7 +66,7 @@ persistent actor Photo {
 
   public type Error = {
     #NotFound;
-    #Unauthorized;
+    #NotAuthorized;
     #QuotaExceeded: Text;
     #Duplicate: Text;     // payload is the existing photo ID
     #InvalidInput: Text;
@@ -143,7 +143,7 @@ persistent actor Photo {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#InvalidInput("Canister is paused")) };
@@ -251,6 +251,7 @@ persistent actor Photo {
     if (Text.size(jobId) == 0)      return #err(#InvalidInput("jobId cannot be empty"));
     if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
     if (Text.size(hash) == 0)       return #err(#InvalidInput("hash cannot be empty"));
+    if (Text.size(hash) != 64)         return #err(#InvalidInput("hash must be a 64-character hex string (SHA-256)"));
     if (data.size() == 0)           return #err(#InvalidInput("data cannot be empty"));
 
     // Per-minute rate limit: 10 uploads/min regardless of tier
@@ -348,7 +349,7 @@ persistent actor Photo {
       case (?p)  {
         if (not isAdmin(msg.caller)) {
           let authOk = await checkPropertyAuth(p.propertyId, p.owner, msg.caller, false);
-          if (not authOk) return #err(#Unauthorized);
+          if (not authOk) return #err(#NotAuthorized);
         };
         #ok(p)
       };
@@ -363,7 +364,7 @@ persistent actor Photo {
       case (?p)  {
         if (not isAdmin(msg.caller)) {
           let authOk = await checkPropertyAuth(p.propertyId, p.owner, msg.caller, false);
-          if (not authOk) return #err(#Unauthorized);
+          if (not authOk) return #err(#NotAuthorized);
         };
         #ok(p.data)
       };
@@ -429,7 +430,7 @@ persistent actor Photo {
       case (?existing) {
         if (not isAdmin(msg.caller)) {
           let authOk = await checkPropertyAuth(existing.propertyId, existing.owner, msg.caller, true);
-          if (not authOk) return #err(#Unauthorized);
+          if (not authOk) return #err(#NotAuthorized);
         };
 
         let alreadyApproved = Option.isSome(
@@ -467,7 +468,7 @@ persistent actor Photo {
       case (?existing) {
         if (not isAdmin(msg.caller)) {
           let authOk = await checkPropertyAuth(existing.propertyId, existing.owner, msg.caller, true);
-          if (not authOk) return #err(#Unauthorized);
+          if (not authOk) return #err(#NotAuthorized);
         };
         Map.remove(photos, Text.compare, photoId);
         Map.remove(hashIndex, Text.compare, existing.hash);
@@ -482,7 +483,7 @@ persistent actor Photo {
   /// Called by an admin (or a future subscription canister) when a user upgrades or downgrades.
   /// This is the only way to change quota limits — callers cannot pass their own tier.
   public shared(msg) func setTier(user: Principal, tier: SubscriptionTier) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     Map.add(tierGrants, Text.compare, Principal.toText(user), tier);
     #ok(())
   };
@@ -490,7 +491,7 @@ persistent actor Photo {
   /// Wire the photo canister to the payment canister for live tier enforcement.
   /// Must be called once after both canisters are deployed.
   public shared(msg) func setPaymentCanisterId(id: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     payCanisterId := Principal.toText(id);
     #ok(())
   };
@@ -499,14 +500,14 @@ persistent actor Photo {
   /// When set, uploadPhoto() uses the property owner's tier when the caller
   /// is a delegated manager.  Must be called once after both canisters are deployed.
   public shared(msg) func setPropertyCanisterId(id: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     propCanisterId := Principal.toText(id);
     #ok(())
   };
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
@@ -514,7 +515,7 @@ persistent actor Photo {
   /// Add an admin. First call is open (bootstrap); subsequent calls require an existing admin.
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
     if (adminListEntries.size() > 0 and not isAdmin(msg.caller))
-      return #err(#Unauthorized);
+      return #err(#NotAuthorized);
     if (not isAdmin(newAdmin)) {
       adminListEntries := Array.concat(adminListEntries, [newAdmin]);
     };
@@ -524,13 +525,14 @@ persistent actor Photo {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     adminListEntries := Array.filter<Principal>(adminListEntries, func(a) { a != target });
     #ok(())
   };
 
   public shared(msg) func setAuditCanisterId(id : Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    try { ignore await auditLog("AuditCanisterSet", ?id, "caller=" # Principal.toText(msg.caller)) } catch _ {};
     auditCanisterId := ?id;
     #ok(())
   };
@@ -548,7 +550,7 @@ persistent actor Photo {
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -559,7 +561,7 @@ persistent actor Photo {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     try { ignore await auditLog("CanisterUnpaused", null, "caller=" # Principal.toText(msg.caller)) } catch _ {};

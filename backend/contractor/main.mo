@@ -100,7 +100,7 @@ persistent actor Contractor {
   public type Error = {
     #NotFound;
     #AlreadyExists;
-    #Unauthorized;
+    #NotAuthorized;
     #Paused;
     #RateLimitExceeded;
     #InvalidInput: Text;
@@ -180,7 +180,7 @@ persistent actor Contractor {
   };
 
   private func requireActive(caller: Principal) : Result.Result<(), Error> {
-    if (Principal.isAnonymous(caller)) return #err(#Unauthorized);
+    if (Principal.isAnonymous(caller)) return #err(#NotAuthorized);
     if (isPaused) {
       switch (pauseExpiryNs) {
         case (?expiry) { if (Time.now() < expiry) return #err(#Paused) };
@@ -444,7 +444,7 @@ persistent actor Contractor {
     homeownerPrincipal:  Principal,
   ) : async Result.Result<(), Error> {
     if (not isJobCanister(msg.caller) and not isAdmin(msg.caller))
-      return #err(#Unauthorized);
+      return #err(#NotAuthorized);
 
     // Mint credential regardless of whether contractor is registered
     credentialCounter += 1;
@@ -497,14 +497,14 @@ persistent actor Contractor {
   /// Wire the contractor canister to the job canister so recordJobVerified()
   /// accepts cross-canister calls. Must be called once after both canisters deploy.
   public shared(msg) func setJobCanisterId(id: Text) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     jobCanisterId := id;
     #ok(())
   };
 
   /// Mark a contractor as verified (admin only).
   public shared(msg) func verifyContractor(c: Principal) : async Result.Result<ContractorProfile, Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     switch (Map.get(contractors, Principal.compare, c)) {
       case null { #err(#NotFound) };
       case (?existing) {
@@ -531,13 +531,13 @@ persistent actor Contractor {
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.
   public shared(msg) func setUpdateRateLimit(n: Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     maxUpdatesPerMin := n;
     #ok(())
   };
 
   public shared(msg) func addAdmin(newAdmin: Principal) : async Result.Result<(), Error> {
-    if (adminInitialized and not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (adminInitialized and not isAdmin(msg.caller)) return #err(#NotAuthorized);
     admins := Array.concat(admins, [newAdmin]);
     adminInitialized := true;
     #ok(())
@@ -545,7 +545,7 @@ persistent actor Contractor {
 
   /// Remove an existing admin principal (existing admin only).
   public shared(msg) func removeAdmin(target: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     admins := Array.filter<Principal>(admins, func(a) { a != target });
     #ok(())
   };
@@ -553,7 +553,7 @@ persistent actor Contractor {
   /// Register a canister principal as trusted for inter-canister calls.
   /// Trusted canisters (job) bypass per-principal rate limiting. Admin only.
   public shared(msg) func addTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     if (not isTrustedCanister(p)) {
       trustedCanisterEntries := Array.concat(trustedCanisterEntries, [p]);
     };
@@ -561,7 +561,7 @@ persistent actor Contractor {
   };
 
   public shared(msg) func removeTrustedCanister(p: Principal) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     trustedCanisterEntries := Array.filter<Principal>(trustedCanisterEntries, func(t) { t != p });
     #ok(())
   };
@@ -571,7 +571,7 @@ persistent actor Contractor {
   };
 
   public shared(msg) func pause(durationSeconds: ?Nat) : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := true;
     pauseExpiryNs := switch (durationSeconds) {
       case null    { null };
@@ -581,7 +581,7 @@ persistent actor Contractor {
   };
 
   public shared(msg) func unpause() : async Result.Result<(), Error> {
-    if (not isAdmin(msg.caller)) return #err(#Unauthorized);
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
     isPaused := false;
     pauseExpiryNs := null;
     #ok(())
