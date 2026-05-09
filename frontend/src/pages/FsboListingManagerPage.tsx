@@ -28,6 +28,7 @@ import {
 import { COLORS, FONTS, RADIUS, SHADOWS }    from "@/theme";
 import { useBreakpoint }                      from "@/hooks/useBreakpoint";
 import { fsboService, type FsboRecord }       from "@/services/fsbo";
+import { listingService, type PanoramaEntry } from "@/services/listing";
 import { showingRequestService }              from "@/services/showingRequest";
 import { fsboOfferService }                   from "@/services/fsboOffer";
 import ShowingInbox                           from "@/components/ShowingInbox";
@@ -190,6 +191,9 @@ export default function FsboListingManagerPage() {
   const [scoreOptIn,    setScoreOptIn]    = useState(true);
   const [showTakeDown,  setShowTakeDown]  = useState(false);
   const [priceHistory,  setPriceHistory]  = useState(() => fsboService.getPriceHistory(propertyId));
+  const [panoramas,     setPanoramas]     = useState<PanoramaEntry[]>([]);
+  const [newRoomLabel,  setNewRoomLabel]  = useState("");
+  const [newPhotoFile,  setNewPhotoFile]  = useState<File | null>(null);
 
   const listingState = statusForRecord(record);
 
@@ -206,6 +210,7 @@ export default function FsboListingManagerPage() {
 
   // Populate on mount and whenever propertyId changes
   useEffect(() => { refreshAll(); }, [refreshAll]);
+  useEffect(() => { listingService.getPanoramas(propertyId).then(setPanoramas); }, [propertyId]);
 
   function handleSavePrice() {
     const dollars = parseFloat(priceInput);
@@ -533,6 +538,102 @@ export default function FsboListingManagerPage() {
         <Section testId="listing-photos-section" title="Listing Photos">
           <ListingPhotoManager propertyId={propertyId} isOwner={true} />
         </Section>
+
+        {/* ── 360° Tour ─────────────────────────────────────────────────────── */}
+        <section
+          aria-label="360° Tour"
+          style={{
+            background:   UI.paper,
+            border:       `1px solid ${UI.rule}`,
+            borderRadius: RADIUS.card,
+            overflow:     "hidden",
+            marginBottom: "1.25rem",
+          }}
+        >
+          <div style={{
+            padding:       "0.85rem 1.25rem",
+            borderBottom:  `1px solid ${UI.rule}`,
+            fontFamily:    UI.mono,
+            fontSize:      "0.72rem",
+            fontWeight:    700,
+            color:         UI.inkLight,
+            textTransform: "uppercase" as const,
+            letterSpacing: "0.08em",
+          }}>
+            360° Tour
+          </div>
+          <div style={{ padding: "1.25rem" }}>
+            {panoramas.length > 0 && (
+              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.25rem" }}>
+                {panoramas.map((p) => (
+                  <li
+                    key={p.roomLabel}
+                    style={{
+                      display:        "flex",
+                      alignItems:     "center",
+                      justifyContent: "space-between",
+                      padding:        "0.4rem 0",
+                      borderBottom:   `1px solid ${UI.rule}`,
+                    }}
+                  >
+                    <span style={{ fontFamily: UI.sans, fontSize: "0.875rem", color: UI.ink }}>{p.roomLabel}</span>
+                    <button
+                      aria-label={`Remove room ${p.roomLabel}`}
+                      onClick={async () => {
+                        await listingService.removePanorama(propertyId, p.roomLabel);
+                        setPanoramas(await listingService.getPanoramas(propertyId));
+                      }}
+                      style={{
+                        background:   "transparent",
+                        color:        UI.rust,
+                        border:       `1px solid ${UI.rust}60`,
+                        borderRadius: RADIUS.pill,
+                        padding:      "0.25rem 0.65rem",
+                        fontFamily:   UI.mono,
+                        fontSize:     "0.65rem",
+                        cursor:       "pointer",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: "0.75rem" }}>
+              <div>
+                <label
+                  htmlFor="panorama-room-label"
+                  style={{ display: "block", fontFamily: UI.mono, fontSize: "0.65rem", textTransform: "uppercase" as const, letterSpacing: "0.08em", color: UI.inkLight, marginBottom: "0.3rem" }}
+                >
+                  Room Label
+                </label>
+                <input
+                  id="panorama-room-label"
+                  value={newRoomLabel}
+                  onChange={(e) => setNewRoomLabel(e.target.value)}
+                  style={{ padding: "0.5rem 0.75rem", border: `1px solid ${UI.rule}`, borderRadius: RADIUS.input, fontFamily: UI.sans, fontSize: "0.875rem", width: "220px" }}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="panorama-360-photo"
+                  style={{ display: "block", fontFamily: UI.mono, fontSize: "0.65rem", textTransform: "uppercase" as const, letterSpacing: "0.08em", color: UI.inkLight, marginBottom: "0.3rem" }}
+                >
+                  360° Photo
+                </label>
+                <input
+                  id="panorama-360-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewPhotoFile(e.target.files?.[0] ?? null)}
+                  style={{ fontFamily: UI.sans, fontSize: "0.875rem" }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ── Score opt-in ──────────────────────────────────────────────────── */}
         <div style={{ margin: "1rem 0" }}>

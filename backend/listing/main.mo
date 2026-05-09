@@ -30,6 +30,11 @@ persistent actor Listing {
     #DeadlinePassed;
   };
 
+  public type PanoramaEntry = {
+    roomLabel : Text;
+    photoId   : Text;
+  };
+
   public type ListingBidRequest = {
     id:               Text;
     propertyId:       Text;
@@ -118,8 +123,13 @@ persistent actor Listing {
   private let listingPhotos      = Map.empty<Text, [Text]>();
   /// propertyId → the principal who first added a photo (owner lock)
   private let listingPhotoOwners = Map.empty<Text, Principal>();
+  /// propertyId → ordered list of 360° panorama entries (room label + photo ID)
+  private let listingPanoramas      = Map.empty<Text, [PanoramaEntry]>();
+  /// propertyId → the principal who first added a panorama (owner lock)
+  private let listingPanoramaOwners = Map.empty<Text, Principal>();
 
-  private let MAX_LISTING_PHOTOS : Nat = 15;
+  private let MAX_LISTING_PHOTOS    : Nat = 15;
+  private let MAX_LISTING_PANORAMAS : Nat = 10;
 
   // ─── Private Helpers ─────────────────────────────────────────────────────────
 
@@ -501,6 +511,70 @@ persistent actor Listing {
         return #err(#InvalidInput("Unknown photo ID in reorder list: " # id));
     };
     Map.add(listingPhotos, Text.compare, propertyId, photoIds);
+    #ok(())
+  };
+
+  // ─── 360° Panoramas ──────────────────────────────────────────────────────────
+
+  /// Add a 360° equirectangular photo to this listing.
+  /// The first caller becomes the panorama owner; subsequent calls must match.
+  /// Enforces a cap of 10 panoramas per listing; room labels must be unique.
+  public shared(msg) func addPanorama(propertyId: Text, roomLabel: Text, photoId: Text) : async Result.Result<(), Error> {
+    switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
+    if (Text.size(propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
+    if (Text.size(roomLabel)  == 0) return #err(#InvalidInput("roomLabel cannot be empty"));
+    if (Text.size(photoId)    == 0) return #err(#InvalidInput("photoId cannot be empty"));
+
+    switch (Map.get(listingPanoramaOwners, Text.compare, propertyId)) {
+      case null    { Map.add(listingPanoramaOwners, Text.compare, propertyId, msg.caller) };
+      case (?owner) {
+        if (owner != msg.caller and not isAdmin(msg.caller))
+          return #err(#NotAuthorized);
+      };
+    };
+
+    let existing : [PanoramaEntry] = switch (Map.get(listingPanoramas, Text.compare, propertyId)) {
+      case null    { [] };
+      case (?entries) { entries };
+    };
+
+    if (existing.size() >= MAX_LISTING_PANORAMAS)
+      return #err(#InvalidInput("Panorama limit (" # Nat.toText(MAX_LISTING_PANORAMAS) # ") reached"));
+
+    if (Option.isSome(Array.find<PanoramaEntry>(existing, func(e) { e.roomLabel == roomLabel })))
+      return #err(#InvalidInput("Room label \"" # roomLabel # "\" already exists"));
+
+    Map.add(listingPanoramas, Text.compare, propertyId,
+      Array.concat(existing, [{ roomLabel; photoId }]));
+    #ok(())
+  };
+
+  /// Returns the ordered panorama entries for a listing. Publicly readable.
+  public query func getPanoramas(propertyId: Text) : async [PanoramaEntry] {
+    switch (Map.get(listingPanoramas, Text.compare, propertyId)) {
+      case null       { [] };
+      case (?entries) { entries };
+    }
+  };
+
+  /// Remove a panorama entry by room label. Owner or admin only.
+  public shared(msg) func removePanorama(propertyId: Text, roomLabel: Text) : async Result.Result<(), Error> {
+    switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
+    switch (Map.get(listingPanoramaOwners, Text.compare, propertyId)) {
+      case null     { return #err(#NotFound) };
+      case (?owner) {
+        if (owner != msg.caller and not isAdmin(msg.caller))
+          return #err(#NotAuthorized);
+      };
+    };
+    let existing : [PanoramaEntry] = switch (Map.get(listingPanoramas, Text.compare, propertyId)) {
+      case null       { return #err(#NotFound) };
+      case (?entries) { entries };
+    };
+    if (not Option.isSome(Array.find<PanoramaEntry>(existing, func(e) { e.roomLabel == roomLabel })))
+      return #err(#NotFound);
+    Map.add(listingPanoramas, Text.compare, propertyId,
+      Array.filter<PanoramaEntry>(existing, func(e) { e.roomLabel != roomLabel }));
     #ok(())
   };
 

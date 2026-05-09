@@ -16,7 +16,9 @@ import { photoService } from "@/services/photo";
 import { fsboService, type FsboRecord } from "@/services/fsbo";
 import { reportService, type ShareLink } from "@/services/report";
 import ListingPhotoManager from "@/components/ListingPhotoManager";
+import PlayCanvas360Viewer from "@/components/PlayCanvas360Viewer";
 import { computeScore } from "@/services/scoreService";
+import { listingService, type PanoramaEntry } from "@/services/listing";
 import { showingRequestService } from "@/services/showingRequest";
 import { notificationService } from "@/services/notifications";
 import { COLORS, FONTS } from "@/theme";
@@ -170,6 +172,7 @@ export default function FsboListingPage() {
   const [jobs,       setJobs]       = useState<Job[]>([]);
   const [fsbo,       setFsbo]       = useState<FsboRecord | null | undefined>(undefined);
   const [reportLink, setReportLink] = useState<ShareLink | null>(null);
+  const [panoramas,  setPanoramas]  = useState<PanoramaEntry[]>([]);
 
   const helmetTitle = property && fsbo
     ? `${property.address} — For Sale by Owner | HomeGentic`
@@ -187,15 +190,17 @@ export default function FsboListingPage() {
     const fetches: Promise<any>[] = [
       propertyService.getProperty(propertyId),
       jobService.getByProperty(propertyId),
+      listingService.getPanoramas(propertyId),
     ];
 
     if (record?.hasReport) {
       fetches.push(reportService.listShareLinks(propertyId));
     }
 
-    Promise.all(fetches).then(([prop, propJobs, shareLinks]) => {
+    Promise.all(fetches).then(([prop, propJobs, pans, shareLinks]) => {
       setProperty(prop);
       setJobs(propJobs);
+      setPanoramas(pans ?? []);
       if (shareLinks) {
         const active = (shareLinks as ShareLink[]).find((l) => l.isActive) ?? null;
         setReportLink(active);
@@ -290,6 +295,16 @@ export default function FsboListingPage() {
       >
         <ListingPhotoManager propertyId={propertyId!} isOwner={false} />
       </div>
+
+      {/* ── 360° Virtual Tour (issue #308) ──────────────────────────────────── */}
+      {panoramas.length > 0 && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: "1.125rem", color: "#0e0e0c", margin: "0 0 0.75rem" }}>
+            360° Virtual Tour
+          </h2>
+          <PlayCanvas360Viewer panoramas={panoramas} />
+        </div>
+      )}
 
       {/* ── Price + address ────────────────────────────────────────────────── */}
       <div style={{ marginBottom: "1.5rem" }}>

@@ -952,6 +952,17 @@ exports[`listing IDL factory > full signature snapshot 1`] = `
       "variant {ok; err:variant {InvalidInput:text; DeadlinePassed; NotFound; NotAuthorized; AlreadyCancelled}}",
     ],
   },
+  "addPanorama": {
+    "args": [
+      "text",
+      "text",
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {InvalidInput:text; DeadlinePassed; NotFound; NotAuthorized; AlreadyCancelled}}",
+    ],
+  },
   "cancelBidRequest": {
     "args": [
       "text",
@@ -1032,6 +1043,17 @@ exports[`listing IDL factory > full signature snapshot 1`] = `
       "vec record {id:text; status:variant {Open; Awarded; Cancelled}; targetListDate:int; desiredSalePrice:opt nat; createdAt:int; propertyId:text; notes:text; homeowner:principal; bidDeadline:int}",
     ],
   },
+  "getPanoramas": {
+    "args": [
+      "text",
+    ],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "vec record {roomLabel:text; photoId:text}",
+    ],
+  },
   "getProposalsForRequest": {
     "args": [
       "text",
@@ -1053,6 +1075,16 @@ exports[`listing IDL factory > full signature snapshot 1`] = `
     ],
   },
   "removeListingPhoto": {
+    "args": [
+      "text",
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {InvalidInput:text; DeadlinePassed; NotFound; NotAuthorized; AlreadyCancelled}}",
+    ],
+  },
+  "removePanorama": {
     "args": [
       "text",
       "text",
