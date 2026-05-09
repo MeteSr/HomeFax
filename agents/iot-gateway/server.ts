@@ -408,8 +408,10 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
       return;
     }
     try {
-      await fetch(confirmationUrl);
-      logger.info("smartthings", "webhook confirmed", { reqId, confirmationUrl });
+      // Reconstruct from parsed components so the host is never user-controlled.
+      const safeUrl = new URL(parsedUrl.pathname + parsedUrl.search, "https://api.smartthings.com");
+      await fetch(safeUrl);
+      logger.info("smartthings", "webhook confirmed", { reqId, confirmationUrl: safeUrl.toString() });
     } catch (err) {
       logger.error("smartthings", "confirmation fetch failed", { reqId, error: String(err) });
     }

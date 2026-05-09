@@ -11,8 +11,8 @@ jest.mock("web-push", () => ({
   setVapidDetails:  jest.fn(),
   sendNotification: jest.fn(),
   generateVAPIDKeys: jest.fn(() => ({
-    publicKey:  "BPublicKey123",
-    privateKey: "PrivateKey456",
+    publicKey:  "BPublicKeyTestValue",
+    privateKey: "TestVapidPrivValue", // gitleaks:allow
   })),
 }));
 
