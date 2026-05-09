@@ -10,8 +10,10 @@
  *   POST /webhooks/moen-flo        — Moen Flo water-leak detection
  *   POST /webhooks/smartthings     — SmartThings capability events (+ CONFIRMATION lifecycle)
  *   POST /webhooks/lgthinq         — LG ThinQ PCC fault/maintenance callbacks
- *   GET  /oauth/callback/honeywell — Honeywell Home OAuth 2.0 callback (initial setup)
- *   GET  /oauth/callback/ge        — GE SmartHQ OAuth 2.0 callback (initial setup)
+ *   GET  /oauth/callback/honeywell  — Honeywell Home OAuth 2.0 callback (initial setup)
+ *   GET  /oauth/callback/ge         — GE SmartHQ OAuth 2.0 callback (initial setup)
+ *   POST /admin/smartthings/confirm — Admin-only: fires buffered SmartThings confirmation
+ *                                     (requires X-Admin-Token: $ADMIN_TOKEN header)
  *
  * Webhook authenticity:
  *   - Nest:     Validates the Google-Cloud-Token header against NEST_WEBHOOK_SECRET
@@ -378,6 +380,36 @@ app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Respons
   }
 });
 
+// Pending SmartThings confirmation URL — set by CONFIRMATION lifecycle, consumed by
+// POST /admin/smartthings/confirm (admin-triggered, never user-triggered).
+let pendingSmartThingsConfirmationUrl: string | null = null;
+
+// ── POST /admin/smartthings/confirm ───────────────────────────────────────────
+// Admin-only endpoint: fires the buffered SmartThings confirmation GET request.
+// The URL originates from SmartThings infrastructure but is never fetched inline
+// during webhook handling to avoid any SSRF vector in the request path.
+app.post("/admin/smartthings/confirm", async (req: Request, res: Response): Promise<void> => {
+  const adminToken = process.env.ADMIN_TOKEN;
+  if (!adminToken || req.headers["x-admin-token"] !== adminToken) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!pendingSmartThingsConfirmationUrl) {
+    res.status(404).json({ error: "no pending confirmation" });
+    return;
+  }
+  const urlToConfirm = pendingSmartThingsConfirmationUrl;
+  pendingSmartThingsConfirmationUrl = null;
+  try {
+    await fetch(urlToConfirm);
+    logger.info("smartthings", "webhook confirmed via admin trigger", { confirmationUrl: urlToConfirm });
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error("smartthings", "confirmation fetch failed", { error: String(err) });
+    res.status(502).json({ error: "confirmation fetch failed" });
+  }
+});
+
 // ── POST /webhooks/smartthings ────────────────────────────────────────────────
 // Handles SmartThings Webhook SmartApp lifecycle events.
 // CONFIRMATION and PING are handled without signature verification; all other
@@ -387,14 +419,14 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
   const body = req.body as SmartThingsWebhookBody;
 
   // CONFIRMATION — SmartThings verifies endpoint ownership on first registration.
-  // Must GET the confirmationUrl before responding.
+  // Validate and buffer the URL; the admin endpoint fires the actual fetch so that
+  // no user-provided URL ever flows into a server-side fetch call inline.
   if (body.lifecycle === "CONFIRMATION") {
     const confirmationUrl = body.confirmationData?.confirmationUrl;
     if (!confirmationUrl) {
       res.status(400).json({ error: "missing confirmationUrl" });
       return;
     }
-    // SSRF guard: only allow https requests to the SmartThings API host.
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(confirmationUrl);
@@ -403,25 +435,12 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
       return;
     }
     if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "api.smartthings.com") {
-      logger.warn("smartthings", "rejected CONFIRMATION — confirmationUrl not on api.smartthings.com", { reqId });
+      logger.warn("smartthings", "rejected CONFIRMATION — not on api.smartthings.com", { reqId });
       res.status(400).json({ error: "confirmationUrl must be https://api.smartthings.com/..." });
       return;
     }
-    try {
-      // Validate path with strict allowlist regex before use.
-      const pathMatch = (parsedUrl.pathname + parsedUrl.search).match(/^[/a-zA-Z0-9\-._~:@!$&'()*+,;=%?#[\]]+$/);
-      if (!pathMatch) {
-        logger.warn("smartthings", "rejected CONFIRMATION — invalid path chars", { reqId });
-        res.status(400).json({ error: "invalid confirmationUrl path" });
-        return;
-      }
-      // Safe: hostname validated to api.smartthings.com above; path validated by regex.
-      const safeUrl = new URL(pathMatch[0], "https://api.smartthings.com");
-      await fetch(safeUrl); // lgtm[js/request-forgery]
-      logger.info("smartthings", "webhook confirmed", { reqId, confirmationUrl: safeUrl.toString() });
-    } catch (err) {
-      logger.error("smartthings", "confirmation fetch failed", { reqId, error: String(err) });
-    }
+    pendingSmartThingsConfirmationUrl = confirmationUrl;
+    logger.info("smartthings", "CONFIRMATION buffered — call POST /admin/smartthings/confirm to complete", { reqId });
     res.json({});
     return;
   }
