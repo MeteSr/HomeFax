@@ -592,7 +592,7 @@ persistent actor MarketIntelligence {
       getPropertyYearBuilt : query (Text) -> async ?Nat;
     };
     let jobActor = actor(jobCanisterId) : actor {
-      getJobSnapshotsForProperty : query (Text) -> async [JobSnapshot];
+      getJobSnapshotsForProperty : query (Text) -> async [JobSummary];
     };
 
     let yearBuilt = switch (await propActor.getPropertyYearBuilt(propertyId)) {
