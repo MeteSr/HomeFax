@@ -101,6 +101,11 @@ persistent actor Listing {
   private var pauseExpiryNs:   ?Int = null;
   private var adminListEntries: [Principal] = [];
   private var adminInitialized: Bool = false;
+  /// Canister IDs for FSBO trust-signal resolution — set post-deploy via setXxxCanisterId().
+  /// When wired, activateFsboListing() fetches authoritative values instead of trusting the caller.
+  private var propCanisterId   : Text = "";
+  private var jobCanisterId    : Text = "";
+  private var reportCanisterId : Text = "";
 
   // ─── Stable State ────────────────────────────────────────────────────────────
 
@@ -504,6 +509,9 @@ persistent actor Listing {
 
   /// Register or update a property in the public FSBO buyer search index.
   /// Only the property owner may call this; caller is recorded as homeowner.
+  /// Trust signals (verificationLevel, verifiedJobCount, hasPublicReport) are
+  /// resolved from their authoritative canisters when wired; caller-supplied
+  /// values for those fields are always ignored.
   public shared(msg) func activateFsboListing(listing: PublicFsboListing) : async Result.Result<(), Error> {
     switch (requireActive(msg.caller)) { case (#err(e)) return #err(e); case _ {} };
     if (Text.size(listing.propertyId) == 0) return #err(#InvalidInput("propertyId cannot be empty"));
@@ -512,7 +520,52 @@ persistent actor Listing {
       case (?d) { if (Text.size(d) > 5000) return #err(#InvalidInput("description exceeds 5000 characters")) };
       case null {};
     };
-    // Stamp the caller as the owner regardless of what was passed in the record.
+
+    // ── Authoritative trust-signal resolution ─────────────────────────────────
+    // These values are fetched cross-canister and cannot be forged by the caller.
+    // When a canister is not yet wired the field defaults to its safe minimum.
+    var resolvedVerificationLevel : Text = "Unverified";
+    var resolvedVerifiedJobCount  : Nat  = 0;
+    var resolvedHasPublicReport   : Bool = false;
+
+    if (propCanisterId != "") {
+      let propActor = actor(propCanisterId) : actor {
+        getPropertyOwner     : query (Text) -> async ?Principal;
+        getVerificationLevel : query (Text) -> async ?Text;
+      };
+      // Verify the caller actually owns this property.
+      switch (await propActor.getPropertyOwner(listing.propertyId)) {
+        case null    { return #err(#NotFound) };
+        case (?owner) {
+          if (owner != msg.caller) return #err(#NotAuthorized);
+        };
+      };
+      switch (await propActor.getVerificationLevel(listing.propertyId)) {
+        case null        {};
+        case (?level)    { resolvedVerificationLevel := level };
+      };
+    };
+
+    if (jobCanisterId != "") {
+      let jobActor = actor(jobCanisterId) : actor {
+        getCertificationData : query (Text) -> async {
+          verifiedJobCount   : Nat;
+          verifiedKeySystems : [Text];
+          meetsStructural    : Bool;
+        };
+      };
+      let certData = await jobActor.getCertificationData(listing.propertyId);
+      resolvedVerifiedJobCount := certData.verifiedJobCount;
+    };
+
+    if (reportCanisterId != "") {
+      let reportActor = actor(reportCanisterId) : actor {
+        hasActivePublicShareLink : query (Text) -> async Bool;
+      };
+      resolvedHasPublicReport := await reportActor.hasActivePublicShareLink(listing.propertyId);
+    };
+
+    // Stamp the caller as the owner; replace all trust signals with authoritative values.
     let stamped : PublicFsboListing = {
       propertyId        = listing.propertyId;
       homeowner         = msg.caller;
@@ -527,12 +580,12 @@ persistent actor Listing {
       squareFeet        = listing.squareFeet;
       bedrooms          = listing.bedrooms;
       bathrooms         = listing.bathrooms;
-      verificationLevel = listing.verificationLevel;
-      score             = listing.score;
-      verifiedJobCount  = listing.verifiedJobCount;
+      verificationLevel = resolvedVerificationLevel;
+      score             = null;   // no scoring canister — cannot be caller-supplied
+      verifiedJobCount  = resolvedVerifiedJobCount;
       description       = listing.description;
       photoUrl          = listing.photoUrl;
-      hasPublicReport   = listing.hasPublicReport;
+      hasPublicReport   = resolvedHasPublicReport;
       systemHighlights  = listing.systemHighlights;
     };
     Map.add(fsboListings, Text.compare, listing.propertyId, stamped);
@@ -558,6 +611,27 @@ persistent actor Listing {
   /// Return all active public FSBO listings. No authentication required.
   public query func listActiveFsboListings() : async [PublicFsboListing] {
     Iter.toArray(Map.values(fsboListings))
+  };
+
+  /// Wire the property canister for ownership verification and verificationLevel lookup.
+  public shared(msg) func setPropertyCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    propCanisterId := id;
+    #ok(())
+  };
+
+  /// Wire the job canister for verifiedJobCount lookup.
+  public shared(msg) func setJobCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    jobCanisterId := id;
+    #ok(())
+  };
+
+  /// Wire the report canister for hasPublicReport lookup.
+  public shared(msg) func setReportCanisterId(id: Text) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    reportCanisterId := id;
+    #ok(())
   };
 
   /// Set the update-call rate limit (admin only). Pass 0 to disable enforcement.

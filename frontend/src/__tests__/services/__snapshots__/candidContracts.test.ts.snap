@@ -107,6 +107,9 @@ getProposalsForRequest(1) -> (1) [query]
 listActiveFsboListings(0) -> (1) [query]
 removeListingPhoto(2) -> (1)
 reorderListingPhotos(2) -> (1)
+setJobCanisterId(1) -> (1)
+setPropertyCanisterId(1) -> (1)
+setReportCanisterId(1) -> (1)
 submitProposal(11) -> (1)"
 `;
 
@@ -220,6 +223,7 @@ exports[`Candid contract snapshots — method arity > report 1`] = `
 generateRiskProfile(3) -> (1)
 getReport(1) -> (1)
 getRiskProfile(1) -> (1) [query]
+hasActivePublicShareLink(1) -> (1) [query]
 listShareLinks(1) -> (1)
 revokeShareLink(1) -> (1)"
 `;

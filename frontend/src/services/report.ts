@@ -158,6 +158,7 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Tuple(ShareLink, ReportSnapshot), err: Error })],
       []
     ),
+    hasActivePublicShareLink: IDL.Func([IDL.Text], [IDL.Bool], ["query"]),
     listShareLinks: IDL.Func([IDL.Text], [IDL.Vec(ShareLink)], []),
     revokeShareLink: IDL.Func(
       [IDL.Text],

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEPLOY_SCRIPT_VERSION="1.7.1"
+DEPLOY_SCRIPT_VERSION="1.7.2"
 ENV=${1:-local}
 
 echo "============================================"
@@ -560,6 +560,7 @@ PHOTO_ID=$(icp canister status photo -e "$ENV" --id-only 2>/dev/null || echo "")
 QUOTE_ID=$(icp canister status quote -e "$ENV" --id-only 2>/dev/null || echo "")
 SENSOR_ID=$(icp canister status sensor -e "$ENV" --id-only 2>/dev/null || echo "")
 REPORT_ID=$(icp canister status report -e "$ENV" --id-only 2>/dev/null || echo "")
+LISTING_ID=$(icp canister status listing -e "$ENV" --id-only 2>/dev/null || echo "")
 BILLS_ID=$(icp canister status bills -e "$ENV" --id-only 2>/dev/null || echo "")
 AUTH_ID=$(icp canister status auth -e "$ENV" --id-only 2>/dev/null || echo "")
 AUDIT_ID=$(icp canister status audit -e "$ENV" --id-only 2>/dev/null || echo "")
@@ -648,6 +649,18 @@ fi
 if [ -n "$REPORT_ID" ]     && [ -n "$JOB_ID" ]; then
   echo "  Wiring job -> report..."
   icp canister call report     setRiskJobCanisterId    "(\"$JOB_ID\")"              -e "$ENV" &
+fi
+if [ -n "$LISTING_ID" ]    && [ -n "$PROPERTY_ID" ]; then
+  echo "  Wiring property -> listing (trust signals)..."
+  icp canister call listing    setPropertyCanisterId   "(\"$PROPERTY_ID\")"         -e "$ENV" &
+fi
+if [ -n "$LISTING_ID" ]    && [ -n "$JOB_ID" ]; then
+  echo "  Wiring job -> listing (trust signals)..."
+  icp canister call listing    setJobCanisterId        "(\"$JOB_ID\")"              -e "$ENV" &
+fi
+if [ -n "$LISTING_ID" ]    && [ -n "$REPORT_ID" ]; then
+  echo "  Wiring report -> listing (trust signals)..."
+  icp canister call listing    setReportCanisterId     "(\"$REPORT_ID\")"           -e "$ENV" &
 fi
 
 wait
