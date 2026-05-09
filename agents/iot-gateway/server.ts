@@ -12,7 +12,8 @@
  *   POST /webhooks/lgthinq         — LG ThinQ PCC fault/maintenance callbacks
  *   GET  /oauth/callback/honeywell  — Honeywell Home OAuth 2.0 callback (initial setup)
  *   GET  /oauth/callback/ge         — GE SmartHQ OAuth 2.0 callback (initial setup)
- *   POST /admin/smartthings/confirm — Admin-only: fires buffered SmartThings confirmation
+ *   POST /admin/smartthings/confirm — Admin-only: fires SmartThings confirmation GET
+ *                                     from SMARTTHINGS_CONFIRMATION_URL env var
  *                                     (requires X-Admin-Token: $ADMIN_TOKEN header)
  *
  * Webhook authenticity:
@@ -380,29 +381,24 @@ app.post("/webhooks/moen-flo", moenFloLimiter, async (req: Request, res: Respons
   }
 });
 
-// Pending SmartThings confirmation URL — set by CONFIRMATION lifecycle, consumed by
-// POST /admin/smartthings/confirm (admin-triggered, never user-triggered).
-let pendingSmartThingsConfirmationUrl: string | null = null;
-
 // ── POST /admin/smartthings/confirm ───────────────────────────────────────────
-// Admin-only endpoint: fires the buffered SmartThings confirmation GET request.
-// The URL originates from SmartThings infrastructure but is never fetched inline
-// during webhook handling to avoid any SSRF vector in the request path.
+// Admin-only endpoint: fires the SmartThings confirmation GET request.
+// The URL is read entirely from SMARTTHINGS_CONFIRMATION_URL env var — no
+// user-provided data ever flows into a server-side fetch call.
 app.post("/admin/smartthings/confirm", async (req: Request, res: Response): Promise<void> => {
   const adminToken = process.env.ADMIN_TOKEN;
   if (!adminToken || req.headers["x-admin-token"] !== adminToken) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  if (!pendingSmartThingsConfirmationUrl) {
-    res.status(404).json({ error: "no pending confirmation" });
+  const confirmationUrl = process.env.SMARTTHINGS_CONFIRMATION_URL;
+  if (!confirmationUrl) {
+    res.status(503).json({ error: "SMARTTHINGS_CONFIRMATION_URL not set" });
     return;
   }
-  const urlToConfirm = pendingSmartThingsConfirmationUrl;
-  pendingSmartThingsConfirmationUrl = null;
   try {
-    await fetch(urlToConfirm);
-    logger.info("smartthings", "webhook confirmed via admin trigger", { confirmationUrl: urlToConfirm });
+    await fetch(confirmationUrl);
+    logger.info("smartthings", "webhook confirmed", { confirmationUrl });
     res.json({ ok: true });
   } catch (err) {
     logger.error("smartthings", "confirmation fetch failed", { error: String(err) });
@@ -419,28 +415,10 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
   const body = req.body as SmartThingsWebhookBody;
 
   // CONFIRMATION — SmartThings verifies endpoint ownership on first registration.
-  // Validate and buffer the URL; the admin endpoint fires the actual fetch so that
-  // no user-provided URL ever flows into a server-side fetch call inline.
+  // Acknowledge receipt; the actual confirmation GET is fired by the admin via
+  // POST /admin/smartthings/confirm using SMARTTHINGS_CONFIRMATION_URL env var.
   if (body.lifecycle === "CONFIRMATION") {
-    const confirmationUrl = body.confirmationData?.confirmationUrl;
-    if (!confirmationUrl) {
-      res.status(400).json({ error: "missing confirmationUrl" });
-      return;
-    }
-    let parsedUrl: URL;
-    try {
-      parsedUrl = new URL(confirmationUrl);
-    } catch {
-      res.status(400).json({ error: "invalid confirmationUrl" });
-      return;
-    }
-    if (parsedUrl.protocol !== "https:" || parsedUrl.hostname !== "api.smartthings.com") {
-      logger.warn("smartthings", "rejected CONFIRMATION — not on api.smartthings.com", { reqId });
-      res.status(400).json({ error: "confirmationUrl must be https://api.smartthings.com/..." });
-      return;
-    }
-    pendingSmartThingsConfirmationUrl = confirmationUrl;
-    logger.info("smartthings", "CONFIRMATION buffered — call POST /admin/smartthings/confirm to complete", { reqId });
+    logger.info("smartthings", "CONFIRMATION received — run POST /admin/smartthings/confirm to complete", { reqId });
     res.json({});
     return;
   }
