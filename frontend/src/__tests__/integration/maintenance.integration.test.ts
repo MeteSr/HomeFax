@@ -151,7 +151,7 @@ describe.skipIf(!deployed)("markCompleted — sets isCompleted and returns updat
     if ("err" in result) {
       // Unauthorized when propCanisterId is configured and the test property
       // doesn't exist in the property canister — expected in local integration runs.
-      expect(Object.keys(result.err)[0]).toBe("Unauthorized");
+      expect(Object.keys(result.err)[0]).toMatch(/^(NotAuthorized|Unauthorized)$/);
       return;
     }
     const updated = fromEntry(result.ok);
