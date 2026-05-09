@@ -19,7 +19,7 @@ export async function dispatchWebPush(principal: string, payload: PushPayload): 
           console.warn(`[vapid] evicting stale subscription ${sub.endpoint.slice(0, 40)}…`);
           removeSubscription(sub.endpoint);
         } else {
-          console.error(`[vapid] push failed for ${sub.endpoint.slice(0, 40)}… :`, err);
+          console.error("[vapid] push failed for", sub.endpoint.slice(0, 40), "…:", err);
         }
       }
     })

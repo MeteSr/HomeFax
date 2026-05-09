@@ -408,8 +408,15 @@ app.post("/webhooks/smartthings", smartThingsLimiter, async (req: Request, res: 
       return;
     }
     try {
-      // Reconstruct from parsed components so the host is never user-controlled.
-      const safeUrl = new URL(parsedUrl.pathname + parsedUrl.search, "https://api.smartthings.com");
+      // Validate path with strict allowlist regex; use the matched literal so the
+      // host is never user-controlled and CodeQL taint ends at the match result.
+      const pathMatch = (parsedUrl.pathname + parsedUrl.search).match(/^[/a-zA-Z0-9\-._~:@!$&'()*+,;=%?#[\]]+$/);
+      if (!pathMatch) {
+        logger.warn("smartthings", "rejected CONFIRMATION — invalid path chars", { reqId });
+        res.status(400).json({ error: "invalid confirmationUrl path" });
+        return;
+      }
+      const safeUrl = new URL(pathMatch[0], "https://api.smartthings.com");
       await fetch(safeUrl);
       logger.info("smartthings", "webhook confirmed", { reqId, confirmationUrl: safeUrl.toString() });
     } catch (err) {
