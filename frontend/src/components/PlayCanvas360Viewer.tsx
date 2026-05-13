@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
+import { photoService } from "@/services/photo";
 
 export interface PanoramaEntry {
   roomLabel: string;
@@ -7,6 +8,7 @@ export interface PanoramaEntry {
 
 interface Props {
   panoramas:    PanoramaEntry[];
+  propertyId:   string;
   initialRoom?: string;
 }
 
@@ -66,9 +68,31 @@ const S = {
   },
 };
 
-export default function PlayCanvas360Viewer({ panoramas, initialRoom }: Props) {
+// Load a blob URL into a PlayCanvas texture and apply it as the material's
+// emissive map, then force a material update so the sphere re-renders.
+function applyTexture(pc: any, mat: any, url: string | undefined) {
+  if (!url) return;
+  const img = new Image();
+  img.onload = () => {
+    const tex = new pc.Texture(mat.device ?? pc.Application.getApplication()?.graphicsDevice, {
+      width:  img.naturalWidth,
+      height: img.naturalHeight,
+      format: pc.PIXELFORMAT_SRGBA8,
+    });
+    tex.setSource(img);
+    mat.emissiveMap = tex;
+    mat.update();
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
+export default function PlayCanvas360Viewer({ panoramas, propertyId, initialRoom }: Props) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const appRef       = useRef<any>(null);
+  const sphereRef    = useRef<any>(null);
+  // photoId → blob URL, populated once on mount
+  const photoUrlsRef = useRef<Map<string, string>>(new Map());
   const [activeRoom, setActiveRoom] = useState<string>(
     () => initialRoom ?? (panoramas[0]?.roomLabel ?? "")
   );
@@ -95,6 +119,12 @@ export default function PlayCanvas360Viewer({ panoramas, initialRoom }: Props) {
 
     (async () => {
       try {
+        // Pre-fetch all listing photos and build photoId → blob URL map
+        const photos = await photoService.getListingPhotos(propertyId);
+        for (const p of photos) {
+          photoUrlsRef.current.set(p.id, p.url);
+        }
+
         const pc = await import("playcanvas");
 
         if (destroyed || !canvasRef.current) return;
@@ -104,11 +134,19 @@ export default function PlayCanvas360Viewer({ panoramas, initialRoom }: Props) {
         app.setCanvasResolution(pc.RESOLUTION_AUTO);
         appRef.current = app;
 
-        // Sky-sphere entity — equirectangular photo mapped to inner face of a sphere
+        // Sky-sphere — equirectangular photo on the inner face (CULLFACE_FRONT)
         const sphere = new pc.Entity("sky");
         sphere.addComponent("render", { type: "sphere" });
         app.scene.root?.addChild(sphere);
         sphere.setLocalPosition(0, 0, 0);
+        sphere.setLocalScale(100, 100, 100);
+        sphereRef.current = sphere;
+
+        // Material — emissive so the image is visible without lighting
+        const mat = new pc.StandardMaterial();
+        mat.cull = pc.CULLFACE_FRONT;
+        mat.useLighting = false;
+        (sphere.render as any).meshInstances[0].material = mat;
 
         // Camera placed at origin (inside the sphere)
         const camera = new pc.Entity("camera");
@@ -117,6 +155,10 @@ export default function PlayCanvas360Viewer({ panoramas, initialRoom }: Props) {
         camera.setLocalPosition(0, 0, 0);
 
         app.start();
+
+        // Apply initial room texture after PlayCanvas is ready
+        const initial = panoramas.find(p => p.roomLabel === activeRoom) ?? panoramas[0];
+        if (initial) applyTexture(pc, mat, photoUrlsRef.current.get(initial.photoId));
       } catch {
         // PlayCanvas init failure (e.g. in test environment) — silently skip
       }
@@ -124,6 +166,7 @@ export default function PlayCanvas360Viewer({ panoramas, initialRoom }: Props) {
 
     return () => {
       destroyed = true;
+      sphereRef.current = null;
       if (appRef.current) {
         try { appRef.current.destroy(); } catch { /* ignore */ }
         appRef.current = null;
@@ -133,8 +176,13 @@ export default function PlayCanvas360Viewer({ panoramas, initialRoom }: Props) {
 
   // Swap texture when active room changes
   useEffect(() => {
-    // Real texture swap would go here; skipped for now — Phase 1 focus is
-    // the viewer shell and navigation UX. Texture loading is a Phase 1.5 task.
+    if (!appRef.current || !sphereRef.current) return;
+    const entry = panoramas.find(p => p.roomLabel === activeRoom);
+    if (!entry) return;
+    import("playcanvas").then(pc => {
+      const mat = (sphereRef.current.render as any)?.meshInstances?.[0]?.material;
+      if (mat) applyTexture(pc, mat, photoUrlsRef.current.get(entry.photoId));
+    }).catch(() => {});
   }, [activeRoom, panoramas]);
 
   if (!panoramas.length) {
