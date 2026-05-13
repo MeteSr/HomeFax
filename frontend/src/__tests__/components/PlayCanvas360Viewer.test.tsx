@@ -14,18 +14,44 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock PlayCanvas — WebGL not available in jsdom
-vi.mock("playcanvas", () => ({
-  Application:   vi.fn().mockReturnValue({ start: vi.fn(), scene: {}, setCanvasFillMode: vi.fn(), setCanvasResolution: vi.fn(), on: vi.fn(), destroy: vi.fn() }),
-  FILLMODE_FILL_WINDOW: "FILLMODE_FILL_WINDOW",
-  RESOLUTION_AUTO:      "RESOLUTION_AUTO",
-  Entity:  vi.fn().mockReturnValue({ addComponent: vi.fn(), setLocalPosition: vi.fn(), setLocalEulerAngles: vi.fn(), name: "" }),
-  Color:   vi.fn(),
-  Vec3:    vi.fn(),
-  Texture: vi.fn(),
-  TEXTURETYPE_RGBM: "TEXTURETYPE_RGBM",
-  PIXELFORMAT_R8_G8_B8_A8: "PIXELFORMAT_R8_G8_B8_A8",
+// Mock photo service — no real canister in unit tests
+vi.mock("@/services/photo", () => ({
+  photoService: {
+    getListingPhotos: vi.fn().mockResolvedValue([
+      { id: "PH_1", url: "blob:http://localhost/ph1" },
+      { id: "PH_2", url: "blob:http://localhost/ph2" },
+      { id: "PH_3", url: "blob:http://localhost/ph3" },
+    ]),
+  },
 }));
+
+// Mock PlayCanvas — WebGL not available in jsdom
+vi.mock("playcanvas", () => {
+  const meshInst = { material: null };
+  const mockRender = { meshInstances: [meshInst] };
+  const mockEntity = {
+    addComponent: vi.fn().mockReturnValue(mockRender),
+    setLocalPosition: vi.fn(),
+    setLocalScale: vi.fn(),
+    setLocalEulerAngles: vi.fn(),
+    render: mockRender,
+    name: "",
+  };
+  return {
+    Application:   vi.fn().mockReturnValue({ start: vi.fn(), scene: { root: { addChild: vi.fn() } }, setCanvasFillMode: vi.fn(), setCanvasResolution: vi.fn(), on: vi.fn(), destroy: vi.fn(), graphicsDevice: {} }),
+    FILLMODE_FILL_WINDOW: "FILLMODE_FILL_WINDOW",
+    RESOLUTION_AUTO:      "RESOLUTION_AUTO",
+    Entity:  vi.fn().mockReturnValue(mockEntity),
+    Color:   vi.fn(),
+    Vec3:    vi.fn(),
+    Texture: vi.fn(),
+    StandardMaterial: vi.fn().mockReturnValue({ cull: 0, useLighting: true, emissiveMap: null, update: vi.fn() }),
+    CULLFACE_FRONT: 1,
+    PIXELFORMAT_SRGBA8: "PIXELFORMAT_SRGBA8",
+    TEXTURETYPE_RGBM: "TEXTURETYPE_RGBM",
+    PIXELFORMAT_R8_G8_B8_A8: "PIXELFORMAT_R8_G8_B8_A8",
+  };
+});
 
 import PlayCanvas360Viewer, { type PanoramaEntry } from "@/components/PlayCanvas360Viewer";
 
@@ -35,8 +61,10 @@ const ROOMS: PanoramaEntry[] = [
   { roomLabel: "Master Bedroom", photoId: "PH_3" },
 ];
 
+const TEST_PROPERTY_ID = "prop-test-001";
+
 function renderViewer(panoramas = ROOMS) {
-  return render(<PlayCanvas360Viewer panoramas={panoramas} />);
+  return render(<PlayCanvas360Viewer panoramas={panoramas} propertyId={TEST_PROPERTY_ID} />);
 }
 
 // ─── Container and accessibility ──────────────────────────────────────────────
@@ -70,7 +98,7 @@ describe("PlayCanvas360Viewer — room display", () => {
   });
 
   it("accepts an initialRoom prop to start on a specific room", () => {
-    render(<PlayCanvas360Viewer panoramas={ROOMS} initialRoom="Kitchen" />);
+    render(<PlayCanvas360Viewer panoramas={ROOMS} propertyId={TEST_PROPERTY_ID} initialRoom="Kitchen" />);
     expect(screen.getByTestId("viewer-current-room")).toHaveTextContent("Kitchen");
   });
 });
@@ -117,7 +145,7 @@ describe("PlayCanvas360Viewer — room navigation", () => {
   });
 
   it("renders no navigation when only one room is provided", () => {
-    render(<PlayCanvas360Viewer panoramas={[ROOMS[0]]} />);
+    render(<PlayCanvas360Viewer panoramas={[ROOMS[0]]} propertyId={TEST_PROPERTY_ID} />);
     expect(screen.queryByRole("navigation", { name: /rooms/i })).not.toBeInTheDocument();
   });
 });
@@ -126,19 +154,19 @@ describe("PlayCanvas360Viewer — room navigation", () => {
 
 describe("PlayCanvas360Viewer — empty state", () => {
   it("renders a fallback when panoramas array is empty", () => {
-    render(<PlayCanvas360Viewer panoramas={[]} />);
+    render(<PlayCanvas360Viewer panoramas={[]} propertyId={TEST_PROPERTY_ID} />);
     expect(screen.getByTestId("viewer-360-fallback")).toBeInTheDocument();
   });
 
   it("fallback message mentions no tour available", () => {
-    render(<PlayCanvas360Viewer panoramas={[]} />);
+    render(<PlayCanvas360Viewer panoramas={[]} propertyId={TEST_PROPERTY_ID} />);
     expect(
       screen.getByText(/no 360.*tour|no virtual tour|tour not available/i)
     ).toBeInTheDocument();
   });
 
   it("does NOT render the canvas when there are no panoramas", () => {
-    render(<PlayCanvas360Viewer panoramas={[]} />);
+    render(<PlayCanvas360Viewer panoramas={[]} propertyId={TEST_PROPERTY_ID} />);
     expect(screen.queryByRole("region", { name: /360.*virtual tour/i })).not.toBeInTheDocument();
   });
 });

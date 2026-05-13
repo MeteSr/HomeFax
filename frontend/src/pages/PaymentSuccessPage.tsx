@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { CheckCircle, Gift } from "lucide-react";
 import { COLORS, FONTS } from "@/theme";
 import { paymentService } from "@/services/payment";
+import { redeemQuorumCoupon } from "@/services/benefit";
 import { useAuthStore } from "@/store/authStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPrincipal } from "@/services/actor";
@@ -27,6 +28,8 @@ export default function PaymentSuccessPage() {
   // PaymentElement also passes tier/billing directly in the URL
   const urlTier           = params.get("tier") ?? "";
   const urlBilling        = params.get("billing") ?? "";
+  // Quorum HOA member discount code — if present, mark it redeemed after checkout
+  const quorumCoupon      = params.get("quorum_coupon") ?? "";
 
   const [state, setState]       = useState<PageState>("verifying");
   const [giftToken, setGiftToken] = useState<string>("");
@@ -40,6 +43,7 @@ export default function PaymentSuccessPage() {
       if (mock.error) throw new Error(mock.error);
       const t = (mock.tier ?? urlTier).replace("Contractor", "Contractor ");
       if (t) setTierName(t);
+      if (quorumCoupon) redeemQuorumCoupon(quorumCoupon).catch(() => {});
       setState("subscription");
       setTimeout(() => navigate("/dashboard"), 2500);
       return;
@@ -57,9 +61,10 @@ export default function PaymentSuccessPage() {
     if (data.error) throw new Error(data.error);
     const t = (data.tier ?? urlTier).replace("Contractor", "Contractor ");
     if (t) setTierName(t);
+    if (quorumCoupon) redeemQuorumCoupon(quorumCoupon).catch(() => {});
     setState("subscription");
     setTimeout(() => navigate("/dashboard"), 2500);
-  }, [subscriptionId, paymentIntentId, urlTier, navigate]);
+  }, [subscriptionId, paymentIntentId, urlTier, quorumCoupon, navigate]);
 
   useEffect(() => {
     // New PaymentElement flow: verify subscription
@@ -95,6 +100,7 @@ export default function PaymentSuccessPage() {
         setState("gift");
       } else {
         if (result.tier) setTierName(result.tier.replace("Contractor", "Contractor "));
+        if (quorumCoupon) redeemQuorumCoupon(quorumCoupon).catch(() => {});
         setState("subscription");
       }
     }).catch((e) => {

@@ -302,7 +302,7 @@ export default function FsboListingPage() {
           <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: "1.125rem", color: "#0e0e0c", margin: "0 0 0.75rem" }}>
             360° Virtual Tour
           </h2>
-          <PlayCanvas360Viewer panoramas={panoramas} />
+          <PlayCanvas360Viewer panoramas={panoramas} propertyId={propertyId!} />
         </div>
       )}
 
