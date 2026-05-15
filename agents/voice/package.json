@@ -15,6 +15,9 @@
     ],
     "transform": {
       "^.+\\.tsx?$": "babel-jest"
+    },
+    "moduleNameMapper": {
+      "^\\./bidtolistRouter$": "<rootDir>/__mocks__/bidtolistRouter.js"
     }
   },
   "dependencies": {
