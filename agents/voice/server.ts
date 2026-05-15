@@ -23,6 +23,7 @@ import { logger } from "./logger";
 // NOTE: Email (Resend), permits, price-benchmark, forecast, check, report-request
 // and lookup-year-built are handled by the ai_proxy Motoko canister.
 // This relay handles only the 6 Claude AI endpoints.
+import { bidtolistRouter } from "./bidtolistRouter";
 
 const app = express();
 const port = Number(process.env.VOICE_AGENT_PORT) || Number(process.env.PORT) || 3001;
@@ -100,11 +101,14 @@ if (!allowedOrigin) {
   }
   logger.warn("voice-agent", "FRONTEND_ORIGIN not set — accepting any localhost origin (dev only)");
 }
-// In production: exact match against FRONTEND_ORIGIN.
+// In production: exact match against FRONTEND_ORIGIN (and BIDTOLIST_FRONTEND_ORIGIN if set).
 // In dev: accept any localhost port so Vite (:5173), CRA (:3000), etc. all work.
-const origin: string | RegExp =
+const bidtolistOrigin = process.env.BIDTOLIST_FRONTEND_ORIGIN;
+const origin: string | RegExp | string[] =
   process.env.NODE_ENV === "production"
-    ? (allowedOrigin as string)
+    ? (bidtolistOrigin
+        ? [allowedOrigin as string, bidtolistOrigin]
+        : (allowedOrigin as string))
     : (allowedOrigin ?? /^http:\/\/localhost:/);
 
 app.use(cors({ origin }));
@@ -115,6 +119,9 @@ app.use((req, res, next) => {
     // Stripe signature verification requires the raw request body — do NOT parse as JSON.
     // Use type:"*/*" so the raw parser captures any Content-Type (Stripe sends application/json).
     express.raw({ type: "*/*" })(req, res, next);
+  } else if (req.originalUrl === "/api/bidtolist/stripe/webhook") {
+    // BidtoList webhook — raw body handled at route level in bidtolistRouter.
+    next();
   } else if (req.path === "/api/classify") {
     express.json({ limit: "5mb" })(req, res, next);
   } else {
@@ -141,6 +148,7 @@ app.use("/api/", (req: Request, res: Response, next: express.NextFunction): void
   if (!VOICE_API_KEY) { next(); return; }
   // Stripe webhooks are authenticated via HMAC signature, not the API key header.
   if (req.originalUrl.startsWith("/api/stripe/webhook")) { next(); return; }
+  if (req.originalUrl.startsWith("/api/bidtolist/stripe/webhook")) { next(); return; }
   const provided = req.headers["x-api-key"];
   if (provided !== VOICE_API_KEY) {
     res.status(401).json({ error: "Unauthorized" });
@@ -1128,6 +1136,9 @@ Rules:
     res.status(500).json({ error: msg });
   }
 });
+
+// ── BidtoList sub-router ──────────────────────────────────────────────────────
+app.use("/api/bidtolist", bidtolistRouter);
 
 // ── POST /api/stripe/create-checkout (dev only) ───────────────────────────────
 // Local dfx replica doesn't forward custom HTTP headers in outcalls correctly.
