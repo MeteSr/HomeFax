@@ -1229,6 +1229,17 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
       "variant {ok; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
+  "createDiscountCode": {
+    "args": [
+      "text",
+      "nat",
+      "int",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+    ],
+  },
   "createStripeCheckoutSession": {
     "args": [
       "variant {Pro; Premium; Free; RealtorFree; Basic; ContractorPro; ContractorFree; RealtorPro}",
@@ -1287,6 +1298,15 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
       "record {periodDays:nat; tier:variant {Pro; Premium; Free; RealtorFree; Basic; ContractorPro; ContractorFree; RealtorPro}; quoteRequestsPerMonth:nat; propertyLimit:nat; priceUSD:nat; photosPerJob:nat}",
     ],
   },
+  "getReferrals": {
+    "args": [],
+    "mode": [
+      "query",
+    ],
+    "rets": [
+      "variant {ok:vec record {text; text}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+    ],
+  },
   "getSubscriptionStats": {
     "args": [],
     "mode": [
@@ -1331,6 +1351,24 @@ exports[`payment IDL factory > full signature snapshot 1`] = `
     ],
     "rets": [
       "variant {ok:vec record {redeemedBy:opt principal; giftMessage:text; createdAt:int; tier:variant {Pro; Premium; Free; RealtorFree; Basic; ContractorPro; ContractorFree; RealtorPro}; deliveryDate:text; billing:variant {Monthly; Yearly}; senderName:text; recipientName:text; giftToken:text; recipientEmail:text}; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+    ],
+  },
+  "recordReferral": {
+    "args": [
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
+    ],
+  },
+  "redeemDiscountCode": {
+    "args": [
+      "text",
+    ],
+    "mode": [],
+    "rets": [
+      "variant {ok:nat; err:variant {InvalidInput:text; PaymentFailed:text; NotFound; NotAuthorized; RateLimited}}",
     ],
   },
   "redeemGift": {

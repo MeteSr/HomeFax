@@ -183,6 +183,27 @@ export const idlFactory = ({ IDL }: any) => {
       [IDL.Variant({ ok: IDL.Nat, err: Error })],
       []
     ),
+    // ── BidToList cross-market discount codes (#46) ──
+    createDiscountCode: IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Int],
+      [IDL.Variant({ ok: IDL.Null, err: Error })],
+      []
+    ),
+    redeemDiscountCode: IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ ok: IDL.Nat, err: Error })],
+      []
+    ),
+    recordReferral: IDL.Func(
+      [IDL.Text],
+      [IDL.Variant({ ok: IDL.Null, err: Error })],
+      []
+    ),
+    getReferrals: IDL.Func(
+      [],
+      [IDL.Variant({ ok: IDL.Vec(IDL.Tuple(IDL.Text, IDL.Text)), err: Error })],
+      ["query"]
+    ),
   });
 };
 
@@ -513,5 +534,27 @@ export const paymentService = {
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error ?? "Checkout failed");
     window.location.href = data.url;
+  },
+
+  /** Redeem a BidToList homeowner promo code. Fire-and-forget; ignores already-redeemed. */
+  async redeemDiscountCode(code: string): Promise<void> {
+    if (!code.trim()) return;
+    try {
+      const a = await getActor();
+      await a.redeemDiscountCode(code.trim());
+    } catch {
+      // non-fatal — discount tracking should not block the user
+    }
+  },
+
+  /** Store the agent referral tag on this subscription for later attribution. Fire-and-forget. */
+  async recordReferral(ref: string): Promise<void> {
+    if (!ref.trim()) return;
+    try {
+      const a = await getActor();
+      await a.recordReferral(ref.trim());
+    } catch {
+      // non-fatal
+    }
   },
 };

@@ -229,6 +229,19 @@ persistent actor Payment {
   private let agentCreditBalances  = Map.empty<Principal, AgentCreditBalance>();
   private let errsByMethod : Map.Map<Text, Nat> = Map.empty();
 
+  // ─── BidToList cross-market referral ─────────────────────────────────────────
+  public type DiscountCode = {
+    code        : Text;
+    discountPct : Nat;   // 1–100; e.g. 50 = 50% off first month
+    expiresAt   : Int;   // nanoseconds; 0 = never
+    redeemedBy  : ?Principal;
+    redeemedAt  : ?Int;
+  };
+
+  private let discountCodes          = Map.empty<Text, DiscountCode>();
+  /// per-principal referral tag stored on first subscription activation
+  private let subscriptionReferrals  = Map.empty<Principal, Text>();
+
   private func countError(method : Text) {
     let prev = Option.get(Map.get(errsByMethod, Text.compare, method), 0);
     Map.add(errsByMethod, Text.compare, method, prev + 1);
@@ -1107,5 +1120,66 @@ persistent actor Payment {
         #ok(updated.balance)
       };
     }
+  };
+
+  // ─── Discount codes (BidToList homeowner promos) ─────────────────────────────
+
+  /// Admin-only. Called by the BidToList stripe-webhook server after an agent
+  /// pays the platform fee, to mint a single-use HomeGentic promo code for the homeowner.
+  public shared(msg) func createDiscountCode(
+    code        : Text,
+    discountPct : Nat,
+    expiresAt   : Int,
+  ) : async Result.Result<(), Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    if (discountPct == 0 or discountPct > 100) return #err(#InvalidInput("discountPct must be 1–100"));
+    if (Text.size(code) == 0)                  return #err(#InvalidInput("code cannot be empty"));
+    if (Map.contains(discountCodes, Text.compare, code)) return #err(#InvalidInput("code already exists"));
+    Map.add(discountCodes, Text.compare, code, {
+      code; discountPct; expiresAt;
+      redeemedBy = null; redeemedAt = null;
+    });
+    #ok(())
+  };
+
+  /// Called by HomeGentic PaymentSuccessPage after a successful checkout.
+  /// Marks the code as redeemed (single-use). Returns the discount percentage.
+  public shared(msg) func redeemDiscountCode(code: Text) : async Result.Result<Nat, Error> {
+    if (Principal.isAnonymous(msg.caller)) return #err(#NotAuthorized);
+    switch (Map.get(discountCodes, Text.compare, code)) {
+      case null { #err(#NotFound) };
+      case (?dc) {
+        if (dc.redeemedBy != null) return #err(#InvalidInput("code already redeemed"));
+        if (dc.expiresAt > 0 and Time.now() > dc.expiresAt) return #err(#InvalidInput("code expired"));
+        Map.add(discountCodes, Text.compare, code, {
+          code = dc.code; discountPct = dc.discountPct; expiresAt = dc.expiresAt;
+          redeemedBy = ?msg.caller; redeemedAt = ?Time.now();
+        });
+        #ok(dc.discountPct)
+      };
+    }
+  };
+
+  // ─── Referral attribution ─────────────────────────────────────────────────────
+
+  /// Called by HomeGentic PaymentSuccessPage after subscription activation.
+  /// Stores the referral tag (e.g. "AGENT_abc12") so referrals can be credited later.
+  /// Idempotent — subsequent calls for the same principal are silently ignored.
+  public shared(msg) func recordReferral(ref: Text) : async Result.Result<(), Error> {
+    if (Principal.isAnonymous(msg.caller)) return #err(#NotAuthorized);
+    if (Text.size(ref) == 0) return #err(#InvalidInput("ref cannot be empty"));
+    if (not Map.contains(subscriptionReferrals, Principal.compare, msg.caller)) {
+      Map.add(subscriptionReferrals, Principal.compare, msg.caller, ref);
+    };
+    #ok(())
+  };
+
+  /// Admin query: retrieve all referrals for reporting.
+  public query(msg) func getReferrals() : async Result.Result<[(Text, Text)], Error> {
+    if (not isAdmin(msg.caller)) return #err(#NotAuthorized);
+    #ok(Iter.toArray(Iter.map<(Principal, Text), (Text, Text)>(
+      Map.entries(subscriptionReferrals),
+      func((p, r)) { (Principal.toText(p), r) }
+    )))
   };
 }

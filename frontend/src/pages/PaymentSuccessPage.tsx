@@ -30,6 +30,10 @@ export default function PaymentSuccessPage() {
   const urlBilling        = params.get("billing") ?? "";
   // Quorum HOA member discount code — if present, mark it redeemed after checkout
   const quorumCoupon      = params.get("quorum_coupon") ?? "";
+  // BidToList homeowner promo code — single-use, 90-day expiry
+  const bidtolistCode     = params.get("bidtolist_code") ?? "";
+  // Agent referral tag — stored on subscription for attribution
+  const referralRef       = params.get("ref") ?? "";
 
   const [state, setState]       = useState<PageState>("verifying");
   const [giftToken, setGiftToken] = useState<string>("");
@@ -43,7 +47,9 @@ export default function PaymentSuccessPage() {
       if (mock.error) throw new Error(mock.error);
       const t = (mock.tier ?? urlTier).replace("Contractor", "Contractor ");
       if (t) setTierName(t);
-      if (quorumCoupon) redeemQuorumCoupon(quorumCoupon).catch(() => {});
+      if (quorumCoupon)  redeemQuorumCoupon(quorumCoupon).catch(() => {});
+      if (bidtolistCode) paymentService.redeemDiscountCode(bidtolistCode).catch(() => {});
+      if (referralRef)   paymentService.recordReferral(referralRef).catch(() => {});
       setState("subscription");
       setTimeout(() => navigate("/dashboard"), 2500);
       return;
@@ -61,10 +67,12 @@ export default function PaymentSuccessPage() {
     if (data.error) throw new Error(data.error);
     const t = (data.tier ?? urlTier).replace("Contractor", "Contractor ");
     if (t) setTierName(t);
-    if (quorumCoupon) redeemQuorumCoupon(quorumCoupon).catch(() => {});
+    if (quorumCoupon)  redeemQuorumCoupon(quorumCoupon).catch(() => {});
+    if (bidtolistCode) paymentService.redeemDiscountCode(bidtolistCode).catch(() => {});
+    if (referralRef)   paymentService.recordReferral(referralRef).catch(() => {});
     setState("subscription");
     setTimeout(() => navigate("/dashboard"), 2500);
-  }, [subscriptionId, paymentIntentId, urlTier, quorumCoupon, navigate]);
+  }, [subscriptionId, paymentIntentId, urlTier, quorumCoupon, bidtolistCode, referralRef, navigate]);
 
   useEffect(() => {
     // New PaymentElement flow: verify subscription
@@ -100,7 +108,9 @@ export default function PaymentSuccessPage() {
         setState("gift");
       } else {
         if (result.tier) setTierName(result.tier.replace("Contractor", "Contractor "));
-        if (quorumCoupon) redeemQuorumCoupon(quorumCoupon).catch(() => {});
+        if (quorumCoupon)  redeemQuorumCoupon(quorumCoupon).catch(() => {});
+        if (bidtolistCode) paymentService.redeemDiscountCode(bidtolistCode).catch(() => {});
+        if (referralRef)   paymentService.recordReferral(referralRef).catch(() => {});
         setState("subscription");
       }
     }).catch((e) => {

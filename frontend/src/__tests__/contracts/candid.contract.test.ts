@@ -127,17 +127,21 @@ describe("payment IDL factory", () => {
       "adminGrantAgentCredits",
       "cancelSubscription",
       "configureStripe",
+      "createDiscountCode",
       "createStripeCheckoutSession",
       "getAllPricing",
       "getMyAgentCredits",
       "getMySubscription",
       "getPriceQuote",
       "getPricing",
+      "getReferrals",
       "getSubscriptionStats",
       "grantSubscription",
       "initAdmins",
       "isStripeConfigured",
       "listPendingGifts",
+      "recordReferral",
+      "redeemDiscountCode",
       "redeemGift",
       "setTierCanisterIds",
       "subscribe",
@@ -151,7 +155,7 @@ describe("payment IDL factory", () => {
       .filter(([, sig]) => sig.mode.includes("query"))
       .map(([name]) => name)
       .sort();
-    expect(queries).toEqual(["getAllPricing", "getMyAgentCredits", "getMySubscription", "getPricing", "getSubscriptionStats", "isStripeConfigured", "listPendingGifts"]);
+    expect(queries).toEqual(["getAllPricing", "getMyAgentCredits", "getMySubscription", "getPricing", "getReferrals", "getSubscriptionStats", "isStripeConfigured", "listPendingGifts"]);
   });
 
   it("getSubscriptionStats returns all tier breakdown fields", () => {

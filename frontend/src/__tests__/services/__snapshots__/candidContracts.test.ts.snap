@@ -140,17 +140,21 @@ exports[`Candid contract snapshots — method arity > payment 1`] = `
 "adminGrantAgentCredits(2) -> (1)
 cancelSubscription(0) -> (1)
 configureStripe(1) -> (1)
+createDiscountCode(3) -> (1)
 createStripeCheckoutSession(3) -> (1)
 getAllPricing(0) -> (1) [query]
 getMyAgentCredits(0) -> (1) [query]
 getMySubscription(0) -> (1) [query]
 getPriceQuote(1) -> (1)
 getPricing(1) -> (1) [query]
+getReferrals(0) -> (1) [query]
 getSubscriptionStats(0) -> (1) [query]
 grantSubscription(2) -> (1)
 initAdmins(1) -> (1)
 isStripeConfigured(0) -> (1) [query]
 listPendingGifts(0) -> (1) [query]
+recordReferral(1) -> (1)
+redeemDiscountCode(1) -> (1)
 redeemGift(1) -> (1)
 setTierCanisterIds(3) -> (1)
 subscribe(1) -> (1)
